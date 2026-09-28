@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "25.87",
-  "release": "7cc82d8558984df6d23d4ebaddbecc97024ea90c695fa4077ac557920e73aee3",
+  "version": "25.88",
+  "release": "d6b1ce5e15e9ac2e87d22113c368fa4b34fd1e72bdb93883f7b817b690e08242",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.09.28-v25.87-floor-eccentricity-overlay-cleanup",
-  "androidSelectorSha256": "7948083061c08e070a19aee145df4e8a1124f3841f9aafaa5ef03eaec211738e",
+  "androidSourceBuild": "2026.09.28-v25.88-integrated-floor-overlay-fix",
+  "androidSelectorSha256": "489a27a88514b1ad25c2fb166401037c1eedc790414498ba4d8082b7d8dab95e",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
   "files": 286
 }
