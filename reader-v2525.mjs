@@ -2,7 +2,7 @@ import {installTouchNavigation,installFormNavigation,installNativeTextInput} fro
 import {installReaderCalibration} from './reader-calibration-v2565.mjs';
 import {installReaderChoices} from './reader-choices-v2572.mjs';
 import {installReaderTheme,applyReaderTheme} from './reader-theme-v2572.mjs';
-import {saveKitAppearance} from './reader-choice-appearance-v2572.mjs';
+import {saveEditableFormAppearance} from './reader-choice-appearance-v2572.mjs';
 installReaderTheme();
 const assets=new URL('./vendor/pdfjs-6.3.289/',import.meta.url).href;
 const $=id=>document.getElementById(id),hosted=parent!==window;
@@ -29,6 +29,49 @@ function cdqHoldRenderedLayersV2556(duration=1800){
 }
 function commitActive(){if($('viewer').contains(document.activeElement)){const sink=$('status');sink.tabIndex=-1;sink.focus({preventScroll:true});}}
 function cdqTextEntryFieldV2550(el){return !!el&&el.matches?.('.textWidgetAnnotation input,.textWidgetAnnotation textarea')&&!el.disabled&&!el.readOnly&&el.dataset.cdqAutoField!=='true';}
+function cdqFieldDefinitionsV2581(name){
+  const raw=fieldDefinitions instanceof Map?fieldDefinitions.get(name):fieldDefinitions?.[name];
+  return raw?Array.isArray(raw)?raw:[raw]:[];
+}
+function cdqStoredFieldStateV2581(name){
+  const definitions=cdqFieldDefinitionsV2581(name);
+  let value='',hasValue=false,pdfReadOnly=definitions.length>0;
+  for(const definition of definitions){
+    let stored=definition;
+    try{if(definition?.id)stored=doc?.annotationStorage?.getValue(definition.id,definition)||definition;}catch(_){}
+    const candidate=stored?.value??definition?.value??definition?.defaultValue;
+    if(!hasValue&&candidate!==undefined&&candidate!==null){value=candidate;hasValue=true;}
+    const flags=Number(stored?.fieldFlags??definition?.fieldFlags??stored?.flags??definition?.flags??0);
+    const locked=Boolean(stored?.readOnly??definition?.readOnly) || !!(flags&1);
+    if(!locked)pdfReadOnly=false;
+  }
+  return {value:hasValue?value:'',readOnly:pdfReadOnly};
+}
+function cdqRestoreInteractiveFieldsV2581(){
+  if(!doc||!fieldDefinitions)return;
+  const controls=$('viewer').querySelectorAll('.textWidgetAnnotation input,.textWidgetAnnotation textarea,.choiceWidgetAnnotation select');
+  for(const field of controls){
+    const name=String(field.name||'');if(!name)continue;
+    const state=cdqStoredFieldStateV2581(name);
+    if(document.activeElement!==field){
+      if(field.tagName==='SELECT'){
+        const wanted=new Set(Array.isArray(state.value)?state.value.map(String):[String(state.value??'')]);
+        for(const option of field.options)option.selected=wanted.has(String(option.value));
+      }else{
+        const wanted=Array.isArray(state.value)?state.value.join(' + '):String(state.value??'');
+        if(field.value!==wanted)field.value=wanted;
+      }
+    }
+    // Only the PDF's own read-only flag (or the user's Lecture role) may lock
+    // a master field. Re-rendering/zooming must never turn editable client
+    // fields into a blank disabled overlay.
+    if(!readOnly&&!state.readOnly){
+      field.disabled=false;
+      field.readOnly=false;
+    }
+  }
+}
+
 let cdqViewportFieldTimerV2550=0,cdqDirectTextFieldV2557=null,cdqNavigationTextFieldV2562=null;
 function cdqKeyboardVisibleV2560(){
   const viewport=window.visualViewport;
@@ -113,7 +156,7 @@ async function output(){
   commitActive();await new Promise(r=>setTimeout(r,120));
   await scripting.dispatchWillSave();await new Promise(r=>setTimeout(r,0));
   let bytes=await doc.saveDocument();
-  if($('viewer').querySelector('select[name="etalon_utilise"][multiple]'))bytes=await saveKitAppearance(bytes);
+  bytes=await saveEditableFormAppearance(bytes);
   return new Blob([bytes],{type:'application/pdf'});
 }
 async function finishDocument(){
@@ -158,7 +201,7 @@ async function open(data){
   readerCalibration=installReaderCalibration({surface:$('viewer'),doc,fields,tell});
   nativeInput.configure(fields);$('viewer').classList.toggle('cdq-form',!!(fields?.get?.('client_nom')||fields?.client_nom)&&!!(fields?.get?.('charge_point_1_charge_utilisee')||fields?.charge_point_1_charge_utilisee));
   if(fields?.size||fields&&Object.keys(fields).length||actions){const deadline=Date.now()+12000;while(!scripting.ready){if(Date.now()>deadline)throw Error('Les calculs du PDF n’ont pas pu démarrer. Fermez le document puis réessayez.');await new Promise(r=>setTimeout(r,25));}}
-  choices.refresh();form.refresh();
+  cdqRestoreInteractiveFieldsV2581();choices.refresh();form.refresh();
   opening=false;busy(false);$('viewer').dataset.ready='true';status(readOnly?'Consultation seulement':'');
   tell({type:'CDQ_READER_OPENED'});
 }
@@ -251,7 +294,7 @@ try{
   eventBus.on('pagesinit',()=>{viewer.currentScaleValue='page-width';});
   eventBus.on('scalechanging',e=>{$('zoom').textContent=Math.round(e.scale*100)+' %';});
   eventBus.on('pagerendered',e=>{if(!e.error&&e.source?.div)e.source.div.dataset.cdqPaintedV2556='true';if(e.error)fail(e.error);});
-  eventBus.on('annotationlayerrendered',e=>{cdqWrapStableAnnotationLayerV2556(e.source);if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();});
+  eventBus.on('annotationlayerrendered',e=>{cdqWrapStableAnnotationLayerV2556(e.source);cdqRestoreInteractiveFieldsV2581();if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();});
   eventBus.on('textlayerrendered',()=>form.refresh());
   document.addEventListener('visibilitychange',()=>{if(document.hidden)touch.reset();});
   if(hosted){$('empty').style.display='none';status('Ouverture…');}else status('Choisissez un PDF.');
