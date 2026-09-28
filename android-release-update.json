@@ -1,7 +1,7 @@
 {
   "versionName": "25.77",
   "versionCode": 2577,
-  "apkUrl": "https://jprodrigue86.github.io/Balance-CDQ-distribution/Balance-CDQ-Android-25.77.apk",
+  "apkUrl": "https://github.com/jprodrigue86/Balance-CDQ-distribution/releases/latest/download/Balance-CDQ-Android.apk",
   "sha256": "62fdc3f9a7bd51ee021d45449a005d8b6074882f7141a91ad2f109950df9d64f",
   "mandatory": false,
   "channel": "stable",
