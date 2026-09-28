@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="25.82" data-cdq-iphone-release="e7f4582d6eba4c128a4d6eeecaf253defea1ca529688d421bb9d43c2f2c54e41">
+<html data-cdq-iphone-version="25.83" data-cdq-iphone-release="bddbba5c26bfe35c33e9ec011d238ee4279a1e8991fd57842e1f929163626398">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -536,7 +536,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.09.28-v25.82-editable-master-pdf">
+<meta name="cdq-package-build" content="2026.09.28-v25.83-etalon-background-constraint-dash">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -814,7 +814,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.09.28-v25.82-editable-master-pdf'
+    build:'2026.09.28-v25.83-etalon-background-constraint-dash'
   });
 }
 
@@ -827,7 +827,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.09.28-v25.82-editable-master-pdf'
+        build:'2026.09.28-v25.83-etalon-background-constraint-dash'
       });
     }
   } catch(e) {}
@@ -11157,7 +11157,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.09.28-v25.82-editable-master-pdf";
+  const CDQ_BUILD = "2026.09.28-v25.83-etalon-background-constraint-dash";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13425,7 +13425,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.09.28-v25.82-editable-master-pdf";
+const CDQ_V19_BUILD = "2026.09.28-v25.83-etalon-background-constraint-dash";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -14193,7 +14193,7 @@ async function cdqOpenPdfInternal(id,preparedRecord){
     if(!/^save-[\w-]{8,80}$/.test(String(d.requestId||''))||!(d.blob instanceof Blob)||d.blob.type!=='application/pdf')return;
     if(!requests.has(d.requestId))requests.set(d.requestId,save(d));
     try{const result=await requests.get(d.requestId);reply({requestId:d.requestId,ok:true,...result});}
-    catch(e){requests.delete(d.requestId);reply({requestId:d.requestId,ok:false,error:e.message||String(e)});}
+    catch(e){requests.delete(d.requestId);if(disposed){try{afficherErreur(e);}catch(_){}}else reply({requestId:d.requestId,ok:false,error:e.message||String(e)});}
   }
   try{
     const localV2553=!preparedRecord?await cdqLoadPdfLocalV2553(id):null;
@@ -15144,7 +15144,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.09.28-v25.82-editable-master-pdf";
+const CDQ_V20_BUILD = "2026.09.28-v25.83-etalon-background-constraint-dash";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -15992,7 +15992,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.09.28-v25.82-editable-master-pdf";
+const CDQ_V21_BUILD = "2026.09.28-v25.83-etalon-background-constraint-dash";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16520,7 +16520,7 @@ window.ouvrirFacturesCDQ=ouvrirFacturesCDQ;function install(){const nav=document
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.09.28-v25.82-editable-master-pdf';
+const BUILD='2026.09.28-v25.83-etalon-background-constraint-dash';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20201,7 +20201,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.09.28-v25.82-editable-master-pdf';
+  const BUILD='2026.09.28-v25.83-etalon-background-constraint-dash';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22404,7 +22404,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.09.28-v25.82-editable-master-pdf',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.09.28-v25.83-etalon-background-constraint-dash',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;

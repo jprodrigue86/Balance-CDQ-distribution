@@ -145,18 +145,25 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     }
   }
   function refreshKitText(){
-    // The current CDQ PDFs intentionally store Étalon utilisé as a read-only
-    // text result. Acrobat's private kit panel writes that result, so PDF.js
-    // exposes no <select>. Give the reader its own multi-select button over the
-    // same widget and keep the underlying PDF field read-only.
+    // Acrobat uses a large invisible push-button (_cdq_kits_ouvrir) around the
+    // inner etalon_utilise text field. In the CDQ reader, place our one button
+    // on that full rectangle so the old blue arrow/separator can never remain
+    // visible around the reader-owned black arrow.
     if(entries.get('etalon_utilise')?.kind==='select')return;
     const input=surface.querySelector('.textWidgetAnnotation input[name="etalon_utilise"]');
     if(!input)return;
+    const opener=surface.querySelector('[name="_cdq_kits_ouvrir"]');
+    const host=opener||input;
     let entry=entries.get('etalon_utilise');
-    if(!entry||entry.kind!=='kit-text'||entry.input!==input||!entry.button.isConnected){
+    if(!entry||entry.kind!=='kit-text'||entry.input!==input||entry.host!==host||!entry.button.isConnected){
       entry?.button.remove();
-      const made=makeButton('etalon_utilise',input,'kit-text');
-      entry={kind:'kit-text',input,...made};entries.set('etalon_utilise',entry);
+      const made=makeButton('etalon_utilise',host,'kit-text');
+      if(host!==input){
+        input.dataset.cdqChoiceSource='true';
+        input.tabIndex=-1;
+        input.setAttribute('aria-hidden','true');
+      }
+      entry={kind:'kit-text',input,host,...made};entries.set('etalon_utilise',entry);
       input.addEventListener('change',()=>paint(entry));
     }
     paint(entry);

@@ -47,6 +47,25 @@ function cdqStoredFieldStateV2581(name){
   }
   return {value:hasValue?value:'',readOnly:pdfReadOnly};
 }
+function cdqApplyConstraintDefaultsV2583(){
+  if(!doc||!fieldDefinitions)return;
+  const entries=fieldDefinitions instanceof Map?fieldDefinitions.entries():Object.entries(fieldDefinitions||{});
+  for(const [name,raw] of entries){
+    if(!/^charge_point_\d+_charge_contrainte$/.test(String(name||'')))continue;
+    const definitions=Array.isArray(raw)?raw:[raw];
+    for(const definition of definitions){
+      if(!definition)continue;
+      let stored=definition;
+      try{if(definition.id)stored=doc.annotationStorage.getValue(definition.id,definition)||definition;}catch(_){}
+      const value=stored?.value??definition.value??definition.defaultValue??'';
+      if(String(value).trim())continue;
+      try{
+        if(definition.id)doc.annotationStorage.setValue(definition.id,{value:'-'});
+        definition.value='-';
+      }catch(_){}
+    }
+  }
+}
 function cdqRestoreInteractiveFieldsV2581(){
   if(!doc||!fieldDefinitions)return;
   const controls=$('viewer').querySelectorAll('.textWidgetAnnotation input,.textWidgetAnnotation textarea,.choiceWidgetAnnotation select');
@@ -161,13 +180,20 @@ async function output(){
 }
 async function finishDocument(){
   if(saving||!doc)return;
-  commitActive();await new Promise(r=>setTimeout(r,120));
   if(readOnly||!dirty){close();return;}
-  closeAfterSave=true;
-  await save();
-  // Local/non-hosted PDFs are downloaded synchronously by save(), so there is
-  // no parent acknowledgement that could close the viewer for us.
-  if(!hosted||!fileId){closeAfterSave=false;close();}
+  // "Terminer" only waits for local PDF serialization. The actual client-folder
+  // upload/synchronisation is handed to the parent and continues after this
+  // reader closes, so the technician can immediately open the next report.
+  busy(true);$('closeError').textContent='';status('Préparation de l’enregistrement…');
+  try{
+    const blob=await output(),snapshot=version;
+    if(!hosted||!fileId){download(blob);busy(false);close();return;}
+    const requestId='save-'+crypto.randomUUID();
+    lastAttempt={id:requestId,version:snapshot,blob};
+    tell({type:'CDQ_READER_SAVE',blob,name,requestId,background:true});
+    savedVersion=snapshot;dirty=false;closeAfterSave=false;
+    close();
+  }catch(e){fail(e);}
 }
 function download(blob){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}
 async function save(external=false){
@@ -199,6 +225,7 @@ async function open(data){
   // tracked independently and is never cleared by a delayed render or rotation.
   await viewer.firstPagePromise;
   const fields=fieldDefinitions=await doc.getFieldObjects(),actions=await doc.getJSActions();
+  cdqApplyConstraintDefaultsV2583();
   readerCalibration=installReaderCalibration({surface:$('viewer'),doc,fields,tell});
   nativeInput.configure(fields);$('viewer').classList.toggle('cdq-form',!!(fields?.get?.('client_nom')||fields?.client_nom)&&!!(fields?.get?.('charge_point_1_charge_utilisee')||fields?.charge_point_1_charge_utilisee));
   if(fields?.size||fields&&Object.keys(fields).length||actions){const deadline=Date.now()+12000;while(!scripting.ready){if(Date.now()>deadline)throw Error('Les calculs du PDF n’ont pas pu démarrer. Fermez le document puis réessayez.');await new Promise(r=>setTimeout(r,25));}}
