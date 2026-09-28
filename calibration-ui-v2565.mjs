@@ -53,7 +53,7 @@ function ensureNav(){
   if(label){setImportant(label,'color',color);setImportant(label,'-webkit-text-fill-color',color);setImportant(label,'text-shadow',selectedTheme==='minimal'?'none':'0 0 8px #11ac8c');}
   // Keep all destinations available in clients as well as on the home screen.
   b.hidden=false;
-  const order=['Accueil','Dossier','Favoris','Calibration','Inventaire','Factures','Corbeille'];
+  const order=['Accueil','Dossier','Favoris','Rapport','Calibration','Inventaire','Factures','Corbeille'];
   const items=$$(':scope > .bottom-nav-item',nav);
   const sorted=items.slice().sort((a,b)=>order.indexOf($('small',a)?.textContent.trim())-order.indexOf($('small',b)?.textContent.trim()));
   // Move only newly inserted/out-of-order buttons. Never rebuild the rail or
