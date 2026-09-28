@@ -1,6 +1,8 @@
 // One reader-owned choice interface. PDF fields only store values and calculate.
 // No PDF field is moved, hidden or made read-only while this dialog is open.
 const TITLES={client_technicien:'Technicien',frequence_etalonnage:"Fréquence d’étalonnage",legal_pour_commerce:'Légal pour le commerce',unite_mesure:'Unité de mesure',etalon_utilise:'Étalon utilisé'};
+const CDQ_STANDARD_KITS=Object.freeze(['Kit X','X1-X10','Kit Y','Y1-Y10','Kit Z','Z1-Z10','C1-C50','CDQ1882020','CDQ1882022','B1-B20','Kit CDQ2-1']);
+
 export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()=>{},isReadOnly=()=>false}){
   const entries=new Map();let current=null,draft=new Set();
   const dialog=document.createElement('dialog');dialog.id='choiceDialog';dialog.setAttribute('aria-labelledby','choiceTitle');
@@ -10,15 +12,63 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
   const cancel=document.createElement('button');cancel.type='button';cancel.id='choiceCancel';cancel.textContent='Annuler';
   const done=document.createElement('button');done.type='button';done.id='choiceDone';done.className='primary';done.textContent='Terminé';
   footer.append(cancel,done);dialog.append(title,list,footer);document.body.append(dialog);
-  function selected(select){return Array.from(select.selectedOptions).filter(o=>o.value.trim()).map(o=>o.value);}
+
+  const nameOf=entry=>entry.select?.name||entry.input?.name||entry.button?.name||'';
+  const multipleOf=entry=>entry.kind==='kit-text'||!!entry.select?.multiple;
+  const disabledOf=entry=>!!(entry.select?.disabled||entry.input?.disabled);
+  const sourceOf=entry=>entry.select||entry.input;
+
+  function selected(entry){
+    if(entry.kind==='kit-text'){
+      const text=String(entry.input?.value||'').trim();
+      return text?text.split(/\s*\+\s*/).map(x=>x.trim()).filter(Boolean):[];
+    }
+    return Array.from(entry.select.selectedOptions).filter(o=>o.value.trim()).map(o=>o.value);
+  }
+  function options(entry){
+    if(entry.kind==='kit-text')return CDQ_STANDARD_KITS.map(value=>({value,label:value}));
+    return Array.from(entry.select.options)
+      .filter(option=>option.value.trim())
+      .map(option=>({value:option.value,label:option.textContent.trim()}));
+  }
+  function labels(entry){
+    if(entry.kind==='kit-text')return selected(entry);
+    return Array.from(entry.select.selectedOptions).map(o=>o.textContent.trim()).filter(Boolean);
+  }
   function paint(entry){
-    const labels=Array.from(entry.select.selectedOptions).map(o=>o.textContent.trim()).filter(Boolean);
-    entry.label.textContent=labels.join(' + ');
-    entry.button.title=labels.join(' + ');
-    entry.button.setAttribute('aria-label',(TITLES[entry.select.name]||entry.select.title||entry.select.name)+(labels.length?' : '+labels.join(', '):''));
-    entry.button.disabled=entry.select.disabled||isReadOnly();
-    const css=getComputedStyle(entry.select);
+    const currentLabels=labels(entry);
+    entry.label.textContent=currentLabels.join(' + ');
+    entry.button.title=currentLabels.join(' + ');
+    entry.button.setAttribute('aria-label',(TITLES[nameOf(entry)]||sourceOf(entry)?.title||nameOf(entry))+(currentLabels.length?' : '+currentLabels.join(', '):''));
+    entry.button.disabled=disabledOf(entry)||isReadOnly();
+    const css=getComputedStyle(sourceOf(entry));
     entry.button.style.fontSize=css.fontSize;
+  }
+  function commit(entry){
+    if(entry.kind==='kit-text'){
+      const values=Array.from(draft);
+      const text=values.join(' + ');
+      entry.input.value=text;
+      // Mirror the private kit-order field used by the PDF's Acrobat menu. This
+      // keeps a document filled in CDQ compatible with the PDF's own menu later.
+      const order=surface.querySelector('.textWidgetAnnotation input[name="_cdq_kits_ordre"],input[name="_cdq_kits_ordre"]');
+      if(order){
+        order.value=values.join('|');
+        order.dispatchEvent(new Event('input',{bubbles:true}));
+        order.dispatchEvent(new Event('change',{bubbles:true}));
+      }
+      // PDF.js owns annotationStorage; real input/change events write the value
+      // without making this read-only result field directly editable.
+      entry.input.dispatchEvent(new Event('input',{bubbles:true}));
+      entry.input.dispatchEvent(new Event('change',{bubbles:true}));
+      paint(entry);
+      return;
+    }
+    for(const option of entry.select.options)option.selected=draft.has(option.value);
+    if(!entry.select.multiple&&!draft.size)entry.select.value='';
+    entry.select.dispatchEvent(new Event('input',{bubbles:true}));
+    entry.select.dispatchEvent(new Event('change',{bubbles:true}));
+    paint(entry);
   }
   function entryFor(button){return entries.get(button?.name);}
   function renderOptions(){
@@ -29,20 +79,19 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     }
   }
   function open(button){
-    const entry=entryFor(button);if(!entry||isReadOnly()||entry.select.disabled)return false;
+    const entry=entryFor(button);if(!entry||isReadOnly()||disabledOf(entry))return false;
     if(current)return true;
-    current=entry;draft=new Set(selected(entry.select));
-    title.textContent=TITLES[entry.select.name]||entry.select.title||entry.select.name;
-    list.replaceChildren();list.setAttribute('role',entry.select.multiple?'group':'radiogroup');list.setAttribute('aria-label',title.textContent);
-    for(const option of entry.select.options){
-      if(!option.value.trim())continue;
+    current=entry;draft=new Set(selected(entry));
+    title.textContent=TITLES[nameOf(entry)]||sourceOf(entry)?.title||nameOf(entry);
+    list.replaceChildren();list.setAttribute('role',multipleOf(entry)?'group':'radiogroup');list.setAttribute('aria-label',title.textContent);
+    for(const option of options(entry)){
       const row=document.createElement('button');row.type='button';row.className='choice-row';row.dataset.value=option.value;
-      row.setAttribute('role',entry.select.multiple?'checkbox':'radio');
-      const label=document.createElement('span');label.className='choice-text';label.textContent=option.textContent.trim();
+      row.setAttribute('role',multipleOf(entry)?'checkbox':'radio');
+      const label=document.createElement('span');label.className='choice-text';label.textContent=option.label;
       const check=document.createElement('span');check.className='choice-check';check.setAttribute('aria-hidden','true');
       row.append(label,check);
       row.addEventListener('click',()=>{
-        if(entry.select.multiple){if(draft.has(option.value))draft.delete(option.value);else draft.add(option.value);}
+        if(multipleOf(entry)){if(draft.has(option.value))draft.delete(option.value);else draft.add(option.value);}
         else{draft.clear();draft.add(option.value);}
         renderOptions();
       });
@@ -55,21 +104,14 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     (list.querySelector('[aria-checked="true"]')||list.firstElementChild||done).focus({preventScroll:true});
     return true;
   }
-  function close(commit){
+  function close(commitChanges){
     if(!current)return;
     const entry=current;current=null;
-    if(commit){
-      for(const option of entry.select.options)option.selected=draft.has(option.value);
-      if(!entry.select.multiple&&!draft.size)entry.select.value='';
-      // PDF.js owns the canonical annotationStorage and sandbox calculation events.
-      entry.select.dispatchEvent(new Event('input',{bubbles:true}));
-      entry.select.dispatchEvent(new Event('change',{bubbles:true}));
-      paint(entry);
-    }
+    if(commitChanges)commit(entry);
     draft.clear();entry.button.setAttribute('aria-expanded','false');
     dialog.close();onClose(entry.button);
     entry.button.focus({preventScroll:true});
-    if(commit)onConfirm(entry.button);
+    if(commitChanges)onConfirm(entry.button);
   }
   cancel.addEventListener('click',()=>close(false));done.addEventListener('click',()=>close(true));
   dialog.addEventListener('cancel',e=>{e.preventDefault();close(false);});
@@ -77,24 +119,51 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     if(e.key==='Escape'){e.preventDefault();e.stopPropagation();close(false);}
     else if(e.key==='Tab')e.stopPropagation();
   });
-  function refresh(){
+
+  function makeButton(name,source,kind){
+    const button=document.createElement('button');button.type='button';button.name=name;
+    button.className='cdq-choice-field';button.dataset.cdqChoice='true';button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-expanded','false');
+    if(kind==='kit-text')button.dataset.cdqKitText='true';
+    const label=document.createElement('span');label.className='cdq-choice-value';
+    const arrow=document.createElement('span');arrow.className='cdq-choice-arrow';arrow.setAttribute('aria-hidden','true');
+    button.append(label,arrow);source.after(button);
+    source.dataset.cdqChoiceSource='true';source.tabIndex=-1;source.setAttribute('aria-hidden','true');
+    button.addEventListener('click',()=>open(button));
+    return {button,label};
+  }
+  function refreshNativeSelects(){
     for(const select of surface.querySelectorAll('.choiceWidgetAnnotation select')){
       if(select.closest('[hidden]')||select.getAttribute('aria-hidden')==='true'&&!select.dataset.cdqChoiceSource)continue;
       let entry=entries.get(select.name);
-      if(!entry||entry.select!==select||!entry.button.isConnected){
+      if(!entry||entry.kind!=='select'||entry.select!==select||!entry.button.isConnected){
         entry?.button.remove();
-        const button=document.createElement('button');button.type='button';button.name=select.name;
-        button.className='cdq-choice-field';button.dataset.cdqChoice='true';button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-expanded','false');
-        const label=document.createElement('span');label.className='cdq-choice-value';
-        const arrow=document.createElement('span');arrow.className='cdq-choice-arrow';arrow.setAttribute('aria-hidden','true');
-        button.append(label,arrow);select.after(button);
-        select.dataset.cdqChoiceSource='true';select.tabIndex=-1;select.setAttribute('aria-hidden','true');
-        entry={select,button,label};entries.set(select.name,entry);
-        button.addEventListener('click',()=>open(button));
+        const made=makeButton(select.name,select,'select');
+        entry={kind:'select',select,...made};entries.set(select.name,entry);
         select.addEventListener('change',()=>paint(entry));
       }
       paint(entry);
     }
+  }
+  function refreshKitText(){
+    // The current CDQ PDFs intentionally store Étalon utilisé as a read-only
+    // text result. Acrobat's private kit panel writes that result, so PDF.js
+    // exposes no <select>. Give the reader its own multi-select button over the
+    // same widget and keep the underlying PDF field read-only.
+    if(entries.get('etalon_utilise')?.kind==='select')return;
+    const input=surface.querySelector('.textWidgetAnnotation input[name="etalon_utilise"]');
+    if(!input)return;
+    let entry=entries.get('etalon_utilise');
+    if(!entry||entry.kind!=='kit-text'||entry.input!==input||!entry.button.isConnected){
+      entry?.button.remove();
+      const made=makeButton('etalon_utilise',input,'kit-text');
+      entry={kind:'kit-text',input,...made};entries.set('etalon_utilise',entry);
+      input.addEventListener('change',()=>paint(entry));
+    }
+    paint(entry);
+  }
+  function refresh(){
+    refreshNativeSelects();
+    refreshKitText();
   }
   return {refresh,open,isOpen:()=>!!current,cancel:()=>close(false)};
 }
