@@ -1,1 +1,36 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07121c"><title>Installer Balance CDQ</title><style>body{margin:0;background:#07121c;color:#edf5fb;font:16px system-ui;padding:24px}main{max-width:600px;margin:auto}.card{background:#0d2030;border:1px solid #31516a;border-radius:16px;padding:22px}a{display:block;margin-top:18px;padding:15px;border-radius:10px;background:#47d38b;color:#052717;text-align:center;font-weight:800;text-decoration:none}p{color:#bdd0df;line-height:1.5}</style></head><body><main><div class="card"><h1>Balance CDQ Android</h1><p>Version 25.77. Installez-la par-dessus l’application actuelle sans la désinstaller.</p><a href="./Balance-CDQ-Android-25.77.apk" download>Télécharger Balance CDQ 25.77</a><p>L’accès à Balance CDQ reste contrôlé par la gestion des utilisateurs de l’application.</p></div></main></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07121c">
+<title>Installer Balance CDQ</title>
+<style>
+:root{color-scheme:dark;font:16px system-ui,-apple-system,"Segoe UI",sans-serif;background:#07121c;color:#edf5fb}
+*{box-sizing:border-box}body{margin:0}main{max-width:620px;margin:auto;padding:30px 18px}
+.card{padding:22px;border:1px solid #31516a;border-radius:18px;background:#0d2030}
+h1{margin:0 0 8px;font-size:28px}p{line-height:1.5;color:#bdd0df}
+a,button{display:block;width:100%;min-height:50px;margin-top:12px;padding:14px;border:0;border-radius:11px;background:#47d38b;color:#052717;text-align:center;text-decoration:none;font-weight:800;font-size:16px}
+.secondary{background:#193c54;color:#f3faff;border:1px solid #3a5c74}.small{font-size:13px;color:#8fa7bb;overflow-wrap:anywhere}
+</style>
+</head>
+<body><main><section class="card">
+<h1>Balance CDQ</h1>
+<p id="status">Vérification de la dernière version Android…</p>
+<a id="download" hidden>Télécharger Balance CDQ</a>
+<button id="share" class="secondary" type="button" hidden>Partager ce lien</button>
+<p class="small">Le téléchargement de l’application ne donne pas accès aux données CDQ. Un compte autorisé reste obligatoire.</p>
+</section></main>
+<script>
+(async()=>{const status=document.getElementById('status'),download=document.getElementById('download'),share=document.getElementById('share');
+try{
+ const r=await fetch('./android-release-update.json?ts='+Date.now(),{cache:'no-store'});
+ if(!r.ok)throw Error('HTTP '+r.status);
+ const m=await r.json();
+ if(!m.versionName||!m.apkUrl)throw Error('Manifeste incomplet');
+ status.textContent='Dernière version Android : '+m.versionName;
+ download.href=m.apkUrl; download.textContent='Télécharger Balance CDQ '+m.versionName; download.hidden=false;
+ share.hidden=false; share.onclick=async()=>{const url=location.href;try{if(navigator.share){await navigator.share({title:'Installer Balance CDQ',url});return;}}catch(e){if(e?.name==='AbortError')return;}try{await navigator.clipboard.writeText(url);status.textContent='Lien copié.';}catch(_){prompt('Copiez le lien :',url);}};
+}catch(e){status.textContent='La page de téléchargement est temporairement indisponible.';}
+})();
+</script></body></html>
