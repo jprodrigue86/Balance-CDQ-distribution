@@ -1,0 +1,10 @@
+{
+  "platform": "iphone-pwa",
+  "version": "25.77",
+  "release": "c61cdc1775e598270bbf6ffacfd1f4842ef09b5fc03e086518ffef9489b2f9de",
+  "connectionRevision": "2026.09.24-iphone-rpc-r1",
+  "androidSourceBuild": "2026.09.28-v25.77-github-return",
+  "androidSelectorSha256": "801e00c71a0a4b2ff3a65df07df94fbb52d7bc90de66fae3c335b220b5ee5f42",
+  "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
+  "files": 286
+}

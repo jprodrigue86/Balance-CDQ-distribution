@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>PDF — CDQ</title>
+<link rel="stylesheet" href="./vendor/pdfjs-6.3.289/web/pdf_viewer.css">
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#101820;color:#eaf3fa;font-family:Arial,sans-serif}header{height:64px;display:flex;align-items:center;gap:10px;padding:8px 14px;background:#102a40;border-bottom:1px solid #335065}button,label.action{cursor:pointer;border:1px solid #3b596d;background:#183b54;color:#f5fbff;border-radius:9px;min-height:44px;padding:10px 14px;font:600 14px Arial}button.primary{background:#0876bc;border-color:#1591d8}button:disabled{opacity:.5;cursor:default}#name{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600}#container{position:absolute;top:64px;bottom:30px;left:0;right:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y pinch-zoom}#empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:12px}#file{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0}#status{position:absolute;bottom:0;left:0;right:0;height:30px;padding:7px 14px;font-size:13px;background:#102a40;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}#more{position:absolute;z-index:50;right:12px;top:62px;width:250px;padding:8px;background:#17374b;border:1px solid #416478;border-radius:12px;box-shadow:0 14px 40px #0009}#more button,#more label{display:block;width:100%;text-align:left;margin:4px 0}#zoom{min-width:42px;text-align:center;font-size:13px}.pdfViewer{padding:0}.pdfViewer .page{margin:0 auto 10px;border:none}
+/* Le document doit glisser à un doigt, même si le geste commence sur la page
+   ou sur un champ du formulaire. Le pincement à deux doigts reste disponible. */
+#container,#viewer,.pdfViewer,.pdfViewer .page,.canvasWrapper,.canvasWrapper canvas,.annotationLayer,.annotationLayer section,.annotationLayer :is(input,textarea,select,a){touch-action:pan-x pan-y!important}
+/* Retirer aussi l'image de surbrillance PDF.js : background-color seul ne la
+   retire pas. Garder le fond cyan /MK/BG du PDF, identique pour tous les champs. */
+.annotationLayer :is(.textWidgetAnnotation,.choiceWidgetAnnotation) :is(input,textarea,select){background-image:none!important;box-shadow:none!important;opacity:1}
+.annotationLayer :is(input,textarea,select,a):is(:focus,:focus-visible,:active,:hover){outline:none!important;outline-offset:0!important;box-shadow:none!important;filter:none!important}
+.annotationLayer :is(.textWidgetAnnotation,.choiceWidgetAnnotation) :is(input,textarea,select):focus-visible{outline:1px solid #07536b!important;outline-offset:-1px!important}
+.annotationLayer .buttonWidgetAnnotation :is(input,button,a):is(:focus,:focus-visible,:active,:hover){outline:none!important;background:transparent!important;box-shadow:none!important;filter:none!important}
+#container{overflow-anchor:none}#formNav{position:absolute;z-index:40;bottom:30px;left:0;right:0;height:48px;display:flex;justify-content:center;gap:8px;padding:2px 8px;background:#102a40;border-top:1px solid #335065}#formNav[hidden]{display:none}body.form-navigation #container{bottom:30px}
+@media(max-width:600px){header{height:106px;flex-wrap:wrap;gap:6px;padding:7px 8px}#container{top:106px}#name{flex-basis:calc(100% - 65px);font-size:15px}.zoom-button{min-width:44px}#save{margin-left:auto}#more{top:104px}button{padding:10px}#back{font-size:0}#back:before{content:'←';font-size:24px}#status{font-size:12px}}
+
+#closeDialog{max-width:460px;width:calc(100% - 24px);border:1px solid #567186;border-radius:16px;background:#142a3b;color:#f5f9fc;padding:24px;font:16px Arial}#closeDialog::backdrop{background:#0009}#closeDialog h2{margin-top:0;font-size:21px}#closeDialog p{line-height:1.5}#closeDialog button{display:block;width:100%;margin-top:10px;text-align:center}#closeError{color:#ffd19a}#discard{color:#ffb9b9}#savingMask{position:absolute;inset:64px 0 30px;z-index:45;background:#142a3b55;cursor:wait}#savingMask[hidden]{display:none}#viewer{color-scheme:only light}.annotationLayer input,.annotationLayer select,.annotationLayer textarea{color-scheme:only light}.annotationLayer :is(input,textarea,select):disabled{opacity:1!important;-webkit-text-fill-color:currentColor}#container{scrollbar-gutter:stable}button:focus-visible{outline:2px solid #8cdfff;outline-offset:2px}@media(max-width:600px){#savingMask{top:106px}#status{padding-left:8px;padding-right:8px}}
+/* CDQ PDFs embed NimbusSans-Bold/Helvetica-Bold. Match this weight in the live widgets. */
+#viewer .annotationLayer :is(.textWidgetAnnotation,.choiceWidgetAnnotation) :is(input,textarea,select){font-family:Arial,Helvetica,sans-serif!important;font-weight:700!important;color:#000!important;-webkit-text-fill-color:#000!important;opacity:1!important;filter:none!important}
+#viewer .annotationLayer .choiceWidgetAnnotation select{
+  text-align:center!important;text-align-last:center!important;padding-left:0!important;padding-right:0!important
+}
+#viewer .annotationLayer .choiceWidgetAnnotation select[name="legal_pour_commerce"]{
+  -webkit-appearance:none!important;appearance:none!important;
+  text-align:center!important;text-align-last:center!important;
+  padding-left:26px!important;padding-right:26px!important;
+  background-image:
+    linear-gradient(45deg,transparent 50%,#111 50%),
+    linear-gradient(135deg,#111 50%,transparent 50%)!important;
+  background-position:calc(100% - 13px) 50%,calc(100% - 8px) 50%!important;
+  background-size:5px 5px,5px 5px!important;background-repeat:no-repeat!important
+}
+#viewer .annotationLayer .choiceWidgetAnnotation select option{text-align:center!important}
+#viewer .annotationLayer .buttonWidgetAnnotation :is(input,button,a){opacity:1!important;filter:none!important;color-scheme:only light;forced-color-adjust:none}
+#viewer .annotationLayer .buttonWidgetAnnotation :is(input,button,a):disabled{opacity:1!important}
+#viewer .annotationLayer :is(input,select,textarea){min-height:0;min-width:0;margin:0}
+/* V25.50 - champs calcules/remplis automatiquement: visibles, mais jamais
+   selectionnes par Suivant/Precedent ni par un toucher accidentel. */
+#viewer .annotationLayer :is(input,textarea,select)[data-cdq-auto-field="true"]{
+  pointer-events:none!important;cursor:default!important;caret-color:transparent!important;user-select:none!important
+}
+header{background:#161a20;border-color:#3d4652}header button,#more button{background:#293541;border-color:#718190;color:#fff}header #save{background:#087ab5;border-color:#4dc7ff}
+
+/* One composite page, one canvas: no moving detail tile layered over the PDF. */
+#container{cursor:grab;isolation:isolate;scroll-behavior:auto}#container.dragging{cursor:grabbing;user-select:none}
+.pdfViewer .page{background:white;isolation:isolate}.canvasWrapper{background:white;backface-visibility:hidden}
+.annotationLayer :is(input,textarea,select){cursor:text;opacity:1!important;color:#000!important;-webkit-text-fill-color:#000!important}
+#container.dragging .annotationLayer{pointer-events:none}header{box-shadow:none}
+@media(max-width:600px){header{height:96px;padding:4px 8px}#container{top:96px}#savingMask{top:96px}#more{top:94px}}
+
+/* V25.46 — interface lecteur mobile compacte, zones système respectées. */
+#zoomControls{display:flex;align-items:center;justify-content:center;gap:6px;flex:0 0 auto}
+#back{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+/* V25.51 — fidélité PDF: la couche interactive reste transparente et les
+   apparences embarquées dans le PDF gardent leurs couleurs originales. */
+#viewer .annotationLayer .buttonWidgetAnnotation:is(.checkBox,.radioButton) input{
+  background:none!important;background-image:none!important;background-color:transparent!important;
+  border:0!important;box-shadow:none!important;opacity:1!important;filter:none!important
+}
+#viewer .annotationLayer .buttonWidgetAnnotation:is(.checkBox,.radioButton) [data-canvas-name],
+#viewer .annotationLayer .buttonWidgetAnnotation.pushButton [data-canvas-name]{
+  filter:none!important;opacity:1!important
+}
+#viewer .annotationLayer .buttonWidgetAnnotation.pushButton > a{
+  filter:none!important;opacity:1!important
+}
+.canvasWrapper{backface-visibility:visible!important}
+.canvasWrapper canvas{backface-visibility:visible!important;will-change:auto!important}
+/* V25.56 — après le premier rendu réussi, un zoom/déplacement garde le
+   composite visible pendant que PDF.js prépare la nouvelle résolution. */
+.pdfViewer .page[data-cdq-painted-v2556="true"].loadingIcon.loading::after{
+  display:none!important;transition:none!important
+}
+@media(max-width:600px){
+  html{--reader-safe-top:max(10px,env(safe-area-inset-top,0px))}
+  html,body{height:100%;min-height:100%;overflow:hidden}
+  header#readerTop{
+    position:absolute;top:0;left:0;right:0;height:calc(104px + var(--reader-safe-top))!important;
+    display:grid;grid-template-columns:46px minmax(0,1fr) auto 46px;
+    grid-template-areas:"back name save menu" "zoom zoom zoom zoom";
+    align-items:center;gap:6px 8px;padding:calc(var(--reader-safe-top) + 6px) 8px 8px!important;
+    background:#121820;border-bottom:1px solid #2d3944
+  }
+  #back{grid-area:back;width:44px;min-width:44px;min-height:42px;padding:0;border-radius:12px;font-size:0}
+  #back:before{content:'←';font-size:26px;line-height:1}
+  #back span{display:none}
+  #name{grid-area:name;min-width:0;flex:none;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #save{grid-area:save;margin:0!important;min-height:42px;padding:8px 11px;border-radius:12px}
+  #menu{grid-area:menu;width:44px;min-width:44px;min-height:42px;padding:0;border-radius:12px;font-size:24px;line-height:1}
+  #zoomControls{
+    grid-area:zoom;justify-self:center;display:grid;grid-template-columns:44px 72px 44px;
+    align-items:center;gap:2px;padding:3px;border:1px solid #34424d;border-radius:14px;background:#1a232c
+  }
+  #zoomControls button{min-width:0;min-height:36px;padding:0;border:0;border-radius:10px;background:transparent;font-size:22px}
+  #zoom{min-width:0;text-align:center;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+  #container{position:absolute!important;top:calc(104px + var(--reader-safe-top))!important;bottom:30px!important;left:0!important;right:0!important;width:auto!important;min-height:0}
+  #formNav{position:absolute!important;bottom:30px!important;left:0!important;right:0!important;height:48px;padding:3px 8px;background:#121820;border-top:1px solid #2d3944}
+  #formNav button{min-height:40px;border-radius:11px;padding:7px 11px;background:#223442;border-color:#536777}
+  body.form-navigation #container{bottom:30px!important}
+  #status{position:absolute!important;bottom:0!important;left:0!important;right:0!important;height:30px;padding:7px 8px;background:#111820}
+  #more{position:absolute;right:8px;top:calc(102px + var(--reader-safe-top));width:min(260px,calc(100vw - 16px));z-index:70}
+  #savingMask{position:absolute!important;top:calc(104px + var(--reader-safe-top))!important;bottom:30px!important;left:0!important;right:0!important}
+  /* V25.49 — saisie mobile: dès qu’un champ texte prend le focus, la
+     barre de zoom, les actions non nécessaires et l’état disparaissent pour
+     laisser le maximum d’espace au PDF au-dessus du clavier Android. */
+  body.cdq-keyboard-field header#readerTop{
+    height:calc(46px + var(--reader-safe-top))!important;
+    grid-template-columns:40px minmax(0,1fr)!important;
+    grid-template-areas:"back name"!important;
+    grid-template-rows:1fr!important;
+    gap:6px!important;
+    padding:calc(var(--reader-safe-top) + 3px) 6px 3px!important
+  }
+  body.cdq-keyboard-field #back{width:40px!important;min-width:40px!important;min-height:36px!important;border-radius:10px!important}
+  body.cdq-keyboard-field #name{font-size:13px!important}
+  body.cdq-keyboard-field #zoomControls,
+  body.cdq-keyboard-field #save,
+  body.cdq-keyboard-field #menu,
+  body.cdq-keyboard-field #status{display:none!important}
+  body.cdq-keyboard-field #container{
+    top:calc(46px + var(--reader-safe-top))!important;
+    bottom:44px!important
+  }
+  body.cdq-keyboard-field.form-navigation #container{bottom:44px!important}
+  body.cdq-keyboard-field #formNav{
+    bottom:0!important;height:44px!important;padding:2px 6px!important
+  }
+  body.cdq-keyboard-field #formNav button{
+    min-height:38px!important;padding:5px 9px!important;border-radius:10px!important
+  }
+  body.cdq-keyboard-field #savingMask{
+    top:calc(46px + var(--reader-safe-top))!important;bottom:0!important
+  }
+  body.cdq-keyboard-field #more{display:none!important}
+}
+
+/* V25.63 — visionneuse mobile plus compacte : une seule rangée en haut,
+   aucune barre d'état permanente et navigation de formulaire collée au bas. */
+@media(max-width:600px){
+  header#readerTop{
+    height:calc(54px + var(--reader-safe-top))!important;
+    grid-template-columns:44px minmax(0,1fr) 36px 36px 44px!important;
+    grid-template-areas:"back name minus plus menu"!important;
+    grid-template-rows:1fr!important;
+    gap:5px!important;
+    padding:calc(var(--reader-safe-top) + 5px) 7px 5px!important
+  }
+  #save{display:none!important}
+  #zoomControls{display:contents!important}
+  #zoom{display:none!important}
+  #minus{grid-area:minus!important}
+  #plus{grid-area:plus!important}
+  #minus,#plus{
+    min-width:36px!important;width:36px!important;min-height:38px!important;height:38px!important;
+    padding:0!important;border:1px solid #3f4e5b!important;border-radius:10px!important;
+    background:#1a232c!important;font-size:22px!important
+  }
+  #menu{grid-area:menu!important;width:42px!important;min-width:42px!important;min-height:40px!important}
+  #container{
+    top:calc(54px + var(--reader-safe-top))!important;
+    bottom:0!important
+  }
+  body.form-navigation #container{bottom:0!important}
+  #formNav{
+    bottom:0!important;height:46px!important;padding:2px 6px!important;
+    background:#121820!important
+  }
+  #formNav button{
+    min-height:40px!important;padding:6px 10px!important;border-radius:10px!important
+  }
+  #savingMask{
+    top:calc(54px + var(--reader-safe-top))!important;
+    bottom:0!important
+  }
+  #more{
+    top:calc(52px + var(--reader-safe-top))!important
+  }
+  /* L'état reste disponible aux lecteurs d'écran et comme petit message
+     flottant lors d'une sauvegarde/erreur, sans réserver 30 px en permanence. */
+  #status{
+    position:absolute!important;left:50%!important;right:auto!important;bottom:50px!important;
+    width:auto!important;max-width:calc(100vw - 24px)!important;height:auto!important;
+    min-height:0!important;padding:6px 10px!important;border-radius:9px!important;
+    transform:translateX(-50%)!important;background:#111820e8!important;
+    font-size:12px!important;z-index:65!important;pointer-events:none!important;
+    opacity:0!important;white-space:nowrap!important
+  }
+  #status[data-active="true"]{opacity:1!important}
+  body.cdq-keyboard-field #status{display:none!important}
+}
+
+</style><link rel="stylesheet" href="./reader-ui-v2572.css"></head><body>
+<header id="readerTop"><button id="back" aria-label="Retour dans CDQ"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg><span>Retour</span></button><span id="name">PDF</span><div id="zoomControls" aria-label="Zoom du PDF"><button id="minus" class="zoom-button" aria-label="Réduire"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><span id="zoom">100 %</span><button id="plus" class="zoom-button" aria-label="Agrandir"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button></div><button id="save" class="primary" disabled>Enregistrer</button><button id="menu" aria-label="Options du PDF" aria-expanded="false"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></header>
+<div id="more" hidden><button id="rotate">Pivoter de 90°</button><button id="fit">Ajuster à la largeur</button><button id="download">Télécharger le PDF rempli</button><button id="external">Télécharger pour Adobe</button><label class="action" for="file">Ouvrir un PDF local</label></div>
+<div id="container"><div id="viewer" class="pdfViewer"></div><div id="empty"><label class="action" for="file">Ouvrir un PDF</label></div></div><input id="file" type="file" accept="application/pdf,.pdf"><div id="status" role="status">Chargement du lecteur…</div>
+<nav id="formNav" aria-label="Saisie du formulaire" hidden><button id="previousField">↑ Précédent</button><button id="nextField">Suivant ↓</button><button id="doneFields">Terminer</button></nav>
+<div id="savingMask" hidden></div><dialog id="closeDialog" aria-labelledby="closeTitle"><h2 id="closeTitle">Fermer ce PDF ?</h2><p>Enregistrer les modifications dans le dossier client avant de fermer ?</p><p id="closeError" role="status"></p><button id="saveClose" class="primary">✓ Enregistrer et fermer</button><button id="keepEditing">Continuer à remplir</button><button id="discard">Fermer sans enregistrer</button></dialog>
+<script type="module" src="reader-v2525.mjs"></script></body></html>

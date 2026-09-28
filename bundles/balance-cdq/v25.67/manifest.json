@@ -1,0 +1,36 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V25.67",
+  "build": "2026.09.27-v25.67-calibration-feedback",
+  "title": "Balance CDQ V25.67 — Activation des retours de calibration",
+  "requiresBuild": [
+    "V25.53"
+  ],
+  "patches": [
+    {
+      "file": "Selector.html",
+      "op": "replace_build_any",
+      "from": [
+        "2026.09.26-v25.29-pdf-client-send"
+      ],
+      "to": "2026.09.27-v25.67-calibration-feedback"
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQCalibrationV2566.gs",
+      "sha256": "f9715864be8ec901dd74ee76de92ac682cbdba7aca8f47c27d257fdbe3c74be9",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v25.67/files/CDQCalibrationV2566.gs"
+    }
+  ],
+  "removeFiles": [],
+  "audit": {
+    "scriptManagerRequired": "V43",
+    "androidAppRequired": "25.66",
+    "scope": "Retours techniciens partagés, alertes administrateur et clôture documentée.",
+    "compatibility": "Diagnostic du 27 septembre 2026 : interface V25.29, module PDF V25.53, sources et déploiement identiques. Le paquet V25.30 était refusé par le comparateur de versions de Script Manager V43.",
+    "preservation": "Seul le marqueur de version de Selector est actualisé; ajout du module de retours. Code.gs, module PDF, modèles et documents clients conservés. Registre séparé dans _CDQ_CALIBRATION.",
+    "activation": "Ouvrir le lien du paquet dans Script Manager V43 puis ÉCRIRE + DÉPLOYER. Android reste en V25.66. Les retours restent locaux avant activation."
+  }
+}

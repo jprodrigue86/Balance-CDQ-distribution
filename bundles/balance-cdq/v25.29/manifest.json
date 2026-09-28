@@ -1,0 +1,157 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V25.29",
+  "build": "2026.09.26-v25.29-pdf-client-send",
+  "title": "Balance CDQ V25.29 — PDF instantané et copies client",
+  "requiresBuild": [
+    "2026.09.23-v25.28-apk-embarquee"
+  ],
+  "patches": [
+    {
+      "file": "Code.gs",
+      "op": "replace_build_any",
+      "from": [
+        "2026.09.23-v25.28-apk-embarquee"
+      ],
+      "to": "2026.09.26-v25.29-pdf-client-send"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_build_any",
+      "from": [
+        "2026.09.23-v25.28-apk-embarquee"
+      ],
+      "to": "2026.09.26-v25.29-pdf-client-send"
+    },
+    {
+      "id": "v2553-selector-01",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "async function cdqLoadPdfRecord(id){return cdqLoadPdfRecordImplV2522(id);}",
+      "replacement": "async function cdqLoadPdfLocalV2553(id){\n  const email=cdqReaderOwnerV2520();\n  const pending=(await cdqV19QueueGet()).filter(a=>a.targetId===id&&a.kind==='pdf-save-v2520').at(-1);\n  cdqReaderGuardV2520(email);\n  const old=await cdqV19GetRecord('document-pdf',id);cdqReaderGuardV2520(email);\n  if(pending)return {...old,id,nom:pending.fileName,revision:pending.expectedRevision,pendingSaveId:pending.id,blob:new Blob([cdqV2112Base64ToBytes(pending.data)],{type:'application/pdf'}),cdqLocalFastV2553:true};\n  if(old?.blob instanceof Blob&&old.blob.size>0&&old.blob.size<=CDQ_DOCUMENT_MAX_BYTES)return {...old,cdqLocalFastV2553:true};\n  return null;\n}\nasync function cdqLoadPdfRecord(id){return cdqLoadPdfRecordImplV2522(id);}"
+    },
+    {
+      "id": "v2553-selector-02",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "const inPwa=cdqPwaAvailable(),requests=new Map(),unconfirmed=new Set();let lastSaveId='';",
+      "replacement": "const inPwa=cdqPwaAvailable(),requests=new Map(),unconfirmed=new Set();let lastSaveId='',remoteRevisionV2553='';"
+    },
+    {
+      "id": "v2553-selector-03",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "    valid();if(rec.offlinePrepared&&rec.offlineVersion!==undefined)return cdqOffline24.save(rec,d.blob,d.requestId);",
+      "replacement": "    valid();if(remoteRevisionV2553&&String(remoteRevisionV2553)!==String(rec.revision||''))throw new Error('Une version plus récente de ce PDF existe dans le dossier client. Fermez puis rouvrez le rapport avant de l’enregistrer.');\n    if(rec.offlinePrepared&&rec.offlineVersion!==undefined)return cdqOffline24.save(rec,d.blob,d.requestId);"
+    },
+    {
+      "id": "v2553-selector-04",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "    rec=await cdqOffline24.load(id)||preparedRecord||await cdqLoadPdfRecord(id);lastSaveId=rec.pendingSaveId||'';valid();",
+      "replacement": "    const localV2553=!preparedRecord?await cdqLoadPdfLocalV2553(id):null;\n    rec=await cdqOffline24.load(id)||preparedRecord||localV2553||await cdqLoadPdfRecord(id);lastSaveId=rec.pendingSaveId||'';valid();\n    if(localV2553&&!preparedRecord&&!rec.offlinePrepared&&navigator.onLine!==false){\n      Promise.resolve().then(()=>cdqLoadPdfRecord(id)).then(fresh=>{\n        if(disposed||!fresh?.revision)return;\n        if(String(fresh.revision)!==String(rec.revision||''))remoteRevisionV2553=String(fresh.revision);\n      }).catch(()=>{});\n    }"
+    },
+    {
+      "id": "v2553-selector-05",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "function ouvrirConfirmation(){",
+      "replacement": "\nfunction cdqRpcV2553(name,args){\n  return new Promise((resolve,reject)=>{\n    try{let r=cdqApiRun().withSuccessHandler(resolve).withFailureHandler(reject);r[name].apply(r,args||[])}\n    catch(e){reject(e)}\n  });\n}\nfunction cdqPdfMetaV2553(id,meta){\n  if(meta){\n    const type=String(meta.mimeType||meta.type||'').toLowerCase(),name=String(meta.nom||meta.name||'');\n    if(type==='application/pdf'||type==='pdf'||/\\.pdf$/i.test(name))return true;\n  }\n  const box=[...document.querySelectorAll('.file-checkbox[data-file-id]')].find(x=>String(x.dataset.fileId||'')===String(id));\n  const row=box?.closest('.file-row');\n  const type=String(row?.dataset.fileType||'').toLowerCase(),name=String(row?.dataset.fileName||row?.querySelector('.file-name')?.textContent||'');\n  return type==='application/pdf'||type==='pdf'||/\\.pdf$/i.test(name);\n}\nfunction cdqBytesBase64V2553(bytes){\n  let bin='';\n  for(let i=0;i<bytes.length;i+=32768)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+32768));\n  return btoa(bin);\n}\nasync function cdqFlattenPdfV2553(id){\n  if(navigator.onLine!==false&&typeof cdqSynchroniserEnAttente==='function')await cdqSynchroniserEnAttente();\n  const rec=await cdqLoadPdfRecord(String(id));\n  if(!(rec?.blob instanceof Blob))throw new Error('PDF introuvable pour l’envoi.');\n  const PDFDocument=globalThis.PDFLib&&globalThis.PDFLib.PDFDocument;\n  if(!PDFDocument)throw new Error('Le module PDF non modifiable n’est pas disponible.');\n  const pdf=await PDFDocument.load(await rec.blob.arrayBuffer());\n  const form=pdf.getForm(),fields=form.getFields();\n  if(fields.length)form.flatten({updateFieldAppearances:false});\n  const bytes=await pdf.save();\n  return {base64:cdqBytesBase64V2553(bytes),fields:fields.length,name:String(rec.nom||'Rapport.pdf')};\n}\nasync function cdqPrepareSendFilesV2553(ids,metas,clientId,session,progress){\n  const sendIds=ids.map(String),tempIds=[];\n  try{\n    for(let i=0;i<sendIds.length;i++){\n      const id=sendIds[i],meta=Array.isArray(metas)?metas[i]:null;\n      if(!cdqPdfMetaV2553(id,meta))continue;\n      if(typeof progress==='function')progress('Préparation du PDF '+(i+1)+' / '+sendIds.length+'…');\n      const flat=await cdqFlattenPdfV2553(id);\n      const temp=await cdqRpcV2553('creerCopieAplatieTemporaireV2553',[id,flat.base64,String(clientId||''),String(session||'')]);\n      if(!temp?.id)throw new Error('La copie client non modifiable n’a pas été créée.');\n      sendIds[i]=String(temp.id);tempIds.push(String(temp.id));\n    }\n    return {sendIds,tempIds};\n  }catch(e){\n    if(tempIds.length)await cdqRpcV2553('nettoyerCopiesAplatiesV2553',[tempIds]).catch(()=>{});\n    throw e;\n  }\n}\nfunction cdqPrepareSendOptionsV2553(files,clientId){\n  const email=document.getElementById('emailDestinataire');\n  if(email)cdqRpcV2553('obtenirDestinataireClientV2553',[String(clientId||'')]).then(value=>{if(String(value||'').trim())email.value=String(value).trim();}).catch(()=>{});\n  const modal=email?.closest('.modal');\n  if(!modal)return;\n  let host=document.getElementById('cdqSendOptionsV2553');\n  if(!host){\n    host=document.createElement('div');host.id='cdqSendOptionsV2553';host.className='modal-section';\n    host.innerHTML='<label class=\"send-mode-option\"><input id=\"cdqSendFlattenV2553\" type=\"checkbox\"><span><strong>PDF non modifiable pour le client</strong><small>Les champs sont aplatis seulement dans la copie envoyée. Le PDF du dossier client reste modifiable.</small></span></label><button type=\"button\" id=\"cdqSendSaveRecipientV2553\" class=\"modal-button\">Définir cette adresse par défaut</button><small id=\"cdqSendRecipientStatusV2553\" class=\"send-mode-help\">Le compte Google utilisé pour ouvrir les documents ne change pas.</small>';\n    const message=document.getElementById('messageEmail')?.closest('.modal-section');\n    if(message)modal.insertBefore(host,message);else modal.querySelector('.modal-buttons')?.before(host);\n  }\n  const hasPdf=(files||[]).some(id=>cdqPdfMetaV2553(id,null)),flatten=document.getElementById('cdqSendFlattenV2553'),saveRecipient=document.getElementById('cdqSendSaveRecipientV2553');\n  if(flatten){flatten.checked=hasPdf;flatten.disabled=!hasPdf;flatten.closest('label').style.display=hasPdf?'flex':'none';}\n  if(saveRecipient)saveRecipient.onclick=async()=>{\n    const input=document.getElementById('emailDestinataire'),status=document.getElementById('cdqSendRecipientStatusV2553'),value=String(input?.value||'').trim();\n    if(!value){if(status)status.textContent='Entrez d’abord une adresse courriel.';return}\n    saveRecipient.disabled=true;\n    try{await cdqRpcV2553('enregistrerDestinataireClientV2553',[String(clientId||''),value]);if(status)status.textContent='Adresse enregistrée par défaut pour ce client.';}\n    catch(e){if(status)status.textContent=e?.message||String(e);}\n    finally{saveRecipient.disabled=false}\n  };\n}\n\nfunction ouvrirConfirmation(){"
+    },
+    {
+      "id": "v2553-selector-06",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "      document.getElementById(\"emailDestinataire\").value = email || \"\";",
+      "replacement": "      document.getElementById(\"emailDestinataire\").value = email || \"\";\n      cdqPrepareSendOptionsV2553(fichiers,String(compagnieSelectionnee||\"\"));"
+    },
+    {
+      "id": "v2553-selector-07",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "    const mode=obtenirModeEnvoiSelectionne();\n    const total=files.length+folders.length;",
+      "replacement": "    const mode=obtenirModeEnvoiSelectionne();\n    const flatten=!!document.getElementById(\"cdqSendFlattenV2553\")?.checked;\n    const total=files.length+folders.length;",
+      "expected": 2
+    },
+    {
+      "id": "v2553-selector-08",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "        cdqRunSendSelection(files,folders,mode,String(email).trim(),message,company,force);",
+      "replacement": "        cdqRunSendSelection(files,folders,mode,String(email).trim(),message,company,force,flatten);"
+    },
+    {
+      "id": "v2553-selector-09",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "      .verifierEnvoiSelectionRecent(files,folders,mode,String(email).trim(),company,24);",
+      "replacement": "      .verifierEnvoiSelectionRecentV2553(files,folders,mode,String(email).trim(),company,24);",
+      "expected": 2
+    },
+    {
+      "id": "v2553-selector-10",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "      cdqRunSendSelection(files,folders,contexte.mode,contexte.email,contexte.message,contexte.company,true);",
+      "replacement": "      cdqRunSendSelection(files,folders,contexte.mode,contexte.email,contexte.message,contexte.company,true,!!contexte.flatten);"
+    },
+    {
+      "id": "v2553-selector-11",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "function cdqRunSendSelection(files,folders,mode,email,message,company,force){\n    const total=files.length+folders.length;\n    if(!total) return;\n    const send=document.getElementById(\"sendButton\");\n    if(send)send.disabled=true;\n    const session=\"s\"+Date.now()+Math.random().toString(36).slice(2,9);\n    cdqStartProgress(session,total);\n\n    const contexte={\n      mode:mode,\n      email:email,\n      message:message,\n      company:company\n    };\n\n    cdqApiRun()\n      .withSuccessHandler(function(r){\n        if(send)send.disabled=String(utilisateurCourantRole||\"\")===\"lecture\";\n        const hasFailures=!!(r&&Array.isArray(r.echecs)&&r.echecs.length);\n        cdqStopProgress(!hasFailures || Number(r&&r.envoyes||0)>0);\n\n        document.querySelectorAll(\".file-checkbox\").forEach(function(c){c.checked=false;});\n        dossiersSelectionnes.clear();\n        modeSelectionFichiers=false;\n        mettreAJourInterface();\n\n        afficherMessage((r&&r.message)||\"Traitement terminé.\",!hasFailures);\n        if(hasFailures){\n          setTimeout(function(){cdqOpenRetryFailures(r,contexte);},700);\n        }\n      })\n      .withFailureHandler(function(e){\n        if(send)send.disabled=String(utilisateurCourantRole||\"\")===\"lecture\";\n        cdqStopProgress(false);\n        const msg=e&&e.message?e.message:String(e);\n        if(msg.indexOf(\"CDQ_DOUBLE_ENVOI|\")!==-1) alert(\"Envoi bloqué : cette sélection vient déjà d’être envoyée.\");\n        else afficherErreur(e);\n      })\n      .envoyerSelectionSuivi(files,folders,mode,email,message,nomCompagnieSelectionnee,company,session,!!force);\n  }",
+      "replacement": "async function cdqRunSendSelection(files,folders,mode,email,message,company,force,flatten){\n    const total=files.length+folders.length;\n    if(!total) return;\n    const send=document.getElementById(\"sendButton\");\n    if(send)send.disabled=true;\n    const session=\"s\"+Date.now()+Math.random().toString(36).slice(2,9);\n    cdqStartProgress(session,total);\n\n    const contexte={\n      mode:mode,\n      email:email,\n      message:message,\n      company:company,\n      flatten:!!flatten\n    };\n    let tempIds=[];\n    try{\n      let sendFiles=files.map(String);\n      if(flatten){\n        const prepared=await cdqPrepareSendFilesV2553(files,null,company,session,msg=>afficherMessage(msg,true));\n        sendFiles=prepared.sendIds;tempIds=prepared.tempIds;\n      }\n      cdqApiRun()\n        .withSuccessHandler(function(r){\n          if(send)send.disabled=String(utilisateurCourantRole||\"\")===\"lecture\";\n          const hasFailures=!!(r&&Array.isArray(r.echecs)&&r.echecs.length);\n          cdqStopProgress(!hasFailures || Number(r&&r.envoyes||0)>0);\n\n          document.querySelectorAll(\".file-checkbox\").forEach(function(c){c.checked=false;});\n          dossiersSelectionnes.clear();\n          modeSelectionFichiers=false;\n          mettreAJourInterface();\n\n          afficherMessage((r&&r.message)||\"Traitement terminé.\",!hasFailures);\n          if(hasFailures){\n            setTimeout(function(){cdqOpenRetryFailures(r,contexte);},700);\n          }\n        })\n        .withFailureHandler(function(e){\n          if(send)send.disabled=String(utilisateurCourantRole||\"\")===\"lecture\";\n          cdqStopProgress(false);\n          if(tempIds.length)cdqRpcV2553('nettoyerCopiesAplatiesV2553',[tempIds]).catch(()=>{});\n          const msg=e&&e.message?e.message:String(e);\n          if(msg.indexOf(\"CDQ_DOUBLE_ENVOI|\")!==-1) alert(\"Envoi bloqué : cette sélection vient déjà d’être envoyée.\");\n          else afficherErreur(e);\n        })\n        .envoyerSelectionSuiviV2553(files,sendFiles,folders,mode,email,message,nomCompagnieSelectionnee,company,session,!!force,tempIds);\n    }catch(e){\n      if(send)send.disabled=String(utilisateurCourantRole||\"\")===\"lecture\";\n      cdqStopProgress(false);\n      if(tempIds.length)cdqRpcV2553('nettoyerCopiesAplatiesV2553',[tempIds]).catch(()=>{});\n      afficherErreur(e);\n    }\n  }"
+    },
+    {
+      "id": "v2553-selector-12",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "  let email='';try{email=await gs('obtenirDestinataireParDefaut',[])}catch(e){}",
+      "replacement": "  const clientIdV2553=String(st.explorer.client.id);let email='';try{email=await gs('obtenirDestinataireClientV2553',[clientIdV2553])}catch(e){try{email=await gs('obtenirDestinataireParDefaut',[])}catch(_){}}"
+    },
+    {
+      "id": "v2553-selector-13",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "  document.querySelector('.pc16-send-overlay')?.remove();const ov=document.createElement('div');ov.className='pc16-modal-bg pc16-send-overlay';",
+      "replacement": "  document.querySelector('.pc16-send-overlay')?.remove();const ov=document.createElement('div');ov.className='pc16-modal-bg pc16-send-overlay';\n  const pdfCountV2553=files.filter(f=>cdqPdfMetaV2553(f.id,f)).length;"
+    },
+    {
+      "id": "v2553-selector-14",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "<input id=\"pc16SendEmail\" type=\"email\" value=\"${esc(email||'')}\">",
+      "replacement": "<input id=\"pc16SendEmail\" type=\"email\" value=\"${esc(email||'')}\"><button type=\"button\" id=\"pc16SaveRecipientV2553\">Définir cette adresse par défaut</button><div id=\"pc16RecipientStatusV2553\" class=\"pc16-follow-meta\">Ce réglage est distinct du compte Google des documents.</div>${pdfCountV2553?'<label class=\"send-mode-option\"><input id=\"pc16SendFlattenV2553\" type=\"checkbox\" checked><span><strong>PDF non modifiable pour le client</strong><small>La copie envoyée est aplatie; le PDF maître du dossier reste modifiable.</small></span></label>':''}"
+    },
+    {
+      "id": "v2553-selector-15",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "  $('.send',ov).onclick=async function(){const btn=this,mail=$('#pc16SendEmail').value.trim(),mode=$('#pc16SendMode').value,msg=$('#pc16SendMessage').value;if(!mail){toast('Entrez une adresse courriel.',true);return}const ids=files.map(f=>String(f.id)),clientId=String(st.explorer.client.id),clientName=String(st.explorer.client.nom);",
+      "replacement": "  const saveRecipientV2553=$('#pc16SaveRecipientV2553',ov);if(saveRecipientV2553)saveRecipientV2553.onclick=async()=>{const mail=$('#pc16SendEmail',ov).value.trim(),status=$('#pc16RecipientStatusV2553',ov);if(!mail){status.textContent='Entrez d’abord une adresse courriel.';return}saveRecipientV2553.disabled=true;try{await gs('enregistrerDestinataireClientV2553',[clientIdV2553,mail]);status.textContent='Adresse enregistrée par défaut pour ce client.'}catch(e){status.textContent=e?.message||String(e)}finally{saveRecipientV2553.disabled=false}};\n  $('.send',ov).onclick=async function(){const btn=this,mail=$('#pc16SendEmail').value.trim(),mode=$('#pc16SendMode').value,msg=$('#pc16SendMessage').value;if(!mail){toast('Entrez une adresse courriel.',true);return}const ids=files.map(f=>String(f.id)),clientId=String(st.explorer.client.id),clientName=String(st.explorer.client.nom);"
+    },
+    {
+      "id": "v2553-selector-16",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "const r=await gs('envoyerSelectionSuivi',[ids,[],mode,mail,msg,clientName,clientId,session,!!force]);",
+      "replacement": "let sendIds=ids.slice();if($('#pc16SendFlattenV2553')?.checked){const prepared=await cdqPrepareSendFilesV2553(ids,files,clientId,session,text=>{if(prog)prog.textContent=text});sendIds=prepared.sendIds;}const tempIdsV2553=sendIds.filter((x,i)=>x!==ids[i]);const r=await gs('envoyerSelectionSuiviV2553',[ids,sendIds,[],mode,mail,msg,clientName,clientId,session,!!force,tempIdsV2553]);"
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQSendV2553.gs",
+      "sha256": "2ce380421a1bcf56ca6393d92e7eedaa6eb22d285cc8062a46a22f960ccea546",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v25.29/files/CDQSendV2553.gs"
+    }
+  ],
+  "removeFiles": [],
+  "audit": {
+    "scriptManagerRequired": "V43",
+    "androidAppRequired": "APK Android 25.53 pour l’ouverture locale immédiate sur Android; le serveur V25.29 active les copies PDF non modifiables et le destinataire par client.",
+    "scope": "Ouverture locale immédiate d’un PDF déjà enregistré; copie PDF aplatie uniquement pour l’envoi; destinataire par défaut séparé du compte Google.",
+    "preservation": "Le PDF maître du dossier client reste interactif, modifiable et protégé par sa révision. Aucun modèle PDF n’est modifié.",
+    "security": "Les copies aplaties sont temporaires, créées dans le dossier autorisé puis mises à la corbeille dans un bloc finally. Aucune clé privée n’est incluse."
+  }
+}

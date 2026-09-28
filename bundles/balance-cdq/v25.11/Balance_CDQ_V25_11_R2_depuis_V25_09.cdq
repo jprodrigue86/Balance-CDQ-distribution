@@ -1,0 +1,409 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V25.11",
+  "build": "2026.09.22-v25.11-mobile-readers-settings",
+  "title": "Balance CDQ V25.11 R2 — depuis V25.09",
+  "requiresBuild": [
+    "2026.09.21-v25.09-native-file-open-contract"
+  ],
+  "patches": [
+    {
+      "file": "Selector.html",
+      "op": "replace_build",
+      "from": "2026.09.21-v25.09-native-file-open-contract",
+      "to": "2026.09.21-v25.10-display-document-cleanup"
+    },
+    {
+      "file": "Code.gs",
+      "op": "replace_build",
+      "from": "2026.09.21-v25.09-native-file-open-contract",
+      "to": "2026.09.21-v25.10-display-document-cleanup"
+    },
+    {
+      "file": "Selector.html",
+      "op": "remove_style_id_if_present",
+      "id": "cdqV2508DisplayFitCss"
+    },
+    {
+      "file": "Selector.html",
+      "op": "remove_script_id_if_present",
+      "id": "cdqV2508DisplayFitJs"
+    },
+    {
+      "file": "Selector.html",
+      "op": "remove_script_id_if_present",
+      "id": "cdqV2509NativeFileOpenJs"
+    },
+    {
+      "file": "Selector.html",
+      "op": "remove_script_id_if_present",
+      "id": "cdqV2311NativeAccountJs"
+    },
+    {
+      "file": "Selector.html",
+      "op": "remove_style_id_if_present",
+      "id": "cdqV2311NativeAccountCss"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "// Filet de sécurité Android : certains anciens gestionnaires de swipe\n// consomment le click synthétique après pointerup. On déclenche donc le PDF\n// au pointerup, pendant le vrai geste, puis on supprime seulement le click\n// qui suit afin d'éviter une double ouverture.\n(function(){\n  if(!/Android/i.test(navigator.userAgent||''))return;\n\n  let tap=null;\n\n  document.addEventListener('pointerdown',function(e){\n    if(e.target&&e.target.closest&&e.target.closest('button'))return;\n    const row=e.target&&e.target.closest?e.target.closest('.file-row'):null;\n    if(!row)return;\n    const box=row.querySelector('.file-checkbox[data-file-id]');\n    if(!box)return;\n    const id=String(box.dataset.fileId||'');\n    const meta=cdqDocumentMeta(id);\n    if(!meta||meta.type!=='PDF')return;\n    tap={row:row,id:id,pointerId:e.pointerId,x:e.clientX,y:e.clientY,moved:false};\n  },true);\n\n  document.addEventListener('pointermove',function(e){\n    if(!tap||tap.pointerId!==e.pointerId)return;\n    if(Math.abs(e.clientX-tap.x)>18||Math.abs(e.clientY-tap.y)>18)tap.moved=true;\n  },true);\n\n  document.addEventListener('pointercancel',function(e){\n    if(tap&&tap.pointerId===e.pointerId)tap=null;\n  },true);\n\n  document.addEventListener('pointerup',function(e){\n    if(!tap||tap.pointerId!==e.pointerId)return;\n    const t=tap;tap=null;\n\n    if(t.moved)return;\n    if(typeof modeSelectionFichiers!=='undefined'&&modeSelectionFichiers)return;\n    if(e.target&&e.target.closest&&e.target.closest('button'))return;\n\n    t.row.dataset.cdqPdfOpenedV2275='1';\n    try{\n      cdqOuvrirPdfCommeSheetV2275(t.id);\n    }catch(err){\n      try{afficherErreur(err);}catch(_){}\n    }\n\n    setTimeout(function(){\n      try{delete t.row.dataset.cdqPdfOpenedV2275;}catch(_){}\n    },800);\n  },true);\n\n  document.addEventListener('click',function(e){\n    const row=e.target&&e.target.closest?e.target.closest('.file-row'):null;\n    if(!row||row.dataset.cdqPdfOpenedV2275!=='1')return;\n    e.preventDefault();\n    e.stopImmediatePropagation();\n    delete row.dataset.cdqPdfOpenedV2275;\n  },true);\n})();\n\n",
+      "replacement": "// Document taps are handled by cdqDocumentOpen; swipe/selection keep their own handlers.\n\n"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "        // Mémoriser la valeur choisie sans recalculer le layout pendant le glissement.\n        localStorage.setItem(\"cdqUiGeneralScaleV89\",String(v));\n        localStorage.setItem(\"cdqUiScaleV86\",String(v));\n        cdqMarkDisplayLocalEditV2212();",
+      "replacement": "        cdqApplyGeneralScaleV89(v,true);\n        cdqDetachBottomNavV96();\n        cdqMarkDisplayLocalEditV2212();"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "  const iconValue=typeof cdqIconValueV89===\"function\"?cdqIconValueV89():50;",
+      "replacement": "  const density=cdqGeneralDensityFactorV2221(cdqGeneralValueV89());\n  const navHeight='calc('+Math.round(78*density)+'px + env(safe-area-inset-bottom,0px))';\n  nav.style.setProperty(\"height\",navHeight,\"important\");\n  nav.style.setProperty(\"min-height\",navHeight,\"important\");\n  nav.style.setProperty(\"max-height\",navHeight,\"important\");\n  document.body.style.setProperty(\"padding-bottom\",navHeight,\"important\");\n\n  const iconValue=typeof cdqIconValueV89===\"function\"?cdqIconValueV89():50;"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "  if(!noSync)cdqScheduleSavePreferencesV72();\n}\n// Compatibilité avec d'anciens appels.",
+      "replacement": "  if(typeof cdqDetachBottomNavV96===\"function\")cdqDetachBottomNavV96();\n  if(!noSync)cdqScheduleSavePreferencesV72();\n}\n// Compatibilité avec d'anciens appels."
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "function cdqDefaultGoogleAccountV2299(){\n  try{\n    if(localStorage.getItem(CDQ_DEFAULT_GOOGLE_ACCOUNT_RESET_V2299)==='1')return '';\n    const saved=String(\n      localStorage.getItem(CDQ_DEFAULT_GOOGLE_ACCOUNT_KEY_V2299)||\n      localStorage.getItem('cdqDefaultGoogleAccountV2294')||\n      ''\n    ).trim().toLowerCase();\n    if(saved)return saved;\n  }catch(e){}\n  try{return String(utilisateurCourantEmail||'').trim().toLowerCase();}catch(e){return '';}\n}\n",
+      "replacement": "function cdqDefaultGoogleAccountV2299(){\n  try{return String(localStorage.getItem('cdqDefaultGoogleAccountV2294')||'').trim().toLowerCase();}\n  catch(e){return '';}\n}\n"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "  refreshSettings();\n  if(typeof afficherMessage==='function'){",
+      "replacement": "  // Clear obsolete native/web account copies when the visible setting changes.\n  ['cdqDefaultGoogleAccountV2296','cdqDefaultGoogleAccountV2297','cdqDefaultGoogleAccountV2298','cdqDefaultGoogleAccountV2299'].forEach(function(k){try{localStorage.removeItem(k);}catch(_){}});\n  try{cdqPostToPwa({type:'CDQ_DEFAULT_GOOGLE_ACCOUNT_SET',email:email,reset:!email});}catch(_){}\n  refreshSettings();\n  if(typeof afficherMessage==='function'){"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "    top.innerHTML='<span aria-hidden=\"true\" style=\"font-size:22px;line-height:1\">⚙</span><span>Réglages</span>';",
+      "replacement": "    const markup='<span aria-hidden=\"true\" style=\"font-size:22px;line-height:1\">⚙</span><span>Réglages</span>';\n    if(top.innerHTML!==markup)top.innerHTML=markup;"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "    const small=bottom.querySelector('small');if(small)small.textContent='Réglages';\n    const icon=bottom.querySelector('span');if(icon)icon.textContent='⚙';",
+      "replacement": "    const small=bottom.querySelector('small');if(small&&small.textContent!=='Réglages')small.textContent='Réglages';\n    const icon=bottom.querySelector('span');if(icon&&icon.textContent!=='⚙')icon.textContent='⚙';"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "      btn.innerHTML='<span class=\"side-icon\">⚙</span><span>Réglages</span>';",
+      "replacement": "      const markup='<span class=\"side-icon\">⚙</span><span>Réglages</span>';\n      if(btn.innerHTML!==markup)btn.innerHTML=markup;"
+    },
+    {
+      "file": "Selector.html",
+      "op": "remove_style_id_if_present",
+      "id": "cdqPcV2244UpdateBannerCss"
+    },
+    {
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "  const embarque=(typeof cdqTemplateEmbarque_==='function') ? cdqTemplateEmbarque_(modele.cle) : null;\n  if(embarque)return embarque;\n",
+      "replacement": ""
+    },
+    {
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "    sha256:(typeof cdqMetaEmbarquee_==='function' ? (cdqMetaEmbarquee_(String(modeleId||'plancher'))||{}).sha256 : '')||''",
+      "replacement": "    sha256:'' // Drive revision (id + modified time) invalidates the offline cache."
+    },
+    {
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "  if(fichier.cdqEmbedded){\n    const bytes=cdqChunkEmbarque_(String(modeleId||'plancher'),index);\n    return {ok:true,index:index,debut:index*CDQ_TEMPLATE_OFFLINE_CHUNK_BYTES_,fin:index*CDQ_TEMPLATE_OFFLINE_CHUNK_BYTES_+bytes.length,total:Number(fichier.getSize()),base64:Utilities.base64Encode(bytes)};\n  }\n",
+      "replacement": ""
+    },
+    {
+      "file": "Selector.html",
+      "op": "insert_before_literal",
+      "before": "</body>",
+      "text": "<style id=\"cdqDisplayLayout\">\nhtml.android .container,html.mobile-device .container{box-sizing:border-box!important;}\nhtml.android #cdqTopDisplayButtonV2204,html.mobile-device #cdqTopDisplayButtonV2204{\n  flex-direction:column!important;gap:4px!important;min-width:0!important;\n}\nhtml.android #cdqTopDisplayButtonV2204>span:last-child,html.mobile-device #cdqTopDisplayButtonV2204>span:last-child{\n  white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;font-size:12px!important;\n}\n</style>\n<script id=\"cdqDocumentOpenJs\">\n(function () {\n  'use strict';\n  // All document entry points share the preferences shown in Settings.\n  function account() {\n    try { return String(localStorage.getItem('cdqDefaultGoogleAccountV2294') || '').trim().toLowerCase(); }\n    catch (_) { return ''; }\n  }\n  function reader() {\n    let value = 'ask';\n    try { value = localStorage.getItem('cdqPdfReaderPreferenceV1') || 'ask'; } catch (_) {}\n    return ['ask', 'cdq', 'ilovepdf', 'acrobat'].includes(value) ? value : 'ask';\n  }\n  function meta(id) {\n    const box = document.querySelector('.file-checkbox[data-file-id=\"' + id + '\"]');\n    const row = box && box.closest('.file-row');\n    if (row) return {name: row.dataset.fileName || '', type: row.dataset.fileType || '', modified: row.dataset.fileDate || ''};\n    try {\n      const m = typeof cdqDocumentMeta === 'function' ? cdqDocumentMeta(id) : null;\n      if (m) return {name: m.nom || m.name || '', type: m.type || '', modified: m.dateModification || ''};\n    } catch (_) {}\n    return {};\n  }\n  function kind(m) {\n    const type = String(m.type || '').toUpperCase();\n    if (type === 'PDF' || /\\.pdf$/i.test(m.name || '')) return 'pdf';\n    if (type.includes('SHEET')) return 'sheet';\n    if (type === 'TEXT' || type === 'TXT' || type === 'TEXT/PLAIN' || /\\.txt$/i.test(m.name || '')) return 'note';\n    return '';\n  }\n  function native() { return /BalanceCDQAndroid\\/\\d+(?:\\.\\d+)?/i.test(navigator.userAgent || ''); }\n  let lastOpen = {id: '', at: 0};\n  function open(id, requestedKind) {\n    id = String(id || '');\n    if (!/^[A-Za-z0-9_-]{10,200}$/.test(id)) return false;\n    const m = meta(id), type = requestedKind || kind(m);\n    if (!type || !native()) return false;\n    // Keep an explicitly selected CDQ reader on its established internal route.\n    if (type === 'pdf' && reader() === 'cdq') return false;\n    if (lastOpen.id === id && Date.now() - lastOpen.at < 800) return true;\n    lastOpen = {id: id, at: Date.now()};\n    try {\n      if (typeof utilisateurCourantRole !== 'undefined' && utilisateurCourantRole !== 'lecture') {\n        fichierOuvertPourModification = id;\n        sessionStorage.setItem('fichierEnModification', id);\n        sessionStorage.setItem('ancienneDateModification', m.modified || '');\n        sessionStorage.setItem('momentModification', String(Date.now()));\n      }\n    } catch (_) {}\n    const email = account();\n    const query = new URLSearchParams({\n      fileId: id,\n      name: String(m.name || (type === 'note' ? 'Note.txt' : 'Rapport.pdf')).slice(0, 180),\n      account: email,\n      accountMode: email ? 'default' : 'ask',\n      reader: type === 'pdf' ? reader() : 'system',\n      readOnly: typeof utilisateurCourantRole !== 'undefined' && utilisateurCourantRole === 'lecture' ? '1' : '0'\n    });\n    // No browser fallback: a failed native handoff must not open a Drive viewer.\n    const a = document.createElement('a');\n    a.href = 'intent://open?' + query.toString() + '#Intent;scheme=cdq' + type + ';package=ca.balancecdq.android;end';\n    a.target = '_top';\n    a.style.display = 'none';\n    document.body.appendChild(a);\n    a.click();\n    a.remove();\n    return true;\n  }\n  const legacy = window.modifierFichier;\n  window.modifierFichier = function (id) {\n    if (open(id)) return true;\n    return typeof legacy === 'function' ? legacy.apply(this, arguments) : false;\n  };\n  try { modifierFichier = window.modifierFichier; } catch (_) {}\n\n  // Buttons and offline lists can call these functions without clicking a row.\n  // Preserve their Promise contract and the explicit internal-reader route.\n  ['cdqOpenPdf', 'cdqV24OpenPdf', 'cdqOuvrirPdfCommeSheetV2275', 'cdqV19OpenOfflineSheet'].forEach(function (name) {\n    const previous = window[name];\n    if (typeof previous !== 'function') return;\n    window[name] = function (id) {\n      if (open(id, name === 'cdqV19OpenOfflineSheet' ? 'sheet' : 'pdf')) return Promise.resolve(true);\n      return previous.apply(this, arguments);\n    };\n  });\n\n  // The old PDF pointerup interceptor is removed from the package.\n  // A click opens a document; a drag/long press continues to select or swipe.\n  let pointer = null, suppressUntil = 0;\n  document.addEventListener('pointerdown', function (e) {\n    if (!e.target.closest || !e.target.closest('.file-row')) return;\n    pointer = {id: e.pointerId, x: e.clientX, y: e.clientY, at: Date.now(), moved: false};\n  }, true);\n  document.addEventListener('pointermove', function (e) {\n    if (pointer && pointer.id === e.pointerId && (Math.abs(e.clientX-pointer.x)>16 || Math.abs(e.clientY-pointer.y)>16)) pointer.moved = true;\n  }, true);\n  document.addEventListener('pointerup', function (e) {\n    if (!pointer || pointer.id !== e.pointerId) return;\n    const longPress = Math.max(300, Number(localStorage.getItem('cdqLongPressMs')) || 1000);\n    if (pointer.moved || Date.now()-pointer.at >= longPress) suppressUntil = Date.now()+700;\n    pointer = null;\n  }, true);\n  document.addEventListener('pointercancel', function () { pointer = null; suppressUntil = Date.now()+700; }, true);\n  window.addEventListener('click', function (e) {\n    if (!native() || !e.target.closest) return;\n    if (e.target.closest('button,a,input,select,textarea,label,.file-actions,[class*=\"swipe\"]')) return;\n    const row = e.target.closest('.file-row');\n    if (!row) return;\n    if (Date.now() < suppressUntil || row.classList.contains('cdq-swiped-left') || row.classList.contains('cdq-swiped-right')) {\n      e.preventDefault();\n      e.stopImmediatePropagation();\n      return;\n    }\n    if (document.body.classList.contains('selection-active') || (typeof modeSelectionFichiers !== 'undefined' && modeSelectionFichiers)) return;\n    const box = row.querySelector('.file-checkbox[data-file-id]');\n    if (!box || !open(box.dataset.fileId)) return;\n    e.preventDefault();\n    e.stopImmediatePropagation();\n  }, true);\n  window.cdqDocumentOpen = {open: open, account: account, reader: reader, kind: kind};\n})();\n\n</script>\n"
+    },
+    {
+      "file": "Code.gs",
+      "op": "replace_build",
+      "from": "2026.09.21-v25.10-display-document-cleanup",
+      "to": "2026.09.22-v25.11-mobile-readers-settings"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_build",
+      "from": "2026.09.21-v25.10-display-document-cleanup",
+      "to": "2026.09.22-v25.11-mobile-readers-settings"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "  if(!noSync)cdqScheduleSavePreferencesV72();\n  return value;\n}\n\nfunction cdqRefitGeneralScaleV92(){",
+      "replacement": "  if(!noSync)cdqScheduleSavePreferencesV72();\n  if(window.cdqMobileLayout)window.cdqMobileLayout.apply();\n  return value;\n}\n\nfunction cdqRefitGeneralScaleV92(){"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "  if(typeof cdqFitQuickButtonsV2202===\"function\")cdqFitQuickButtonsV2202();\n  if(!noSync)cdqScheduleSavePreferencesV72();\n  return value;\n}",
+      "replacement": "  if(typeof cdqFitQuickButtonsV2202===\"function\")cdqFitQuickButtonsV2202();\n  if(!noSync)cdqScheduleSavePreferencesV72();\n  if(window.cdqMobileLayout)window.cdqMobileLayout.apply();\n  return value;\n}"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "    window.cdqApplyVisibleIconScaleV2208(value);\n  }\n\n  if(!noSync)cdqScheduleSavePreferencesV72();\n  return value;\n}",
+      "replacement": "    window.cdqApplyVisibleIconScaleV2208(value);\n  }\n\n  if(!noSync)cdqScheduleSavePreferencesV72();\n  if(window.cdqMobileLayout)window.cdqMobileLayout.apply();\n  return value;\n}"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "  localStorage.setItem(\"cdqUiIconScaleV89\",String(value));\n}",
+      "replacement": "  localStorage.setItem(\"cdqUiIconScaleV89\",String(value));\n  if(window.cdqMobileLayout)window.cdqMobileLayout.apply();\n}"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "    rescue.classList.toggle(\"show\",!ok);\n  });\n}",
+      "replacement": "    rescue.classList.toggle(\"show\",!ok);\n  });\n  if(window.cdqMobileLayout)window.cdqMobileLayout.apply();\n}"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "    const markup='<span aria-hidden=\"true\" style=\"font-size:22px;line-height:1\">⚙</span><span>Réglages</span>';",
+      "replacement": "    const markup='<span aria-hidden=\"true\">⚙</span><span>Réglages</span>';"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "    if(top.innerHTML!==markup)top.innerHTML=markup;",
+      "replacement": "    // Inline sizes are set by the layout engine: compare structure, not serialized styles.\n    if(top.children.length!==2 || top.firstElementChild.textContent!=='⚙' || top.lastElementChild.textContent!=='Réglages')top.innerHTML=markup;"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "À 50, la taille standard reste inchangée.",
+      "replacement": "À 50, le format est adapté au téléphone. Les boutons restent accessibles.",
+      "id": "settings-display-9"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "<span>50 · standard</span><span>75 · ancien 100</span><span>100 · extra</span>",
+      "replacement": "<span>50 · téléphone</span><span>100 · grand</span>",
+      "id": "settings-display-10"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "  refreshSettings();\n  ensureModal().style.display='flex';",
+      "replacement": "  refreshSettings();\n  const modal=ensureModal();\n  if(window.cdqOrganizeSettings)window.cdqOrganizeSettings(modal);\n  modal.style.display='flex';"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "  el.textContent=text||\"\";\n  el.className=\"cdq-v19-sync-pill \"+(state||\"\");",
+      "replacement": "  if(!el.querySelector(\"[data-cdq-offline-icon]\")){\n    el.innerHTML='<span data-cdq-offline-icon aria-hidden=\"true\">⇩</span><span>Hors ligne</span>';\n  }\n  el.title=String(text||\"Hors ligne\");\n  el.setAttribute(\"aria-label\",\"Hors ligne — \"+String(text||\"\"));\n  el.className=\"cdq-v19-sync-pill cdq-top-action \"+(state||\"\");\n  if(window.cdqMobileLayout)window.cdqMobileLayout.schedule();"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "    cdqRefreshUpdateCenterUI();\n    cdqCheckUpdate();\n    m.style.display=\"flex\";",
+      "replacement": "    cdqRefreshUpdateCenterUI();\n    m.style.display=\"flex\";",
+      "id": "settings-display-13"
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-root",
+      "op": "replace_literal",
+      "search": "function cdqOpenDisplaySettings(){\n    const m=document.getElementById(\"cdqDisplayModal\");\n    const body=m.querySelector(\".cdq-modal-body\");",
+      "replacement": "function cdqOpenDisplaySettings(){\n    const m=document.getElementById(\"cdqDisplayModal\");\n    const body=m.querySelector(\".cdq-modal-body\");\n    const controls=function(){\n      if(body.querySelector('.cdq-display-group'))return body;\n      const settings=document.getElementById('cdqSettingsModalV2294');\n      if(settings&&settings.querySelector('.cdq-display-group'))return settings;\n      return document.getElementById('cdqInlineDisplayPanelV2204')||body;\n    };"
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-1",
+      "op": "replace_literal",
+      "search": "body.querySelector(\"#cdqAdminSettingsButton\")",
+      "replacement": "controls().querySelector(\"#cdqAdminSettingsButton\")",
+      "expected": 1
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-2",
+      "op": "replace_literal",
+      "search": "body.querySelector(\"#cdqCheckUpdateButton\")",
+      "replacement": "controls().querySelector(\"#cdqCheckUpdateButton\")",
+      "expected": 1
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-3",
+      "op": "replace_literal",
+      "search": "body.querySelector(\"#cdqDiagnosticSettingsButton\")",
+      "replacement": "controls().querySelector(\"#cdqDiagnosticSettingsButton\")",
+      "expected": 1
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-4",
+      "op": "replace_literal",
+      "search": "body.querySelector(\"#cdqGeneralScaleRange\")",
+      "replacement": "controls().querySelector(\"#cdqGeneralScaleRange\")",
+      "expected": 2
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-5",
+      "op": "replace_literal",
+      "search": "body.querySelector(\"#cdqGeneralScaleValue\")",
+      "replacement": "controls().querySelector(\"#cdqGeneralScaleValue\")",
+      "expected": 2
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-6",
+      "op": "replace_literal",
+      "search": "body.querySelector(\"#cdqIconScaleRange\")",
+      "replacement": "controls().querySelector(\"#cdqIconScaleRange\")",
+      "expected": 2
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-7",
+      "op": "replace_literal",
+      "search": "body.querySelector(\"#cdqIconScaleValue\")",
+      "replacement": "controls().querySelector(\"#cdqIconScaleValue\")",
+      "expected": 2
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-8",
+      "op": "replace_literal",
+      "search": "body.querySelector(\"#cdqInstallUpdateButton\")",
+      "replacement": "controls().querySelector(\"#cdqInstallUpdateButton\")",
+      "expected": 1
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-9",
+      "op": "replace_literal",
+      "search": "body.querySelector(\"#cdqTextScaleRange\")",
+      "replacement": "controls().querySelector(\"#cdqTextScaleRange\")",
+      "expected": 2
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-10",
+      "op": "replace_literal",
+      "search": "body.querySelector(\"#cdqTextScaleValue\")",
+      "replacement": "controls().querySelector(\"#cdqTextScaleValue\")",
+      "expected": 2
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-11",
+      "op": "replace_literal",
+      "search": "body.querySelector(\"#cdqUiScaleResetAll\")",
+      "replacement": "controls().querySelector(\"#cdqUiScaleResetAll\")",
+      "expected": 1
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-12",
+      "op": "replace_literal",
+      "search": "body.querySelector(rangeId)",
+      "replacement": "controls().querySelector(rangeId)",
+      "expected": 1
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-13",
+      "op": "replace_literal",
+      "search": "body.querySelector(valueId)",
+      "replacement": "controls().querySelector(valueId)",
+      "expected": 1
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-14",
+      "op": "replace_literal",
+      "search": "body.querySelectorAll(\"[data-long]\")",
+      "replacement": "controls().querySelectorAll(\"[data-long]\")",
+      "expected": 2
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-15",
+      "op": "replace_literal",
+      "search": "body.querySelectorAll(\"[data-pdf-reader]\")",
+      "replacement": "controls().querySelectorAll(\"[data-pdf-reader]\")",
+      "expected": 2
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-16",
+      "op": "replace_literal",
+      "search": "body.querySelectorAll(\"[data-swipe]\")",
+      "replacement": "controls().querySelectorAll(\"[data-swipe]\")",
+      "expected": 2
+    },
+    {
+      "file": "Selector.html",
+      "id": "settings-controls-query-17",
+      "op": "replace_literal",
+      "search": "body.querySelectorAll(\"[data-theme]\")",
+      "replacement": "controls().querySelectorAll(\"[data-theme]\")",
+      "expected": 2
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "function appliquerAccesAutorise(etat){",
+      "replacement": "function appliquerAccesAutorise(etat){\n  try{if(etat&&etat.email&&cdqObtenirJetonAppareil())localStorage.setItem('cdqLastUnlockEmailV2511',String(etat.email));}catch(_){}\n"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "function verifierAccesApplication(){",
+      "replacement": "function verifierAccesApplication(skipFastBiometric){"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "  const jeton=cdqObtenirJetonAppareil();\n  cdqApiRun()\n    .withSuccessHandler(function(etat){\n      cdqPostToPwa({type:'CDQ_BACKEND_STATUS',",
+      "replacement": "  const jeton=cdqObtenirJetonAppareil();\n  let lastEmail='';\n  try{lastEmail=localStorage.getItem('cdqLastUnlockEmailV2511')||'';}catch(_){}\n  if(!skipFastBiometric && jeton && lastEmail && /BalanceCDQAndroid\\//.test(navigator.userAgent||'') && cdqPwaAvailable()){\n    cdqFastUnlockV2511=true;\n    afficherDeverrouillageBiometrique({email:lastEmail});\n    return;\n  }\n  cdqFastUnlockV2511=false;\n  cdqApiRun()\n    .withSuccessHandler(function(etat){\n      cdqPostToPwa({type:'CDQ_BACKEND_STATUS',"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "let cdqBiometricFallbackActive = false;",
+      "replacement": "let cdqBiometricFallbackActive = false;\nlet cdqFastUnlockV2511 = false;"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "    .withFailureHandler(function(){\n      if(actuel())cdqAfficherPlanBNip(\"Entrez votre NIP à 4 chiffres.\");\n    })\n    .restaurerSessionApresBiometrie(jeton);",
+      "replacement": "    .withFailureHandler(function(){\n      if(!actuel())return;\n      if(cdqFastUnlockV2511){\n        cdqArreterDelaiBiometrique();\n        cdqBiometricRequestId=\"\";cdqBiometricPending=false;\n        cdqFastUnlockV2511=false;\n        verifierAccesApplication(true);\n      }else cdqAfficherPlanBNip(\"Entrez votre NIP à 4 chiffres.\");\n    })\n    .restaurerSessionApresBiometrie(jeton);"
+    },
+    {
+      "file": "Selector.html",
+      "op": "insert_before_literal",
+      "before": "</body>",
+      "text": "<style id=\"cdqMobileLayoutCss\">\n#cdqSettingsModalV2294 .modal{width:calc(100vw - 16px)!important;max-width:580px!important;max-height:calc(100dvh - 24px)!important;display:flex!important;flex-direction:column!important;padding:12px!important;overflow:hidden!important;border-radius:14px!important}\n#cdqSettingsModalV2294 .cdq-modal-title{font-size:18px!important;margin:0 0 10px!important}\n#cdqSettingsModalV2294 .cdq-modal-body{min-height:0!important;overflow:hidden!important;display:flex!important}\n#cdqSettingsModalV2294 .cdq-settings-v2294{width:100%;min-height:0;display:flex;flex-direction:column;gap:10px;padding:0}\n#cdqSettingsModalV2294 .cdq-settings-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;flex-shrink:0}\n#cdqSettingsModalV2294 .cdq-settings-tabs button{min-width:0;min-height:40px;font-size:12px!important;line-height:1.2!important;padding:6px!important;border:1px solid #31516a;border-radius:8px;background:#0b1c2b;color:#c9deeb}\n#cdqSettingsModalV2294 .cdq-settings-tabs button[aria-selected=true]{background:#0b597f;color:white;border-color:#46c7ff}\n#cdqSettingsModalV2294 .cdq-settings-panel{overflow:auto;overscroll-behavior:contain;min-height:0;padding:0 2px 8px;touch-action:pan-y}\n#cdqSettingsModalV2294 [hidden]{display:none!important}\n#cdqSettingsModalV2294 .cdq-display-group,#cdqSettingsModalV2294 .cdq-settings-card-v2294{margin:0 0 10px!important;padding:10px!important;border-radius:10px!important}\n#cdqSettingsModalV2294 .cdq-display-label{font-size:14px!important;margin-bottom:8px!important}\n#cdqSettingsModalV2294 .cdq-ui-scale-head,#cdqSettingsModalV2294 .cdq-setting-row{font-size:13px!important}\n#cdqSettingsModalV2294 .cdq-ui-scale-note,#cdqSettingsModalV2294 .cdq-v20-note{font-size:12px!important;line-height:1.4!important}\n#cdqSettingsModalV2294 input[type=range]{width:100%!important;height:32px!important;margin:4px 0!important;touch-action:pan-x}\n#cdqSettingsModalV2294 .cdq-ui-scale-ticks{font-size:10px!important}\n#cdqSettingsModalV2294 .cdq-phone-preset{width:100%;min-height:44px;margin-bottom:10px;border:1px solid #2b99c9;border-radius:10px;background:#123c50;color:#fff;font-size:13px!important}\n#cdqSettingsModalV2294 .cdq-setting-buttons,#cdqSettingsModalV2294 .cdq-theme-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}\n#cdqSettingsModalV2294 .cdq-setting-buttons button,#cdqSettingsModalV2294 .cdq-theme-grid button{min-height:40px!important;padding:7px!important;font-size:12px!important;white-space:normal!important}\n#cdqSettingsModalV2294 .modal-buttons{flex-shrink:0;margin-top:8px!important}\n#cdqSettingsModalV2294 .modal-buttons button{min-height:40px!important;font-size:13px!important}\n#cdqSettingsModalV2294 .cdq-settings-email-v2294{font-size:14px!important}\nhtml.cdq-mobile-layout .file-row{touch-action:pan-y pinch-zoom}\nhtml.cdq-mobile-layout #cdqTopActionsV2204,html.cdq-mobile-layout .quick-buttons{gap:5px!important;margin-top:7px!important;margin-bottom:7px!important}\n\n</style>\n<script id=\"cdqMobileLayoutJs\">\n(function () {\n  'use strict';\n  const root = document.documentElement;\n  const clamp = value => Math.max(0, Math.min(100, Number.isFinite(+value) ? +value : 50));\n  const setting = name => {\n    const value = localStorage.getItem('cdqUi' + name + 'ScaleV89');\n    return value === null ? 50 : clamp(value);\n  };\n  const px = n => (Math.round(n * 10) / 10) + 'px';\n  function set(el, props) {\n    if (!el) return;\n    Object.entries(props).forEach(([key, value]) => {\n      if (el.style.getPropertyValue(key) !== value || el.style.getPropertyPriority(key) !== 'important')\n        el.style.setProperty(key, value, 'important');\n    });\n  }\n  function each(selector, props) { document.querySelectorAll(selector).forEach(el => set(el, props)); }\n  function icon(selector, size) {\n    each(selector, {'width': px(size), 'height': px(size), 'min-width': px(size), 'max-width': px(size),\n      'min-height': px(size), 'max-height': px(size), 'font-size': px(size), 'line-height': '1', 'flex-shrink': '0'});\n  }\n  function apply() {\n    if (!root.matches('.android,.ios,.mobile-device') && window.innerWidth > 899) return;\n    root.classList.add('cdq-mobile-layout');\n    const g = setting('General'), t = setting('Text'), i = setting('Icon');\n    const density = 0.72 + g * 0.0056;\n    const top = 16 + i * 0.2, bottom = 17 + i * 0.2, label = 9 + t * 0.06;\n    const text = 12 + t * 0.08;\n    const height = Math.ceil(Math.max(44 * density, bottom + label * 1.15 + 8 * density, 44));\n    const navHeight = 'calc(' + height + 'px + env(safe-area-inset-bottom,0px))';\n    Object.entries({bottom, top, quick: top, file: 20 + i * 0.22, action: 12 + i * 0.1})\n      .forEach(([name, value]) => root.style.setProperty('--cdq-icon-' + name + '-v2213', px(value)));\n    const nav = document.querySelector('.bottom-nav');\n    if (nav) {\n      if (nav.parentElement !== document.body) document.body.appendChild(nav);\n      const count = nav.querySelectorAll(':scope > .bottom-nav-item').length || 1;\n      set(nav, {'height': navHeight, 'min-height': navHeight, 'max-height': navHeight,\n        'padding': '2px 2px calc(2px + env(safe-area-inset-bottom,0px))', 'gap': '0',\n        'grid-template-columns': 'repeat(' + count + ',minmax(0,1fr))', 'align-items': 'stretch'});\n      set(document.body, {'padding-bottom': navHeight});\n    }\n    each('.bottom-nav > .bottom-nav-item', {'height': '100%', 'min-height': '0', 'max-height': 'none',\n      'padding': px(2 * density) + ' 0', 'gap': px(2 * density), 'justify-content': 'center',\n      'min-width': '0', 'width': '100%', 'box-sizing': 'border-box'});\n    icon('.bottom-nav > .bottom-nav-item > span, .bottom-nav > .bottom-nav-item > span svg', bottom);\n    each('.bottom-nav > .bottom-nav-item small', {'font-size': px(label), 'line-height': '1.15',\n      'padding': '0', 'margin': '0', 'max-width': '100%', 'white-space': 'nowrap'});\n    const buttonHeight = Math.ceil(Math.max(44, 49 * density, top + label * 1.2 + 10));\n    each('#cdqTopActionsV2204 > .cdq-top-action, .quick-button', {'min-height': px(buttonHeight),\n      'height': 'auto', 'padding': px(4 * density) + ' 2px', 'gap': px(3 * density)});\n    icon('#cdqTopActionsV2204 > .cdq-top-action > svg, #cdqTopActionsV2204 > .cdq-top-action > span:first-child:not(:last-child), .quick-icon, .quick-icon svg', top);\n    each('#cdqTopActionsV2204 > .cdq-top-action > span:last-child, .quick-name', {'font-size': px(label),\n      'line-height': '1.15', 'white-space': 'nowrap', 'overflow-wrap': 'normal'});\n    icon('.file-icon, .file-icon svg', 20 + i * 0.22);\n    each('#createFolderButton', {'font-size': px(top), 'width': px(buttonHeight), 'height': px(buttonHeight),\n      'min-height': px(buttonHeight), 'padding': '2px'});\n    each('.file-name, .file-name-text, .folder-name, .folder-name-text', {'font-size': px(text), 'line-height': '1.2'});\n    each('.file-date', {'font-size': px(10 + t * 0.06), 'line-height': '1.2'});\n    each('.file-row, .folder-header', {'min-height': px(Math.max(44, 48 * density)), 'padding-top': px(5 * density), 'padding-bottom': px(5 * density)});\n    each('.company-button, .company-reset-button', {'min-height': px(Math.max(44, 48 * density))});\n    each('.company-button', {'font-size': px(text)});\n    window.cdqMobileDimensions = {density, top, bottom, label, navHeight: height, buttonHeight, text};\n  }\n  let queued = false;\n  function schedule() {\n    if (queued) return;\n    queued = true;\n    requestAnimationFrame(() => { queued = false; apply(); });\n  }\n  window.cdqMobileLayout = {apply, schedule};\n  window.addEventListener('resize', schedule, {passive: true});\n  document.addEventListener('input', e => {\n    if (e.target.matches('#cdqGeneralScaleRange,#cdqTextScaleRange,#cdqIconScaleRange')) schedule();\n  });\n  function start() {\n    apply();\n    // Observe new/replaced icons only. Style writes cannot re-trigger this observer.\n    new MutationObserver(records => {\n      if (records.some(r => r.addedNodes.length || r.removedNodes.length)) schedule();\n    }).observe(document.body, {subtree: true, childList: true});\n  }\n  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once: true});\n  else start();\n\n  window.cdqOrganizeSettings = function (modal) {\n    const container = modal.querySelector('.cdq-settings-v2294');\n    const accountCard = modal.querySelector('#cdqDefaultGoogleStatusV2294').closest('section');\n    const androidCard = modal.querySelector('#cdqAndroidUpdateCardV2315');\n    // Build the original controls once per opening, retaining all existing handlers.\n    window.ouvrirReglagesAffichage();\n    const display = document.getElementById('cdqDisplayModal');\n    const groups = Array.from(display.querySelectorAll('.cdq-display-options > .cdq-display-group'));\n    display.style.display = 'none';\n    document.getElementById('cdqInlineDisplayPanelV2204')?.classList.remove('open');\n    container.replaceChildren();\n    const tabs = document.createElement('div');\n    tabs.className = 'cdq-settings-tabs'; tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Catégories de réglages');\n    const panels = {};\n    const titles = {sizes: 'Tailles', appearance: 'Apparence', files: 'Fichiers', gestures: 'Gestes', updates: 'Mises à jour', advanced: 'Avancé'};\n    Object.entries(titles).forEach(([key, title]) => {\n      const tab = document.createElement('button'); tab.type = 'button'; tab.textContent = title;\n      tab.id = 'cdq-settings-tab-' + key; tab.setAttribute('role', 'tab'); tab.dataset.settingsTab = key;\n      const panel = document.createElement('div'); panel.id = 'cdq-settings-panel-' + key;\n      panel.className = 'cdq-settings-panel'; panel.setAttribute('role', 'tabpanel'); panel.setAttribute('aria-labelledby', tab.id);\n      tab.setAttribute('aria-controls', panel.id);\n      tab.onclick = () => {\n        tabs.querySelectorAll('button').forEach(b => { b.setAttribute('aria-selected', String(b === tab)); b.tabIndex = b === tab ? 0 : -1; });\n        Object.values(panels).forEach(p => { p.hidden = p !== panel; });\n        panel.scrollTop = 0;\n        if (key === 'updates') panel.querySelector('#cdqCheckUpdateButton')?.click();\n      };\n      tab.onkeydown = e => {\n        const buttons = Array.from(tabs.children), index = buttons.indexOf(tab);\n        let next = e.key === 'ArrowRight' ? (index + 1) % buttons.length : e.key === 'ArrowLeft' ? (index + buttons.length - 1) % buttons.length : e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1 : -1;\n        if (next < 0) return; e.preventDefault(); buttons[next].click(); buttons[next].focus();\n      };\n      tabs.appendChild(tab); panels[key] = panel;\n    });\n    container.appendChild(tabs);\n    Object.values(panels).forEach(p => container.appendChild(p));\n    groups.forEach(group => {\n      const title = group.querySelector('.cdq-display-label')?.textContent || '';\n      const key = /Ajustement/.test(title) ? 'sizes' : /Thème/.test(title) ? 'appearance' : /Lecteur PDF/.test(title) ? 'files' : /Gestes/.test(title) ? 'gestures' : /Mise à jour/.test(title) ? 'updates' : 'advanced';\n      panels[key].appendChild(group);\n    });\n    panels.files.appendChild(accountCard);\n    if (androidCard) panels.updates.appendChild(androidCard);\n    if (typeof window.cdqOuvrirPartageApplication === 'function') {\n      const share = document.createElement('button'); share.type = 'button'; share.id = 'cdqInstallShareSettingsButton';\n      share.textContent = 'Installer / partager Balance CDQ'; share.onclick = window.cdqOuvrirPartageApplication;\n      panels.advanced.appendChild(share);\n    }\n    const preset = document.createElement('button'); preset.type = 'button'; preset.className = 'cdq-phone-preset';\n    preset.textContent = 'Appliquer le format téléphone compact';\n    preset.onclick = () => {\n      [['General', 25], ['Text', 35], ['Icon', 35]].forEach(([name, value]) => {\n        const range = modal.querySelector('#cdq' + name + 'ScaleRange');\n        if (range) { range.value = value; range.dispatchEvent(new Event('input', {bubbles: true})); range.dispatchEvent(new Event('change', {bubbles: true})); }\n      });\n      apply();\n    };\n    panels.sizes.prepend(preset);\n    tabs.firstChild.click();\n    modal.setAttribute('role', 'dialog'); modal.setAttribute('aria-modal', 'true'); modal.setAttribute('aria-label', 'Réglages');\n    if (!modal.dataset.cdqCategoryNavigation) {\n      modal.dataset.cdqCategoryNavigation = '1';\n      modal.addEventListener('click', e => {\n        if (e.target.closest('#cdqAdminSettingsButton,#cdqDiagnosticSettingsButton,#cdqInstallShareSettingsButton')) modal.style.display = 'none';\n      }, true);\n      modal.querySelector('#cdqSettingsCloseV2294').onclick = () => {\n        modal.style.display = 'none'; document.getElementById('cdqTopDisplayButtonV2204')?.focus();\n      };\n    }\n    modal.onkeydown = e => {\n      if (e.key === 'Escape') modal.querySelector('#cdqSettingsCloseV2294').click();\n      if (e.key !== 'Tab') return;\n      const focusable = Array.from(modal.querySelectorAll('button,input,select,a[href]')).filter(el => el.tabIndex >= 0 && el.getClientRects().length && !el.disabled);\n      const first = focusable[0], last = focusable[focusable.length - 1];\n      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }\n      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }\n    };\n    requestAnimationFrame(() => tabs.firstChild.focus());\n  };\n})();\n\n</script>\n"
+    }
+  ],
+  "removeFiles": [],
+  "audit": {
+    "scriptManagerRequired": "V40",
+    "androidAppRequired": "Balance CDQ Android 25.12",
+    "productionVerified": false,
+    "source": "Cumulative V25.09 → V25.10 R2 → V25.11 R2 with exact project and occurrence guards.",
+    "modelCleanup": "No removal: installed model helper and fragments retained.",
+    "deviceValidation": "Android build and automated browser tests; physical reader/OAuth/biometric validation still required.",
+    "packageCompatibility": "R2 removes full-function exact matches; expected occurrence counts and version/project checks remain enforced."
+  },
+  "revision": 2
+}

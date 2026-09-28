@@ -1,0 +1,40 @@
+{
+  "schema": "cdq-script-bundle-v2",
+  "version": "V22.24",
+  "build": "2026.09.18-v22.24-pc-nettoyage",
+  "title": "Balance CDQ V22.24 — Nettoyage PC",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "requiresBuild": "2026.09.18-v22.23-slash-n-fix",
+  "patches": [
+    {
+      "file": "Selector.html",
+      "op": "replace_build",
+      "from": "2026.09.18-v22.23-slash-n-fix",
+      "to": "2026.09.18-v22.24-pc-nettoyage"
+    },
+    {
+      "file": "Code.gs",
+      "op": "replace_build",
+      "from": "2026.09.18-v22.23-slash-n-fix",
+      "to": "2026.09.18-v22.24-pc-nettoyage"
+    },
+    {
+      "file": "Selector.html",
+      "op": "insert_before_literal",
+      "before": "</body>",
+      "text": "<style id=\"cdqPcV2224Cleanup\">\nhtml.pc16-startup-lock,\nhtml.pc16-startup-lock body{\n  background-color:#050608!important;\n  background-image:\n    linear-gradient(rgba(5,6,8,.28),rgba(5,6,8,.28)),\n    url(\"https://jprodrigue86.github.io/Balance-CDQ-distribution/assets/music-wall-choice1.webp?v=20260918-pc80\")!important;\n  background-position:center center,center center!important;\n  background-size:cover,80% auto!important;\n  background-repeat:no-repeat,no-repeat!important;\n  background-attachment:fixed,fixed!important;\n}\nhtml.pc16-startup-lock #accessOverlay{\n  background-color:#050608!important;\n  background-image:\n    linear-gradient(rgba(5,6,8,.28),rgba(5,6,8,.28)),\n    url(\"https://jprodrigue86.github.io/Balance-CDQ-distribution/assets/music-wall-choice1.webp?v=20260918-pc80\")!important;\n  background-position:center center,center center!important;\n  background-size:cover,80% auto!important;\n  background-repeat:no-repeat,no-repeat!important;\n}\nhtml.windows #cdqPcV16 .pc16-body{\n  grid-template-columns:182px minmax(0,1fr)!important;\n  gap:8px!important;\n}\nhtml.windows #cdqPcV16 .pc16-center{padding-right:8px!important;}\nhtml.windows #cdqPcV16 .pc16-rail{display:none!important;}\nhtml.windows #cdqPcV16 .pc16-kpis{\n  grid-template-columns:repeat(5,minmax(0,1fr))!important;\n  gap:9px!important;\n}\nhtml.windows #cdqPcV16 .pc16-kpi{\n  grid-template-columns:48px minmax(0,1fr)!important;\n  padding:8px 9px!important;\n}\nhtml.windows #cdqPcV16 .pc16-kpi.cyan{--c:#20c8e8}\nhtml.windows #cdqPcV16 .pc16-kpi .ico{font-size:32px!important}\nhtml.windows #cdqPcV16 .pc16-kpi .lab{\n  font-size:11.5px!important;\n  white-space:normal!important;\n  line-height:1.1!important;\n}\nhtml.windows #cdqPcV16 .pc16-kpi strong{font-size:25px!important}\nhtml.windows #cdqPcV16 .pc16-kpi em{\n  font-size:8.8px!important;\n  white-space:nowrap!important;\n  overflow:hidden!important;\n  text-overflow:ellipsis!important;\n}\nhtml.windows #cdqPcV16 .pc16-side-clock-v2224{\n  display:grid;\n  grid-template-columns:minmax(0,1fr) auto;\n  gap:5px;\n  align-items:center;\n  margin:3px 0 5px;\n  padding:4px 6px;\n  border:1px solid #214759;\n  border-radius:4px;\n  background:#061923;\n  color:#9fb6c2;\n  font-size:7px;\n}\nhtml.windows #cdqPcV16 .pc16-side-clock-v2224 span{\n  white-space:nowrap;\n  overflow:hidden;\n  text-overflow:ellipsis;\n}\nhtml.windows #cdqPcV16 .pc16-side-clock-v2224 b{\n  color:#dfeaf0;\n  font-size:7.5px;\n  white-space:nowrap;\n}\n</style>\n<script id=\"cdqPcV2224CleanupJs\">\n(function(){\n\"use strict\";\nif(!document.documentElement.classList.contains(\"windows\"))return;\n\nfunction clientCountV2224(root){\n  const txt=String(root.textContent||\"\");\n  const m=txt.match(/Affichage\\s+\\d+\\s+à\\s+\\d+\\s+sur\\s+(\\d+)/i);\n  if(m)return Number(m[1]||0);\n  const m2=txt.match(/(\\d+)\\s+Clients chargés/i);\n  return m2?Number(m2[1]||0):0;\n}\nfunction enhanceV2224(){\n  const root=document.getElementById(\"cdqPcV16\");\n  if(!root)return;\n\n  const status=root.querySelector(\".pc16-side-status\");\n  if(status){\n    const version=status.querySelector(\".pc16-side-meta span\");\n    if(version)version.textContent=\"V22.24\";\n\n    let clock=status.querySelector(\".pc16-side-clock-v2224\");\n    if(!clock){\n      clock=document.createElement(\"div\");\n      clock.className=\"pc16-side-clock-v2224\";\n      clock.innerHTML='<span class=\"date\"></span><b class=\"time\"></b>';\n      const badge=status.querySelector(\"#pc16UpdateBadge\");\n      status.insertBefore(clock,badge||status.firstChild);\n    }\n    const d=new Date();\n    const da=clock.querySelector(\".date\");\n    const ti=clock.querySelector(\".time\");\n    if(da)da.textContent=d.toLocaleDateString(\"fr-CA\",{weekday:\"short\",day:\"numeric\",month:\"short\"});\n    if(ti)ti.textContent=d.toLocaleTimeString(\"fr-CA\",{hour:\"2-digit\",minute:\"2-digit\",hour12:false}).replace(\":\",\" h \");\n  }\n\n  const kpis=root.querySelector(\"#pc16Kpis\");\n  if(kpis&&!kpis.querySelector('[data-follow=\"clients\"]')){\n    const k=document.createElement(\"div\");\n    k.className=\"pc16-kpi cyan\";\n    k.dataset.follow=\"clients\";\n    k.innerHTML='<span class=\"ico\">📂</span><div><span class=\"lab\">Clients chargés</span><strong>'+clientCountV2224(root)+'</strong><em>Ouvrir la liste</em></div>';\n    k.onclick=function(){\n      const nav=root.querySelector('.pc16-nav button[data-view=\"clients\"]');\n      if(nav)nav.click();\n    };\n    kpis.appendChild(k);\n  }else if(kpis){\n    const strong=kpis.querySelector('[data-follow=\"clients\"] strong');\n    if(strong)strong.textContent=String(clientCountV2224(root));\n  }\n}\n\nconst mo=new MutationObserver(function(){\n  clearTimeout(window.__cdqPcV2224Timer);\n  window.__cdqPcV2224Timer=setTimeout(enhanceV2224,40);\n});\nmo.observe(document.body,{childList:true,subtree:true});\nsetInterval(enhanceV2224,1000);\nwindow.addEventListener(\"load\",function(){setTimeout(enhanceV2224,100);});\n})();\n</script>\n"
+    }
+  ],
+  "audit": {
+    "syntaxChecked": true,
+    "robustPatch": true,
+    "notes": [
+      "Aucun replace_literal fragile",
+      "Mur PC compact",
+      "Rail droit masqué",
+      "Zone centrale élargie",
+      "Clients chargés ajouté dynamiquement",
+      "Date/heure ajoutées à gauche"
+    ]
+  }
+}
