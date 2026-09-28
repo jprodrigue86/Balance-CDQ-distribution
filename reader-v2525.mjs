@@ -244,8 +244,8 @@ $('container').addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&(e
 $('container').addEventListener('pointermove',e=>{if(drag?.id===e.pointerId){$('container').scrollLeft=drag.left+drag.x-e.clientX;$('container').scrollTop=drag.top+drag.y-e.clientY;}});
 for(const type of ['pointerup','pointercancel'])$('container').addEventListener(type,()=>{drag=null;$('container').classList.remove('dragging')});
 $('save').onclick=()=>save();$('download').onclick=()=>{menu(true);save(true);};$('external').onclick=()=>{menu(true);save(true);};
-$('back').onclick=requestClose;$('saveClose').onclick=()=>{closeAfterSave=true;save();};
-$('doneFields').addEventListener('click',()=>{finishDocument();});
+$('back').onclick=requestClose;$('saveClose').onclick=()=>{$('closeDialog').close();finishDocument();};
+$('doneFields').addEventListener('click',()=>{requestClose();});
 $('keepEditing').onclick=()=>{$('closeDialog').close();closeAfterSave=false;};
 $('discard').onclick=()=>{
   if(!hosted||!fileId){close();return;}
