@@ -132,25 +132,6 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     button.addEventListener('click',()=>open(button));
     return {button,label};
   }
-  function kitHostSection(input){
-    const inner=input.closest('.textWidgetAnnotation,.choiceWidgetAnnotation,.buttonWidgetAnnotation');
-    if(!inner)return null;
-    const root=inner.closest('.annotationLayer')||surface;
-    const a=inner.getBoundingClientRect();
-    let best=null,bestArea=Infinity;
-    for(const section of root.querySelectorAll('.buttonWidgetAnnotation')){
-      if(section===inner)continue;
-      const b=section.getBoundingClientRect();
-      if(!a.width||!a.height||!b.width||!b.height)continue;
-      const overlapY=Math.min(a.bottom,b.bottom)-Math.max(a.top,b.top);
-      const sameRow=overlapY>=Math.min(a.height,b.height)*.7;
-      const encloses=b.left<=a.left+1&&b.right>=a.right-1;
-      if(!sameRow||!encloses)continue;
-      const area=b.width*b.height;
-      if(area<bestArea){best=section;bestArea=area;}
-    }
-    return best||inner;
-  }
   function refreshNativeSelects(){
     for(const select of surface.querySelectorAll('.choiceWidgetAnnotation select')){
       if(select.closest('[hidden]')||select.getAttribute('aria-hidden')==='true'&&!select.dataset.cdqChoiceSource)continue;
@@ -165,36 +146,20 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     }
   }
   function refreshKitText(){
-    // Acrobat uses a large invisible push-button (_cdq_kits_ouvrir) around the
-    // inner etalon_utilise text field. In the CDQ reader, place our one button
-    // on that full rectangle so the old blue arrow/separator can never remain
-    // visible around the reader-owned black arrow.
+    // Micro-correction only: keep the PDF artwork untouched. Use the existing
+    // Acrobat opener rectangle strictly as a click host, with no resizing,
+    // no background and no replacement rectangle.
     if(entries.get('etalon_utilise')?.kind==='select')return;
     const input=surface.querySelector('.textWidgetAnnotation input[name="etalon_utilise"]');
     if(!input)return;
-    const innerSection=input.closest('.textWidgetAnnotation');
-    const namedOpener=surface.querySelector('[name="_cdq_kits_ouvrir"]');
-    const namedHost=namedOpener?.closest('.buttonWidgetAnnotation');
-    const spatialHost=kitHostSection(input);
-    const hostSection=namedHost||spatialHost||innerSection;
-    const source=namedOpener||input;
+    const opener=surface.querySelector('[name="_cdq_kits_ouvrir"]');
+    const hostSection=opener?.closest('.buttonWidgetAnnotation')||input.closest('.textWidgetAnnotation');
+    const source=opener||input;
     let entry=entries.get('etalon_utilise');
     if(!entry||entry.kind!=='kit-text'||entry.input!==input||entry.hostSection!==hostSection||!entry.button.isConnected){
       entry?.button.remove();
       hostSection?.setAttribute('data-cdq-kit-host','true');
       const made=makeButton('etalon_utilise',source,'kit-text',hostSection);
-      if(hostSection===innerSection){
-        const a=innerSection.getBoundingClientRect(),page=innerSection.closest('.page')?.getBoundingClientRect();
-        // Older/intermediate templates use an inner text widget that is exactly
-        // 14 PDF points narrower on both sides than the real menu rectangle.
-        // Detect that proportion instead of hard-coding one screen size.
-        if(a.width&&page?.width&&a.width/page.width<.215){
-          made.button.style.left='-12.1141%';
-          made.button.style.right='-12.1141%';
-          made.button.style.width='auto';
-          made.button.dataset.cdqKitExpanded='true';
-        }
-      }
       input.dataset.cdqChoiceSource='true';
       input.tabIndex=-1;
       input.setAttribute('aria-hidden','true');

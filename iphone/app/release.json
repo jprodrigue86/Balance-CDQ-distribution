@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "25.84",
-  "release": "e485800bd1d533baccc25d652df5ea4ee24428684487283d42941ba831ae10db",
+  "version": "25.85",
+  "release": "f8081898027a6285769b586fab9d1290d2a118b50acb9664abb966f510e46b4b",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.09.28-v25.84-etalon-confirm-dialog",
-  "androidSelectorSha256": "b5bc7001a3db954bba493960986a50464cee926af5eaee82afac60f8819387aa",
+  "androidSourceBuild": "2026.09.28-v25.85-etalon-microfix",
+  "androidSelectorSha256": "139b57671853898e305300fa2d8a17638a5a047dd5600214ec42690f71686bad",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
   "files": 286
 }
