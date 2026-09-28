@@ -14,30 +14,30 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
   footer.append(cancel,done);dialog.append(title,list,footer);document.body.append(dialog);
 
   const nameOf=entry=>entry.select?.name||entry.input?.name||entry.button?.name||'';
-  const multipleOf=entry=>entry.kind==='kit-text'||!!entry.select?.multiple;
+  const multipleOf=entry=>(entry.kind==='kit-text'||entry.kind==='kit-native')||!!entry.select?.multiple;
   const disabledOf=entry=>!!(entry.select?.disabled||entry.input?.disabled);
   const sourceOf=entry=>entry.select||entry.input;
 
   function selected(entry){
-    if(entry.kind==='kit-text'){
+    if((entry.kind==='kit-text'||entry.kind==='kit-native')){
       const text=String(entry.input?.value||'').trim();
       return text?text.split(/\s*\+\s*/).map(x=>x.trim()).filter(Boolean):[];
     }
     return Array.from(entry.select.selectedOptions).filter(o=>o.value.trim()).map(o=>o.value);
   }
   function options(entry){
-    if(entry.kind==='kit-text')return CDQ_STANDARD_KITS.map(value=>({value,label:value}));
+    if((entry.kind==='kit-text'||entry.kind==='kit-native'))return CDQ_STANDARD_KITS.map(value=>({value,label:value}));
     return Array.from(entry.select.options)
       .filter(option=>option.value.trim())
       .map(option=>({value:option.value,label:option.textContent.trim()}));
   }
   function labels(entry){
-    if(entry.kind==='kit-text')return selected(entry);
+    if((entry.kind==='kit-text'||entry.kind==='kit-native'))return selected(entry);
     return Array.from(entry.select.selectedOptions).map(o=>o.textContent.trim()).filter(Boolean);
   }
   function paint(entry){
     const currentLabels=labels(entry);
-    entry.label.textContent=currentLabels.join(' + ');
+    if(entry.label)entry.label.textContent=currentLabels.join(' + ');
     entry.button.title=currentLabels.join(' + ');
     entry.button.setAttribute('aria-label',(TITLES[nameOf(entry)]||sourceOf(entry)?.title||nameOf(entry))+(currentLabels.length?' : '+currentLabels.join(', '):''));
     entry.button.disabled=disabledOf(entry)||isReadOnly();
@@ -45,7 +45,7 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     entry.button.style.fontSize=css.fontSize;
   }
   function commit(entry){
-    if(entry.kind==='kit-text'){
+    if((entry.kind==='kit-text'||entry.kind==='kit-native')){
       const values=Array.from(draft);
       const text=values.join(' + ');
       entry.input.value=text;
@@ -70,7 +70,7 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     entry.select.dispatchEvent(new Event('change',{bubbles:true}));
     paint(entry);
   }
-  function entryFor(button){return entries.get(button?.name);}
+  function entryFor(button){return entries.get(button?.dataset?.cdqChoiceKey||button?.name);}
   function renderOptions(){
     for(const row of list.children){
       const checked=draft.has(row.dataset.value);
@@ -146,24 +146,29 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     }
   }
   function refreshKitText(){
-    // Micro-correction only: keep the PDF artwork untouched. Use the existing
-    // Acrobat opener rectangle strictly as a click host, with no resizing,
-    // no background and no replacement rectangle.
+    // Micro-correction: use the PDF's own full-width Acrobat opener.
+    // Do not create, resize or paint any rectangle over the PDF.
     if(entries.get('etalon_utilise')?.kind==='select')return;
     const input=surface.querySelector('.textWidgetAnnotation input[name="etalon_utilise"]');
     if(!input)return;
     const opener=surface.querySelector('[name="_cdq_kits_ouvrir"]');
-    const hostSection=opener?.closest('.buttonWidgetAnnotation')||input.closest('.textWidgetAnnotation');
-    const source=opener||input;
+    if(!opener)return;
     let entry=entries.get('etalon_utilise');
-    if(!entry||entry.kind!=='kit-text'||entry.input!==input||entry.hostSection!==hostSection||!entry.button.isConnected){
-      entry?.button.remove();
-      hostSection?.setAttribute('data-cdq-kit-host','true');
-      const made=makeButton('etalon_utilise',source,'kit-text',hostSection);
+    if(!entry||entry.kind!=='kit-native'||entry.input!==input||entry.button!==opener||!opener.isConnected){
+      if(entry?.generated)entry.button?.remove();
+      opener.dataset.cdqChoice='true';
+      opener.dataset.cdqChoiceKey='etalon_utilise';
+      opener.setAttribute('aria-haspopup','dialog');
+      opener.setAttribute('aria-expanded','false');
+      opener.setAttribute('aria-label','Étalon utilisé');
       input.dataset.cdqChoiceSource='true';
       input.tabIndex=-1;
-      input.setAttribute('aria-hidden','true');
-      entry={kind:'kit-text',input,hostSection,...made};entries.set('etalon_utilise',entry);
+      entry={kind:'kit-native',input,button:opener,label:null,generated:false};
+      entries.set('etalon_utilise',entry);
+      if(!opener.dataset.cdqKitBound){
+        opener.dataset.cdqKitBound='true';
+        opener.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();open(opener);});
+      }
       input.addEventListener('change',()=>paint(entry));
     }
     paint(entry);
