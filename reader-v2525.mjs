@@ -190,7 +190,8 @@ async function open(data){
   if(doc)return; // A repeated READY/OPEN exchange must never erase current answers.
   opening=true;$('viewer').inert=true;name=String(data.name||name);fileId=String(data.fileId||'');readOnly=!!data.readOnly;
   $('name').textContent=name;$('empty').style.display='none';status('Ouverture du PDF…');
-  const task=api.getDocument({data:new Uint8Array(await blob.arrayBuffer()),standardFontDataUrl:assets+'standard_fonts/',cMapUrl:assets+'cmaps/',cMapPacked:true,wasmUrl:assets+'wasm/',isEvalSupported:false,enableXfa:false,enableHWA:true});
+  const sourceBytes=new Uint8Array(await blob.arrayBuffer());
+  const task=api.getDocument({data:sourceBytes,standardFontDataUrl:assets+'standard_fonts/',cMapUrl:assets+'cmaps/',cMapPacked:true,wasmUrl:assets+'wasm/',isEvalSupported:false,enableXfa:false,enableHWA:true});
   doc=await task.promise;viewer.setDocument(doc);viewer.linkService.setDocument(doc);
   doc.annotationStorage.onSetModified=()=>{if(!readOnly&&!opening){dirty=true;status('');}};
   $('save').hidden=readOnly;$('saveClose').hidden=readOnly;

@@ -7,6 +7,28 @@ async function pdfLibrary(){
   return library;
 }
 
+function rawNeedsAppearanceRepair(bytes){
+  // CDQ PDFs keep AcroForm in a normal (non-object-stream) dictionary. Avoid
+  // loading pdf-lib at all for clean files so normal opens stay fast.
+  const needle='/NeedAppearances true';
+  const data=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
+  outer:for(let i=0;i<=data.length-needle.length;i++){
+    for(let j=0;j<needle.length;j++)if(data[i+j]!==needle.charCodeAt(j))continue outer;
+    return true;
+  }
+  return false;
+}
+
+export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
+  const data=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
+  if(!rawNeedsAppearanceRepair(data))return data;
+  const {PDFDocument,PDFName}=providedLibrary||await pdfLibrary();
+  const pdf=await PDFDocument.load(data,{updateMetadata:false});
+  const form=pdf.getForm();
+  form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
+  return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
+}
+
 export async function saveEditableFormAppearance(bytes,providedLibrary){
   const {PDFDocument,PDFName,StandardFonts}=providedLibrary||await pdfLibrary();
   const pdf=await PDFDocument.load(bytes,{updateMetadata:false});
