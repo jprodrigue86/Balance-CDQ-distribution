@@ -7,5 +7,5 @@
   "channel": "stable",
   "signingCertificateSha256": "496030d9cd10e81ff4e9486c38491bc15389112c0c295c61c295981c101c4436",
   "compatibleReleaseIdentityFrom": "25.15",
-  "sourceCommit": "2378ed7428e99f6921af6dbaabee5410175d8658"
+  "sourceCommit": "a0abf6d0f7e7c2bc4ba0be327259df32f34d39ed"
 }
