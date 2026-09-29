@@ -31,13 +31,13 @@
   "extraFiles": [
     {
       "name": "CDQInvoicesV2590.gs",
-      "sha256": "c50fb67e4b940dce025ca337cedc2ff25c665d03c21b8db23e2b2dc8b26fee73",
+      "sha256": "ddc77b79c9c7ae6dd606077f6e5655cedd9254d5bda09b7aa3081febad15616f",
       "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v25.90/files/CDQInvoicesV2590.gs"
     }
   ],
   "removeFiles": [],
   "audit": {
-    "scriptManagerRequired": "V43",
+    "scriptManagerRequired": "V46",
     "androidAppRequired": "25.90",
     "scope": "Ajoute l'import d'une image existante depuis la galerie, utilise le même OCR et permet aux techniciens et administrateurs de supprimer leurs factures enregistrées depuis l'application.",
     "preservation": "Aucun dossier client ni modèle PDF n'est modifié. L'accès Drive est inchangé; les restrictions Workspace seront configurées séparément lors de la migration.",
