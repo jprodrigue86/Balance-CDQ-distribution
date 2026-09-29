@@ -1,6 +1,6 @@
 // Mozilla PDF.js 6.3.289 : rendu du PDF original et scripts dans QuickJS isolé.
 import {installTouchNavigation, installFormNavigation} from './reader-interactions.mjs?v=21.33';
-const CDN='https://jprodrigue86.github.io/Balance-CDQ-distribution/native/v26.07/vendor/pdfjs-6.3.289/';
+const CDN='https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/vendor/pdfjs-6.3.289/';
 const $=id=>document.getElementById(id),hosted=window.parent!==window;
 let parentOrigin='';
 try{const origin=new URL(document.referrer).origin;if(origin===location.origin||/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(origin))parentOrigin=origin;}catch(e){}
