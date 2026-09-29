@@ -5,6 +5,11 @@ function cdqInvSSV2593_(){return SpreadsheetApp.openById(CDQ_INV_SHEET_ID_V2593)
 function cdqInvCleanV2593_(v,n){return String(v==null?'':v).replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,n||180);}
 function cdqInvEmailV2593_(){try{return cdqInvCleanV2593_(Session.getActiveUser().getEmail()||'',180).toLowerCase();}catch(e){return '';}}
 function cdqInvNowV2593_(){return Utilities.formatDate(new Date(),'America/Toronto','yyyy-MM-dd HH:mm:ss');}
+function cdqInvActorV2593_(hint){
+  var h=cdqInvCleanV2593_(hint||'',180).toLowerCase();
+  if(/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(h))return h;
+  return cdqInvEmailV2593_();
+}
 function cdqInvSheetV2593_(name){
   var sh=cdqInvSSV2593_().getSheetByName(name);
   if(!sh)throw new Error('Feuille inventaire introuvable : '+name);
@@ -100,12 +105,12 @@ function cdqInvLocationNameV2593_(loc){
   var hit=data.find(function(x){return String(x.emplacementId||'')===String(loc);});
   return hit?String(hit.emplacementNom||loc):String(loc||'');
 }
-function cdqInvAppendMovementV2593_(article,qty,originId,originName,destId,destName,type,note){
+function cdqInvAppendMovementV2593_(article,qty,originId,originName,destId,destName,type,note,actor){
   var sh=cdqInvSheetV2593_('Mouvements');
   sh.appendRow([
     cdqInvNowV2593_(),article.articleId||'',article.numero||'',article.description||'',
     Number(qty)||0,originId||'',originName||'',destId||'',destName||'',
-    cdqInvEmailV2593_(),type||'',cdqInvCleanV2593_(note||'',240)
+    cdqInvActorV2593_(actor),type||'',cdqInvCleanV2593_(note||'',240)
   ]);
 }
 function cdqInvSetQtyV2593_(articleId,loc,newQty){
@@ -128,8 +133,17 @@ function cdqInventoryMoveV2593(payload){
   if(kind==='transfer'){
     var from=cdqInvCleanV2593_(payload.from||'',220),to=cdqInvCleanV2593_(payload.to||'',220);
     if(!from||!to||from===to)throw new Error('Choisissez deux emplacements différents.');
-    if(typeof transfererInventaire!=='function')throw new Error('Le transfert inventaire serveur est indisponible.');
-    return cdqInvAugmentV2593_(transfererInventaire(id,from,to,qty,cdqInvCleanV2593_(payload.note||'',180)));
+    var articleT=cdqInvFindArticleV2593_(id).row;
+    var lockT=LockService.getScriptLock();lockT.waitLock(30000);
+    try{
+      var fromStock=cdqInvStockRowV2593_(id,from),toStock=cdqInvStockRowV2593_(id,to);
+      var fromBefore=fromStock.row?Number(fromStock.row.quantite||0):0,toBefore=toStock.row?Number(toStock.row.quantite||0):0;
+      if(fromBefore<qty)throw new Error('Quantité insuffisante à l’emplacement d’origine.');
+      cdqInvSetQtyV2593_(id,from,fromBefore-qty);
+      cdqInvSetQtyV2593_(id,to,toBefore+qty);
+      cdqInvAppendMovementV2593_(articleT,qty,from,cdqInvLocationNameV2593_(from),to,cdqInvLocationNameV2593_(to),'transfert',payload.note||'Transfert',payload.userEmail);
+    }finally{lockT.releaseLock();}
+    return cdqInventoryGetV2593();
   }
   if(kind!=='add'&&kind!=='remove')throw new Error('Type de mouvement invalide.');
   var loc=cdqInvCleanV2593_(payload.location||payload.to||payload.from||'',220);
@@ -142,8 +156,8 @@ function cdqInventoryMoveV2593(payload){
     if(after<0)throw new Error('Quantité insuffisante à cet emplacement.');
     cdqInvSetQtyV2593_(id,loc,after);
     var locName=cdqInvLocationNameV2593_(loc);
-    if(kind==='add')cdqInvAppendMovementV2593_(article,qty,'ENTREE','Entrée',loc,locName,'entree',payload.note||'Ajout de stock');
-    else cdqInvAppendMovementV2593_(article,qty,loc,locName,'SORTIE','Retrait','sortie',payload.note||'Retrait de stock');
+    if(kind==='add')cdqInvAppendMovementV2593_(article,qty,'ENTREE','Entrée',loc,locName,'entree',payload.note||'Ajout de stock',payload.userEmail);
+    else cdqInvAppendMovementV2593_(article,qty,loc,locName,'SORTIE','Retrait','sortie',payload.note||'Retrait de stock',payload.userEmail);
   }finally{lock.releaseLock();}
   return cdqInventoryGetV2593();
 }
@@ -170,7 +184,7 @@ function cdqInventoryCreateV2593(payload){
   var qty=Math.max(0,Math.floor(Number(payload.qty)||0)),loc=cdqInvCleanV2593_(payload.location||'SHOP',220)||'SHOP';
   if(qty>0){
     cdqInvSetQtyV2593_(id,loc,qty);
-    cdqInvAppendMovementV2593_({articleId:id,numero:numero,description:description},qty,'ENTREE','Entrée',loc,cdqInvLocationNameV2593_(loc),'entree','Création article');
+    cdqInvAppendMovementV2593_({articleId:id,numero:numero,description:description},qty,'ENTREE','Entrée',loc,cdqInvLocationNameV2593_(loc),'entree','Création article',payload.userEmail);
   }
   return {articleId:id,inventory:cdqInventoryGetV2593()};
 }
