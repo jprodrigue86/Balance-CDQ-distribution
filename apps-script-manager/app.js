@@ -2,7 +2,7 @@
 
 const $ = id => document.getElementById(id);
 const LS = localStorage;
-const APP_VERSION = 'V46';
+const APP_VERSION = 'V47';
 const CDQ_PRODUCTION_SCRIPT_ID = '1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf';
 const CDQ_PRODUCTION_DEPLOYMENT_ID = 'AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw';
 const CDQ_PRODUCTION_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw/exec';
@@ -1290,6 +1290,23 @@ function applyPatchV25(source,patch,fileLabel){
     const found=countLiteralV25(source,needle);
     if(found!==1)throw new Error(fileLabel+' : point insertion attendu 1 fois, trouvé '+found+'.');
     return source.replace(needle,text+needle);
+  }
+  if(op==='ensure_advanced_service'){
+    let doc;
+    try{doc=JSON.parse(source);}catch(_){throw new Error(fileLabel+' : appsscript.json invalide.');}
+    const serviceId=String(patch.serviceId||'').trim();
+    const userSymbol=String(patch.userSymbol||'').trim();
+    const version=String(patch.version||'').trim();
+    if(!/^[A-Za-z0-9._-]{2,60}$/.test(serviceId)||!/^[A-Za-z_$][A-Za-z0-9_$]{1,39}$/.test(userSymbol)||!/^[A-Za-z0-9._-]{1,20}$/.test(version)){
+      throw new Error(fileLabel+' : service avancé invalide.');
+    }
+    if(!doc.dependencies||typeof doc.dependencies!=='object'||Array.isArray(doc.dependencies))doc.dependencies={};
+    if(!Array.isArray(doc.dependencies.enabledAdvancedServices))doc.dependencies.enabledAdvancedServices=[];
+    const list=doc.dependencies.enabledAdvancedServices;
+    const existing=list.find(x=>String(x&&x.serviceId||'')===serviceId||String(x&&x.userSymbol||'')===userSymbol);
+    if(existing){existing.serviceId=serviceId;existing.userSymbol=userSymbol;existing.version=version;}
+    else list.push({userSymbol,version,serviceId});
+    return JSON.stringify(doc,null,2)+'\n';
   }
   throw new Error('Opération patch non supportée : '+op);
 }

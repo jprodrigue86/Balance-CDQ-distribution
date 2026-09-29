@@ -1,7 +1,8 @@
 /* iPhone PWA only. Never installs APKs, touches account permissions or clears user data. */
 (() => {
   'use strict';
-  const base=new URL('./',document.currentScript.src), origin=location.origin;
+  const base=new URL('./',document.currentScript.src), canonicalBase=new URL('https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/'), origin=location.origin;
+  const legacyPath=base.pathname!==canonicalBase.pathname;
   const current=document.documentElement.dataset.cdqIphoneRelease;
   const version=document.documentElement.dataset.cdqIphoneVersion;
   const inside=window.parent!==window;
@@ -67,6 +68,13 @@
     lastCheck=Date.now();status('Vérification de la mise à jour iPhone…',false,true);
     checking=(async()=>{
       try{
+        if(legacyPath){
+          const response=await fetch(new URL('release.json',canonicalBase),{cache:'no-store'});
+          if(!response.ok)throw Error('Le nouveau canal iPhone ne répond pas. Réessayez.');
+          latest=await response.json();
+          status('Ancienne installation iPhone détectée. Ouvrez la nouvelle installation CDQ pour passer à V'+String(latest.version||'courante')+'.',true);
+          return;
+        }
         if(!('serviceWorker' in navigator))throw Error('Ce navigateur ne permet pas les mises à jour installables. Ouvrez CDQ dans Safari.');
         reg=reg||await navigator.serviceWorker.register(new URL('sw.js',base),{scope:base.href,updateViaCache:'none'});
         if(!reg.__cdqListening){
@@ -97,6 +105,7 @@
   }
   async function apply(){
     if(applying)return;
+    if(legacyPath){location.href=canonicalBase.href;return;}
     await check(true);
     if(!reg?.waiting||!latest||latest.release===current){await waiting();return;}
     if(!(await waiting()))return;
