@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
   "version": "26.05",
-  "release": "63736904cef383323851ce37a29ad9ea6fddbc53106117e658cf9985445e6be3",
+  "release": "5f8fdbe5936e49630f67511042dea6e482408e3c9c3a335b3517d2ba9da7e742",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.09.29-v26.05-mobile-send-selection-lock",
-  "androidSelectorSha256": "1c354553d388ba50bd82977cf8b088041f58d20f233fc00ec35c6719c02c39eb",
+  "androidSourceBuild": "2026.09.29-v26.07-admin-user-management-settings",
+  "androidSelectorSha256": "d31051bac74f9df9c64dfb8f383f72de86c82c638cbd6635827d18f4b7fe83e3",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
   "files": 290
 }

@@ -184,12 +184,22 @@ async function renderHistory(){
 }
 function compressImage(file,max,quality){return new Promise((resolve,reject)=>{var r=new FileReader();r.onerror=()=>reject(Error('Lecture de l’image impossible.'));r.onload=()=>{var im=new Image();im.onerror=()=>reject(Error('Image invalide.'));im.onload=()=>{var w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,k=Math.min(1,max/Math.max(w,h));w=Math.max(1,Math.round(w*k));h=Math.max(1,Math.round(h*k));var c=document.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d',{alpha:false});x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h);resolve(c.toDataURL('image/jpeg',quality||.9))};im.src=r.result};r.readAsDataURL(file)})}
 function renderScanner(){
-  header('Scanner','Ajouter, transférer ou retirer rapidement',true);
+  header('Scanner','Code-barres et QR en direct',true);
   state.scanArticle=null;state.scanCode='';state.scanDataUrl='';
-  body.innerHTML='<div class="cdq-im-scannerbox"><div class="cdq-im-scanpreview" id="cdqImScanPreview"><div class="cdq-im-scanplaceholder"><b>Scanner un code</b>Photographiez le code-barres ou le code QR.</div></div><input type="file" id="cdqImScanFile" accept="image/*" capture="environment" hidden><input type="file" id="cdqImScanGallery" accept="image/*" hidden><div class="cdq-im-scanbuttons"><button id="cdqImScanTake">📷 Scanner avec caméra</button><button id="cdqImScanGalleryBtn">▧ Galerie</button></div><div id="cdqImScanResult"></div></div>';
-  $('#cdqImScanTake',body).onclick=()=>$('#cdqImScanFile',body).click();$('#cdqImScanGalleryBtn',body).onclick=()=>$('#cdqImScanGallery',body).click();
-  function bindFile(el){el.onchange=async e=>{var f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;try{state.scanDataUrl=await compressImage(f,2200,.94);var im=document.createElement('img');im.src=state.scanDataUrl;$('#cdqImScanPreview',body).replaceChildren(im);scanBarcode()}catch(er){setStatus(er.message||String(er),'error')}}}
-  bindFile($('#cdqImScanFile',body));bindFile($('#cdqImScanGallery',body));
+  body.innerHTML='<div class="cdq-im-scannerbox"><div class="cdq-im-scanpreview" id="cdqImScanPreview"><div class="cdq-im-scanplaceholder"><b>Scanner un code</b>Cadrez le code-barres ou le QR. La détection se fait automatiquement, sans prendre de photo.</div></div><input type="file" id="cdqImScanGallery" accept="image/*" hidden><div class="cdq-im-scanbuttons"><button id="cdqImScanTake">▥ Scanner maintenant</button><button id="cdqImScanGalleryBtn">▧ Lire une photo</button></div><div id="cdqImScanResult"></div></div>';
+  $('#cdqImScanTake',body).onclick=startLiveBarcodeScanner;
+  $('#cdqImScanGalleryBtn',body).onclick=()=>$('#cdqImScanGallery',body).click();
+  $('#cdqImScanGallery',body).onchange=async e=>{
+    var f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;
+    try{
+      state.scanDataUrl=await compressImage(f,2200,.94);
+      var im=document.createElement('img');im.src=state.scanDataUrl;
+      $('#cdqImScanPreview',body).replaceChildren(im);
+      scanBarcodePhoto();
+    }catch(er){setStatus(er.message||String(er),'error')}
+  };
+  var bridge=nativeBarcodeBridge();
+  if(bridge&&typeof bridge.scanInventoryBarcode==='function')setTimeout(startLiveBarcodeScanner,0);
 }
 function renderScanFound(){
   var box=$('#cdqImScanResult',body);if(!box)return;
@@ -198,16 +208,41 @@ function renderScanFound(){
   box.innerHTML='<div class="cdq-im-found"><strong>✓ '+esc(articleLabel(a))+'</strong><small>'+esc(maker(a))+' · # '+esc(a.numero||a.modele||'')+' · Stock total '+totalQty(a.articleId)+'</small></div>'+(canWrite()?'<div class="cdq-im-detailactions"><button class="cdq-im-action add" data-scanmove="add">＋ Ajouter</button><button class="cdq-im-action transfer" data-scanmove="transfer">⇄ Transférer</button><button class="cdq-im-action remove" data-scanmove="remove">− Retirer</button></div>':'');
   $('[data-scanmove]',body).forEach(b=>b.onclick=()=>{state.article=a;setView('move',{kind:b.dataset.scanmove,article:a})});
 }
-function scanBarcode(){
-  var bridge;try{bridge=window.BalanceCDQNative||(window.parent&&window.parent.BalanceCDQNative)}catch(_){bridge=window.BalanceCDQNative}
-  if(!bridge||typeof bridge.recognizeInventoryBarcode!=='function'){setStatus('Le scanner natif est disponible à partir de Balance CDQ Android 25.94.','error');return}
-  var id='invscan-'+Date.now()+'-'+Math.random().toString(36).slice(2);window.__cdqInvBarcodeReqV2592=id;state.scanBusy=true;setStatus('Lecture du code…');
-  try{bridge.recognizeInventoryBarcode(id,state.scanDataUrl)}catch(e){state.scanBusy=false;setStatus(e.message||String(e),'error')}
+function nativeBarcodeBridge(){
+  try{return window.BalanceCDQNative||(window.parent&&window.parent.BalanceCDQNative)||null}catch(_){return window.BalanceCDQNative||null}
+}
+function beginBarcodeRequest(label){
+  var id='invscan-'+Date.now()+'-'+Math.random().toString(36).slice(2);
+  window.__cdqInvBarcodeReqV2592=id;state.scanBusy=true;setStatus(label||'Lecture du code…');
+  return id;
+}
+function startLiveBarcodeScanner(){
+  if(state.scanBusy)return;
+  var bridge=nativeBarcodeBridge();
+  if(!bridge||typeof bridge.scanInventoryBarcode!=='function'){
+    setStatus('Le scanner en direct nécessite la version Android 26.06. Vous pouvez encore lire une photo.','error');
+    return;
+  }
+  var id=beginBarcodeRequest('Scanner actif — placez le code dans le cadre…');
+  try{bridge.scanInventoryBarcode(id)}catch(e){state.scanBusy=false;window.__cdqInvBarcodeReqV2592='';setStatus(e.message||String(e),'error')}
+}
+function scanBarcodePhoto(){
+  if(state.scanBusy)return;
+  var bridge=nativeBarcodeBridge();
+  if(!bridge||typeof bridge.recognizeInventoryBarcode!=='function'){setStatus('Lecture de photo indisponible sur cet appareil.','error');return}
+  var id=beginBarcodeRequest('Lecture de la photo…');
+  try{bridge.recognizeInventoryBarcode(id,state.scanDataUrl)}catch(e){state.scanBusy=false;window.__cdqInvBarcodeReqV2592='';setStatus(e.message||String(e),'error')}
 }
 window.cdqNativeInventoryBarcodeV2592=function(id,ok,value,message){
-  if(String(id)!==String(window.__cdqInvBarcodeReqV2592||''))return;window.__cdqInvBarcodeReqV2592='';state.scanBusy=false;
-  if(!ok||!value){setStatus(message||'Aucun code lisible détecté.','error');return}
-  state.scanCode=clean(value);var code=state.scanCode.toLowerCase();state.scanArticle=((state.inv&&state.inv.articles)||[]).find(a=>[a.codeBarres,a.numero,a.modele].some(v=>clean(v).toLowerCase()===code))||null;
+  if(String(id)!==String(window.__cdqInvBarcodeReqV2592||''))return;
+  window.__cdqInvBarcodeReqV2592='';state.scanBusy=false;
+  if(!ok||!value){
+    var detail=String(message||'');
+    if(/annul/i.test(detail)){setStatus('Scan annulé.','');return}
+    setStatus(detail||'Aucun code lisible détecté.','error');return;
+  }
+  state.scanCode=clean(value);var code=state.scanCode.toLowerCase();
+  state.scanArticle=((state.inv&&state.inv.articles)||[]).find(a=>[a.codeBarres,a.numero,a.modele].some(v=>clean(v).toLowerCase()===code))||null;
   setStatus('Code détecté : '+state.scanCode,'ok');renderScanFound();
 };
 function renderCreate(){

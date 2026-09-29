@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.05" data-cdq-iphone-release="63736904cef383323851ce37a29ad9ea6fddbc53106117e658cf9985445e6be3">
+<html data-cdq-iphone-version="26.05" data-cdq-iphone-release="5f8fdbe5936e49630f67511042dea6e482408e3c9c3a335b3517d2ba9da7e742">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -536,7 +536,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.09.29-v26.05-mobile-send-selection-lock">
+<meta name="cdq-package-build" content="2026.09.29-v26.07-admin-user-management-settings">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -814,7 +814,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.09.29-v26.05-mobile-send-selection-lock'
+    build:'2026.09.29-v26.07-admin-user-management-settings'
   });
 }
 
@@ -827,7 +827,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.09.29-v26.05-mobile-send-selection-lock'
+        build:'2026.09.29-v26.07-admin-user-management-settings'
       });
     }
   } catch(e) {}
@@ -5707,8 +5707,8 @@ html.windows .header-metal-banner{
 }
 </style>
 
-  <script src="https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/vendor/pdf-lib-1.17.1.min.js"></script>
-<style id="cdqDesktopBootV2517Css">html.windows.pc16-startup-lock,html.windows.pc16-startup-lock body,html.windows #accessOverlay{background:#080808 url("https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/assets/music-wall-pc-v2521.webp") center/cover no-repeat!important}</style>
+  <script src="https://jprodrigue86.github.io/Balance-CDQ-distribution/native/v26.07/vendor/pdf-lib-1.17.1.min.js"></script>
+<style id="cdqDesktopBootV2517Css">html.windows.pc16-startup-lock,html.windows.pc16-startup-lock body,html.windows #accessOverlay{background:#080808 url("https://jprodrigue86.github.io/Balance-CDQ-distribution/native/v26.07/assets/music-wall-pc-v2521.webp") center/cover no-repeat!important}</style>
 <link rel="stylesheet" href="./invoice-ui-v2590.css">
 <link rel="stylesheet" href="./inventory-modern-v2592.css">
 </head>
@@ -5749,10 +5749,10 @@ html.pc16-startup-lock #accessOverlay{visibility:visible!important;opacity:1!imp
 <style id="pc16ImmediateStartupV2181">
 html.pc16-startup-lock,
 html.pc16-startup-lock body{
-  background:#050608 url("https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/assets/music-wall-android-v2523.webp") center center / cover no-repeat fixed !important;
+  background:#050608 url("https://jprodrigue86.github.io/Balance-CDQ-distribution/native/v26.07/assets/music-wall-android-v2523.webp") center center / cover no-repeat fixed !important;
 }
 html.pc16-startup-lock #accessOverlay{
-  background:#050608 url("https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/assets/music-wall-android-v2523.webp") center center / cover no-repeat !important;
+  background:#050608 url("https://jprodrigue86.github.io/Balance-CDQ-distribution/native/v26.07/assets/music-wall-android-v2523.webp") center center / cover no-repeat !important;
 }
 </style>
 <script id="pc16MobileUnlockV2181">
@@ -11377,7 +11377,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.09.29-v26.05-mobile-send-selection-lock";
+  const CDQ_BUILD = "2026.09.29-v26.07-admin-user-management-settings";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13663,7 +13663,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.09.29-v26.05-mobile-send-selection-lock";
+const CDQ_V19_BUILD = "2026.09.29-v26.07-admin-user-management-settings";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15382,7 +15382,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.09.29-v26.05-mobile-send-selection-lock";
+const CDQ_V20_BUILD = "2026.09.29-v26.07-admin-user-management-settings";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16230,7 +16230,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.09.29-v26.05-mobile-send-selection-lock";
+const CDQ_V21_BUILD = "2026.09.29-v26.07-admin-user-management-settings";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16754,7 +16754,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.09.29-v26.05-mobile-send-selection-lock';
+const BUILD='2026.09.29-v26.07-admin-user-management-settings';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -16951,7 +16951,7 @@ const pc17Bridge={stats,fmt,nativeExplorerIcon,statusHtml,show,quick,createClien
   openSharedSettings:()=>{if(window.cdqOpenSettingsV2294)window.cdqOpenSettingsV2294();else if(window.ouvrirReglagesAffichage)window.ouvrirReglagesAffichage()},
   sync:()=>{if(window.cdqLoadSharedPreferencesV72)window.cdqLoadSharedPreferencesV72(true)}
 };
-function shell(){if($('#cdqPcV16'))return;document.body.classList.add('cdq-pc-v16');const r=document.createElement('div');r.id='cdqPcV16';r.dataset.build='v21.76-no-legacy-flash';r.innerHTML=`<div class="pc16-stage"><header class="pc16-header"><img class="pc16-brand-logo" alt="Balance CDQ" src="https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/icons/icon-heavy-v3-512.png"></header><div class="pc16-body"><aside class="pc16-sidebar"><nav class="pc16-nav"><button data-view="home"><span class="ico">⌂</span>Accueil</button><button data-view="clients"><span class="ico">👥</span>Clients</button><button data-view="reports"><span class="ico">📂</span>Rapports</button><button data-pc-action="inventory"><span class="ico">📦</span>Inventaire</button><button data-view="invoices"><span class="ico">🧾</span>Factures</button><button data-view="models"><span class="ico">▰</span>Modèles</button><button data-view="tools"><span class="ico">🛠</span>Outils</button><button data-view="settings"><span class="ico">⚙</span>Paramètres</button></nav><div class="pc16-shortcuts"><h4>Raccourcis rapides</h4><button data-quick="report">▤ Nouveau rapport</button><button data-quick="client">👥 Ajouter un client</button><button data-quick="import">⇧ Importer un fichier</button><button data-quick="analyse">▥ Calculer des écarts</button></div><div class="pc16-side-status"><div class="pc16-side-meta"><strong>Balance CDQ</strong><span>V22.17</span></div><button id="pc16UpdateBadge" class="pc16-update-pill">↑ Mise à jour disponible</button><div class="pc16-side-user"><span class="avatar">${esc(initials())}</span><span class="copy"><b>${esc(initials())} ${esc(role())}</b><small>● En ligne</small></span></div></div></aside><section class="pc16-center"><div class="pc16-kpis" id="pc16Kpis"></div><section class="pc16-main pc16-panel" id="pc16Main"></section></section><aside class="pc16-rail"><div class="pc16-rail-date pc16-panel"><span id="pc16Date"></span><span class="pc16-time" id="pc16Time"></span></div><section class="pc16-card pc16-panel"><div class="pc16-card-head">⚡ Actions rapides</div><div class="pc16-quick"><button data-quick="report">＋ Nouveau rapport</button><button data-quick="client">👥 Ajouter un client</button><button data-quick="import">⇧ Importer un fichier</button><button data-quick="refresh">☁ Actualiser Drive</button><button data-quick="analyse">▥ Analyser les conformités</button></div></section><section class="pc16-card pc16-panel"><div class="pc16-card-head">⚑ À traiter <span class="grow"></span><small id="pc16TreatAll">Voir le suivi →</small></div><div class="pc16-activity" id="pc16Activity"></div></section></aside></div><footer class="pc16-footer"><span>Balance CDQ — Rapports d’étalonnages</span><span>MESURER　•　CONTRÔLER　•　CERTIFIER　•　AVANCER</span><span><b>● Système opérationnel</b>　FRA</span></footer><input id="pc16ImportInput" type="file" multiple hidden><div class="pc16-toast" id="pc16Toast"></div></div>`;document.body.appendChild(r);window.cdqDesktopV2517.mount(st,pc17Bridge);pc16AutoFitV21_65();addEventListener('resize',pc16AutoFitV21_65,{passive:true});addEventListener('orientationchange',pc16AutoFitV21_65,{passive:true});addEventListener('focus',pc16AutoFitV21_65,{passive:true});document.addEventListener('fullscreenchange',pc16AutoFitV21_65);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')pc16AutoFitV21_65()});if(window.visualViewport){visualViewport.addEventListener('resize',pc16AutoFitV21_65,{passive:true});visualViewport.addEventListener('scroll',pc16AutoFitV21_65,{passive:true})}try{new ResizeObserver(pc16AutoFitV21_65).observe(document.documentElement)}catch(_){}/* V22.40 : recalcul supplémentaire supprimé */$$('[data-quick]',r).forEach(b=>b.onclick=()=>quick(b.dataset.quick));
+function shell(){if($('#cdqPcV16'))return;document.body.classList.add('cdq-pc-v16');const r=document.createElement('div');r.id='cdqPcV16';r.dataset.build='v21.76-no-legacy-flash';r.innerHTML=`<div class="pc16-stage"><header class="pc16-header"><img class="pc16-brand-logo" alt="Balance CDQ" src="https://jprodrigue86.github.io/Balance-CDQ-distribution/native/v26.07/icons/icon-heavy-v3-512.png"></header><div class="pc16-body"><aside class="pc16-sidebar"><nav class="pc16-nav"><button data-view="home"><span class="ico">⌂</span>Accueil</button><button data-view="clients"><span class="ico">👥</span>Clients</button><button data-view="reports"><span class="ico">📂</span>Rapports</button><button data-pc-action="inventory"><span class="ico">📦</span>Inventaire</button><button data-view="invoices"><span class="ico">🧾</span>Factures</button><button data-view="models"><span class="ico">▰</span>Modèles</button><button data-view="tools"><span class="ico">🛠</span>Outils</button><button data-view="settings"><span class="ico">⚙</span>Paramètres</button></nav><div class="pc16-shortcuts"><h4>Raccourcis rapides</h4><button data-quick="report">▤ Nouveau rapport</button><button data-quick="client">👥 Ajouter un client</button><button data-quick="import">⇧ Importer un fichier</button><button data-quick="analyse">▥ Calculer des écarts</button></div><div class="pc16-side-status"><div class="pc16-side-meta"><strong>Balance CDQ</strong><span>V22.17</span></div><button id="pc16UpdateBadge" class="pc16-update-pill">↑ Mise à jour disponible</button><div class="pc16-side-user"><span class="avatar">${esc(initials())}</span><span class="copy"><b>${esc(initials())} ${esc(role())}</b><small>● En ligne</small></span></div></div></aside><section class="pc16-center"><div class="pc16-kpis" id="pc16Kpis"></div><section class="pc16-main pc16-panel" id="pc16Main"></section></section><aside class="pc16-rail"><div class="pc16-rail-date pc16-panel"><span id="pc16Date"></span><span class="pc16-time" id="pc16Time"></span></div><section class="pc16-card pc16-panel"><div class="pc16-card-head">⚡ Actions rapides</div><div class="pc16-quick"><button data-quick="report">＋ Nouveau rapport</button><button data-quick="client">👥 Ajouter un client</button><button data-quick="import">⇧ Importer un fichier</button><button data-quick="refresh">☁ Actualiser Drive</button><button data-quick="analyse">▥ Analyser les conformités</button></div></section><section class="pc16-card pc16-panel"><div class="pc16-card-head">⚑ À traiter <span class="grow"></span><small id="pc16TreatAll">Voir le suivi →</small></div><div class="pc16-activity" id="pc16Activity"></div></section></aside></div><footer class="pc16-footer"><span>Balance CDQ — Rapports d’étalonnages</span><span>MESURER　•　CONTRÔLER　•　CERTIFIER　•　AVANCER</span><span><b>● Système opérationnel</b>　FRA</span></footer><input id="pc16ImportInput" type="file" multiple hidden><div class="pc16-toast" id="pc16Toast"></div></div>`;document.body.appendChild(r);window.cdqDesktopV2517.mount(st,pc17Bridge);pc16AutoFitV21_65();addEventListener('resize',pc16AutoFitV21_65,{passive:true});addEventListener('orientationchange',pc16AutoFitV21_65,{passive:true});addEventListener('focus',pc16AutoFitV21_65,{passive:true});document.addEventListener('fullscreenchange',pc16AutoFitV21_65);document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')pc16AutoFitV21_65()});if(window.visualViewport){visualViewport.addEventListener('resize',pc16AutoFitV21_65,{passive:true});visualViewport.addEventListener('scroll',pc16AutoFitV21_65,{passive:true})}try{new ResizeObserver(pc16AutoFitV21_65).observe(document.documentElement)}catch(_){}/* V22.40 : recalcul supplémentaire supprimé */$$('[data-quick]',r).forEach(b=>b.onclick=()=>quick(b.dataset.quick));
 r.addEventListener('click',function(e){
   const action=e.target.closest('.pc16-nav button[data-pc-action]');
   if(action){e.preventDefault();e.stopPropagation();const key=action.dataset.pcAction;if(key==='inventory'&&typeof window.ouvrirInventaireCDQ==='function')window.ouvrirInventaireCDQ();if(key==='favorites')window.cdqDriveV2521.openFavorites();if(key==='drive')window.cdqDriveV2521.open();return}
@@ -20176,7 +20176,7 @@ html.pc16-startup-lock body{
   background-color:#050608!important;
   background-image:
     linear-gradient(rgba(5,6,8,.28),rgba(5,6,8,.28)),
-    url("https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/assets/music-wall-pc-v2521.webp")!important;
+    url("https://jprodrigue86.github.io/Balance-CDQ-distribution/native/v26.07/assets/music-wall-pc-v2521.webp")!important;
   background-position:center center,center center!important;
   background-size:cover,80% auto!important;
   background-repeat:no-repeat,no-repeat!important;
@@ -20186,7 +20186,7 @@ html.pc16-startup-lock #accessOverlay{
   background-color:#050608!important;
   background-image:
     linear-gradient(rgba(5,6,8,.28),rgba(5,6,8,.28)),
-    url("https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/assets/music-wall-pc-v2521.webp")!important;
+    url("https://jprodrigue86.github.io/Balance-CDQ-distribution/native/v26.07/assets/music-wall-pc-v2521.webp")!important;
   background-position:center center,center center!important;
   background-size:cover,80% auto!important;
   background-repeat:no-repeat,no-repeat!important;
@@ -20435,7 +20435,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.09.29-v26.05-mobile-send-selection-lock';
+  const BUILD='2026.09.29-v26.07-admin-user-management-settings';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -21738,7 +21738,14 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     const g = setting('General'), t = setting('Text'), i = setting('Icon');
     // Reference photo is 709 px wide: normalize its proportions to a 384 CSS px phone.
     // All three controls meet at this reference, without rewriting saved preferences.
-    const reference = Math.min(480, Math.max(240, document.documentElement.clientWidth || window.innerWidth)) / 384;
+    const cdqViewportWidthNowV2606=Math.max(240,Math.round(document.documentElement.clientWidth||window.innerWidth||384));
+    const cdqOrientationV2606=(screen.orientation&&screen.orientation.type)||((window.innerWidth||0)>(window.innerHeight||0)?'landscape':'portrait');
+    let cdqViewportStateV2606=window.__cdqViewportStateV2606;
+    if(!cdqViewportStateV2606||cdqViewportStateV2606.orientation!==cdqOrientationV2606){
+      cdqViewportStateV2606={width:cdqViewportWidthNowV2606,orientation:cdqOrientationV2606};
+      window.__cdqViewportStateV2606=cdqViewportStateV2606;
+    }
+    const reference = Math.min(480, Math.max(240, cdqViewportStateV2606.width)) / 384;
     const around50 = (value, low, high) => value <= 50
       ? low + (1 - low) * value / 50 : 1 + (high - 1) * (value - 50) / 50;
     const density = window.cdqPersonalSizing?.factor('General',g,x=>around50(x,.78,1.25)) ?? around50(g,.78,1.25), unit = reference * density;
@@ -21826,6 +21833,11 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
   }
   let queued = false;
   function schedule() {
+    try{
+      if((typeof modeSelectionFichiers!=='undefined'&&modeSelectionFichiers)||
+         document.body.classList.contains('selection-active')||
+         document.querySelector('.file-checkbox:checked'))return;
+    }catch(_){}
     if (queued) return;
     queued = true;
     requestAnimationFrame(() => { queued = false; apply(); });
@@ -22011,6 +22023,11 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     const container = modal.querySelector('.cdq-settings-v2294');
     const accountCard = modal.querySelector('#cdqDefaultGoogleStatusV2294').closest('section');
     const androidCard = modal.querySelector('#cdqAndroidUpdateCardV2315');
+    const userAdminButton = document.getElementById('adminButton');
+    // If the same existing admin button was moved into the settings panel on a
+    // previous opening, detach it before the panel is rebuilt so it is never
+    // destroyed or duplicated.
+    if(userAdminButton && container.contains(userAdminButton))userAdminButton.remove();
     // Build the original controls once per opening, retaining all existing handlers.
     window.ouvrirReglagesAffichage();
     const display = document.getElementById('cdqDisplayModal');
@@ -22055,6 +22072,14 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
       share.textContent = 'Installer / partager Balance CDQ'; share.onclick = window.cdqOuvrirPartageApplication;
       panels.advanced.appendChild(share);
     }
+    if(userAdminButton){
+      const adminRole=String(typeof utilisateurCourantRole!=='undefined'?utilisateurCourantRole:'').trim().toLowerCase();
+      const adminAllowed=adminRole==='admin'||document.body.classList.contains('cdq-role-admin');
+      userAdminButton.hidden=!adminAllowed;
+      userAdminButton.dataset.cdqAdminSettingsV2607='1';
+      userAdminButton.classList.add('cdq-admin-settings-v2607');
+      if(adminAllowed)panels.advanced.appendChild(userAdminButton);
+    }
     const preset = document.createElement('button'); preset.type = 'button'; preset.className = 'cdq-phone-preset';
     preset.textContent = 'Format téléphone — 50 / 50 / 50';
     preset.onclick = () => {
@@ -22080,7 +22105,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     if (!modal.dataset.cdqCategoryNavigation) {
       modal.dataset.cdqCategoryNavigation = '1';
       modal.addEventListener('click', e => {
-        if (e.target.closest('#cdqAdminSettingsButton,#cdqDiagnosticSettingsButton,#cdqInstallShareSettingsButton')) modal.style.display = 'none';
+        if (e.target.closest('#adminButton,#cdqAdminSettingsButton,#cdqDiagnosticSettingsButton,#cdqInstallShareSettingsButton')) modal.style.display = 'none';
       }, true);
       modal.querySelector('#cdqSettingsCloseV2294').onclick = () => {
         modal.style.display = 'none'; document.getElementById('cdqTopDisplayButtonV2204')?.focus();
@@ -22100,7 +22125,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
 
 </script>
 <style id="cdqIconThemesCssV2514">
-:root{--cdq-icon-original-v2515:url("https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/bundles/balance-cdq/v25.14/icons-reference.png")}
+:root{--cdq-icon-original-v2515:url("https://jprodrigue86.github.io/Balance-CDQ-distribution/native/v26.07/bundles/balance-cdq/v25.14/icons-reference.png")}
 /* Transparent artwork is embedded once; no external request, tint or rectangular background. */
 .cdq-icon-sample-v2514 {
   display:block; width:36px; height:36px; flex:0 0 auto;
@@ -22135,7 +22160,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
 @media(max-width:359px){.cdq-icon-preview-v2514 .cdq-icon-sample-v2514{width:30px;height:30px}.cdq-icon-choice-v2514{padding:8px!important}}
 .cdq-icon-status-v2514 {min-height:2.8em;margin-top:10px!important;margin-bottom:0!important}
 
-.cdq-icon-sample-v2514,.bottom-nav > .bottom-nav-item > .cdq-icon-host-v2514::after{background-image:url("https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/bundles/balance-cdq/v25.15/icons-transparent.webp")}
+.cdq-icon-sample-v2514,.bottom-nav > .bottom-nav-item > .cdq-icon-host-v2514::after{background-image:url("https://jprodrigue86.github.io/Balance-CDQ-distribution/native/v26.07/bundles/balance-cdq/v25.15/icons-transparent.webp")}
 .cdq-icon-sample-v2514[data-art-source=original]{background-image:var(--cdq-icon-original-v2515)}
 </style>
 <script id="cdqIconThemesJsV2514">
@@ -22351,7 +22376,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
 <style id="cdqDesktopV2517Css">
 /* Balance CDQ desktop workspace. Native CSS dimensions: no scaled fixed canvas. */
 html.windows,html.windows body{margin:0!important;padding:0!important;width:100%!important;height:100%!important;max-width:none!important;transform:none!important;zoom:1!important;overflow:hidden!important}
-html.windows.pc16-startup-lock,html.windows.pc16-startup-lock body,html.windows #accessOverlay{background:#080808 url("https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/assets/music-wall-pc-v2521.webp") center/cover no-repeat!important}
+html.windows.pc16-startup-lock,html.windows.pc16-startup-lock body,html.windows #accessOverlay{background:#080808 url("https://jprodrigue86.github.io/Balance-CDQ-distribution/native/v26.07/assets/music-wall-pc-v2521.webp") center/cover no-repeat!important}
 html.windows #accessOverlay{background-attachment:fixed!important}
 html.windows #cdqPcV16{--pc-bg:#0b0d10;--pc-panel:#13171c;--pc-raised:#1b2129;--pc-line:#2b333e;--pc-ink:#edf1f5;--pc-muted:#9aa7b7;--pc-accent:#50c6f6;--pc-font:15px;--pc-row:56px;position:fixed!important;inset:0!important;padding:0!important;margin:0!important;max-width:none!important;font:var(--pc-font)/1.45 system-ui,-apple-system,"Segoe UI",sans-serif!important;color:var(--pc-ink)!important;background:var(--pc-bg)!important;overflow:hidden!important}
 html.windows #cdqPcV16[data-theme=dark]{--pc-bg:#09121c;--pc-panel:#101f2e;--pc-raised:#1a2e41;--pc-line:#2d4256}
@@ -22365,7 +22390,7 @@ html.windows #cdqPcV16 button:focus-visible,html.windows #cdqPcV16 input:focus-v
 html.windows #cdqPcV16 svg{width:20px;height:20px;flex-shrink:0;vertical-align:middle}
 html.windows #cdqPcV16 .pc16-stage{position:relative!important;inset:0!important;width:100%!important;height:100%!important;transform:none!important;zoom:1!important;will-change:auto!important;display:grid!important;grid-template-rows:clamp(86px,8.6vw,132px) minmax(0,1fr)!important;background:var(--pc-bg)!important;overflow:hidden!important}
 html.windows #cdqPcV16 .pc16-header{position:relative!important;inset:auto!important;width:100%!important;height:100%!important;max-width:none!important;transform:none!important;background:#03080d!important;border:0!important;padding:0!important;overflow:hidden!important}
-.pc17-banner{height:100%;width:100%;background:url("https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/bundles/balance-cdq/v25.17/banner-original.webp") center/cover no-repeat;filter:brightness(1.1)}
+.pc17-banner{height:100%;width:100%;background:url("https://jprodrigue86.github.io/Balance-CDQ-distribution/native/v26.07/bundles/balance-cdq/v25.17/banner-original.webp") center/cover no-repeat;filter:brightness(1.1)}
 html.windows #cdqPcV16 .pc16-body{position:relative!important;inset:auto!important;width:100%!important;height:100%!important;display:grid!important;grid-template-columns:220px minmax(0,1fr)!important;gap:0!important;min-height:0!important;padding:0!important;margin:0!important}
 html.windows #cdqPcV16 .pc16-sidebar{position:relative!important;inset:auto!important;width:auto!important;height:auto!important;min-width:0!important;min-height:0!important;padding:18px 12px 12px!important;border:0!important;border-right:1px solid var(--pc-line)!important;background:var(--pc-panel)!important;display:flex!important;flex-direction:column!important;overflow:auto!important}
 html.windows #cdqPcV16 .pc16-nav{display:grid!important;gap:5px!important;padding:0!important;margin:0!important}
@@ -22373,7 +22398,7 @@ html.windows #cdqPcV16 .pc16-nav button{display:flex!important;align-items:cente
 html.windows #cdqPcV16 .pc16-nav button[hidden]{display:none!important}
 html.windows #cdqPcV16 .pc16-nav button.active{background:var(--pc-raised)!important;color:var(--pc-ink)!important;box-shadow:inset 3px 0 var(--pc-accent)!important}
 html.windows #cdqPcV16 .pc16-nav .ico{display:inline-flex!important;align-items:center;justify-content:center;width:25px!important;height:25px!important;font-size:20px!important;color:inherit!important;flex:0 0 25px!important}
-html.windows #cdqPcV16 .pc16-nav .pc17-art{background-image:url("https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/bundles/balance-cdq/v25.15/icons-transparent.webp");background-size:var(--cdq-art-size);background-position:var(--cdq-art-position);background-repeat:no-repeat;filter:none!important}
+html.windows #cdqPcV16 .pc16-nav .pc17-art{background-image:url("https://jprodrigue86.github.io/Balance-CDQ-distribution/native/v26.07/bundles/balance-cdq/v25.15/icons-transparent.webp");background-size:var(--cdq-art-size);background-position:var(--cdq-art-position);background-repeat:no-repeat;filter:none!important}
 html.windows #cdqPcV16 .pc16-shortcuts{position:static!important;display:grid!important;gap:4px!important;margin:20px 0 12px!important;padding:16px 0 0!important;border-top:1px solid var(--pc-line)!important}
 html.windows #cdqPcV16 .pc16-shortcuts h4{font-size:11px!important;font-weight:600!important;text-transform:uppercase;letter-spacing:1px;color:var(--pc-muted);margin:9px 10px 4px!important}
 html.windows #cdqPcV16 .pc16-shortcuts button{display:flex!important;align-items:center!important;gap:9px!important;min-height:36px!important;height:auto!important;padding:7px 10px!important;font-size:12px!important;color:var(--pc-muted)!important;background:transparent!important;border:0!important;border-radius:6px!important;box-shadow:none!important;text-align:left!important}
@@ -22638,7 +22663,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.09.29-v26.05-mobile-send-selection-lock',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.09.29-v26.07-admin-user-management-settings',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23410,6 +23435,42 @@ html:is(.android,.ios,.mobile-device) #modalOverlay .modal-button{
   measure();
 })();
 </script>
+
+<style id="cdq-mobile-stability-v2606">
+html:is(.android,.ios,.mobile-device),
+html:is(.android,.ios,.mobile-device) body{
+  max-width:100%!important;
+  overflow-x:hidden!important;
+}
+html:is(.android,.ios,.mobile-device) :is(.container,#filesContainer,.files,.folder,.folder-content,.folder-header,.file-row){
+  box-sizing:border-box!important;
+  max-width:100%!important;
+  min-width:0!important;
+}
+html:is(.android,.ios,.mobile-device) :is(.selection-toolbar,.selection-actions,.batch-actions,.multi-select-actions){
+  box-sizing:border-box!important;
+  max-width:100%!important;
+  min-width:0!important;
+  overflow-x:auto!important;
+}
+</style>
+
+<style id="cdq-admin-settings-v2607">
+#cdq-settings-panel-advanced > #adminButton.cdq-admin-settings-v2607{
+  position:relative!important;
+  inset:auto!important;
+  float:none!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-height:44px!important;
+  margin:8px 0 0!important;
+  box-sizing:border-box!important;
+  justify-content:center!important;
+}
+body:not(.cdq-role-admin) #cdq-settings-panel-advanced > #adminButton.cdq-admin-settings-v2607{
+  display:none!important;
+}
+</style>
 </body>
 </html>
 
