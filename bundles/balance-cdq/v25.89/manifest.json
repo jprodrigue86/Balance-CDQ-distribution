@@ -1,0 +1,45 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V25.89",
+  "build": "2026.09.28-v25.89-invoices",
+  "title": "Balance CDQ V25.89 — Factures sécurisées par technicien",
+  "requiresBuild": [
+    "2026.09.27-v25.68-calibration-health"
+  ],
+  "patches": [
+    {
+      "file": "Code.gs",
+      "op": "replace_build_any",
+      "from": [
+        "2026.09.27-v25.68-calibration-health"
+      ],
+      "to": "2026.09.28-v25.89-invoices"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_build_any",
+      "from": [
+        "2026.09.27-v25.68-calibration-health"
+      ],
+      "to": "2026.09.28-v25.89-invoices"
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQInvoicesV2589.gs",
+      "sha256": "6dac27e80e2ed3630dec487f84220b190d1143b1dbb9c0135dfd00a100247142",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v25.89/files/CDQInvoicesV2589.gs"
+    }
+  ],
+  "removeFiles": [],
+  "audit": {
+    "scriptManagerRequired": "V43",
+    "androidAppRequired": "25.89",
+    "scope": "Nouvelle page Factures; technicien imposé par l'identité connectée; photo, OCR Android local, catégories Essence/Outils/Hébergement/Réparation véhicule et classement automatique.",
+    "preservation": "Aucun dossier client ni modèle PDF n'est modifié par l'installation. Le dossier Facture et ses sous-dossiers sont créés uniquement lors du premier enregistrement d'une facture.",
+    "security": "Le technicien n'est jamais choisi par le client: le serveur le résout depuis l'identité courante. Le client n'expose aucune fonction supprimer/déplacer pour les factures.",
+    "storage": "_CDQ_System / Facture / [Technicien] / [Catégorie], fichier nommé [montant] - [date].jpg",
+    "compatibility": "Prévu pour le serveur CDQ V25.68 actuellement publié; ajoute le module Factures sans toucher aux rapports, PDF ni dossiers clients."
+  }
+}
