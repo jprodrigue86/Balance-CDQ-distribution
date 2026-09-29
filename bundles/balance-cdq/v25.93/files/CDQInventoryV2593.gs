@@ -3,7 +3,16 @@ var CDQ_INV_PHOTO_PARENT_V2593='1Xo6L1rziVxNniWeka_oOKtISALV8Ss7j';
 
 function cdqInvSSV2593_(){return SpreadsheetApp.openById(CDQ_INV_SHEET_ID_V2593);}
 function cdqInvCleanV2593_(v,n){return String(v==null?'':v).replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,n||180);}
-function cdqInvEmailV2593_(){try{return cdqInvCleanV2593_(Session.getActiveUser().getEmail()||'',180).toLowerCase();}catch(e){return '';}}
+function cdqInvEmailV2593_(){
+  try{
+    if(typeof obtenirListeTechniciensRapports==='function'){
+      var data=obtenirListeTechniciensRapports()||{},cur=data.courant||{};
+      var e=cdqInvCleanV2593_(cur.email||'',180).toLowerCase();
+      if(e)return e;
+    }
+  }catch(e){}
+  try{return cdqInvCleanV2593_(Session.getActiveUser().getEmail()||'',180).toLowerCase();}catch(e){return '';}
+}
 function cdqInvNowV2593_(){return Utilities.formatDate(new Date(),'America/Toronto','yyyy-MM-dd HH:mm:ss');}
 function cdqInvActorV2593_(hint){
   var h=cdqInvCleanV2593_(hint||'',180).toLowerCase();
@@ -47,11 +56,11 @@ function cdqInvFindArticleV2593_(articleId){
 function cdqInvCanAdminV2593_(){
   var email=cdqInvEmailV2593_();
   try{
-    if(typeof obtenirListeUtilisateurs==='function'){
-      var users=obtenirListeUtilisateurs()||[];
-      var hit=users.find(function(u){return cdqInvCleanV2593_(u&&u.email||'',180).toLowerCase()===email;});
-      if(hit)return String(hit.role||'').toLowerCase()==='admin';
-    }
+    var users=[];
+    if(typeof obtenirUtilisateurs==='function')users=obtenirUtilisateurs()||[];
+    else if(typeof obtenirListeUtilisateurs==='function')users=obtenirListeUtilisateurs()||[];
+    var hit=users.find(function(u){return cdqInvCleanV2593_(u&&u.email||'',180).toLowerCase()===email;});
+    if(hit)return String(hit.role||'').toLowerCase()==='admin';
   }catch(e){}
   return email==='jp.rodrigue86@gmail.com';
 }
