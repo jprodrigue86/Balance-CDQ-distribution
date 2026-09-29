@@ -2,7 +2,7 @@
 
 const $ = id => document.getElementById(id);
 const LS = localStorage;
-const APP_VERSION = 'V45';
+const APP_VERSION = 'V46';
 const CDQ_PRODUCTION_SCRIPT_ID = '1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf';
 const CDQ_PRODUCTION_DEPLOYMENT_ID = 'AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw';
 const CDQ_PRODUCTION_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw/exec';
@@ -84,15 +84,15 @@ const KEEP_CONNECTED_KEY = 'cdqsm_keep_connected';
 const TOKEN_KEY = 'cdqsm_google_access_token';
 const TOKEN_EXPIRES_KEY = 'cdqsm_google_access_token_expires';
 const PENDING_BUNDLE_KEY_V41 = 'cdqsm_pending_bundle_v41';
-let googleConnectBusyV45=false;
+let googleConnectBusyV46=false;
 
-function isEmbeddedBrowserV45(){
+function isEmbeddedBrowserV46(){
   const ua=String(navigator.userAgent||'');
   const ref=String(document.referrer||'');
   return /Android/i.test(ua) && (/; wv\)|FBAN|FBAV|Instagram|ChatGPT/i.test(ua) || /chatgpt|openai/i.test(ref));
 }
 
-function openScriptManagerInChromeV45(){
+function openScriptManagerInChromeV46(){
   const target=new URL(location.href);
   target.searchParams.set('cdq_browser','chrome');
   const https=target.href;
@@ -796,13 +796,13 @@ async function restoreBackup(backupId) {
 }
 
 async function handleGoogleConnect() {
-  if(googleConnectBusyV45)return;
-  if(isEmbeddedBrowserV45()){
+  if(googleConnectBusyV46)return;
+  if(isEmbeddedBrowserV46()){
     topstat('Ouverture de Script Manager dans Google Chrome…','warn');
-    openScriptManagerInChromeV45();
+    openScriptManagerInChromeV46();
     return;
   }
-  googleConnectBusyV45=true;
+  googleConnectBusyV46=true;
   invalidateVersionDiagnosticV43();
   S.projectReadGeneration++;
   if(quickConnect)quickConnect.disabled=true;
@@ -819,7 +819,7 @@ async function handleGoogleConnect() {
     badge('authBadge', 'Google : non connecté');
     topstat('Connexion impossible : ' + e.message, 'err');
   } finally {
-    googleConnectBusyV45=false;
+    googleConnectBusyV46=false;
     if(quickConnect)quickConnect.disabled=false;
     if($('connect'))$('connect').disabled=false;
   }
@@ -2220,12 +2220,12 @@ async function runAction(fn, start = '') {
 }
 
 function detectEmbeddedBrowser() {
-  const embedded=isEmbeddedBrowserV45();
+  const embedded=isEmbeddedBrowserV46();
   browserWarning.hidden=!embedded;
-  const chromeButton=$('openChromeV45');
+  const chromeButton=$('openChromeV46');
   if(chromeButton){
     chromeButton.hidden=!embedded;
-    chromeButton.onclick=function(){openScriptManagerInChromeV45();};
+    chromeButton.onclick=function(){openScriptManagerInChromeV46();};
   }
   if(embedded){
     if(quickConnect)quickConnect.textContent='Ouvrir Script Manager dans Chrome';
@@ -2417,12 +2417,12 @@ window.addEventListener('appinstalled', updateInstallState);
       updateQuickUi();
       await refreshProjectList();
     } else {
-      // V45 : ne jamais ouvrir Google automatiquement au démarrage.
+      // V46 : ne jamais ouvrir Google automatiquement au démarrage.
       // Sur Android, deux demandes de compte pouvaient sinon se chevaucher
       // avec l'action manuelle et sortir du Script Manager.
       if(shouldAutoReconnect())clearRememberedConnection();
       updateQuickUi();
-      topstat(isEmbeddedBrowserV45()
+      topstat(isEmbeddedBrowserV46()
         ? 'Ouvre Script Manager dans Chrome avant de connecter Google.'
         : 'Application prête. Touche « Se connecter à Google » une seule fois.');
     }
