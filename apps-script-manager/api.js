@@ -12,8 +12,7 @@ const CDQ = {
   grantedScopes: '',
 };
 
-const CDQ_GOOGLE_LOGIN_HINT_V45 = 'jprodrigue@groupecdq.com';
-const CDQ_GOOGLE_HD_V45 = 'groupecdq.com';
+const CDQ_GOOGLE_LOGIN_HINT_V46 = 'jp.rodrigue86@gmail.com';
 
 const SCOPES = [
   'https://www.googleapis.com/auth/script.projects',
@@ -81,8 +80,7 @@ async function prepareGoogleClient(clientId) {
     client_id: clientId,
     scope: SCOPES,
     include_granted_scopes: true,
-    login_hint: CDQ_GOOGLE_LOGIN_HINT_V45,
-    hd: CDQ_GOOGLE_HD_V45,
+    login_hint: CDQ_GOOGLE_LOGIN_HINT_V46,
     prompt: '',
     callback: () => {},
     error_callback: () => {},
@@ -122,8 +120,8 @@ async function requestGoogleToken(clientId, mode = 'reuse') {
     try {
       const override =
         mode === 'silent'
-          ? { prompt: 'none', login_hint: CDQ_GOOGLE_LOGIN_HINT_V45 }
-          : { prompt: '', login_hint: CDQ_GOOGLE_LOGIN_HINT_V45 };
+          ? { prompt: 'none', login_hint: CDQ_GOOGLE_LOGIN_HINT_V46 }
+          : { prompt: '', login_hint: CDQ_GOOGLE_LOGIN_HINT_V46 };
       client.requestAccessToken(override);
     } catch (err) {
       finishError(err);
