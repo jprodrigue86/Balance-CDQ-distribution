@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.10" data-cdq-iphone-release="8ac52690e552a564edbe6e07e503709fbbf1ca344f7233f87ea4214f87e8195e">
+<html data-cdq-iphone-version="26.11" data-cdq-iphone-release="9405b512b45effb10937e22967e75d16cda277004ec0dbcbdba2921fbb06ce51">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -536,7 +536,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.09.29-v26.10-admin-role-live-sync">
+<meta name="cdq-package-build" content="2026.09.29-v26.11-clean-admin-settings">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -814,7 +814,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.09.29-v26.10-admin-role-live-sync'
+    build:'2026.09.29-v26.11-clean-admin-settings'
   });
 }
 
@@ -827,7 +827,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.09.29-v26.10-admin-role-live-sync'
+        build:'2026.09.29-v26.11-clean-admin-settings'
       });
     }
   } catch(e) {}
@@ -11377,7 +11377,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.09.29-v26.10-admin-role-live-sync";
+  const CDQ_BUILD = "2026.09.29-v26.11-clean-admin-settings";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13663,7 +13663,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.09.29-v26.10-admin-role-live-sync";
+const CDQ_V19_BUILD = "2026.09.29-v26.11-clean-admin-settings";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15382,7 +15382,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.09.29-v26.10-admin-role-live-sync";
+const CDQ_V20_BUILD = "2026.09.29-v26.11-clean-admin-settings";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16230,7 +16230,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.09.29-v26.10-admin-role-live-sync";
+const CDQ_V21_BUILD = "2026.09.29-v26.11-clean-admin-settings";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16754,7 +16754,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.09.29-v26.10-admin-role-live-sync';
+const BUILD='2026.09.29-v26.11-clean-admin-settings';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20435,7 +20435,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.09.29-v26.10-admin-role-live-sync';
+  const BUILD='2026.09.29-v26.11-clean-admin-settings';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22023,19 +22023,14 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     const container = modal.querySelector('.cdq-settings-v2294');
     const accountCard = modal.querySelector('#cdqDefaultGoogleStatusV2294').closest('section');
     const androidCard = modal.querySelector('#cdqAndroidUpdateCardV2315');
-    // Build the original controls first, then move the already-existing
-    // user-management control. Do not create a second management action.
+    // Build the original controls once per opening, retaining all existing handlers.
     window.ouvrirReglagesAffichage();
     const display = document.getElementById('cdqDisplayModal');
-    const legacyAdminButton = document.getElementById('adminButton');
-    const generatedAdminButton = display && display.querySelector('#cdqAdminSettingsButton');
-    const roleValue = String(typeof utilisateurCourantRole!=='undefined'?utilisateurCourantRole:'').trim().toLowerCase();
-    let legacyVisible=false;
-    try{legacyVisible=!!legacyAdminButton&&getComputedStyle(legacyAdminButton).display!=='none';}catch(_){}
-    const adminAllowed=roleValue==='admin'||document.body.classList.contains('cdq-role-admin')||!!generatedAdminButton||legacyVisible;
-    const userManagementButton = legacyAdminButton || generatedAdminButton;
-    if(userManagementButton && container.contains(userManagementButton))userManagementButton.remove();
     const groups = Array.from(display.querySelectorAll('.cdq-display-options > .cdq-display-group'));
+    // Capture the already-existing settings action before its group is moved.
+    let adminSettingsButton = display.querySelector('#cdqAdminSettingsButton');
+    const adminGroup = adminSettingsButton && adminSettingsButton.closest('.cdq-display-group');
+    if(adminSettingsButton)adminSettingsButton.remove();
     display.style.display = 'none';
     document.getElementById('cdqInlineDisplayPanelV2204')?.classList.remove('open');
     container.replaceChildren();
@@ -22071,30 +22066,75 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     });
     panels.files.appendChild(accountCard);
     if (androidCard) panels.updates.appendChild(androidCard);
+
     if (typeof window.cdqOuvrirPartageApplication === 'function') {
       const share = document.createElement('button'); share.type = 'button'; share.id = 'cdqInstallShareSettingsButton';
       share.textContent = 'Installer / partager Balance CDQ'; share.onclick = window.cdqOuvrirPartageApplication;
       panels.advanced.appendChild(share);
     }
-    // Never leave a second user-management entry in the Administration group.
-    if(generatedAdminButton && generatedAdminButton!==userManagementButton)generatedAdminButton.remove();
-    if(userManagementButton){
-      userManagementButton.dataset.cdqAdminSettingsV2609='1';
-      userManagementButton.classList.remove('cdq-admin-settings-v2608');
-      userManagementButton.classList.add('cdq-admin-settings-v2609');
-      if(legacyAdminButton && userManagementButton===legacyAdminButton){
-        userManagementButton.removeAttribute('title');
-        userManagementButton.setAttribute('aria-label','Gestion des utilisateurs');
-        userManagementButton.innerHTML='<span aria-hidden="true">👑</span><span><strong>Gestion des utilisateurs</strong><small>Administrateur, technicien ou lecture seule</small></span>';
-      }
-      if(adminAllowed){
-        userManagementButton.hidden=false;
-        userManagementButton.style.setProperty('display','flex','important');
-        panels.advanced.appendChild(userManagementButton);
-      }else{
-        userManagementButton.style.setProperty('display','none','important');
-      }
+
+    function mountAdminSettingsButtonV2611(button){
+      if(!button)return false;
+      button.onclick=function(){modal.style.display='none';ouvrirGestionUtilisateurs();};
+      button.hidden=false;
+      button.style.removeProperty('display');
+      const share=panels.advanced.querySelector('#cdqInstallShareSettingsButton');
+      if(share)share.insertAdjacentElement('afterend',button);
+      else panels.advanced.prepend(button);
+      if(adminGroup && adminGroup.isConnected && !adminGroup.querySelector('button'))adminGroup.remove();
+      return true;
     }
+
+    function regenerateAdminSettingsButtonV2611(){
+      window.ouvrirReglagesAffichage();
+      const freshDisplay=document.getElementById('cdqDisplayModal');
+      const button=freshDisplay&&freshDisplay.querySelector('#cdqAdminSettingsButton');
+      if(freshDisplay)freshDisplay.style.display='none';
+      if(button)adminSettingsButton=button;
+      return button;
+    }
+
+    function cdqAdminRoleRefreshV2611(){
+      const localRole=String(typeof utilisateurCourantRole!=='undefined'?utilisateurCourantRole:'').trim().toLowerCase();
+      if(localRole==='admin'){
+        mountAdminSettingsButtonV2611(adminSettingsButton||regenerateAdminSettingsButtonV2611());
+        return;
+      }
+
+      // Fast biometric startup can temporarily expose a technician role.
+      // Ask the authenticated server session for the authoritative role.
+      const session=String(typeof cdqSessionRpcV58!=='undefined'?cdqSessionRpcV58:'').trim();
+      let device='';try{device=String(cdqObtenirJetonAppareil()||'');}catch(_){}
+      if(!session||!device)return;
+      cdqApiRun()
+        .withSuccessHandler(function(state){
+          if(!state||state.autorise!==true)return;
+          const role=String(state.role||'').trim().toLowerCase();
+          if(!['admin','technicien','lecture'].includes(role))return;
+          utilisateurCourantRole=role;
+          if(typeof appliquerDroitsRoleInterface==='function')appliquerDroitsRoleInterface();
+          if(role==='admin')mountAdminSettingsButtonV2611(adminSettingsButton||regenerateAdminSettingsButtonV2611());
+        })
+        .withFailureHandler(function(){})
+        .reprendreSessionCourteCDQV2524(session,device);
+    }
+
+    cdqAdminRoleRefreshV2611();
+
+    if(modal.dataset.cdqAdminRoleRefreshV2611!=='1'){
+      modal.dataset.cdqAdminRoleRefreshV2611='1';
+      window.addEventListener('cdq:access-ready',function(){
+        if(modal.style.display==='none')return;
+        requestAnimationFrame(function(){
+          if(modal.style.display==='none')return;
+          window.cdqOrganizeSettings(modal);
+          modal.style.display='flex';
+          const advanced=modal.querySelector('[data-settings-tab="advanced"]');
+          if(advanced&&modal.querySelector('#cdq-settings-panel-advanced:not([hidden])'))advanced.click();
+        });
+      });
+    }
+
     const preset = document.createElement('button'); preset.type = 'button'; preset.className = 'cdq-phone-preset';
     preset.textContent = 'Format téléphone — 50 / 50 / 50';
     preset.onclick = () => {
@@ -22120,7 +22160,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     if (!modal.dataset.cdqCategoryNavigation) {
       modal.dataset.cdqCategoryNavigation = '1';
       modal.addEventListener('click', e => {
-        if (e.target.closest('#adminButton,#cdqAdminSettingsButton,#cdqDiagnosticSettingsButton,#cdqInstallShareSettingsButton')) modal.style.display = 'none';
+        if (e.target.closest('#cdqAdminSettingsButton,#cdqDiagnosticSettingsButton,#cdqInstallShareSettingsButton')) modal.style.display = 'none';
       }, true);
       modal.querySelector('#cdqSettingsCloseV2294').onclick = () => {
         modal.style.display = 'none'; document.getElementById('cdqTopDisplayButtonV2204')?.focus();
@@ -22678,7 +22718,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.09.29-v26.10-admin-role-live-sync',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.09.29-v26.11-clean-admin-settings',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23470,151 +23510,15 @@ html:is(.android,.ios,.mobile-device) :is(.selection-toolbar,.selection-actions,
 }
 </style>
 
-<style id="cdq-admin-settings-v2609">
-#cdq-settings-panel-advanced > :is(#adminButton,#cdqAdminSettingsButton).cdq-admin-settings-v2609{
-  position:relative!important;
-  inset:auto!important;
-  float:none!important;
+<style id="cdq-admin-settings-v2611">
+#cdq-settings-panel-advanced > #cdqAdminSettingsButton{
   width:100%!important;
   max-width:100%!important;
-  min-height:58px!important;
+  min-height:54px!important;
   margin:8px 0 0!important;
-  padding:10px 14px!important;
   box-sizing:border-box!important;
-  align-items:center!important;
-  justify-content:flex-start!important;
-  gap:12px!important;
-  text-align:left!important;
-}
-#cdq-settings-panel-advanced > #adminButton.cdq-admin-settings-v2609 > span:first-child{
-  font-size:24px!important;
-  line-height:1!important;
-  flex:0 0 auto!important;
-}
-#cdq-settings-panel-advanced > #adminButton.cdq-admin-settings-v2609 > span:last-child{
-  display:flex!important;
-  min-width:0!important;
-  flex:1 1 auto!important;
-  flex-direction:column!important;
-  gap:2px!important;
-}
-#cdq-settings-panel-advanced > #adminButton.cdq-admin-settings-v2609 strong{
-  font-size:16px!important;
-  line-height:1.15!important;
-}
-#cdq-settings-panel-advanced > #adminButton.cdq-admin-settings-v2609 small{
-  font-size:12px!important;
-  line-height:1.2!important;
-  opacity:.78!important;
 }
 </style>
-
-<style id="cdq-admin-settings-v2610">
-#cdq-settings-panel-advanced > #adminButton.cdq-admin-settings-v2610{
-  position:relative!important;
-  inset:auto!important;
-  float:none!important;
-  display:flex!important;
-  width:100%!important;
-  max-width:100%!important;
-  min-height:58px!important;
-  margin:8px 0 0!important;
-  padding:10px 14px!important;
-  box-sizing:border-box!important;
-  align-items:center!important;
-  justify-content:flex-start!important;
-  gap:12px!important;
-  text-align:left!important;
-}
-#cdq-settings-panel-advanced > #adminButton.cdq-admin-settings-v2610 > span:first-child{
-  font-size:24px!important;line-height:1!important;flex:0 0 auto!important;
-}
-#cdq-settings-panel-advanced > #adminButton.cdq-admin-settings-v2610 > span:last-child{
-  display:flex!important;min-width:0!important;flex:1 1 auto!important;
-  flex-direction:column!important;gap:2px!important;
-}
-#cdq-settings-panel-advanced > #adminButton.cdq-admin-settings-v2610 strong{
-  font-size:16px!important;line-height:1.15!important;
-}
-#cdq-settings-panel-advanced > #adminButton.cdq-admin-settings-v2610 small{
-  font-size:12px!important;line-height:1.2!important;opacity:.78!important;
-}
-</style>
-<script id="cdq-admin-settings-v2610">
-(function(){
-  'use strict';
-  function currentRole(){
-    try{return String(utilisateurCourantRole||'').trim().toLowerCase();}catch(_){return '';}
-  }
-  function isAdmin(){
-    return currentRole()==='admin'||document.body.classList.contains('cdq-role-admin');
-  }
-  function existingButton(){
-    return document.getElementById('adminButton');
-  }
-  function prepareButton(button){
-    if(!button)return;
-    button.hidden=false;
-    button.classList.remove('cdq-admin-settings-v2608','cdq-admin-settings-v2609');
-    button.classList.add('cdq-admin-settings-v2610');
-    button.setAttribute('aria-label','Gestion des utilisateurs');
-    button.title='Gestion des utilisateurs';
-    if(button.dataset.cdqAdminCopyV2610!=='1'){
-      button.dataset.cdqAdminCopyV2610='1';
-      button.innerHTML='<span aria-hidden="true">👑</span><span><strong>Gestion des utilisateurs</strong><small>Administrateur, technicien ou lecture seule</small></span>';
-    }
-    button.onclick=function(){
-      const settings=document.getElementById('cdqSettingsModalV2294');
-      if(settings)settings.style.display='none';
-      if(typeof ouvrirGestionUtilisateurs==='function')ouvrirGestionUtilisateurs();
-    };
-  }
-  function sync(){
-    const button=existingButton();
-    if(!button)return;
-    const modal=document.getElementById('cdqSettingsModalV2294');
-    const panel=modal&&modal.querySelector('#cdq-settings-panel-advanced');
-    if(!isAdmin()){
-      button.style.setProperty('display','none','important');
-      return;
-    }
-    if(!panel)return;
-    const duplicate=panel.querySelector('#cdqAdminSettingsButton');
-    if(duplicate&&duplicate!==button)duplicate.remove();
-    prepareButton(button);
-    button.style.setProperty('display','flex','important');
-    if(button.parentElement!==panel)panel.appendChild(button);
-  }
-
-  const previous=window.cdqOrganizeSettings;
-  if(typeof previous==='function'&&!previous.__cdqAdmin2610){
-    const wrapped=function(modal){
-      const button=existingButton();
-      const container=modal&&modal.querySelector('.cdq-settings-v2294');
-      if(button&&container&&container.contains(button))button.remove();
-      const result=previous.apply(this,arguments);
-      sync();
-      return result;
-    };
-    wrapped.__cdqAdmin2610=true;
-    window.cdqOrganizeSettings=wrapped;
-  }
-
-  window.addEventListener('cdq:access-ready',function(){requestAnimationFrame(sync);});
-  window.addEventListener('cdq:startup-confirmed-v2539',function(){requestAnimationFrame(sync);});
-  window.addEventListener('cdq:warm-confirmed-v2540',function(){requestAnimationFrame(sync);});
-  document.addEventListener('click',function(event){
-    if(event.target.closest&&event.target.closest('#cdqTopDisplayButtonV2204,#displayModeButton,[data-cdq-settings-v2294="1"]')){
-      requestAnimationFrame(function(){requestAnimationFrame(sync);});
-    }
-  },true);
-  try{
-    const modal=document.getElementById('cdqSettingsModalV2294');
-    if(modal)new MutationObserver(function(){if(isAdmin())sync();}).observe(modal,{attributes:true,attributeFilter:['style'],subtree:false});
-  }catch(_){}
-  window.cdqSyncAdminSettingsV2610=sync;
-})();
-</script>
 </body>
 </html>
 
