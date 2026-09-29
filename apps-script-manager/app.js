@@ -2,7 +2,7 @@
 
 const $ = id => document.getElementById(id);
 const LS = localStorage;
-const APP_VERSION = 'V43';
+const APP_VERSION = 'V44';
 const CDQ_PRODUCTION_SCRIPT_ID = '1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf';
 const CDQ_PRODUCTION_DEPLOYMENT_ID = 'AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw';
 const CDQ_PRODUCTION_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw/exec';
@@ -84,6 +84,23 @@ const KEEP_CONNECTED_KEY = 'cdqsm_keep_connected';
 const TOKEN_KEY = 'cdqsm_google_access_token';
 const TOKEN_EXPIRES_KEY = 'cdqsm_google_access_token_expires';
 const PENDING_BUNDLE_KEY_V41 = 'cdqsm_pending_bundle_v41';
+let googleConnectBusyV44=false;
+
+function isEmbeddedBrowserV44(){
+  const ua=String(navigator.userAgent||'');
+  const ref=String(document.referrer||'');
+  return /Android/i.test(ua) && (/; wv\)|FBAN|FBAV|Instagram|ChatGPT/i.test(ua) || /chatgpt|openai/i.test(ref));
+}
+
+function openScriptManagerInChromeV44(){
+  const target=new URL(location.href);
+  target.searchParams.set('cdq_browser','chrome');
+  const https=target.href;
+  if(!/Android/i.test(navigator.userAgent||'')){location.href=https;return true;}
+  const intent='intent://'+target.host+target.pathname+target.search+target.hash+
+    '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(https)+';end';
+  try{location.href=intent;return true;}catch(_){location.href=https;return true;}
+}
 
 function rememberPendingBundleV41(url) {
   try { LS.setItem(PENDING_BUNDLE_KEY_V41, JSON.stringify({url:bundleUrlFromValueV24(url), savedAt:Date.now()})); } catch (_) {}
@@ -779,8 +796,17 @@ async function restoreBackup(backupId) {
 }
 
 async function handleGoogleConnect() {
+  if(googleConnectBusyV44)return;
+  if(isEmbeddedBrowserV44()){
+    topstat('Ouverture de Script Manager dans Google Chrome…','warn');
+    openScriptManagerInChromeV44();
+    return;
+  }
+  googleConnectBusyV44=true;
   invalidateVersionDiagnosticV43();
   S.projectReadGeneration++;
+  if(quickConnect)quickConnect.disabled=true;
+  if($('connect'))$('connect').disabled=true;
   try {
     topstat('Ouverture de Google…');
     await requestGoogleToken(cid(), 'manual');
@@ -792,6 +818,10 @@ async function handleGoogleConnect() {
   } catch (e) {
     badge('authBadge', 'Google : non connecté');
     topstat('Connexion impossible : ' + e.message, 'err');
+  } finally {
+    googleConnectBusyV44=false;
+    if(quickConnect)quickConnect.disabled=false;
+    if($('connect'))$('connect').disabled=false;
   }
 }
 
@@ -2190,9 +2220,17 @@ async function runAction(fn, start = '') {
 }
 
 function detectEmbeddedBrowser() {
-  const ua = navigator.userAgent || '';
-  const ref = document.referrer || '';
-  browserWarning.hidden = !(/Android/i.test(ua) && (/; wv\)|FBAN|FBAV|Instagram/i.test(ua) || /chatgpt|openai/i.test(ref)));
+  const embedded=isEmbeddedBrowserV44();
+  browserWarning.hidden=!embedded;
+  const chromeButton=$('openChromeV44');
+  if(chromeButton){
+    chromeButton.hidden=!embedded;
+    chromeButton.onclick=function(){openScriptManagerInChromeV44();};
+  }
+  if(embedded){
+    if(quickConnect)quickConnect.textContent='Ouvrir Script Manager dans Chrome';
+    if($('connect'))$('connect').textContent='Ouvrir Script Manager dans Chrome';
+  }
 }
 
 function isStandalone() {
@@ -2367,7 +2405,7 @@ window.addEventListener('appinstalled', updateInstallState);
   await renderBackups();
   detectEmbeddedBrowser();
   updateInstallState();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=43').catch(() => {});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=44').catch(() => {});
   try {
     await prepareGoogleClient(cid());
     $('connect').disabled = false;
@@ -2378,24 +2416,15 @@ window.addEventListener('appinstalled', updateInstallState);
       topstat('Session Google restaurée automatiquement.', 'ok');
       updateQuickUi();
       await refreshProjectList();
-    } else if (shouldAutoReconnect()) {
-      badge('authBadge', 'Google : reconnexion…', 'warn');
-      topstat('Reconnexion automatique à Google…');
-      try {
-        await requestGoogleToken(cid(), 'reuse');
-        saveLiveGoogleToken();
-        badge('authBadge', 'Google : connecté', 'ok');
-        rememberConnection();
-        updateQuickUi();
-        await refreshProjectList();
-      } catch (autoError) {
-        badge('authBadge', 'Google : session à renouveler', 'warn');
-        updateQuickUi();
-        topstat('Google exige une nouvelle autorisation. Touche « Se connecter à Google » une fois.', 'warn');
-      }
     } else {
+      // V44 : ne jamais ouvrir Google automatiquement au démarrage.
+      // Sur Android, deux demandes de compte pouvaient sinon se chevaucher
+      // avec l'action manuelle et sortir du Script Manager.
+      if(shouldAutoReconnect())clearRememberedConnection();
       updateQuickUi();
-      topstat('Application prête. Touche « Se connecter à Google ».');
+      topstat(isEmbeddedBrowserV44()
+        ? 'Ouvre Script Manager dans Chrome avant de connecter Google.'
+        : 'Application prête. Touche « Se connecter à Google » une seule fois.');
     }
   } catch (e) {
     $('connect').disabled = false;

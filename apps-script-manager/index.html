@@ -9,8 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>CDQ Apps Script Manager</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=43">
-  <link rel="stylesheet" href="diagnostics.css?v=43">
+  <link rel="stylesheet" href="style.css?v=44">
+  <link rel="stylesheet" href="diagnostics.css?v=44">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -23,7 +23,7 @@
             <strong>CDQ Script Manager</strong>
             <span>Gestion et déploiement de vos applications Google Apps Script</span>
           </div>
-          <div class="version-chip" id="versionChip" title="Version de CDQ Script Manager">V43</div>
+          <div class="version-chip" id="versionChip" title="Version de CDQ Script Manager">V44</div>
           <button id="installApp" class="install-btn" type="button">Installer</button>
         </div>
       </header>
@@ -39,7 +39,8 @@
       <main>
     <section id="browserWarning" class="card warning-card" hidden>
       <h2>Ouvrir dans Chrome</h2>
-      <p>La connexion Google n’est pas prise en charge dans certains navigateurs intégrés. Ouvre cette adresse directement dans Google Chrome, puis installe l’application.</p>
+      <p>La connexion Google doit rester dans le même navigateur. Ouvre Script Manager dans Google Chrome avant de choisir ton compte.</p>
+      <button id="openChromeV44" class="primary" type="button">Ouvrir Script Manager dans Chrome</button>
       <button id="copyUrl" class="secondary" type="button">Copier l’adresse</button>
     </section>
 
@@ -50,7 +51,7 @@
         <p>Connecte ton compte Google, choisis le projet, colle le nouveau code et écris-le sans ouvrir l’éditeur Apps Script.</p>
       </div>
       <div class="status-row">
-        <span id="versionBadge" class="badge version-badge">Version : V43</span>
+        <span id="versionBadge" class="badge version-badge">Version : V44</span>
         <span id="authBadge" class="badge">Google : non connecté</span>
         <span id="projectBadge" class="badge">Projet : aucun</span>
         <span id="changeBadge" class="badge">Modifications : 0</span>
@@ -352,9 +353,9 @@
     </div>
   </div>
 
-  <script src="api.js?v=43"></script>
+  <script src="api.js?v=44"></script>
   <script src="jszip.min.js?v=23"></script>
-  <script src="diagnostics.js?v=43"></script>
-  <script src="app.js?v=43"></script>
+  <script src="diagnostics.js?v=44"></script>
+  <script src="app.js?v=44"></script>
 </body>
 </html>
