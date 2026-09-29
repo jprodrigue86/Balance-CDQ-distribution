@@ -61,7 +61,7 @@
   ],
   "removeFiles": [],
   "audit": {
-    "scriptManagerRequired": "V47",
+    "scriptManagerRequired": "V48",
     "androidAppRequired": "25.99",
     "iphoneAppRequired": "25.99",
     "scope": "Ajoute la lecture OCR des reçus sur iPhone et Web tout en conservant ML Kit natif sur Android, et renforce le canal permanent de mise à jour iPhone.",

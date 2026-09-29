@@ -2,7 +2,7 @@
 
 const $ = id => document.getElementById(id);
 const LS = localStorage;
-const APP_VERSION = 'V47';
+const APP_VERSION = 'V48';
 const CDQ_PRODUCTION_SCRIPT_ID = '1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf';
 const CDQ_PRODUCTION_DEPLOYMENT_ID = 'AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw';
 const CDQ_PRODUCTION_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw/exec';
@@ -131,8 +131,20 @@ async function prepareLatestBundleV41() {
 
 window.addEventListener('cdqsm:network-wait', event => {
   const d = event.detail || {};
-  const message = d.phase + ' — ' + d.elapsedSeconds + ' s';
+  const seconds = Math.max(0, Number(d.elapsedSeconds || 0));
+  const message = d.phase + ' — ' + seconds + ' s';
   if (S.deployBusy) {
+    // Keep the user informed during the intentionally longer safe read.
+    // Never fake completion: this only advances inside the preparation band.
+    if (S.deployProgress >= 8 && S.deployProgress < 16) {
+      const waitingProgress = Math.min(15, 8 + Math.floor(seconds / 12));
+      if (waitingProgress > S.deployProgress) {
+        S.deployProgress = waitingProgress;
+        if (quickDeployProgress) quickDeployProgress.setAttribute('aria-valuenow', String(waitingProgress));
+        if (quickDeployProgressBar) quickDeployProgressBar.style.width = waitingProgress + '%';
+        if (quickDeployProgressPercent) quickDeployProgressPercent.textContent = waitingProgress + ' %';
+      }
+    }
     if (quickDeployProgressText) quickDeployProgressText.textContent = message;
   } else stat(message);
 });
@@ -1857,7 +1869,7 @@ async function writeProjectChanges() {
   invalidateVersionDiagnosticV43();
   S.projectReadGeneration++;
   const count = validateChanges();
-  setQuickDeployProgress(8, 'Lecture de la version actuelle depuis Google…');
+  setQuickDeployProgress(8, 'Lecture sécurisée du projet depuis Google… Sur réseau mobile, cette étape peut prendre 1 à 3 minutes.');
   stat('1/4 Relecture depuis Google…');
   const fresh = await getProjectContent(S.id, cid());
   const updatedFiles=buildUpdatedFileSet(fresh.files);
@@ -2422,7 +2434,7 @@ window.addEventListener('appinstalled', updateInstallState);
   await renderBackups();
   detectEmbeddedBrowser();
   updateInstallState();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=44').catch(() => {});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=48').catch(() => {});
   try {
     await prepareGoogleClient(cid());
     $('connect').disabled = false;

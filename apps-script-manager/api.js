@@ -222,6 +222,7 @@ async function googleFetch(url, clientId, options = {}) {
   const method = String(options.method || 'GET').toUpperCase();
   // A timed-out write may already have reached Google. Never replay it blindly.
   const safeToRetry = method === 'GET' || method === 'HEAD';
+  const projectContentRead = safeToRetry && /\/projects\/[^/]+\/content(?:\?|$)/.test(String(url));
   const alternate = cdqScriptAlternateUrlV39(url);
   const candidates = safeToRetry && alternate ? [String(url), alternate] : [String(url)];
   let lastNetworkError = null;
@@ -229,7 +230,10 @@ async function googleFetch(url, clientId, options = {}) {
 
   for (let hostIndex = 0; hostIndex < candidates.length; hostIndex++) {
     const target = candidates[hostIndex];
-    const attempts = 1;
+    // The Balance CDQ Apps Script project is multi-megabyte. On mobile/5G,
+    // getContent can legitimately need longer than 30 s. Preserve the fresh
+    // pre-write safety read, but give that one read extra time and a retry.
+    const attempts = projectContentRead ? 2 : 1;
 
     for (let attempt = 0; attempt < attempts; attempt++) {
       const headers = new Headers(options.headers || {});
@@ -239,7 +243,13 @@ async function googleFetch(url, clientId, options = {}) {
 
       let response, text;
       try {
-        ({response, text} = await cdqFetchOnceV39(target, options, headers, safeToRetry ? 30000 : 90000));
+        ({response, text} = await cdqFetchOnceV39(
+          target,
+          options,
+          headers,
+          safeToRetry ? (projectContentRead ? 90000 : 30000) : 90000,
+          projectContentRead ? 'Google Apps Script — gros projet' : 'Google'
+        ));
       } catch (error) {
         lastNetworkError = error;
         if (!safeToRetry) {
@@ -248,7 +258,7 @@ async function googleFetch(url, clientId, options = {}) {
           throw uncertain;
         }
         if (attempt + 1 < attempts) {
-          await cdqSleepV39(attempt === 0 ? 450 : 1200);
+          await cdqSleepV39(projectContentRead ? 1500 : (attempt === 0 ? 450 : 1200));
           continue;
         }
         break;

@@ -1,5 +1,5 @@
 {
-  "version": "V47",
-  "build": "2026.09.29-v47-advanced-service-packages",
+  "version": "V48",
+  "build": "2026.09.29-v48-mobile-project-read-retry",
   "diagnosticSchema": "cdq-version-diagnostic-v1"
 }
