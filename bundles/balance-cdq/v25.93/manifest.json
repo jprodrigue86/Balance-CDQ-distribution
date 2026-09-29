@@ -7,7 +7,8 @@
   "requiresBuild": [
     "2026.09.27-v25.68-calibration-health",
     "2026.09.28-v25.90-invoices-gallery-delete",
-    "2026.09.28-v25.92-invoice-root-legacy"
+    "2026.09.28-v25.92-invoice-root-legacy",
+    "2026.09.29-v25.93-modern-inventory-server"
   ],
   "patches": [
     {
@@ -16,7 +17,8 @@
       "from": [
         "2026.09.27-v25.68-calibration-health",
         "2026.09.28-v25.90-invoices-gallery-delete",
-        "2026.09.28-v25.92-invoice-root-legacy"
+        "2026.09.28-v25.92-invoice-root-legacy",
+        "2026.09.29-v25.93-modern-inventory-server"
       ],
       "to": "2026.09.29-v25.93-modern-inventory-server"
     },
@@ -26,7 +28,8 @@
       "from": [
         "2026.09.27-v25.68-calibration-health",
         "2026.09.28-v25.90-invoices-gallery-delete",
-        "2026.09.28-v25.92-invoice-root-legacy"
+        "2026.09.28-v25.92-invoice-root-legacy",
+        "2026.09.29-v25.93-modern-inventory-server"
       ],
       "to": "2026.09.29-v25.93-modern-inventory-server"
     },
