@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="25.88" data-cdq-iphone-release="d6b1ce5e15e9ac2e87d22113c368fa4b34fd1e72bdb93883f7b817b690e08242">
+<html data-cdq-iphone-version="25.90" data-cdq-iphone-release="a0e67a073d865318bc0101756b7a1ab6c462efc747934b372ff6fd91a4f7714b">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -536,7 +536,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.09.28-v25.88-integrated-floor-overlay-fix">
+<meta name="cdq-package-build" content="2026.09.28-v25.90-invoices-gallery-delete">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -814,7 +814,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.09.28-v25.88-integrated-floor-overlay-fix'
+    build:'2026.09.28-v25.90-invoices-gallery-delete'
   });
 }
 
@@ -827,7 +827,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.09.28-v25.88-integrated-floor-overlay-fix'
+        build:'2026.09.28-v25.90-invoices-gallery-delete'
       });
     }
   } catch(e) {}
@@ -5709,6 +5709,7 @@ html.windows .header-metal-banner{
 
   <script src="https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/vendor/pdf-lib-1.17.1.min.js"></script>
 <style id="cdqDesktopBootV2517Css">html.windows.pc16-startup-lock,html.windows.pc16-startup-lock body,html.windows #accessOverlay{background:#080808 url("https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/assets/music-wall-pc-v2521.webp") center/cover no-repeat!important}</style>
+<link rel="stylesheet" href="./invoice-ui-v2590.css">
 </head>
 
 
@@ -11157,7 +11158,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.09.28-v25.88-integrated-floor-overlay-fix";
+  const CDQ_BUILD = "2026.09.28-v25.90-invoices-gallery-delete";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13425,7 +13426,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.09.28-v25.88-integrated-floor-overlay-fix";
+const CDQ_V19_BUILD = "2026.09.28-v25.90-invoices-gallery-delete";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15144,7 +15145,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.09.28-v25.88-integrated-floor-overlay-fix";
+const CDQ_V20_BUILD = "2026.09.28-v25.90-invoices-gallery-delete";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -15992,7 +15993,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.09.28-v25.88-integrated-floor-overlay-fix";
+const CDQ_V21_BUILD = "2026.09.28-v25.90-invoices-gallery-delete";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16306,11 +16307,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 #cdqPcV16 .pc16-table-wrap{min-height:0!important;height:100%!important;overflow:auto!important;}
 #cdqPcV16 .pc16-main>.pc16-table-wrap{overflow:auto!important;}
 </style>
-<script id="cdqSharedInvoicesV84">
-(function(){"use strict";function api(name,args){return new Promise(function(resolve,reject){try{let r=cdqApiRun().withSuccessHandler(resolve).withFailureHandler(reject);r[name].apply(r,args||[])}catch(e){reject(e)}})}function escInv(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])})}
-async function ouvrirFacturesCDQ(){let o=document.getElementById('cdqInvoicesSharedModal');if(!o){o=document.createElement('div');o.id='cdqInvoicesSharedModal';o.className='modal-overlay';o.style.display='none';o.innerHTML='<div class="modal" style="max-width:760px"><h2>Factures CDQ</h2><div class="cdq-modal-body"></div><div class="modal-buttons"><button type="button" class="modal-button cancel-button">Fermer</button></div></div>';o.querySelector('.cancel-button').onclick=function(){o.style.display='none'};o.addEventListener('click',function(e){if(e.target===o)o.style.display='none'});document.body.appendChild(o)}o.style.display='flex';const body=o.querySelector('.cdq-modal-body');body.innerHTML='<div style="padding:14px;color:#9fb6c9">Chargement des factures…</div>';try{const rows=await api('obtenirFacturesCDQ',[250]);body.innerHTML='<div style="display:flex;gap:8px;margin-bottom:10px"><button id="cdqMobileAddInvoice" class="modal-button confirm-button" type="button">＋ Nouvelle facture</button><button id="cdqMobileRefreshInvoices" class="modal-button" type="button">↻ Actualiser</button></div><div style="display:grid;gap:7px;max-height:58vh;overflow:auto">'+(rows||[]).map(function(x){return '<div style="padding:10px;border:1px solid #31516a;border-radius:10px;background:#0d2234"><div style="font-weight:900;font-size:15px">'+escInv(x.numero)+'</div><div style="font-size:13px;margin-top:3px">'+escInv(x.clientNom||'—')+' · '+escInv(String(x.date||'').slice(0,10))+'</div><div style="font-size:13px;margin-top:3px">'+Number(x.montant||0).toFixed(2)+' $ · <b>'+escInv(x.statut||'BROUILLON')+'</b></div>'+(x.note?'<div style="font-size:12px;color:#9fb6c9;margin-top:4px">'+escInv(x.note)+'</div>':'')+'</div>'}).join('')+'</div>';body.querySelector('#cdqMobileRefreshInvoices').onclick=ouvrirFacturesCDQ;body.querySelector('#cdqMobileAddInvoice').onclick=async function(){const client=prompt('Nom du client :','');if(!client)return;const montant=prompt('Montant CAD :','0')||'0';const numero=prompt('N° facture (vide = automatique) :','')||'';try{await api('ajouterFactureCDQ',[{clientNomLibre:client,numero:numero,montant:montant,date:new Date().toISOString().slice(0,10),statut:'BROUILLON',note:''}]);ouvrirFacturesCDQ()}catch(e){alert(e&&e.message||e)}}}catch(e){body.innerHTML='<div style="color:#ff8080;padding:14px">'+escInv(e&&e.message||e)+'</div>'}}
-window.ouvrirFacturesCDQ=ouvrirFacturesCDQ;function install(){const nav=document.querySelector('.bottom-nav');if(nav&&!document.getElementById('cdqInvoicesNavButton')){nav.classList.remove('cdq-v19-six');nav.classList.add('cdq-v19-seven');const b=document.createElement('button');b.id='cdqInvoicesNavButton';b.type='button';b.className='bottom-nav-item';b.title='Factures';b.innerHTML='<span>🧾</span><small>Factures</small>';b.onclick=ouvrirFacturesCDQ;nav.insertBefore(b,document.getElementById('displayModeButton')||nav.lastChild)}}window.addEventListener('load',function(){setTimeout(install,1200)});setTimeout(install,2200)})();
-</script>
+
 <script id="cdqDesktopV2517Js">
 (function () {
   'use strict';
@@ -16520,7 +16517,7 @@ window.ouvrirFacturesCDQ=ouvrirFacturesCDQ;function install(){const nav=document
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.09.28-v25.88-integrated-floor-overlay-fix';
+const BUILD='2026.09.28-v25.90-invoices-gallery-delete';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20201,7 +20198,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.09.28-v25.88-integrated-floor-overlay-fix';
+  const BUILD='2026.09.28-v25.90-invoices-gallery-delete';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22404,7 +22401,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.09.28-v25.88-integrated-floor-overlay-fix',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.09.28-v25.90-invoices-gallery-delete',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -22861,7 +22858,8 @@ html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item.cdq-nav-hom
   }
   window.cdqRapportsV2578={open:openRoot,create:createReport,models:MODELS};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
-})();</script></body>
+})();</script><script src="./invoice-ui-v2590.js"></script>
+</body>
 </html>
 
 <style id="pc16V2185HorizontalTitle">

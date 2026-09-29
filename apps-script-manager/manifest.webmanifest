@@ -1,0 +1,35 @@
+{
+  "id": "/Balance-CDQ-distribution/apps-script-manager/",
+  "name": "CDQ Script Manager",
+  "short_name": "CDQ Script",
+  "description": "Écrire, sauvegarder et déployer les applications Google Apps Script CDQ",
+  "start_url": "/Balance-CDQ-distribution/apps-script-manager/",
+  "scope": "/Balance-CDQ-distribution/apps-script-manager/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#050a12",
+  "theme_color": "#07111f",
+  "prefer_related_applications": false,
+  "categories": [
+    "productivity",
+    "utilities",
+    "developer"
+  ],
+  "icons": [
+    {
+      "src": "icon-industrial.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-industrial.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
+}
