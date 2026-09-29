@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "25.90",
-  "release": "a0e67a073d865318bc0101756b7a1ab6c462efc747934b372ff6fd91a4f7714b",
+  "version": "25.98",
+  "release": "ad101f9dcbb88a7e121ce773e37646bdf5e2e690efb139f2f2d80137563cf3e6",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.09.28-v25.90-invoices-gallery-delete",
-  "androidSelectorSha256": "0e16fc56390f4aec6f9e33573e6ed1b7b844823148c7c940863d1c325ae2acd4",
+  "androidSourceBuild": "2026.09.29-v25.98-users-menu-restore",
+  "androidSelectorSha256": "66a8d4635da522fd74c7d959fe498e2785e3f0bf14c927ece0db3284b257d860",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
-  "files": 288
+  "files": 290
 }

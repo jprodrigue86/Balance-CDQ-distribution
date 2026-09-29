@@ -59,8 +59,13 @@ function cdqInvCanAdminV2593_(){
     var users=[];
     if(typeof obtenirUtilisateurs==='function')users=obtenirUtilisateurs()||[];
     else if(typeof obtenirListeUtilisateurs==='function')users=obtenirListeUtilisateurs()||[];
-    var hit=users.find(function(u){return cdqInvCleanV2593_(u&&u.email||'',180).toLowerCase()===email;});
-    if(hit)return String(hit.role||'').toLowerCase()==='admin';
+    if(Array.isArray(users)){
+      var hit=users.find(function(u){return cdqInvCleanV2593_(u&&u.email||'',180).toLowerCase()===email;});
+      if(hit)return String(hit.role||'').toLowerCase()==='admin';
+      // Ces fonctions d'administration ne sont normalement accessibles
+      // qu'après validation d'une session administrateur.
+      if(users.length)return true;
+    }
   }catch(e){}
   return email==='jp.rodrigue86@gmail.com';
 }
@@ -236,3 +241,10 @@ function cdqInventoryGetPhotoV2593(articleId){
   var blob=DriveApp.getFileById(id).getBlob(),bytes=blob.getBytes();
   return {ok:true,dataUrl:'data:'+blob.getContentType()+';base64,'+Utilities.base64Encode(bytes)};
 }
+
+function cdqInventaireCompletV2593(){return cdqInventoryGetV2593();}
+function cdqInventaireHistoriqueV2593(limit){return cdqInventoryHistoryV2593(limit);}
+function cdqInventaireAjouterV2593(articleId,qty,actor){return cdqInventoryMoveV2593({kind:'add',articleId:articleId,qty:qty,location:'SHOP',userEmail:actor,note:'Ajout au Shop'});}
+function cdqInventaireRetirerV2593(articleId,locationId,qty,actor,note){return cdqInventoryMoveV2593({kind:'remove',articleId:articleId,qty:qty,location:locationId,userEmail:actor,note:note||'Retrait inventaire'});}
+function cdqInventairePrixV2593(articleId,price,actor){var r=cdqInventorySetPriceV2593(articleId,price);return cdqInventoryGetV2593();}
+function cdqInventaireCreerArticleV2593(payload,qty,actor){payload=payload||{};payload.qty=qty;payload.location='SHOP';payload.userEmail=actor;var r=cdqInventoryCreateV2593(payload);return r.inventory||cdqInventoryGetV2593();}

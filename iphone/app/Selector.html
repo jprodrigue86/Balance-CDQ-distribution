@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="25.90" data-cdq-iphone-release="a0e67a073d865318bc0101756b7a1ab6c462efc747934b372ff6fd91a4f7714b">
+<html data-cdq-iphone-version="25.98" data-cdq-iphone-release="ad101f9dcbb88a7e121ce773e37646bdf5e2e690efb139f2f2d80137563cf3e6">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -536,7 +536,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.09.28-v25.90-invoices-gallery-delete">
+<meta name="cdq-package-build" content="2026.09.29-v25.98-users-menu-restore">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -814,7 +814,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.09.28-v25.90-invoices-gallery-delete'
+    build:'2026.09.29-v25.98-users-menu-restore'
   });
 }
 
@@ -827,7 +827,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.09.28-v25.90-invoices-gallery-delete'
+        build:'2026.09.29-v25.98-users-menu-restore'
       });
     }
   } catch(e) {}
@@ -2759,7 +2759,7 @@ body{background:linear-gradient(180deg,#071421 0%,#081a28 100%);color:var(--pro-
 .cdq-header-logo{width:76px;height:76px;object-fit:contain;border-radius:12px;display:block;}
 .app-header-copy h1{margin:0;font-size:clamp(21px,4.8vw,30px);line-height:1.05;color:#fff;text-align:left;}.app-subtitle{font-size:13px;color:#a9bfd3;margin-top:5px;}
 .header-actions{display:flex;gap:7px;}.header-icon-button{width:42px;height:42px;border-radius:12px;border:1px solid #31536d;background:#10283d;color:#fff;font-size:18px;display:grid;place-items:center;}.admin-header-button{display:none;}
-#createFolderButton,#adminButton{display:none!important;}.theme-button{top:10px;right:10px;width:38px;height:38px;min-height:38px;opacity:.92;z-index:700;}
+#createFolderButton{display:none!important;}#adminButton{display:none;}body.cdq-role-admin #adminButton{display:flex!important;}.theme-button{top:10px;right:10px;width:38px;height:38px;min-height:38px;opacity:.92;z-index:700;}
 .top-bar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:stretch;margin-bottom:9px;}.company-wrapper{min-width:0;}.company-button{min-height:50px!important;border-radius:13px!important;background:#10273b!important;border-color:#31516a!important;font-size:16px!important;}.company-reset-button{width:48px!important;min-width:48px!important;min-height:50px!important;border-radius:13px!important;}
 .open-client-folder-button{min-height:50px;padding:0 14px;border:0;border-radius:13px;background:linear-gradient(180deg,var(--pro-blue),var(--pro-blue-2));color:white;font-weight:800;font-size:14px;white-space:nowrap;box-shadow:0 4px 12px rgba(0,107,230,.28);}.open-client-folder-button:disabled{opacity:.4;box-shadow:none;}
 .quick-buttons{display:grid!important;grid-template-columns:repeat(4,1fr)!important;gap:7px!important;margin:8px 0!important;}.quick-button{min-height:64px!important;padding:7px 4px!important;border-radius:12px!important;box-shadow:none!important;}.quick-icon{font-size:23px!important;height:26px!important;line-height:26px!important;}.quick-icon svg{width:26px!important;height:26px!important;}.quick-name{font-size:11.5px!important;line-height:1.12!important;font-weight:800!important;}
@@ -5710,6 +5710,7 @@ html.windows .header-metal-banner{
   <script src="https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/vendor/pdf-lib-1.17.1.min.js"></script>
 <style id="cdqDesktopBootV2517Css">html.windows.pc16-startup-lock,html.windows.pc16-startup-lock body,html.windows #accessOverlay{background:#080808 url("https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/assets/music-wall-pc-v2521.webp") center/cover no-repeat!important}</style>
 <link rel="stylesheet" href="./invoice-ui-v2590.css">
+<link rel="stylesheet" href="./inventory-modern-v2592.css">
 </head>
 
 
@@ -11158,7 +11159,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.09.28-v25.90-invoices-gallery-delete";
+  const CDQ_BUILD = "2026.09.29-v25.98-users-menu-restore";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13426,7 +13427,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.09.28-v25.90-invoices-gallery-delete";
+const CDQ_V19_BUILD = "2026.09.29-v25.98-users-menu-restore";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15145,7 +15146,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.09.28-v25.90-invoices-gallery-delete";
+const CDQ_V20_BUILD = "2026.09.29-v25.98-users-menu-restore";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -15993,7 +15994,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.09.28-v25.90-invoices-gallery-delete";
+const CDQ_V21_BUILD = "2026.09.29-v25.98-users-menu-restore";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16517,7 +16518,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.09.28-v25.90-invoices-gallery-delete';
+const BUILD='2026.09.29-v25.98-users-menu-restore';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20198,7 +20199,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.09.28-v25.90-invoices-gallery-delete';
+  const BUILD='2026.09.29-v25.98-users-menu-restore';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22401,7 +22402,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.09.28-v25.90-invoices-gallery-delete',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.09.29-v25.98-users-menu-restore',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -22859,6 +22860,7 @@ html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item.cdq-nav-hom
   window.cdqRapportsV2578={open:openRoot,create:createReport,models:MODELS};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();</script><script src="./invoice-ui-v2590.js"></script>
+<script src="./inventory-modern-v2592.js"></script>
 </body>
 </html>
 
