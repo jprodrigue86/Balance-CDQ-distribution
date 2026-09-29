@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.03" data-cdq-iphone-release="877b6cfcbd15e015d3c09357522a875d1dfdb9d20f10493c8a64716dcc49943b">
+<html data-cdq-iphone-version="26.04" data-cdq-iphone-release="1fef828a9796ce7ecca6d8696186d9a8209e7713c4eadd093ceacf51ea7c2186">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -536,7 +536,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.09.29-v26.03-sheet-return-live-refresh">
+<meta name="cdq-package-build" content="2026.09.29-v26.04-mobile-page-fit">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -814,7 +814,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.09.29-v26.03-sheet-return-live-refresh'
+    build:'2026.09.29-v26.04-mobile-page-fit'
   });
 }
 
@@ -827,7 +827,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.09.29-v26.03-sheet-return-live-refresh'
+        build:'2026.09.29-v26.04-mobile-page-fit'
       });
     }
   } catch(e) {}
@@ -11350,7 +11350,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.09.29-v26.03-sheet-return-live-refresh";
+  const CDQ_BUILD = "2026.09.29-v26.04-mobile-page-fit";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13636,7 +13636,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.09.29-v26.03-sheet-return-live-refresh";
+const CDQ_V19_BUILD = "2026.09.29-v26.04-mobile-page-fit";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15355,7 +15355,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.09.29-v26.03-sheet-return-live-refresh";
+const CDQ_V20_BUILD = "2026.09.29-v26.04-mobile-page-fit";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16203,7 +16203,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.09.29-v26.03-sheet-return-live-refresh";
+const CDQ_V21_BUILD = "2026.09.29-v26.04-mobile-page-fit";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16727,7 +16727,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.09.29-v26.03-sheet-return-live-refresh';
+const BUILD='2026.09.29-v26.04-mobile-page-fit';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20408,7 +20408,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.09.29-v26.03-sheet-return-live-refresh';
+  const BUILD='2026.09.29-v26.04-mobile-page-fit';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22611,7 +22611,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.09.29-v26.03-sheet-return-live-refresh',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.09.29-v26.04-mobile-page-fit',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23070,6 +23070,124 @@ html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item.cdq-nav-hom
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();</script><script src="./invoice-ui-v2590.js"></script>
 <script src="./inventory-modern-v2592.js"></script>
+
+<style id="cdq-mobile-page-fit-v2604">
+html:is(.android,.ios,.mobile-device){
+  min-height:100%!important;
+  height:auto!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  scroll-padding-bottom:calc(var(--cdq-nav-height,72px) + 28px)!important;
+}
+html:is(.android,.ios,.mobile-device) body{
+  min-height:var(--cdq-page-vh,100dvh)!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  -webkit-overflow-scrolling:touch!important;
+  overscroll-behavior-y:auto!important;
+  box-sizing:border-box!important;
+  scroll-padding-bottom:calc(var(--cdq-nav-height,72px) + 28px)!important;
+}
+html:is(.android,.ios,.mobile-device) .container{
+  min-height:var(--cdq-page-vh,100dvh)!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+  box-sizing:border-box!important;
+  padding-bottom:calc(var(--cdq-nav-height,72px) + 28px)!important;
+}
+html:is(.android,.ios,.mobile-device) #filesContainer{
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+}
+html:is(.android,.ios,.mobile-device) .folder-content{
+  height:auto!important;
+  max-height:none!important;
+}
+html:is(.android,.ios,.mobile-device) :is(.file-row,.folder,.folder-header,.message,.brand-footer){
+  scroll-margin-bottom:calc(var(--cdq-nav-height,72px) + 18px)!important;
+}
+html:is(.android,.ios,.mobile-device) .brand-footer{
+  margin-bottom:16px!important;
+}
+html:is(.android,.ios,.mobile-device) .bottom-nav{
+  max-width:100vw!important;
+}
+</style>
+<script id="cdq-mobile-page-fit-v2604">
+(function(){
+  'use strict';
+  if(!document.documentElement.matches('.android,.ios,.mobile-device'))return;
+  const root=document.documentElement;
+  let restoreTimer=0;
+
+  function measure(){
+    const vv=window.visualViewport;
+    const h=Math.max(320,Math.round((vv&&vv.height)||window.innerHeight||document.documentElement.clientHeight||0));
+    root.style.setProperty('--cdq-page-vh',h+'px');
+    const nav=document.querySelector('.bottom-nav');
+    if(nav){
+      const nh=Math.max(0,Math.round(nav.getBoundingClientRect().height));
+      if(nh)root.style.setProperty('--cdq-nav-height',nh+'px');
+    }
+  }
+
+  function clientKey(){
+    let id='';try{id=String(compagnieSelectionnee||'');}catch(_){}
+    let email='';try{email=String(utilisateurCourantEmail||'').trim().toLowerCase();}catch(_){}
+    return email+'|'+id;
+  }
+
+  function captureScroll(){
+    return {key:clientKey(),y:Math.max(0,window.scrollY||document.documentElement.scrollTop||0)};
+  }
+
+  function restoreScroll(state){
+    if(!state||state.key!==clientKey())return;
+    clearTimeout(restoreTimer);
+    restoreTimer=setTimeout(function(){
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          if(state.key!==clientKey())return;
+          const max=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
+          window.scrollTo({top:Math.min(state.y,max),left:0,behavior:'auto'});
+        });
+      });
+    },0);
+  }
+
+  const previous=window.afficherContenu;
+  if(typeof previous==='function'&&!previous.__cdqPageFitV2604){
+    const wrapped=function(){
+      const state=captureScroll();
+      const result=previous.apply(this,arguments);
+      measure();
+      restoreScroll(state);
+      return result;
+    };
+    wrapped.__cdqPageFitV2604=true;
+    window.afficherContenu=wrapped;
+    try{afficherContenu=wrapped;}catch(_){}
+  }
+
+  window.cdqMobilePageFitV2604={measure,captureScroll,restoreScroll};
+  window.addEventListener('resize',measure,{passive:true});
+  window.addEventListener('pageshow',measure,{passive:true});
+  window.addEventListener('focus',measure,{passive:true});
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize',measure,{passive:true});
+    window.visualViewport.addEventListener('scroll',measure,{passive:true});
+  }
+  if(window.ResizeObserver){
+    const nav=document.querySelector('.bottom-nav');
+    if(nav)new ResizeObserver(measure).observe(nav);
+  }
+  measure();
+})();
+</script>
 </body>
 </html>
 
