@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="26.11" data-cdq-iphone-release="9405b512b45effb10937e22967e75d16cda277004ec0dbcbdba2921fbb06ce51">
+<html lang="fr" data-cdq-iphone-version="26.12" data-cdq-iphone-release="dd9f7c4853a5a6b58498b724daafea21aafc8094e42e19d871b8b15dc0b8f628">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./iphone-update.js"></script>
@@ -474,7 +474,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 </div>
 
 <script>
-const CDQ_PWA_BUILD = '2026.09.29-v26.11-clean-admin-settings';
+const CDQ_PWA_BUILD = '2026.09.29-v26.12-auth-account-root-fix';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1403,6 +1403,13 @@ function cdqHandleDefaultGoogleAccountV2297(data,source){
     const email=String(data.email||'').trim().toLowerCase();
     const reset=!!data.reset;
     const value=cdqSaveDefaultGoogleAccountV2297(email,reset);
+    // Keep Android's native account store identical to the Settings value.
+    // Clearing the default must also clear any older native remembered account.
+    try{
+      if(window.BalanceCDQNative&&typeof BalanceCDQNative.setDefaultGoogleAccount==='function'){
+        BalanceCDQNative.setDefaultGoogleAccount(value.email,value.reset);
+      }
+    }catch(_){}
     replyToSelector(source,{
       type:'CDQ_DEFAULT_GOOGLE_ACCOUNT_VALUE',
       email:value.email,
