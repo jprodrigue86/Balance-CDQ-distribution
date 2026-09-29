@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.00" data-cdq-iphone-release="f74a900863243650961be26a33254164fa1c23c6d689c4142a719cf446d08ea2">
+<html data-cdq-iphone-version="26.02" data-cdq-iphone-release="5e89622b44a18074ebeb5c0c9c63f454f3f405036819c6dba772cb11236fe0b9">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -536,7 +536,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.09.29-v26.00-invoice-category-inventory-theme">
+<meta name="cdq-package-build" content="2026.09.29-v26.02-folder-state-android-back">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -814,7 +814,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.09.29-v26.00-invoice-category-inventory-theme'
+    build:'2026.09.29-v26.02-folder-state-android-back'
   });
 }
 
@@ -827,7 +827,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.09.29-v26.00-invoice-category-inventory-theme'
+        build:'2026.09.29-v26.02-folder-state-android-back'
       });
     }
   } catch(e) {}
@@ -8248,6 +8248,8 @@ function choisirCompagnie(
 
 function deselectionnerCompagnie(){
 
+  if(window.cdqFolderStateV2602)window.cdqFolderStateV2602.clear();
+
   compagnieSelectionnee = null;
   nomCompagnieSelectionnee = "";
 
@@ -8897,6 +8899,170 @@ function trierContenuRecursif(
 
 
 
+const CDQ_FOLDER_STATE_KEY_V2602="cdq_folder_state_v2602";
+function cdqFolderStateReadV2602(){
+  const client=String(typeof compagnieSelectionnee!=="undefined"&&compagnieSelectionnee||"");
+  const email=String(typeof utilisateurCourantEmail!=="undefined"&&utilisateurCourantEmail||"").trim().toLowerCase();
+  if(!client)return {clientId:"",email:email,open:[]};
+  let state=null;
+  try{state=JSON.parse(sessionStorage.getItem(CDQ_FOLDER_STATE_KEY_V2602)||"null");}catch(_){}
+  if(!state||String(state.clientId||"")!==client||String(state.email||"")!==email){
+    state={clientId:client,email:email,open:[]};
+    try{sessionStorage.setItem(CDQ_FOLDER_STATE_KEY_V2602,JSON.stringify(state));}catch(_){}
+  }
+  if(!Array.isArray(state.open))state.open=[];
+  return state;
+}
+function cdqFolderStateWriteV2602(state){
+  if(!state||!state.clientId)return;
+  state.open=Array.from(new Set((state.open||[]).map(String).filter(Boolean)));
+  try{sessionStorage.setItem(CDQ_FOLDER_STATE_KEY_V2602,JSON.stringify(state));}catch(_){}
+}
+function cdqFolderOpenIdsV2602(){
+  return new Set(cdqFolderStateReadV2602().open||[]);
+}
+function cdqRememberFolderV2602(id,open,folderEl){
+  id=String(id||"");if(!id)return;
+  const state=cdqFolderStateReadV2602();if(!state.clientId)return;
+  const set=new Set(state.open||[]);
+  if(open){
+    set.add(id);
+  }else{
+    set.delete(id);
+    if(folderEl){
+      folderEl.querySelectorAll(".folder.open[data-folder-id]").forEach(function(child){
+        set.delete(String(child.dataset.folderId||""));
+      });
+    }
+  }
+  state.open=Array.from(set);cdqFolderStateWriteV2602(state);
+}
+function cdqReplaceFolderStateV2602(ids){
+  const state=cdqFolderStateReadV2602();if(!state.clientId)return;
+  state.open=Array.from(ids||[]).map(String).filter(Boolean);
+  cdqFolderStateWriteV2602(state);
+}
+let cdqFolderRestoreTimerV2602=null;
+function cdqRestoreOpenFoldersV2602(){
+  clearTimeout(cdqFolderRestoreTimerV2602);
+  const wanted=cdqFolderOpenIdsV2602();
+  if(!wanted.size)return;
+  document.querySelectorAll(".folder[data-folder-id]").forEach(function(el){
+    const id=String(el.dataset.folderId||"");
+    if(!wanted.has(id)||el.classList.contains("open")||el.classList.contains("cdq-folder-loading"))return;
+    const content=el.querySelector(":scope > .folder-content");
+    let node=null;try{node=typeof cdqFindFolder==="function"?cdqFindFolder(id):null;}catch(_){}
+    if(document.documentElement.classList.contains("mobile-device")&&node&&content&&typeof window.cdqLazyOpenFolder==="function"){
+      window.cdqLazyOpenFolder(node,el,content);
+    }else{
+      el.classList.add("open");
+    }
+  });
+}
+function cdqRestoreOpenFoldersSoonV2602(){
+  clearTimeout(cdqFolderRestoreTimerV2602);
+  cdqFolderRestoreTimerV2602=setTimeout(cdqRestoreOpenFoldersV2602,0);
+}
+function cdqClearFolderStateV2602(){
+  try{sessionStorage.removeItem(CDQ_FOLDER_STATE_KEY_V2602);}catch(_){}
+}
+
+window.cdqFolderStateV2602={
+  current:cdqFolderOpenIdsV2602,
+  remember:cdqRememberFolderV2602,
+  replace:cdqReplaceFolderStateV2602,
+  restoreSoon:cdqRestoreOpenFoldersSoonV2602,
+  clear:cdqClearFolderStateV2602
+};
+
+function cdqVisibleV2602(el){
+  if(!el||el.hidden)return false;
+  const s=getComputedStyle(el);
+  return s.display!=="none"&&s.visibility!=="hidden";
+}
+
+function cdqCloseVisibleModalV2602(){
+  const overlays=Array.from(document.querySelectorAll(".modal-overlay")).filter(cdqVisibleV2602);
+  const modal=overlays.pop();
+  if(!modal)return false;
+  const close=modal.querySelector(".cancel-button,.copy-cancel,.delete-cancel,.rename-cancel,.cdq-v19-close,button.close");
+  if(close){close.click();return true;}
+  modal.style.display="none";
+  return true;
+}
+
+window.cdqHandleAndroidBackV2602=function(){
+  try{
+    const inventory=document.getElementById("cdqInventoryModernV2592");
+    if(cdqVisibleV2602(inventory)){
+      const back=document.getElementById("cdqImBack");
+      if(back){back.click();return true;}
+      window.cdqInventoryModernV2592?.close?.();
+      return true;
+    }
+
+    const invoice=document.getElementById("cdqInvoicePageV2590");
+    if(cdqVisibleV2602(invoice)){
+      const close=invoice.querySelector("[data-inv-close]");
+      if(close)close.click();else window.cdqFacturesV2590?.close?.();
+      return true;
+    }
+
+    const report=document.getElementById("cdqReportOverlayV2578");
+    if(cdqVisibleV2602(report)){
+      const back=report.querySelector("[data-report-back]:not([hidden])");
+      const close=report.querySelector("[data-report-close]");
+      if(back)back.click();else if(close)close.click();
+      return true;
+    }
+
+    const calibration=document.getElementById("cdqCalibrationDialogV2565");
+    if(calibration&&calibration.open){
+      const back=calibration.querySelector("[data-cal-back]");
+      const close=calibration.querySelector("[data-cal-close]");
+      if(back)back.click();else if(close)close.click();else calibration.close();
+      return true;
+    }
+
+    if(cdqCloseVisibleModalV2602())return true;
+
+    const companyMenu=document.getElementById("companyMenu");
+    if(cdqVisibleV2602(companyMenu)){
+      companyMenu.style.display="none";
+      return true;
+    }
+
+    if((typeof modeSelectionFichiers!=="undefined"&&modeSelectionFichiers)||
+       document.body.classList.contains("selection-active")){
+      if(typeof quitterModeSelection==="function")quitterModeSelection();
+      return true;
+    }
+
+    const openFolders=Array.from(document.querySelectorAll("#filesContainer .folder.open[data-folder-id]"));
+    if(openFolders.length){
+      const depth=function(el){
+        let n=0,p=el.parentElement;
+        while(p){if(p.classList&&p.classList.contains("folder"))n++;p=p.parentElement;}
+        return n;
+      };
+      openFolders.sort(function(a,b){return depth(a)-depth(b);});
+      const folder=openFolders[openFolders.length-1];
+      const header=folder.querySelector(":scope > .folder-header");
+      if(header){header.click();return true;}
+    }
+
+    if(typeof compagnieSelectionnee!=="undefined"&&compagnieSelectionnee){
+      cdqClearFolderStateV2602();
+      if(typeof deselectionnerCompagnie==="function"){
+        deselectionnerCompagnie();
+        try{window.scrollTo({top:0,behavior:"auto"});}catch(_){}
+        return true;
+      }
+    }
+  }catch(_){}
+  return false;
+};
+
 function afficherContenu(
   contenu
 ){
@@ -8910,10 +9076,14 @@ function afficherContenu(
     Array.from(document.querySelectorAll(".file-checkbox:checked"))
       .map(function(c){ return String(c.dataset.fileId || ""); })
   );
-  const dossiersOuvertsAvant = new Set(
-    Array.from(document.querySelectorAll(".folder.open"))
-      .map(function(f){ return String(f.dataset.folderId || ""); })
-  );
+  const dossiersOuvertsAvant = window.cdqFolderStateV2602
+    ? window.cdqFolderStateV2602.current()
+    : new Set();
+  Array.from(document.querySelectorAll(".folder.open")).forEach(function(f){
+    const id=String(f.dataset.folderId||"");
+    if(id)dossiersOuvertsAvant.add(id);
+  });
+  if(window.cdqFolderStateV2602)window.cdqFolderStateV2602.replace(dossiersOuvertsAvant);
 
   container.innerHTML =
     "";
@@ -8948,9 +9118,14 @@ function afficherContenu(
     }
   });
   modeSelectionFichiers = selectionsAvant.size > 0;
-  document.querySelectorAll(".folder").forEach(function(f){
-    if(dossiersOuvertsAvant.has(String(f.dataset.folderId || ""))) f.classList.add("open");
-  });
+  if(window.cdqFolderStateV2602){
+    window.cdqFolderStateV2602.replace(dossiersOuvertsAvant);
+    window.cdqFolderStateV2602.restoreSoon();
+  }else{
+    document.querySelectorAll(".folder").forEach(function(f){
+      if(dossiersOuvertsAvant.has(String(f.dataset.folderId || ""))) f.classList.add("open");
+    });
+  }
 
   mettreAJourInfosClient(contenu);
   appliquerFiltresFichiers();
@@ -9012,17 +9187,19 @@ function afficherDossierRecursif(dossier, parent){
 
       header.onclick = function(){
         const vaOuvrir = !folder.classList.contains("open");
+        const folderId=String(sousDossier.id||"");
+        if(window.cdqFolderStateV2602)window.cdqFolderStateV2602.remember(folderId,vaOuvrir,folder);
         if(vaOuvrir && sousDossier && typeof window.cdqLazyOpenFolder === "function"){
-          cdqDossierOuvertId = String(sousDossier.id || "");
+          cdqDossierOuvertId = folderId;
           cdqDossierOuvertNom = String(sousDossier.nom || "");
           window.cdqLazyOpenFolder(sousDossier,folder,contenu);
           return;
         }
         folder.classList.toggle("open");
         if(vaOuvrir){
-          cdqDossierOuvertId = String(sousDossier.id || "");
+          cdqDossierOuvertId = folderId;
           cdqDossierOuvertNom = String(sousDossier.nom || "");
-        }else if(String(cdqDossierOuvertId || "") === String(sousDossier.id || "")){
+        }else if(String(cdqDossierOuvertId || "") === folderId){
           cdqDossierOuvertId = null;
           cdqDossierOuvertNom = "";
         }
@@ -11159,7 +11336,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.09.29-v26.00-invoice-category-inventory-theme";
+  const CDQ_BUILD = "2026.09.29-v26.02-folder-state-android-back";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -11486,6 +11663,7 @@ function cdqCreateFolderLoaderV2527(options) {
       appliquerFiltresFichiers();
       mettreAJourInterface();
       cdqSchedulePhotoPresenceRefresh();
+      if(window.cdqFolderStateV2602)window.cdqFolderStateV2602.restoreSoon();
     },function(e){
       folderEl.classList.remove("cdq-folder-loading");
       afficherErreur(e);
@@ -13427,7 +13605,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.09.29-v26.00-invoice-category-inventory-theme";
+const CDQ_V19_BUILD = "2026.09.29-v26.02-folder-state-android-back";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15146,7 +15324,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.09.29-v26.00-invoice-category-inventory-theme";
+const CDQ_V20_BUILD = "2026.09.29-v26.02-folder-state-android-back";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -15994,7 +16172,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.09.29-v26.00-invoice-category-inventory-theme";
+const CDQ_V21_BUILD = "2026.09.29-v26.02-folder-state-android-back";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16518,7 +16696,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.09.29-v26.00-invoice-category-inventory-theme';
+const BUILD='2026.09.29-v26.02-folder-state-android-back';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20199,7 +20377,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.09.29-v26.00-invoice-category-inventory-theme';
+  const BUILD='2026.09.29-v26.02-folder-state-android-back';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22402,7 +22580,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.09.29-v26.00-invoice-category-inventory-theme',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.09.29-v26.02-folder-state-android-back',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
