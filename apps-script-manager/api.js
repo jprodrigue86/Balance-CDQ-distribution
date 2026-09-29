@@ -12,6 +12,9 @@ const CDQ = {
   grantedScopes: '',
 };
 
+const CDQ_GOOGLE_LOGIN_HINT_V45 = 'jprodrigue@groupecdq.com';
+const CDQ_GOOGLE_HD_V45 = 'groupecdq.com';
+
 const SCOPES = [
   'https://www.googleapis.com/auth/script.projects',
   'https://www.googleapis.com/auth/script.deployments',
@@ -78,6 +81,9 @@ async function prepareGoogleClient(clientId) {
     client_id: clientId,
     scope: SCOPES,
     include_granted_scopes: true,
+    login_hint: CDQ_GOOGLE_LOGIN_HINT_V45,
+    hd: CDQ_GOOGLE_HD_V45,
+    prompt: '',
     callback: () => {},
     error_callback: () => {},
   });
@@ -115,9 +121,9 @@ async function requestGoogleToken(clientId, mode = 'reuse') {
     client.error_callback = finishError;
     try {
       const override =
-        mode === 'manual' ? { prompt: 'select_account' } :
-        mode === 'silent' ? { prompt: 'none' } :
-        { prompt: '' };
+        mode === 'silent'
+          ? { prompt: 'none', login_hint: CDQ_GOOGLE_LOGIN_HINT_V45 }
+          : { prompt: '', login_hint: CDQ_GOOGLE_LOGIN_HINT_V45 };
       client.requestAccessToken(override);
     } catch (err) {
       finishError(err);
