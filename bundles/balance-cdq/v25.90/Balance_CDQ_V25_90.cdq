@@ -1,0 +1,47 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V25.90",
+  "build": "2026.09.28-v25.90-invoices-gallery-delete",
+  "title": "Balance CDQ V25.90 — Factures galerie et suppression",
+  "requiresBuild": [
+    "2026.09.27-v25.68-calibration-health",
+    "2026.09.28-v25.89-invoices"
+  ],
+  "patches": [
+    {
+      "file": "Code.gs",
+      "op": "replace_build_any",
+      "from": [
+        "2026.09.27-v25.68-calibration-health",
+        "2026.09.28-v25.89-invoices"
+      ],
+      "to": "2026.09.28-v25.90-invoices-gallery-delete"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_build_any",
+      "from": [
+        "2026.09.27-v25.68-calibration-health",
+        "2026.09.28-v25.89-invoices"
+      ],
+      "to": "2026.09.28-v25.90-invoices-gallery-delete"
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQInvoicesV2590.gs",
+      "sha256": "c50fb67e4b940dce025ca337cedc2ff25c665d03c21b8db23e2b2dc8b26fee73",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v25.90/files/CDQInvoicesV2590.gs"
+    }
+  ],
+  "removeFiles": [],
+  "audit": {
+    "scriptManagerRequired": "V43",
+    "androidAppRequired": "25.90",
+    "scope": "Ajoute l'import d'une image existante depuis la galerie, utilise le même OCR et permet aux techniciens et administrateurs de supprimer leurs factures enregistrées depuis l'application.",
+    "preservation": "Aucun dossier client ni modèle PDF n'est modifié. L'accès Drive est inchangé; les restrictions Workspace seront configurées séparément lors de la migration.",
+    "security": "La suppression côté serveur est limitée aux fichiers situés dans CDQ System / Facture / [technicien connecté] / [catégorie]. Un ID de fichier extérieur à ce dossier est refusé.",
+    "storage": "CDQ System / Facture / [Technicien] / [Catégorie], fichier nommé [montant] - [date].jpg"
+  }
+}
