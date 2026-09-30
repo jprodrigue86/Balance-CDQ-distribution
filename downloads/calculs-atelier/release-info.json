@@ -1,0 +1,25 @@
+{
+  "app": "Calculs d’atelier",
+  "version": "1.4.1",
+  "versionCode": 14001,
+  "minShellVersion": 11000,
+  "releasedAt": "2026-09-30T21:35:52.113785+00:00",
+  "channel": "latest.atelier-update.json",
+  "packageSha256": "08d64aa4f71e811f38706294295077fe7f248836b6c094b61e2d5857d962ec3c",
+  "htmlSha256": "5c9529e8a69cb2f3885a9ab0b22a386ca17d23e04ea235597b5b6865abbafab9",
+  "packageBytes": 1173673,
+  "htmlBytes": 659526,
+  "notes": [
+    "Historique Envoyé : Nouvelle matière passe en haut à droite.",
+    "CS ancien matériel passe en bas à gauche.",
+    "CS nouveau matériel passe en bas à droite.",
+    "Aucun calcul, donnée, thème ou autre comportement n’est modifié."
+  ],
+  "verification": {
+    "signature": "RSA-SHA256 validée avec la clé historique",
+    "sourceSyntaxAndCalculationTests": "réussis",
+    "historyTileOrder": "Caisses planifiées, Nouvelle matière, CS ancien matériel, CS nouveau matériel",
+    "physicalDeviceTest": false
+  },
+  "privacy": "Contenu applicatif compilé uniquement. Aucune saisie utilisateur, aucun historique local, aucune clé privée."
+}
