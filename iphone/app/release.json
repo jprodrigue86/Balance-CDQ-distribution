@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.12",
-  "release": "dd9f7c4853a5a6b58498b724daafea21aafc8094e42e19d871b8b15dc0b8f628",
+  "version": "26.13",
+  "release": "a088bb39f2b2bc7eb40c3a42a046a024845abcc994f3ed1e096243586cc11321",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.09.29-v26.12-auth-account-root-fix",
-  "androidSelectorSha256": "0e0a27b2372f54072c066b70c0131baf373539a22d1d0170dd2e2e806de242c1",
+  "androidSourceBuild": "2026.09.29-v26.13-admin-button-placement",
+  "androidSelectorSha256": "17db90f8b617ebcb28faa6ece5ef51493b8e6417101ab4791537bef9f80632a4",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
   "files": 290
 }
