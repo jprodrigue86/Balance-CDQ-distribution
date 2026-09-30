@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.19" data-cdq-iphone-release="a7a21927f439d9fb9a7076ce94d324e3dbcfd431a251126fead67541158cbf4e">
+<html data-cdq-iphone-version="26.20" data-cdq-iphone-release="c1cc1868765bd732d36d5486a630ec3156bbd6ee2c3e33dc41555e35ec731cfd">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -536,7 +536,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.09.30-v26.19-auth-drive-separation">
+<meta name="cdq-package-build" content="2026.09.30-v26.20-drive-account-gate">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -814,7 +814,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.09.30-v26.19-auth-drive-separation'
+    build:'2026.09.30-v26.20-drive-account-gate'
   });
 }
 
@@ -827,7 +827,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.09.30-v26.19-auth-drive-separation'
+        build:'2026.09.30-v26.20-drive-account-gate'
       });
     }
   } catch(e) {}
@@ -7313,7 +7313,8 @@ function appliquerAccesAutorise(etat){
   utilisateurCourantRole=String(etat.role||"technicien").trim().toLowerCase();
   appliquerDroitsRoleInterface();
   cdqSetAccessState("ready");
-  chargerClients(false,etat.compagniesInitiales);
+  if(window.cdqDriveAccessGateV2620)window.cdqDriveAccessGateV2620.afterLogin(etat.compagniesInitiales);
+  else chargerClients(false,etat.compagniesInitiales);
   setTimeout(function(){if(cdqAccessState==="ready")nettoyerAncienCache();},3000);
   window.dispatchEvent(new Event("cdq:access-ready"));
 }
@@ -7373,6 +7374,30 @@ function cdqDemanderConnexionGoogleV42(message){
 }
 function cdqTraiterCredentialGoogleV42(d){
   if(!d||!d.credential||!d.challengeId)return;
+  if(window.__cdqDriveGateGooglePendingV2620){
+    if(cdqGoogleAuthPendingV42)return;
+    cdqGoogleAuthPendingV42=true;
+    cdqApiRun()
+      .withSuccessHandler(function(resultat){
+        cdqGoogleAuthPendingV42=false;
+        window.__cdqDriveGateGooglePendingV2620=false;
+        cdqGooglePromptDelegatedV42=false;
+        cdqPostToPwa({type:"CDQ_GOOGLE_AUTH_HIDE",authProtocol:42});
+        cdqSetAccessState("ready");
+        if(window.cdqDriveAccessGateV2620)window.cdqDriveAccessGateV2620.googleResult(true,resultat&&resultat.email||"","");
+      })
+      .withFailureHandler(function(erreur){
+        cdqGoogleAuthPendingV42=false;
+        window.__cdqDriveGateGooglePendingV2620=false;
+        cdqGooglePromptDelegatedV42=false;
+        cdqPostToPwa({type:"CDQ_GOOGLE_AUTH_HIDE",authProtocol:42});
+        cdqSetAccessState("ready");
+        const msg=erreur&&erreur.message?erreur.message:String(erreur||"Compte Google Drive refusé.");
+        if(window.cdqDriveAccessGateV2620)window.cdqDriveAccessGateV2620.googleResult(false,"",msg);
+      })
+      .verifierJetonDriveGoogleCDQV2620(String(d.credential),String(d.challengeId));
+    return;
+  }
   if(cdqGoogleAuthPendingV42)return;
   cdqGoogleAuthPendingV42=true;
   cdqSetAccessState("pending");
@@ -11389,7 +11414,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.09.30-v26.19-auth-drive-separation";
+  const CDQ_BUILD = "2026.09.30-v26.20-drive-account-gate";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13675,7 +13700,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.09.30-v26.19-auth-drive-separation";
+const CDQ_V19_BUILD = "2026.09.30-v26.20-drive-account-gate";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15394,7 +15419,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.09.30-v26.19-auth-drive-separation";
+const CDQ_V20_BUILD = "2026.09.30-v26.20-drive-account-gate";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16242,7 +16267,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.09.30-v26.19-auth-drive-separation";
+const CDQ_V21_BUILD = "2026.09.30-v26.20-drive-account-gate";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16766,7 +16791,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.09.30-v26.19-auth-drive-separation';
+const BUILD='2026.09.30-v26.20-drive-account-gate';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20447,7 +20472,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.09.30-v26.19-auth-drive-separation';
+  const BUILD='2026.09.30-v26.20-drive-account-gate';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22673,7 +22698,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.09.30-v26.19-auth-drive-separation',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.09.30-v26.20-drive-account-gate',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23495,6 +23520,117 @@ window.cdqAuthDriveSeparationV2619=Object.freeze({
   driveAccount:"separate-google-selector",
   defaultDriveAccountPreserved:true
 });
+</script>
+
+
+<style id="cdq-drive-access-gate-v2620">
+#cdqDriveGateV2620{position:fixed;inset:0;z-index:49000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(3,8,13,.86);backdrop-filter:blur(6px)}
+#cdqDriveGateV2620.show{display:flex}
+#cdqDriveGateV2620 .card{width:min(520px,100%);padding:22px;border:1px solid #2b6a88;border-radius:18px;background:#081720;color:#effaff;box-shadow:0 20px 70px #0009;text-align:center}
+#cdqDriveGateV2620 h3{margin:0 0 8px;font-size:22px}
+#cdqDriveGateV2620 p{margin:7px 0;color:#b7ccd8;line-height:1.4}
+#cdqDriveGateV2620 .account{margin:12px 0;padding:10px;border:1px solid #28526a;border-radius:10px;background:#07121a;font-weight:850;overflow-wrap:anywhere}
+#cdqDriveGateV2620 .error{color:#ff8f98;font-weight:800}
+#cdqDriveGateV2620 .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+#cdqDriveGateV2620 button{min-height:48px;border:1px solid #39708d;border-radius:10px;background:#0d2a3a;color:#fff;font-weight:900}
+#cdqDriveGateV2620 button.primary{border-color:#168dbb;background:#07557a}
+@media(max-width:520px){#cdqDriveGateV2620 .actions{grid-template-columns:1fr}}
+</style>
+<script id="cdq-drive-access-gate-v2620">
+(function(){
+'use strict';
+let initialCompanies=null,busy=false,approvedEmail="",requestSeq=0,lastMessage="";
+window.__cdqDriveGateGooglePendingV2620=false;
+
+function nativeBridge(){
+  try{return window.BalanceCDQNative||(window.parent&&window.parent.BalanceCDQNative)||null;}catch(_){return window.BalanceCDQNative||null;}
+}
+function defaultEmail(){
+  try{return String(typeof cdqDefaultGoogleAccountV2299==="function"?cdqDefaultGoogleAccountV2299():"").trim().toLowerCase();}catch(_){return "";}
+}
+function overlay(){
+  let o=document.getElementById("cdqDriveGateV2620");
+  if(o)return o;
+  o=document.createElement("div");o.id="cdqDriveGateV2620";
+  o.innerHTML='<div class="card"><h3>Accès Google Drive</h3><p class="status">Vérification du compte Google…</p><div class="account" hidden></div><p class="error" hidden></p><div class="actions"><button type="button" data-drive-retry>Réessayer</button><button type="button" class="primary" data-drive-other>Choisir un autre compte</button></div></div>';
+  document.body.appendChild(o);
+  o.querySelector("[data-drive-retry]").onclick=function(){begin(false)};
+  o.querySelector("[data-drive-other]").onclick=function(){begin(true)};
+  return o;
+}
+function paint(status,email,error,show){
+  const o=overlay();o.classList.toggle("show",show!==false);
+  o.querySelector(".status").textContent=status||"Vérification du compte Google…";
+  const a=o.querySelector(".account");a.hidden=!email;a.textContent=email||"";
+  const e=o.querySelector(".error");e.hidden=!error;e.textContent=error||"";
+}
+function allow(email){
+  approvedEmail=String(email||"").trim().toLowerCase();
+  busy=false;lastMessage="";
+  paint("",approvedEmail,"",false);
+  try{sessionStorage.setItem("cdq_drive_gate_email_v2620",approvedEmail);}catch(_){}
+  if(typeof chargerClients==="function")chargerClients(false,initialCompanies);
+}
+function deny(email,message){
+  busy=false;lastMessage=String(message||"Ce compte Google n’est pas autorisé pour Drive.");
+  paint("Accès Drive non autorisé",email,lastMessage,true);
+}
+function nativeRequest(forceAsk){
+  const b=nativeBridge();
+  if(!b||typeof b.authorizeDriveBrowse!=="function")return false;
+  const email=forceAsk?"":defaultEmail();
+  const id="drive-"+Date.now()+"-"+(++requestSeq);
+  busy=true;
+  paint(forceAsk||!email?"Choisissez le compte Google autorisé pour Drive.":"Vérification du compte Drive par défaut…",email,"",true);
+  b.authorizeDriveBrowse(id,email,!!forceAsk||!email);
+  window.__cdqDriveGateNativeRequestV2620=id;
+  return true;
+}
+function webDefault(email){
+  busy=true;paint("Vérification du compte Drive par défaut…",email,"",true);
+  cdqApiRun()
+    .withSuccessHandler(function(r){if(r&&r.ok)allow(r.email||email);else deny(email,r&&r.message||"Compte Google Drive refusé.");})
+    .withFailureHandler(function(e){deny(email,e&&e.message?e.message:String(e));})
+    .verifierAccesDriveEmailCDQV2620(email);
+}
+function webPicker(){
+  busy=true;
+  window.__cdqDriveGateGooglePendingV2620=true;
+  paint("Choisissez le compte Google autorisé pour Drive.","","",true);
+  cdqDemanderConnexionGoogleV42("Choisissez le compte Google autorisé pour afficher les dossiers Drive.");
+}
+function begin(forceAsk){
+  if(busy)return;
+  if(nativeRequest(!!forceAsk))return;
+  const email=forceAsk?"":defaultEmail();
+  if(email)webDefault(email);else webPicker();
+}
+function afterLogin(companies){
+  initialCompanies=Array.isArray(companies)?companies:null;
+  if(approvedEmail){if(typeof chargerClients==="function")chargerClients(false,initialCompanies);return;}
+  begin(false);
+}
+function googleResult(ok,email,message){
+  if(ok)allow(email);else deny(email,message);
+}
+window.cdqNativeDriveGateV2620=function(id,ok,email,message){
+  if(String(id)!==String(window.__cdqDriveGateNativeRequestV2620||""))return;
+  window.__cdqDriveGateNativeRequestV2620="";
+  if(ok)allow(email);else deny(email,message);
+};
+window.cdqDriveAccessGateV2620=Object.freeze({
+  version:"26.20",
+  afterLogin:afterLogin,
+  googleResult:googleResult,
+  retry:function(){begin(false)},
+  chooseOther:function(){begin(true)},
+  approvedEmail:function(){return approvedEmail},
+  applicationLogin:"email-code-pin",
+  driveAccount:"verified-separately",
+  defaultDriveAccountPreserved:true,
+  ignoresAnyonePermission:true
+});
+})();
 </script>
 
 </body>
