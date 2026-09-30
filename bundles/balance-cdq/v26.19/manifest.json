@@ -1,0 +1,74 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V26.19",
+  "build": "2026.09.30-v26.19-auth-drive-separation",
+  "title": "Balance CDQ V26.19 — connexion CDQ séparée du compte Google Drive",
+  "requiresBuild": [
+    "2026.09.30-v26.16-inventory-label-photo-serial"
+  ],
+  "patches": [
+    {
+      "file": "Code.gs",
+      "op": "replace_build_any",
+      "from": [
+        "2026.09.30-v26.16-inventory-label-photo-serial"
+      ],
+      "to": "2026.09.30-v26.19-auth-drive-separation"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_build_any",
+      "from": [
+        "2026.09.30-v26.16-inventory-label-photo-serial"
+      ],
+      "to": "2026.09.30-v26.19-auth-drive-separation"
+    },
+    {
+      "id": "auth-identity-without-google",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "function verifierIdentiteActivationCDQ_(email, ticketGoogle, jetonAppareil) {\n  email = normaliserEmailCDQ_(email);\n  const identite = lireTicketGoogleCDQ_(ticketGoogle);\n  if (identite && identite.email === email) return {type:'google', identite:identite};\n\n  const appareil = lireUtilisateurDepuisJetonAppareilCDQ_(String(jetonAppareil || '').trim());\n  if (appareil && appareil.email === email) return {type:'appareil', identite:appareil};\n\n  throw new Error('Reconnectez-vous avec votre compte Google avant d’utiliser la clé d’activation.');\n}",
+      "replacement": "function verifierIdentiteActivationCDQ_(email, ticketGoogle, jetonAppareil) {\n  email = normaliserEmailCDQ_(email);\n  const utilisateur = trouverUtilisateurAutoriseParEmail_(email);\n  if (!utilisateur) {\n    throw new Error('Cette adresse courriel n’est pas autorisée à utiliser Balance CDQ.');\n  }\n\n  const appareil = lireUtilisateurDepuisJetonAppareilCDQ_(String(jetonAppareil || '').trim());\n  if (appareil && appareil.email === email) return {type:'appareil', identite:appareil};\n\n  // V26.19 : la Gestion des utilisateurs + le code d’activation sont la\n  // preuve d’accès à l’application. Google est réservé à Drive/Sheets/PDF.\n  return {type:'gestion-utilisateurs', identite:utilisateur};\n}",
+      "expected": 1,
+      "ignoreLineTrailingSpaces": true
+    },
+    {
+      "id": "auth-no-device-direct-cdq",
+      "file": "Code.gs",
+      "op": "insert_before_literal",
+      "before": "    // Aucun appareil connu : l'identité vient UNIQUEMENT de Google Identity\n    // Services. On ne dépend plus de Session.getActiveUser() ni de la page\n    // de connexion Apps Script.",
+      "text": "    // V26.19 : aucun appareil connu. On affiche directement le formulaire\n    // CDQ (courriel autorisé + code d’activation). Le compte Google sera choisi\n    // séparément seulement lorsqu’un fichier Drive/Sheets/PDF en aura besoin.\n    return {\n      versionBackend: CDQ_BACKEND_BUILD_,\n      autorise:false,\n      connexionRequise:true,\n      oublierJeton: !!jeton,\n      typeConnexion:'activation6',\n      emailSuggere:'',\n      message:'Entrez votre adresse courriel autorisée et votre code d’activation à 6 chiffres.'\n    };\n\n"
+    },
+    {
+      "id": "selector-no-google-login-jump",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "      if(etat&&etat.connexionGoogleRequise){\n        cdqSauverTicketGoogleV42(\"\");\n        cdqDemanderConnexionGoogleV42(etat.message||\"Connectez votre compte Google pour continuer.\");\n        return;\n      }",
+      "replacement": "      if(etat&&etat.connexionGoogleRequise){\n        cdqSauverTicketGoogleV42(\"\");\n        const emailLogin=document.getElementById(\"accessEmailInput\");\n        if(emailLogin)emailLogin.readOnly=false;\n        afficherConnexionCodePersonnel(\n          \"Entrez votre adresse courriel autorisée et votre code d’activation à 6 chiffres.\",\n          \"\"\n        );\n        if(status)status.textContent=\"Connexion Balance CDQ\";\n        if(error){\n          error.textContent=\"La connexion à l’application utilise votre compte CDQ, pas votre compte Google Drive.\";\n          error.style.display=\"block\";\n        }\n        return;\n      }",
+      "expected": 1,
+      "ignoreLineTrailingSpaces": true
+    },
+    {
+      "id": "selector-no-google-activation-fallback",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": "      if(/Reconnectez-vous avec votre compte Google/i.test(msg)){\n        \n        \n        \n        if(status)status.textContent=\"Confirmation du compte Google...\";\n        if(pinInput)pinInput.value=code;\n        cdqSauverTicketGoogleV42(\"\");\n        cdqGooglePromptDelegatedV42=true;\n        cdqDemanderConnexionGoogleV42(\"Confirmez votre compte Google pour terminer l’activation.\");\n        return;\n      }",
+      "replacement": "      if(/Reconnectez-vous avec votre compte Google/i.test(msg)){\n        if(status)status.textContent=\"Activation Balance CDQ\";\n        if(error){\n          error.textContent=\"Le service CDQ doit être mis à jour en V26.19. Aucun compte Google n’est requis pour activer l’application.\";\n          error.style.display=\"block\";\n        }\n        if(pinInput){pinInput.value=\"\";try{pinInput.focus();}catch(e){}}\n        return;\n      }",
+      "expected": 1,
+      "ignoreLineTrailingSpaces": true
+    }
+  ],
+  "extraFiles": [],
+  "removeFiles": [],
+  "audit": {
+    "scriptManagerRequired": "V48",
+    "androidAppRequired": "26.19",
+    "iphoneAppRequired": "26.19",
+    "applicationAuthentication": "Gestion des utilisateurs + courriel autorisé + code d’activation 6 chiffres; NIP/biométrie après activation.",
+    "googleDriveAuthentication": "Séparée de la connexion CDQ. Le sélecteur de compte Google et le compte Google par défaut restent inchangés pour Drive/Sheets/PDF.",
+    "newDevice": "Un appareil sans jeton CDQ affiche directement le formulaire courriel + code d’activation; aucun compte Google n’est requis pour activer l’application.",
+    "unauthorized": "Une adresse absente de Gestion des utilisateurs reçoit un refus CDQ clair et n’est pas envoyée vers Google.",
+    "preservation": "Rôles, codes existants, NIP, biométrie, jetons appareils, gestion des utilisateurs, Drive, sélecteur Google et compte Google par défaut sont conservés."
+  }
+}
