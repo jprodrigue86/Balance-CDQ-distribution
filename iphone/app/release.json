@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.15",
-  "release": "f7df5bab389f17c8c4cb228d3f59a8eccf30295f700224dd39ef38c5bf897721",
+  "version": "26.16",
+  "release": "169bda388d8e1c3d9ad917a8e6073743268b49c1d7b366715ffa340fdf648eba",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.09.30-v26.15-invoice-monthly-manual-category",
-  "androidSelectorSha256": "e594082d6f4c54afbfd26e8253e1f39559667d12ec760ea19bc7ea014818a76a",
+  "androidSourceBuild": "2026.09.30-v26.16-inventory-label-photo-serial",
+  "androidSelectorSha256": "098480e2294159a481e7e6677132ec983a1d9af7c8daf4a94d756878f3e8870b",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
   "files": 290
 }
