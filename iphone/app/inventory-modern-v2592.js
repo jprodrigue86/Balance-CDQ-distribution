@@ -2,7 +2,7 @@
 'use strict';
 if(window.cdqInventoryModernV2592)return;
 var page=null,body=null,titleEl=null,subEl=null,backBtn=null,statusEl=null,scheduled=false;
-var state={inv:null,view:'home',article:null,query:'',category:'Tous',locationFilter:'',lowOnly:false,pendingMoveKind:'',history:[],scanDataUrl:'',scanCode:'',scanArticle:null,scanUnit:null,scanBusy:false,moveKind:'',preferredLocation:'',labelDataUrl:'',labelText:'',labelBarcode:'',labelInfo:null,labelArticleId:'',labelPendingKind:'',labelRequest:'',labelBusy:false,preserveLabelScanner:false,serialServerReady:null};
+var state={inv:null,view:'home',article:null,query:'',category:'Tous',locationFilter:'',lowOnly:false,pendingMoveKind:'',history:[],scanDataUrl:'',scanCode:'',scanArticle:null,scanUnit:null,scanBusy:false,moveKind:'',preferredLocation:'',labelDataUrl:'',labelText:'',labelBarcode:'',labelInfo:null,labelArticleId:'',labelPendingKind:'',labelRequest:'',labelBusy:false,preserveLabelScanner:false,serialServerReady:null,scanConfirmed:false,labelQuality:null};
 var photoCache=new Map(),photoObserver=null;
 var $=(s,r)=>(r||document).querySelector(s), $$=(s,r)=>Array.from((r||document).querySelectorAll(s));
 function role(){try{return String(utilisateurCourantRole||'technicien').toLowerCase()}catch(_){return'technicien'}}
@@ -26,7 +26,8 @@ function unitActive(u){return normalize(u&&u.statut||'stock')!=='sortie'}
 function unitsFor(articleId,loc){return ((state.inv&&state.inv.unites)||[]).filter(function(u){return String(u.articleId)===String(articleId)&&unitActive(u)&&(!loc||String(u.emplacementId)===String(loc))})}
 function unitBySerial(articleId,serial){var key=serialKey(serial);if(!key)return null;return ((state.inv&&state.inv.unites)||[]).find(function(u){return String(u.articleId)===String(articleId)&&unitActive(u)&&serialKey(u.numeroSerie)===key})||null}
 function unitByBarcode(code){var c=clean(code).toLowerCase();if(!c)return null;return ((state.inv&&state.inv.unites)||[]).find(function(u){return unitActive(u)&&clean(u.codeBarres).toLowerCase()===c})||null}
-function clearInventoryLabelContext(){state.labelDataUrl='';state.labelText='';state.labelBarcode='';state.labelInfo=null;state.labelArticleId='';state.labelPendingKind='';state.labelRequest='';state.labelBusy=false;state.preserveLabelScanner=false}
+function unitByAnySerial(serial){var key=serialKey(serial);if(!key)return null;return ((state.inv&&state.inv.unites)||[]).find(function(u){return unitActive(u)&&serialKey(u.numeroSerie)===key})||null}
+function clearInventoryLabelContext(){state.labelDataUrl='';state.labelText='';state.labelBarcode='';state.labelInfo=null;state.labelArticleId='';state.labelPendingKind='';state.labelRequest='';state.labelBusy=false;state.labelQuality=null;state.preserveLabelScanner=false}
 function labelCaptureCard(kind,compact){var action=kind==='remove'?'retirer':kind==='add'?'ajouter':'identifier';return '<section class="cdq-im-label-card'+(compact?' compact':'')+'" data-label-card><div class="cdq-im-label-head"><span>▣</span><div><strong>Photo d’étiquette</strong><small>Photographiez l’étiquette pour '+action+' la bonne unité.</small></div></div><input type="file" accept="image/*" capture="environment" data-label-camera hidden><input type="file" accept="image/*" data-label-import hidden><div class="cdq-im-label-actions"><button type="button" data-label-take>📷 Prendre une photo</button><button type="button" data-label-import-btn>▧ Importer</button></div><div data-label-inline></div></section>'}
 function installLabelCapture(host,kind,compact){if(!host||host.querySelector('[data-label-card]'))return;var wrap=document.createElement('div');wrap.innerHTML=labelCaptureCard(kind,compact);var card=wrap.firstElementChild;host.insertBefore(card,host.firstChild);var camera=$('[data-label-camera]',card),gallery=$('[data-label-import]',card);$('[data-label-take]',card).onclick=function(){camera.click()};$('[data-label-import-btn]',card).onclick=function(){gallery.click()};camera.onchange=function(e){var file=e.target.files&&e.target.files[0];e.target.value='';if(file)analyzeInventoryLabelFile(file,kind)};gallery.onchange=function(e){var file=e.target.files&&e.target.files[0];e.target.value='';if(file)analyzeInventoryLabelFile(file,kind)};if(state.labelInfo){var hit=state.labelArticleId?findArticle(state.labelArticleId):null,inline=$('[data-label-inline]',card);if(inline)inline.innerHTML=labelSummaryHtml(state.labelInfo,hit)}}
 function firstLabelCapture(text,patterns){for(var i=0;i<patterns.length;i++){var m=String(text||'').match(patterns[i]);if(m&&m[1])return clean(m[1]).replace(/^[#:\- ]+|[;, ]+$/g,'')}return''}
@@ -36,8 +37,11 @@ function matchInventoryLabel(info){
   if(!info)return null;
   var serial=serialKey(info.serial);
   if(serial){
-    var unit=((state.inv&&state.inv.unites)||[]).find(function(x){return unitActive(x)&&serialKey(x.numeroSerie)===serial});
-    if(unit){var ua=findArticle(unit.articleId);if(ua)return{article:ua,score:300}}
+    var unit=unitByAnySerial(info.serial);
+    if(unit){
+      var ua=findArticle(unit.articleId),validation=ua?inventoryLabelValidation(info,ua,unit):null;
+      if(ua)return{article:ua,unit:unit,score:300,validation:validation};
+    }
   }
   var text=normalize(info.text),best=null,bestScore=0;
   ((state.inv&&state.inv.articles)||[]).forEach(function(a){
@@ -52,32 +56,98 @@ function matchInventoryLabel(info){
     score+=Math.min(20,hits*5);
     if(score>bestScore){bestScore=score;best=a}
   });
-  return bestScore>=50?{article:best,score:bestScore}:null;
+  return bestScore>=50?{article:best,unit:null,score:bestScore,validation:null}:null;
 }
 function labelSummaryHtml(info,a){if(!info)return'';var rows=[];if(info.model)rows.push('<span><b>Modèle</b>'+esc(info.model)+'</span>');if(info.serial)rows.push('<span><b>Série</b>'+esc(info.serial)+'</span>');if(info.barcode)rows.push('<span><b>Code</b>'+esc(info.barcode)+'</span>');if(info.fabricant)rows.push('<span><b>Fabricant</b>'+esc(info.fabricant)+'</span>');var match=a?'<div class="cdq-im-label-match"><strong>✓ '+esc(articleLabel(a))+'</strong><small>'+esc([cat(a),maker(a),a.modele].filter(Boolean).join(' • '))+' · Prix '+money(a.prixClient)+'</small></div>':'<div class="cdq-im-label-match warn"><strong>Article non reconnu automatiquement</strong><small>Vérifiez les informations avant de créer ou retirer du stock.</small></div>';return'<div class="cdq-im-label-result">'+rows.join('')+match+'</div>'}
 function nativeInventoryLabelBridge(){try{return window.BalanceCDQNative||(window.parent&&window.parent.BalanceCDQNative)||null}catch(_){return window.BalanceCDQNative||null}}
 async function requireSerialServer(){if(state.serialServerReady===true)return true;try{var c=await rpc('cdqInventoryCapabilitiesV2616',[]);state.serialServerReady=!!(c&&c.ok&&c.serialTracking)}catch(_){state.serialServerReady=false}if(!state.serialServerReady)setStatus('Le service Inventaire V26.16 doit être déployé avant d’enregistrer un numéro de série.','error');return state.serialServerReady}
-function applyInventoryLabelResult(text,barcode,kind){
-  state.labelText=String(text||'');
-  state.labelBarcode=clean(barcode);
-  state.labelInfo=parseInventoryLabel(state.labelText,state.labelBarcode);
-  state.labelPendingKind=kind||state.labelPendingKind||'detail';
-  var hit=matchInventoryLabel(state.labelInfo),article=hit&&hit.article;
-  state.labelArticleId=article?String(article.articleId):'';
-  if((state.labelPendingKind==='add'||state.labelPendingKind==='remove')&&article){
-    state.article=article;state.pendingMoveKind='';
-    setView('move',{kind:state.labelPendingKind,article:article});return;
+function inventoryLabelValidation(info,a,unit){
+  var good=[],bad=[],model=normalize(info&&info.model),part=normalize(info&&info.partNumber),makerInfo=normalize(info&&info.fabricant),barcode=clean(info&&info.barcode).toLowerCase();
+  var models=[normalize(a&&a.modele),normalize(a&&a.numero)].filter(Boolean),makerArticle=normalize(a&&a.fabricant);
+  function modelMatches(v){return !!v&&models.some(function(x){return x===v||x.includes(v)||v.includes(x)})}
+  if(model){if(modelMatches(model))good.push('modèle');else if(models.length)bad.push('modèle')}
+  if(part){if(modelMatches(part))good.push('référence');else if(models.length)bad.push('référence')}
+  if(makerInfo){if(makerArticle&&(makerArticle===makerInfo||makerArticle.includes(makerInfo)||makerInfo.includes(makerArticle)))good.push('fabricant');else if(makerArticle)bad.push('fabricant')}
+  if(barcode){
+    var codes=[clean(unit&&unit.codeBarres).toLowerCase(),clean(a&&a.codeBarres).toLowerCase()].filter(Boolean);
+    if(codes.includes(barcode))good.push('code-barres');else if(codes.length)bad.push('code-barres');
   }
-  if(state.labelPendingKind==='add'&&!article&&canWrite()){
-    state.scanCode='';state.preserveLabelScanner=true;setView('create');return;
-  }
-  if(state.labelPendingKind==='detail'&&article){
-    state.article=article;setView('detail',{article:article});return;
-  }
-  render();
-  setStatus(article?'Étiquette reconnue : '+articleLabel(article):'Étiquette lue. Vérifiez les informations.','ok');
+  var serialExact=!!(unit&&serialKey(unit.numeroSerie)===serialKey(info&&info.serial));
+  return {serialExact:serialExact,good:good,bad:bad,conflict:bad.length>0,strong:serialExact&&bad.length===0&&good.length>0,partial:serialExact&&bad.length===0&&good.length===0};
 }
-async function analyzeInventoryLabelFile(file,kind){if(!file||state.labelBusy)return;state.labelBusy=true;state.labelPendingKind=kind||'detail';setStatus('Analyse de l’étiquette…');try{state.labelDataUrl=await compressImage(file,2400,.94);var bridge=nativeInventoryLabelBridge();if(bridge&&typeof bridge.recognizeInventoryLabel==='function'){var id='invlabel-'+Date.now()+'-'+Math.random().toString(36).slice(2);state.labelRequest=id;window.__cdqInvLabelReqV2616=id;bridge.recognizeInventoryLabel(id,state.labelDataUrl);return}var ocr=await rpc('cdqLireFactureOcrV2599',[state.labelDataUrl]);var text=ocr&&ocr.text||'',barcode='';if(bridge&&typeof bridge.recognizeInventoryBarcode==='function'){var bid='invlabelbar-'+Date.now()+'-'+Math.random().toString(36).slice(2);window.__cdqInvLabelBarcodeReqV2616=bid;window.__cdqInvLabelBarcodeTextV2616=text;try{bridge.recognizeInventoryBarcode(bid,state.labelDataUrl);return}catch(_){}}applyInventoryLabelResult(text,barcode,kind)}catch(e){setStatus(e.message||String(e),'error')}finally{if(!state.labelRequest&&!window.__cdqInvLabelBarcodeReqV2616)state.labelBusy=false}}
+function closeInventoryLabelConfirm(clear){
+  var o=page&&page.querySelector('[data-label-confirm-overlay]');if(o)o.remove();
+  if(clear)clearInventoryLabelContext();
+}
+function showInventoryLabelConfirm(a,unit,info,requestedKind,validation){
+  if(!page||!a)return;
+  closeInventoryLabelConfirm(false);
+  var location=unit?(unit.emplacementNom||locName(unit.emplacementId)):'—',serial=clean(info&&info.serial)||clean(unit&&unit.numeroSerie),confidence=validation&&validation.strong?'Numéro de série + '+validation.good.join(' + '):'Numéro de série exact';
+  var overlay=document.createElement('div');overlay.className='cdq-im-label-confirm-overlay';overlay.dataset.labelConfirmOverlay='1';
+  overlay.innerHTML='<div class="cdq-im-label-confirm"><div class="cdq-im-label-confirm-icon">✓</div><h3>Cet objet existe déjà dans l’inventaire</h3><div class="cdq-im-label-confirm-product"><strong>'+esc(articleLabel(a))+'</strong><small>'+esc([maker(a),a.modele,a.categorie].filter(Boolean).join(' • '))+'</small></div><div class="cdq-im-label-confirm-grid"><span><b>Numéro de série</b>'+esc(serial||'—')+'</span><span><b>Emplacement</b>'+esc(location)+'</span><span><b>Prix</b>'+esc(money(a.prixClient))+'</span><span><b>Validation</b>'+esc(confidence)+'</span></div><p>La fiche a été retrouvée par le numéro de série et vérifiée avec les informations lisibles de l’étiquette.</p><div class="cdq-im-label-confirm-actions"><button type="button" data-label-cancel>Annuler</button><button type="button" data-label-view>Voir la fiche</button>'+(canWrite()?'<button type="button" class="danger" data-label-remove>Retirer cet objet</button>':'')+'</div></div>';
+  page.append(overlay);
+  $('[data-label-cancel]',overlay).onclick=function(){closeInventoryLabelConfirm(true);setStatus('Lecture annulée.','')};
+  $('[data-label-view]',overlay).onclick=function(){closeInventoryLabelConfirm(false);state.article=a;setView('detail',{article:a})};
+  var remove=$('[data-label-remove]',overlay);if(remove)remove.onclick=function(){closeInventoryLabelConfirm(false);state.labelPendingKind='remove';state.article=a;state.preferredLocation=unit&&unit.emplacementId||state.preferredLocation;setView('move',{kind:'remove',article:a,location:state.preferredLocation})};
+}
+function imageQualityFromFile(file){
+  return new Promise(function(resolve,reject){
+    var r=new FileReader();r.onerror=function(){reject(Error('Lecture de la photo impossible.'))};r.onload=function(){var im=new Image();im.onerror=function(){reject(Error('Photo invalide.'))};im.onload=function(){
+      var ow=im.naturalWidth||im.width,oh=im.naturalHeight||im.height,maxSide=Math.max(ow,oh),minSide=Math.min(ow,oh);
+      if(maxSide<900||minSide<350){resolve({ok:false,reason:'Photo trop petite. Rapprochez-vous et assurez-vous que toute l’étiquette reste dans l’image.',width:ow,height:oh});return}
+      var scale=Math.min(1,420/maxSide),w=Math.max(32,Math.round(ow*scale)),h=Math.max(32,Math.round(oh*scale)),c=document.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d',{alpha:false,willReadFrequently:true});x.drawImage(im,0,0,w,h);var d=x.getImageData(0,0,w,h).data,g=new Float32Array(w*h),sum=0,sum2=0,n=w*h;
+      for(var i=0,p=0;i<d.length;i+=4,p++){var y=.299*d[i]+.587*d[i+1]+.114*d[i+2];g[p]=y;sum+=y;sum2+=y*y}
+      var mean=sum/n,contrast=Math.sqrt(Math.max(0,sum2/n-mean*mean)),edge=0,count=0;
+      for(var yy=1;yy<h-1;yy+=2)for(var xx=1;xx<w-1;xx+=2){var p=yy*w+xx,gx=Math.abs(g[p+1]-g[p-1]),gy=Math.abs(g[p+w]-g[p-w]);edge+=gx+gy;count++}
+      var sharp=count?edge/count:0,reason='';
+      if(mean<32)reason='Photo trop sombre. Ajoutez de la lumière et reprenez la photo.';
+      else if(mean>242&&contrast<22)reason='Photo surexposée. Évitez le reflet et reprenez la photo.';
+      else if(contrast<15)reason='L’étiquette manque de contraste. Rapprochez-vous et évitez les reflets.';
+      else if(sharp<5.8)reason='Photo trop floue. Immobilisez le téléphone et attendez la mise au point avant de prendre la photo.';
+      resolve({ok:!reason,reason:reason,width:ow,height:oh,brightness:mean,contrast:contrast,sharpness:sharp});
+    };im.src=r.result};r.readAsDataURL(file)
+  });
+}
+function applyInventoryLabelResult(text,barcode,kind){
+  state.labelText=String(text||'');state.labelBarcode=clean(barcode);state.labelInfo=parseInventoryLabel(state.labelText,state.labelBarcode);state.labelPendingKind=kind||state.labelPendingKind||'detail';
+  var hit=matchInventoryLabel(state.labelInfo),article=hit&&hit.article,unit=hit&&hit.unit,validation=hit&&hit.validation;
+  state.labelArticleId=article?String(article.articleId):'';
+  if(unit&&article){
+    if(validation&&validation.conflict){
+      render();setStatus('Numéro de série trouvé, mais '+validation.bad.join(', ')+' ne correspond pas à la fiche. Reprenez une photo nette de toute l’étiquette.','error');return;
+    }
+    showInventoryLabelConfirm(article,unit,state.labelInfo,state.labelPendingKind,validation||{partial:true,good:[]});return;
+  }
+  if(article&&state.labelInfo.serial&&unitsFor(article.articleId).length){
+    render();setStatus('Article reconnu, mais le numéro de série ne correspond à aucune unité suivie. Reprenez la photo ou vérifiez le numéro.','error');return;
+  }
+  if((state.labelPendingKind==='add'||state.labelPendingKind==='remove')&&article){
+    state.article=article;state.pendingMoveKind='';setView('move',{kind:state.labelPendingKind,article:article});return;
+  }
+  if(state.labelPendingKind==='add'&&!article&&canWrite()){state.scanCode='';state.preserveLabelScanner=true;setView('create');return}
+  if(state.labelPendingKind==='detail'&&article){state.article=article;setView('detail',{article:article});return}
+  render();setStatus(article?'Étiquette reconnue : '+articleLabel(article):'Étiquette lue, mais aucun article fiable n’a été trouvé.','ok');
+}
+async function analyzeInventoryLabelFile(file,kind){
+  if(!file||state.labelBusy)return;
+  state.labelBusy=true;state.labelPendingKind=kind||'detail';setStatus('Vérification de la netteté…');
+  try{
+    var quality=await imageQualityFromFile(file);state.labelQuality=quality;
+    if(!quality.ok){state.labelBusy=false;setStatus(quality.reason,'error');return}
+    setStatus('Photo nette — lecture de l’étiquette…');
+    state.labelDataUrl=await compressImage(file,2400,.94);
+    var bridge=nativeInventoryLabelBridge();
+    if(bridge&&typeof bridge.recognizeInventoryLabel==='function'){
+      var id='invlabel-'+Date.now()+'-'+Math.random().toString(36).slice(2);state.labelRequest=id;window.__cdqInvLabelReqV2616=id;bridge.recognizeInventoryLabel(id,state.labelDataUrl);return;
+    }
+    var ocr=await rpc('cdqLireFactureOcrV2599',[state.labelDataUrl]),text=ocr&&ocr.text||'',barcode='';
+    if(bridge&&typeof bridge.recognizeInventoryBarcode==='function'){
+      var bid='invlabelbar-'+Date.now()+'-'+Math.random().toString(36).slice(2);window.__cdqInvLabelBarcodeReqV2616=bid;window.__cdqInvLabelBarcodeTextV2616=text;try{bridge.recognizeInventoryBarcode(bid,state.labelDataUrl);return}catch(_){}
+    }
+    applyInventoryLabelResult(text,barcode,kind);
+  }catch(e){setStatus(e.message||String(e),'error')}
+  finally{if(!state.labelRequest&&!window.__cdqInvLabelBarcodeReqV2616)state.labelBusy=false}
+}
 window.cdqNativeInventoryLabelV2616=function(id,ok,text,barcode,message){if(String(id)!==String(window.__cdqInvLabelReqV2616||''))return;window.__cdqInvLabelReqV2616='';state.labelRequest='';state.labelBusy=false;if(!ok)return setStatus(message||'Étiquette non lisible.','error');applyInventoryLabelResult(text,barcode,state.labelPendingKind)}
 
 function locations(){
@@ -229,7 +299,7 @@ function renderMove(){
   function sync(){a=findArticle(artSel.value)||a;state.article=a;var available=qty(a.articleId,origin());avail.textContent=(kind==='add'?'Stock actuel : ':'Disponible : ')+available;if(kind!=='add')q.max=available||1;syncSerial()}
   artSel.onchange=function(){state.labelArticleId='';serialEl.value='';sync()};if(fromEl)fromEl.onchange=sync;if(locEl)locEl.onchange=sync;serialEl.oninput=syncSerial;serialEl.onchange=function(){var u=unitBySerial(a.articleId,serialEl.value);if(u&&kind!=='add'){var target=kind==='transfer'?fromEl:locEl;if(target&&Array.from(target.options).some(function(o){return String(o.value)===String(u.emplacementId)}))target.value=u.emplacementId}sync()};
   minus.onclick=function(){q.value=Math.max(1,Number(q.value||1)-1)};plus.onclick=function(){q.value=Math.max(1,Number(q.value||1)+1)};sync();
-  $('#cdqImConfirm',body).onclick=async function(){var serial=clean(serialEl.value),n=serial?1:Math.max(1,Math.floor(Number(q.value)||1)),note=clean($('#cdqImNote',body).value),payload={kind:kind,articleId:a.articleId,qty:n,note:note,userEmail:email(),serial:serial,unitBarcode:(labelForArticle?clean(state.labelBarcode):'')};if(kind==='transfer'){payload.from=fromEl.value;payload.to=toEl.value;if(payload.from===payload.to)return setStatus('Choisissez deux emplacements différents.','error')}else payload.location=locEl.value;if(kind==='remove'){payload.reason=clean($('#cdqImReason',body).value);payload.destinationDetail=clean($('#cdqImDestination',body).value);var exact=serial?unitBySerial(a.articleId,serial):null;if(serial&&!exact){if(!confirm('Le numéro de série '+serial+' n’était pas encore suivi individuellement. Retirer cette unité de l’ancien stock et conserver ce numéro de série dans l’historique ?'))return;payload.allowLegacySerial=true}}if(serial&&!(await requireSerialServer()))return;if(kind!=='add'&&n>qty(a.articleId,kind==='transfer'?payload.from:payload.location))return setStatus('Quantité invalide ou stock insuffisant.','error');setStatus('Enregistrement du mouvement…');$('#cdqImConfirm',body).disabled=true;try{state.inv=await rpc('cdqInventoryMoveV2593',[payload]);setStatus('Inventaire mis à jour.','ok');var id=a.articleId;clearInventoryLabelContext();state.article=findArticle(id);setTimeout(function(){setView('detail',{article:state.article})},350)}catch(e){setStatus(e.message||String(e),'error');$('#cdqImConfirm',body).disabled=false}};
+  $('#cdqImConfirm',body).onclick=async function(){var serial=clean(serialEl.value),n=serial?1:Math.max(1,Math.floor(Number(q.value)||1)),note=clean($('#cdqImNote',body).value),payload={kind:kind,articleId:a.articleId,qty:n,note:note,userEmail:email(),serial:serial,unitBarcode:(labelForArticle?clean(state.labelBarcode):'')};if(kind==='transfer'){payload.from=fromEl.value;payload.to=toEl.value;if(payload.from===payload.to)return setStatus('Choisissez deux emplacements différents.','error')}else payload.location=locEl.value;if(kind==='remove'){payload.reason=clean($('#cdqImReason',body).value);payload.destinationDetail=clean($('#cdqImDestination',body).value);var exact=serial?unitBySerial(a.articleId,serial):null;if(serial&&!exact){if(!confirm('Le numéro de série '+serial+' n’était pas encore suivi individuellement. Retirer cette unité de l’ancien stock et conserver ce numéro de série dans l’historique ?'))return;payload.allowLegacySerial=true}if((payload.reason==='Installé chez client'||payload.reason==='Vendu')&&!payload.destinationDetail)return setStatus('Indiquez le client ou la destination avant de retirer cette unité.','error')}if(serial&&!(await requireSerialServer()))return;if(kind!=='add'&&n>qty(a.articleId,kind==='transfer'?payload.from:payload.location))return setStatus('Quantité invalide ou stock insuffisant.','error');setStatus('Enregistrement du mouvement…');$('#cdqImConfirm',body).disabled=true;try{state.inv=await rpc('cdqInventoryMoveV2593',[payload]);setStatus('Inventaire mis à jour.','ok');var id=a.articleId;clearInventoryLabelContext();state.article=findArticle(id);setTimeout(function(){setView('detail',{article:state.article})},350)}catch(e){setStatus(e.message||String(e),'error');$('#cdqImConfirm',body).disabled=false}};
 }
 async function loadHistory(force){
   if(state.history.length&&!force)return state.history;
@@ -250,30 +320,42 @@ async function renderHistory(){
 }
 function compressImage(file,max,quality){return new Promise((resolve,reject)=>{var r=new FileReader();r.onerror=()=>reject(Error('Lecture de l’image impossible.'));r.onload=()=>{var im=new Image();im.onerror=()=>reject(Error('Image invalide.'));im.onload=()=>{var w=im.naturalWidth||im.width,h=im.naturalHeight||im.height,k=Math.min(1,max/Math.max(w,h));w=Math.max(1,Math.round(w*k));h=Math.max(1,Math.round(h*k));var c=document.createElement('canvas');c.width=w;c.height=h;var x=c.getContext('2d',{alpha:false});x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(im,0,0,w,h);resolve(c.toDataURL('image/jpeg',quality||.9))};im.src=r.result};r.readAsDataURL(file)})}
 function renderScanner(){
-  header('Scanner','Code-barres et QR en direct',true);
-  state.scanArticle=null;state.scanUnit=null;state.scanCode='';state.scanDataUrl='';
-  body.innerHTML='<div class="cdq-im-scannerbox"><div class="cdq-im-scanpreview" id="cdqImScanPreview"><div class="cdq-im-scanplaceholder"><b>Scanner un code</b>Cadrez le code-barres ou le QR. La détection se fait automatiquement, sans prendre de photo.</div></div><input type="file" id="cdqImScanGallery" accept="image/*" hidden><div class="cdq-im-scanbuttons"><button id="cdqImScanTake">▥ Scanner maintenant</button><button id="cdqImScanGalleryBtn">▧ Lire une photo</button></div><div id="cdqImScanResult"></div></div>';
+  header('Scanner','Lecture sécurisée de l’inventaire',true);
+  state.scanArticle=null;state.scanUnit=null;state.scanCode='';state.scanDataUrl='';state.scanConfirmed=false;
+  body.innerHTML='<div class="cdq-im-scannerbox"><div class="cdq-im-scanpreview" id="cdqImScanPreview"><div class="cdq-im-scanplaceholder"><b>Scanner ou photographier</b>Le scanner rapide lit un code et vous le fait confirmer. Pour identifier une unité par numéro de série, utilisez la photo d’étiquette.</div></div><input type="file" id="cdqImScanGallery" accept="image/*" capture="environment" hidden><div class="cdq-im-scanbuttons"><button id="cdqImScanTake">▥ Scanner un code</button><button id="cdqImScanGalleryBtn">📷 Photo d’étiquette</button></div><div id="cdqImScanResult"></div></div>';
   $('#cdqImScanTake',body).onclick=startLiveBarcodeScanner;
-  $('#cdqImScanGalleryBtn',body).onclick=()=>$('#cdqImScanGallery',body).click();
-  $('#cdqImScanGallery',body).onchange=async e=>{
-    var f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;
-    try{
-      state.scanDataUrl=await compressImage(f,2200,.94);
-      var im=document.createElement('img');im.src=state.scanDataUrl;
-      $('#cdqImScanPreview',body).replaceChildren(im);
-      scanBarcodePhoto();
-    }catch(er){setStatus(er.message||String(er),'error')}
+  $('#cdqImScanGalleryBtn',body).onclick=function(){$('#cdqImScanGallery',body).click()};
+  $('#cdqImScanGallery',body).onchange=async function(e){
+    var file=e.target.files&&e.target.files[0];e.target.value='';if(!file)return;
+    try{state.scanDataUrl=await compressImage(file,2200,.94);var im=document.createElement('img');im.src=state.scanDataUrl;$('#cdqImScanPreview',body).replaceChildren(im);await analyzeInventoryLabelFile(file,'detail')}
+    catch(er){setStatus(er.message||String(er),'error')}
   };
-  var bridge=nativeBarcodeBridge();
-  if(bridge&&typeof bridge.scanInventoryBarcode==='function')setTimeout(startLiveBarcodeScanner,0);
 }
 function renderScanFound(){
   var box=$('#cdqImScanResult',body);if(!box)return;
-  var a=state.scanArticle;
-  if(!a){box.innerHTML='<div class="cdq-im-found"><strong>Code détecté : '+esc(state.scanCode)+'</strong><small>Aucun article associé à ce code.</small></div>'+(canWrite()?'<button class="cdq-im-primary" id="cdqImCreateFromScan">＋ Créer un nouvel article</button>':'');var c=$('#cdqImCreateFromScan',body);if(c)c.onclick=()=>setView('create');return}
-  var unit=state.scanUnit,unitText=unit&&unit.numeroSerie?(' · Série '+unit.numeroSerie):'';
+  var a=state.scanArticle,unit=state.scanUnit;
+  if(!state.scanConfirmed){
+    box.innerHTML='<div class="cdq-im-found review"><strong>Code détecté : '+esc(state.scanCode)+'</strong><small>'+esc(a?([articleLabel(a),maker(a),a.modele].filter(Boolean).join(' • ')):'Aucun article associé')+'</small></div><div class="cdq-im-scan-confirm"><button type="button" id="cdqImScanRetry">Reprendre</button><button type="button" id="cdqImScanConfirm">Confirmer ce code</button></div>';
+    $('#cdqImScanRetry',box).onclick=function(){state.scanConfirmed=false;state.scanCode='';state.scanArticle=null;state.scanUnit=null;$('#cdqImScanResult',body).innerHTML='';startLiveBarcodeScanner()};
+    $('#cdqImScanConfirm',box).onclick=function(){state.scanConfirmed=true;renderScanFound()};
+    return;
+  }
+  if(!a){
+    box.innerHTML='<div class="cdq-im-found"><strong>Code confirmé : '+esc(state.scanCode)+'</strong><small>Aucun article associé à ce code.</small></div>'+(canWrite()?'<button class="cdq-im-primary" id="cdqImCreateFromScan">＋ Créer un nouvel article</button>':'');
+    var c=$('#cdqImCreateFromScan',body);if(c)c.onclick=function(){setView('create')};return;
+  }
+  var unitText=unit&&unit.numeroSerie?(' · Série '+unit.numeroSerie):'';
   box.innerHTML='<div class="cdq-im-found"><strong>✓ '+esc(articleLabel(a))+'</strong><small>'+esc(maker(a))+' · # '+esc(a.numero||a.modele||'')+esc(unitText)+' · Stock total '+totalQty(a.articleId)+'</small></div>'+(canWrite()?'<div class="cdq-im-detailactions"><button class="cdq-im-action add" data-scanmove="add">＋ Ajouter</button><button class="cdq-im-action transfer" data-scanmove="transfer">⇄ Transférer</button><button class="cdq-im-action remove" data-scanmove="remove">− Retirer</button></div>':'');
-  $('[data-scanmove]',body).forEach(b=>b.onclick=()=>{state.article=a;if(unit){state.labelInfo={text:'',barcode:state.scanCode,serial:unit.numeroSerie||'',model:a.modele||'',partNumber:a.numero||'',title:a.description||'',fabricant:a.fabricant||'',categorie:a.categorie||''};state.labelBarcode=state.scanCode;state.labelArticleId=String(a.articleId);state.labelPendingKind=b.dataset.scanmove}else clearInventoryLabelContext();setView('move',{kind:b.dataset.scanmove,article:a})});
+  $('[data-scanmove]',body).forEach(function(b){b.onclick=function(){
+    state.article=a;
+    if(b.dataset.scanmove==='remove'&&unit){
+      clearInventoryLabelContext();state.labelPendingKind='remove';state.preferredLocation=unit.emplacementId||'';state.labelInfo={text:'',barcode:state.scanCode,serial:unit.numeroSerie||'',model:a.modele||'',partNumber:a.numero||'',title:a.description||'',fabricant:a.fabricant||'',categorie:a.categorie||''};state.labelBarcode=state.scanCode;state.labelArticleId=String(a.articleId);
+      setStatus('Pour sécuriser le retrait, prenez une photo nette de l’étiquette afin de confirmer la série et le modèle.','error');
+      installLabelCapture(body,'remove',true);setTimeout(function(){var take=$('[data-label-take]',body);if(take)take.click()},80);return;
+    }
+    if(unit){state.labelInfo={text:'',barcode:state.scanCode,serial:unit.numeroSerie||'',model:a.modele||'',partNumber:a.numero||'',title:a.description||'',fabricant:a.fabricant||'',categorie:a.categorie||''};state.labelBarcode=state.scanCode;state.labelArticleId=String(a.articleId);state.labelPendingKind=b.dataset.scanmove}else clearInventoryLabelContext();
+    setView('move',{kind:b.dataset.scanmove,article:a});
+  }});
 }
 function nativeBarcodeBridge(){
   try{return window.BalanceCDQNative||(window.parent&&window.parent.BalanceCDQNative)||null}catch(_){return window.BalanceCDQNative||null}
@@ -301,17 +383,18 @@ function scanBarcodePhoto(){
   try{bridge.recognizeInventoryBarcode(id,state.scanDataUrl)}catch(e){state.scanBusy=false;window.__cdqInvBarcodeReqV2592='';setStatus(e.message||String(e),'error')}
 }
 window.cdqNativeInventoryBarcodeV2592=function(id,ok,value,message){
+  if(String(id)===String(window.__cdqInvLabelBarcodeReqV2616||'')){
+    window.__cdqInvLabelBarcodeReqV2616='';var txt=String(window.__cdqInvLabelBarcodeTextV2616||'');window.__cdqInvLabelBarcodeTextV2616='';state.labelBusy=false;applyInventoryLabelResult(txt,ok&&value?value:'',state.labelPendingKind);return;
+  }
   if(String(id)!==String(window.__cdqInvBarcodeReqV2592||''))return;
   window.__cdqInvBarcodeReqV2592='';state.scanBusy=false;
-  if(String(id)===String(window.__cdqInvLabelBarcodeReqV2616||'')){window.__cdqInvLabelBarcodeReqV2616='';var txt=String(window.__cdqInvLabelBarcodeTextV2616||'');window.__cdqInvLabelBarcodeTextV2616='';state.labelBusy=false;applyInventoryLabelResult(txt,ok&&value?value:'',state.labelPendingKind);return}
   if(!ok||!value){
-    var detail=String(message||'');
-    if(/annul/i.test(detail)){setStatus('Scan annulé.','');return}
+    var detail=String(message||'');if(/annul/i.test(detail)){setStatus('Scan annulé.','');return}
     setStatus(detail||'Aucun code lisible détecté.','error');return;
   }
-  state.scanCode=clean(value);var code=state.scanCode.toLowerCase();
+  state.scanConfirmed=false;state.scanCode=clean(value);var code=state.scanCode.toLowerCase();
   state.scanUnit=unitByBarcode(state.scanCode);
-  state.scanArticle=state.scanUnit?findArticle(state.scanUnit.articleId):(((state.inv&&state.inv.articles)||[]).find(a=>[a.codeBarres,a.numero,a.modele].some(v=>clean(v).toLowerCase()===code))||null);
+  state.scanArticle=state.scanUnit?findArticle(state.scanUnit.articleId):(((state.inv&&state.inv.articles)||[]).find(function(a){return[a.codeBarres,a.numero,a.modele].some(function(v){return clean(v).toLowerCase()===code})})||null);
   setStatus('Code détecté : '+state.scanCode+(state.scanUnit&&state.scanUnit.numeroSerie?' · série '+state.scanUnit.numeroSerie:''),'ok');renderScanFound();
 };
 function renderCreate(){
