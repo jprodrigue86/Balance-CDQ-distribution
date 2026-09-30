@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="26.18" data-cdq-iphone-release="c0877850bd6faaeef2ea01af005792bfcd9a1f3439731e73ec52fb18479a5f83">
+<html lang="fr" data-cdq-iphone-version="26.19" data-cdq-iphone-release="a7a21927f439d9fb9a7076ce94d324e3dbcfd431a251126fead67541158cbf4e">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./iphone-update.js"></script>
@@ -443,7 +443,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 <div id="load-help" aria-live="polite">
 <div class="load-card">
 <h2 id="load-title">Connexion à Balance CDQ</h2>
-<p id="load-message">Connectez votre compte Google pour continuer.</p>
+<p id="load-message">Vérification de votre accès Balance CDQ…</p>
 <div id="google-button-container" style="display:flex;justify-content:center;min-height:56px"></div>
 <button id="google-touch-fallback" type="button" hidden>Continuer avec Google</button>
 <div id="google-touch-help" hidden>Si le bouton Google blanc ne répond pas sur ce téléphone, utilisez « Continuer avec Google ».</div>
@@ -474,7 +474,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 </div>
 
 <script>
-const CDQ_PWA_BUILD = '2026.09.30-v26.18-document-return-stability';
+const CDQ_PWA_BUILD = '2026.09.30-v26.19-auth-drive-separation';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -939,7 +939,16 @@ function armLoadingTimeout() {
   },15000);
   loadingTimer=setTimeout(()=>{
     if(selectorReady||iframeLoaded||generation!==loadGeneration)return;
-    afficherConnexionGoogle(false,'chargement');
+    loading.style.display='none';
+    loadHelp.style.display='flex';
+    document.getElementById('load-title').textContent='Connexion Balance CDQ';
+    document.getElementById('load-message').textContent='Le service CDQ ne répond pas. Réessayez la connexion à l’application.';
+    document.getElementById('google-button-container').innerHTML='';
+    document.getElementById('google-connect').hidden=true;
+    const touch=document.getElementById('google-touch-fallback');if(touch)touch.hidden=true;
+    const help=document.getElementById('google-touch-help');if(help)help.hidden=true;
+    document.getElementById('load-retry').hidden=false;
+    document.getElementById('open-direct').hidden=true;
   },45000);
 }
 
@@ -963,8 +972,16 @@ if(pcOneWall){app.style.visibility='visible';loading.classList.add('pc-frame-rea
 if (!wasPending) accessWaitTimer = setTimeout(() => {
 if (!selectorAwaitingAccess) return;
 annulerPontBiometrique();
-loading.style.display = 'none';
-afficherConnexionGoogle();
+loading.style.display='none';
+loadHelp.style.display='flex';
+document.getElementById('load-title').textContent='Connexion Balance CDQ';
+document.getElementById('load-message').textContent='La vérification de votre accès CDQ prend trop de temps. Réessayez.';
+document.getElementById('google-button-container').innerHTML='';
+document.getElementById('google-connect').hidden=true;
+const touch=document.getElementById('google-touch-fallback');if(touch)touch.hidden=true;
+const help=document.getElementById('google-touch-help');if(help)help.hidden=true;
+document.getElementById('load-retry').hidden=false;
+document.getElementById('open-direct').hidden=true;
 }, 90000);
 } else {
 clearTimeout(accessWaitTimer);

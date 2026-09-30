@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.18" data-cdq-iphone-release="c0877850bd6faaeef2ea01af005792bfcd9a1f3439731e73ec52fb18479a5f83">
+<html data-cdq-iphone-version="26.19" data-cdq-iphone-release="a7a21927f439d9fb9a7076ce94d324e3dbcfd431a251126fead67541158cbf4e">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -536,7 +536,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.09.30-v26.18-document-return-stability">
+<meta name="cdq-package-build" content="2026.09.30-v26.19-auth-drive-separation">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -814,7 +814,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.09.30-v26.18-document-return-stability'
+    build:'2026.09.30-v26.19-auth-drive-separation'
   });
 }
 
@@ -827,7 +827,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.09.30-v26.18-document-return-stability'
+        build:'2026.09.30-v26.19-auth-drive-separation'
       });
     }
   } catch(e) {}
@@ -7470,7 +7470,17 @@ function verifierAccesApplication(skipFastBiometric){
 
       if(etat&&etat.connexionGoogleRequise){
         cdqSauverTicketGoogleV42("");
-        cdqDemanderConnexionGoogleV42(etat.message||"Connectez votre compte Google pour continuer.");
+        const emailLogin=document.getElementById("accessEmailInput");
+        if(emailLogin)emailLogin.readOnly=false;
+        afficherConnexionCodePersonnel(
+          "Entrez votre adresse courriel autorisée et votre code d’activation à 6 chiffres.",
+          ""
+        );
+        if(status)status.textContent="Connexion Balance CDQ";
+        if(error){
+          error.textContent="La connexion à l’application utilise votre compte CDQ, pas votre compte Google Drive.";
+          error.style.display="block";
+        }
         return;
       }
 
@@ -7559,14 +7569,12 @@ function connecterAvecCodeDepuisInterface(){
       if(btn){btn.disabled=false;btn.textContent="Continuer";}
       const msg=erreur&&erreur.message?erreur.message:String(erreur);
       if(/Reconnectez-vous avec votre compte Google/i.test(msg)){
-        
-        
-        
-        if(status)status.textContent="Confirmation du compte Google...";
-        if(pinInput)pinInput.value=code;
-        cdqSauverTicketGoogleV42("");
-        cdqGooglePromptDelegatedV42=true;
-        cdqDemanderConnexionGoogleV42("Confirmez votre compte Google pour terminer l’activation.");
+        if(status)status.textContent="Activation Balance CDQ";
+        if(error){
+          error.textContent="Le service CDQ doit être mis à jour en V26.19. Aucun compte Google n’est requis pour activer l’application.";
+          error.style.display="block";
+        }
+        if(pinInput){pinInput.value="";try{pinInput.focus();}catch(e){}}
         return;
       }
       if(status)status.textContent="Activation requise";
@@ -11381,7 +11389,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.09.30-v26.18-document-return-stability";
+  const CDQ_BUILD = "2026.09.30-v26.19-auth-drive-separation";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13667,7 +13675,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.09.30-v26.18-document-return-stability";
+const CDQ_V19_BUILD = "2026.09.30-v26.19-auth-drive-separation";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15386,7 +15394,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.09.30-v26.18-document-return-stability";
+const CDQ_V20_BUILD = "2026.09.30-v26.19-auth-drive-separation";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16234,7 +16242,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.09.30-v26.18-document-return-stability";
+const CDQ_V21_BUILD = "2026.09.30-v26.19-auth-drive-separation";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16758,7 +16766,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.09.30-v26.18-document-return-stability';
+const BUILD='2026.09.30-v26.19-auth-drive-separation';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20439,7 +20447,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.09.30-v26.18-document-return-stability';
+  const BUILD='2026.09.30-v26.19-auth-drive-separation';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22665,7 +22673,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.09.30-v26.18-document-return-stability',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.09.30-v26.19-auth-drive-separation',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23479,6 +23487,16 @@ html:is(.android,.ios,.mobile-device) :is(.selection-toolbar,.selection-actions,
   box-sizing:border-box!important;
 }
 </style>
+
+<script id="cdq-auth-drive-separation-v2619">
+window.cdqAuthDriveSeparationV2619=Object.freeze({
+  version:"26.19",
+  applicationLogin:"email-code-pin",
+  driveAccount:"separate-google-selector",
+  defaultDriveAccountPreserved:true
+});
+</script>
+
 </body>
 </html>
 
