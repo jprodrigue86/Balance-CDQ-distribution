@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.25",
-  "release": "cc87aec1bbb2cc8a09de33c38a0dce29dac4aeb70ff7521ea3aa7c9059654e13",
+  "version": "26.26",
+  "release": "030a807f24a78eb3e8cba4e81133e47b5a9d6e0c03306d8f0eb281c065a34cbb",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.01-v26.25-inventory-buttons",
-  "androidSelectorSha256": "3743e485493e63d515fde5dfdad0a98c7b339ee70214868c2c6547a2c75ab7c5",
+  "androidSourceBuild": "2026.10.01-v26.26-default-drive-admin",
+  "androidSelectorSha256": "c568a74aeca0e667bab47b15ada5f9283f28a7e2a8dd8d7fa97830f4147713ac",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
   "files": 291
 }

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.25" data-cdq-iphone-release="cc87aec1bbb2cc8a09de33c38a0dce29dac4aeb70ff7521ea3aa7c9059654e13">
+<html data-cdq-iphone-version="26.26" data-cdq-iphone-release="030a807f24a78eb3e8cba4e81133e47b5a9d6e0c03306d8f0eb281c065a34cbb">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -536,7 +536,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.01-v26.25-inventory-buttons">
+<meta name="cdq-package-build" content="2026.10.01-v26.26-default-drive-admin">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -814,7 +814,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.01-v26.25-inventory-buttons'
+    build:'2026.10.01-v26.26-default-drive-admin'
   });
 }
 
@@ -827,7 +827,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.01-v26.25-inventory-buttons'
+        build:'2026.10.01-v26.26-default-drive-admin'
       });
     }
   } catch(e) {}
@@ -11414,7 +11414,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.01-v26.25-inventory-buttons";
+  const CDQ_BUILD = "2026.10.01-v26.26-default-drive-admin";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13700,7 +13700,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.01-v26.25-inventory-buttons";
+const CDQ_V19_BUILD = "2026.10.01-v26.26-default-drive-admin";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15419,7 +15419,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.01-v26.25-inventory-buttons";
+const CDQ_V20_BUILD = "2026.10.01-v26.26-default-drive-admin";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16267,7 +16267,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.01-v26.25-inventory-buttons";
+const CDQ_V21_BUILD = "2026.10.01-v26.26-default-drive-admin";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16791,7 +16791,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.01-v26.25-inventory-buttons';
+const BUILD='2026.10.01-v26.26-default-drive-admin';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20472,7 +20472,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.01-v26.25-inventory-buttons';
+  const BUILD='2026.10.01-v26.26-default-drive-admin';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22698,7 +22698,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.01-v26.25-inventory-buttons',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.01-v26.26-default-drive-admin',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23546,7 +23546,14 @@ function nativeBridge(){
   try{return window.BalanceCDQNative||(window.parent&&window.parent.BalanceCDQNative)||null;}catch(_){return window.BalanceCDQNative||null;}
 }
 function defaultEmail(){
-  try{return String(typeof cdqDefaultGoogleAccountV2299==="function"?cdqDefaultGoogleAccountV2299():"").trim().toLowerCase();}catch(_){return "";}
+  // V26.26: use the exported Files setting, not a private function in another IIFE.
+  // PDF and Sheets read this same key. Blank/reset must remain an explicit choice.
+  try{
+    const value=typeof window.cdqGoogleDefaultAccountV2294==="function"
+      ? window.cdqGoogleDefaultAccountV2294()
+      : localStorage.getItem("cdqDefaultGoogleAccountV2294");
+    return String(value||"").trim().toLowerCase();
+  }catch(_){return "";}
 }
 function overlay(){
   let o=document.getElementById("cdqDriveGateV2620");
@@ -23581,13 +23588,16 @@ function nativeRequest(forceAsk){
   const email=forceAsk?"":defaultEmail();
   const id="drive-"+Date.now()+"-"+(++requestSeq);
   busy=true;
-  paint(forceAsk||!email?"Choisissez le compte Google autorisé pour Drive.":"Vérification du compte Drive par défaut…",email,"",true);
-  b.authorizeDriveBrowse(id,email,!!forceAsk||!email);
+  // A native chooser or required Google consent owns the screen. No second CDQ dialog.
+  // With a default account, keep the normal CDQ screen while Drive is verified.
+  paint("Vérification du compte Drive…",email,"",false);
   window.__cdqDriveGateNativeRequestV2620=id;
+  try{b.authorizeDriveBrowse(id,email,!!forceAsk||!email);}
+  catch(e){window.__cdqDriveGateNativeRequestV2620="";deny(email,e&&e.message||"Connexion Google indisponible.");}
   return true;
 }
 function webDefault(email){
-  busy=true;paint("Vérification du compte Drive par défaut…",email,"",true);
+  busy=true;paint("Vérification du compte Drive par défaut…",email,"",false);
   cdqApiRun()
     .withSuccessHandler(function(r){if(r&&r.ok)allow(r.email||email);else deny(email,r&&r.message||"Compte Google Drive refusé.");})
     .withFailureHandler(function(e){deny(email,e&&e.message?e.message:String(e));})
@@ -23596,7 +23606,7 @@ function webDefault(email){
 function webPicker(){
   busy=true;
   window.__cdqDriveGateGooglePendingV2620=true;
-  paint("Choisissez le compte Google autorisé pour Drive.","","",true);
+  paint("Choisissez le compte Google autorisé pour Drive.","","",false);
   cdqDemanderConnexionGoogleV42("Choisissez le compte Google autorisé pour afficher les dossiers Drive.");
 }
 function begin(forceAsk){
@@ -23613,9 +23623,16 @@ function afterLogin(companies){
 function googleResult(ok,email,message){
   if(ok)allow(email);else deny(email,message);
 }
-window.cdqNativeDriveGateV2620=function(id,ok,email,message){
+window.cdqNativeDriveGateV2620=function(id,ok,email,message,rememberDefault){
   if(String(id)!==String(window.__cdqDriveGateNativeRequestV2620||""))return;
   window.__cdqDriveGateNativeRequestV2620="";
+  // Remember only an explicitly requested choice AFTER Google and Drive validation.
+  if(ok&&rememberDefault===true){
+    try{
+      if(typeof window.cdqSetGoogleDefaultAccountV2294==="function")window.cdqSetGoogleDefaultAccountV2294(email);
+      else localStorage.setItem("cdqDefaultGoogleAccountV2294",String(email||"").trim().toLowerCase());
+    }catch(_){}
+  }
   if(ok)allow(email);else deny(email,message);
 };
 window.cdqDriveAccessGateV2620=Object.freeze({
