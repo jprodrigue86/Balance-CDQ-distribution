@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.28" data-cdq-iphone-release="19853906807778039816ac5fe99a583d717ecb09c6b23354e18f846cc098e58e">
+<html data-cdq-iphone-version="26.29" data-cdq-iphone-release="bbb99192fbe905a089db854aad9bd511514846e3807128af27bcc9ba9c313291">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -536,7 +536,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.01-v26.28-owner-recovery">
+<meta name="cdq-package-build" content="2026.10.01-v26.29-account-home-ui">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -814,7 +814,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.01-v26.28-owner-recovery'
+    build:'2026.10.01-v26.29-account-home-ui'
   });
 }
 
@@ -827,7 +827,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.01-v26.28-owner-recovery'
+        build:'2026.10.01-v26.29-account-home-ui'
       });
     }
   } catch(e) {}
@@ -11592,7 +11592,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.01-v26.28-owner-recovery";
+  const CDQ_BUILD = "2026.10.01-v26.29-account-home-ui";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13888,7 +13888,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.01-v26.28-owner-recovery";
+const CDQ_V19_BUILD = "2026.10.01-v26.29-account-home-ui";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15607,7 +15607,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.01-v26.28-owner-recovery";
+const CDQ_V20_BUILD = "2026.10.01-v26.29-account-home-ui";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16395,15 +16395,14 @@ function v20Beep(){
 }
 
 function v20ShowAlertBadge(count){
-  let b=document.getElementById("cdqV20AlertBadge");
-  if(!b){
-    b=document.createElement("button");b.id="cdqV20AlertBadge";b.type="button";b.className="cdq-v20-alert-badge";b.onclick=function(){cdqV20Tab="alerts";ouvrirInventaireV20();};document.body.appendChild(b);
-  }
-  b.textContent="🔔 "+Number(count||0);
-  b.classList.toggle("show",Number(count||0)>0);
+  // V26.29: no floating notification badge on the main page.
+  const badge=document.getElementById("cdqV20AlertBadge");
+  if(badge)badge.remove();
 }
 
 async function v20RefreshAlerts(){
+  // The Inventory alert screen remains available; no unsolicited home alert UI.
+  if(!document.body.classList.contains("cdq-inventory-open"))return;
   if(!navigator.onLine)return;
   try{
     const r=await v20Gs("obtenirAlertesInventaireUtilisateur",[]);
@@ -16455,7 +16454,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.01-v26.28-owner-recovery";
+const CDQ_V21_BUILD = "2026.10.01-v26.29-account-home-ui";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16979,7 +16978,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.01-v26.28-owner-recovery';
+const BUILD='2026.10.01-v26.29-account-home-ui';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20660,7 +20659,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.01-v26.28-owner-recovery';
+  const BUILD='2026.10.01-v26.29-account-home-ui';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22896,7 +22895,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.01-v26.28-owner-recovery',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.01-v26.29-account-home-ui',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23950,6 +23949,18 @@ window.cdqCreatorRecoveryV2628=Object.freeze({isActive:function(){return active;
 })();
 
 </script>
+
+<style id="cdq-home-clean-v2629">
+#cdqV20AlertBadge{display:none!important;pointer-events:none!important}
+.bottom-nav #reportNavButtonV2578,.bottom-nav #reportNavButtonV2578>span{
+  background:transparent!important;box-shadow:none!important;filter:none!important;border:0!important;
+}
+.bottom-nav #reportNavButtonV2578 .cdq-report-icon-v2578{
+  background:transparent!important;box-shadow:none!important;filter:none!important;border:0!important;border-radius:0!important;
+  /* Original artwork unchanged. Clip only its baked exterior black/blue halo. */
+  clip-path:polygon(25% 14.583%,70.833% 14.583%,70.833% 16.667%,94.792% 40.625%,94.792% 70.833%,100% 79.167%,100% 100%,14.583% 100%,7.292% 30.208%,25% 26.042%);
+}
+</style>
 </body>
 </html>
 
