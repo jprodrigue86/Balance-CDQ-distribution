@@ -33,8 +33,8 @@ Au premier chargement de l'inventaire après déploiement V26.23 :
 Aucune de ces écritures n'est exécutée tant que V26.23 n'est pas déployée.
 
 ## Photos
-- **64 correspondances produit à haute confiance** ont maintenant une image fabricant/officielle préparée.
-- Ajouts validés : familles et modèles exacts chez Rice Lake, ANYLOAD, Totalcomp, Avery Weigh-Tronix, Kilotech, Flintec, OHAUS, Epson et Neutrik. Les 72 articles restants sans correspondance suffisamment sûre gardent l’icône de catégorie plutôt qu’une mauvaise photo.
+- **104 correspondances produit à haute confiance** ont maintenant une image fabricant/officielle préparée.
+- Ajouts validés : familles et modèles exacts chez Rice Lake, ANYLOAD, Totalcomp, Avery Weigh-Tronix, Kilotech, Flintec, OHAUS, Epson et Neutrik. Les 32 articles restants sans correspondance suffisamment sûre gardent l’icône de catégorie plutôt qu’une mauvaise photo.
 - Ajouts supplémentaires vérifiés : Tedea-Huntleigh 1022-30 kg et 240-20 kg.
 - Une photo Drive ajoutée manuellement à un article demeure prioritaire sur l'image distante.
 - Les produits ambigus restent sans image automatique plutôt que d'afficher une mauvaise photo.

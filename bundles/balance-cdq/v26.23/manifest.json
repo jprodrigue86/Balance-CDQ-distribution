@@ -262,7 +262,7 @@
     "duplicateNumbers": "Les numéros visibles 29 et 3791 existent chacun sur deux articles différents; ils sont conservés et distingués par articleId interne.",
     "negativeAvailability": "La valeur -1 de disponibleVente pour l’article 7663 est conservée telle quelle afin de refléter fidèlement le fichier source.",
     "importSafety": "Au premier chargement Inventaire après déploiement V26.23, Articles, Stock et Unites (si présente) sont sauvegardés avant import. Articles et Stock sont remplacés; Unites est réinitialisée; Mouvements, Alertes et PushTokens restent intacts.",
-    "imagePolicy": "64 correspondances produit à haute confiance utilisent une image fabricant/officielle ou une page produit officielle vérifiée; une photo Drive ajoutée manuellement reste prioritaire. Les 72 articles ambigus restent sans image automatique.",
+    "imagePolicy": "104 correspondances produit à haute confiance utilisent une image fabricant/officielle ou une page produit officielle vérifiée; une photo Drive ajoutée manuellement reste prioritaire. Les 32 articles ambigus restent sans image automatique.",
     "priceListPresentation": "La Liste de prix montre nom de l’article, numéro, fabricant, disponibilité à la vente, photo quand disponible et prix client.",
     "inventoryPresentation": "Inventaire général : stock physique + disponible à la vente; détail : stock physique par emplacement + disponible à la vente séparé.",
     "sourceIntegrity": "136 articles; stock physique total 1055; disponible à la vente total 902; empreinte des cinq colonnes source essentielles 0x540f1af7.",
