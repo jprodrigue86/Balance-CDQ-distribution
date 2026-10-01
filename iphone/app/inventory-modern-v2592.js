@@ -1,5 +1,6 @@
 (function inventoryModernV2592(){
 'use strict';
+function normalize(v){return String(v==null?'':v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
 if(window.cdqInventoryModernV2592)return;
 var page=null,body=null,titleEl=null,subEl=null,backBtn=null,statusEl=null,scheduled=false;
 var state={inv:null,view:'home',article:null,query:'',category:'Tous',locationFilter:'',lowOnly:false,pendingMoveKind:'',history:[],scanDataUrl:'',scanCode:'',scanArticle:null,scanUnit:null,scanBusy:false,moveKind:'',preferredLocation:'',labelDataUrl:'',labelText:'',labelBarcode:'',labelInfo:null,labelArticleId:'',labelPendingKind:'',labelRequest:'',labelBusy:false,preserveLabelScanner:false,serialServerReady:null,scanConfirmed:false,labelQuality:null};
@@ -236,13 +237,13 @@ function renderList(priceOnly){
     var rows=$('#cdqImRows',body),arts=currentArticles();
     rows.innerHTML=arts.length?arts.map(a=>articleRow(a,priceOnly)).join(''):'<div class="cdq-im-empty">Aucun article trouvé.</div>';
     $$('[data-detail]',rows).forEach(b=>b.onclick=()=>{var a=findArticle(b.dataset.detail);if(!a)return;if(state.pendingMoveKind&&!priceOnly){state.article=a;setView('move',{kind:state.pendingMoveKind,article:a});return}setView('detail',{article:a})});
-    $('[data-price]',rows).forEach(b=>b.onclick=e=>{e.stopPropagation();editPrice(b.dataset.price)});
+    $$('[data-price]',rows).forEach(b=>b.onclick=e=>{e.stopPropagation();editPrice(b.dataset.price)});
     hydratePhotos(rows,arts);
   }
   q.oninput=refreshRows;
-  $('[data-cat]',body).forEach(b=>b.onclick=()=>{state.category=b.dataset.cat;renderList(priceOnly)});
+  $$('[data-cat]',body).forEach(b=>b.onclick=()=>{state.category=b.dataset.cat;renderList(priceOnly)});
   bindCommon();
-  $('[data-price]',body).forEach(b=>b.onclick=e=>{e.stopPropagation();editPrice(b.dataset.price)});
+  $$('[data-price]',body).forEach(b=>b.onclick=e=>{e.stopPropagation();editPrice(b.dataset.price)});
   hydratePhotos(body,currentArticles());
 }
 function findArticle(id){return ((state.inv&&state.inv.articles)||[]).find(a=>String(a.articleId)===String(id))}
@@ -256,8 +257,8 @@ function renderDetail(){
    (((state.inv&&state.inv.unites)||[]).filter(function(u){return String(u.articleId)===String(a.articleId)&&unitActive(u)}).length?'<section class="cdq-im-section"><div class="cdq-im-sectionhead"><h3>Unités suivies par numéro de série</h3></div><div class="cdq-im-serial-list">'+unitsFor(a.articleId).map(function(u){return'<div class="cdq-im-serial-row"><span><strong>'+esc(u.numeroSerie||'—')+'</strong><small>'+esc(u.codeBarres?('Code '+u.codeBarres):'Unité sérialisée')+'</small></span><b>'+esc(u.emplacementNom||locName(u.emplacementId))+'</b></div>'}).join('')+'</div></section>':'')+
    (canWrite()?'<div class="cdq-im-detailactions"><button class="cdq-im-action add" data-detailmove="add">＋ Ajouter</button><button class="cdq-im-action transfer" data-detailmove="transfer">⇄ Transférer</button><button class="cdq-im-action remove" data-detailmove="remove">− Retirer</button></div>':'');
   bindCommon();loadPhoto(a,$('[data-photo]',body));
-  $('[data-detailmove]',body).forEach(b=>b.onclick=()=>{if(state.labelInfo&&String(state.labelArticleId||'')===String(a.articleId))state.labelPendingKind=b.dataset.detailmove;else clearInventoryLabelContext();state.article=a;state.preferredLocation='';setView('move',{kind:b.dataset.detailmove,article:a})});
-  $('[data-transferloc]',body).forEach(b=>b.onclick=()=>{state.article=a;setView('move',{kind:'transfer',article:a,location:b.dataset.transferloc})});
+  $$('[data-detailmove]',body).forEach(b=>b.onclick=()=>{if(state.labelInfo&&String(state.labelArticleId||'')===String(a.articleId))state.labelPendingKind=b.dataset.detailmove;else clearInventoryLabelContext();state.article=a;state.preferredLocation='';setView('move',{kind:b.dataset.detailmove,article:a})});
+  $$('[data-transferloc]',body).forEach(b=>b.onclick=()=>{state.article=a;setView('move',{kind:'transfer',article:a,location:b.dataset.transferloc})});
   var pq=$('[data-pricequery]',body);if(pq)pq.onclick=()=>{state.query=pq.dataset.pricequery||'';state.category='Tous';state.locationFilter='';setView('price')};
 }
 async function editPrice(id){
@@ -347,7 +348,7 @@ function renderScanFound(){
   }
   var unitText=unit&&unit.numeroSerie?(' · Série '+unit.numeroSerie):'';
   box.innerHTML='<div class="cdq-im-found"><strong>✓ '+esc(articleLabel(a))+'</strong><small>'+esc(maker(a))+' · # '+esc(a.numero||a.modele||'')+esc(unitText)+' · Stock total '+totalQty(a.articleId)+'</small></div>'+(canWrite()?'<div class="cdq-im-detailactions"><button class="cdq-im-action add" data-scanmove="add">＋ Ajouter</button><button class="cdq-im-action transfer" data-scanmove="transfer">⇄ Transférer</button><button class="cdq-im-action remove" data-scanmove="remove">− Retirer</button></div>':'');
-  $('[data-scanmove]',body).forEach(function(b){b.onclick=function(){
+  $$('[data-scanmove]',body).forEach(function(b){b.onclick=function(){
     state.article=a;
     if(b.dataset.scanmove==='remove'&&unit){
       clearInventoryLabelContext();state.labelPendingKind='remove';state.preferredLocation=unit.emplacementId||'';state.labelInfo={text:'',barcode:state.scanCode,serial:unit.numeroSerie||'',model:a.modele||'',partNumber:a.numero||'',title:a.description||'',fabricant:a.fabricant||'',categorie:a.categorie||''};state.labelBarcode=state.scanCode;state.labelArticleId=String(a.articleId);

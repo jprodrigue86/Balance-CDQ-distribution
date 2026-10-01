@@ -1,0 +1,96 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V26.25",
+  "build": "2026.10.01-v26.25-inventory-buttons",
+  "title": "Balance CDQ V26.25 — boutons Inventaire et Liste de prix",
+  "requiresBuild": [
+    "2026.09.30-v26.23-real-inventory-price-photos"
+  ],
+  "patches": [
+    {
+      "file": "Code.gs",
+      "op": "replace_build_any",
+      "from": [
+        "2026.09.30-v26.23-real-inventory-price-photos"
+      ],
+      "to": "2026.10.01-v26.25-inventory-buttons"
+    },
+    {
+      "file": "Selector.html",
+      "op": "replace_build_any",
+      "from": [
+        "2026.09.30-v26.23-real-inventory-price-photos"
+      ],
+      "to": "2026.10.01-v26.25-inventory-buttons"
+    },
+    {
+      "id": "inventory-buttons-price-rows-v2625",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": " $('[data-price]',rows).forEach",
+      "replacement": " $$('[data-price]',rows).forEach",
+      "expected": 1
+    },
+    {
+      "id": "inventory-buttons-cat-body-v2625",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": " $('[data-cat]',body).forEach",
+      "replacement": " $$('[data-cat]',body).forEach",
+      "expected": 1
+    },
+    {
+      "id": "inventory-buttons-price-body-v2625",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": " $('[data-price]',body).forEach",
+      "replacement": " $$('[data-price]',body).forEach",
+      "expected": 1
+    },
+    {
+      "id": "inventory-buttons-detailmove-body-v2625",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": " $('[data-detailmove]',body).forEach",
+      "replacement": " $$('[data-detailmove]',body).forEach",
+      "expected": 1
+    },
+    {
+      "id": "inventory-buttons-transferloc-body-v2625",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": " $('[data-transferloc]',body).forEach",
+      "replacement": " $$('[data-transferloc]',body).forEach",
+      "expected": 1
+    },
+    {
+      "id": "inventory-buttons-scanmove-body-v2625",
+      "file": "Selector.html",
+      "op": "replace_literal",
+      "search": " $('[data-scanmove]',body).forEach",
+      "replacement": " $$('[data-scanmove]',body).forEach",
+      "expected": 1
+    },
+    {
+      "id": "inventory-local-normalize-v2625",
+      "file": "Selector.html",
+      "op": "insert_before_literal",
+      "before": "if(window.cdqInventoryModernV2592)return;",
+      "text": "function normalize(v){return String(v==null?'':v).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase()}\n"
+    }
+  ],
+  "extraFiles": [],
+  "removeFiles": [],
+  "audit": {
+    "scriptManagerRequired": "V48",
+    "androidAppRecommended": "26.25",
+    "scope": "Interface uniquement : six branchements de collections DOM et normalisation locale des recherches/séries.",
+    "preservation": "Aucun import. Articles, Stock, Unites, Mouvements, photos, prix, rôles et modules serveur existants conservés.",
+    "serverDataChanges": false,
+    "inventoryImport": false,
+    "styleChanges": false,
+    "automaticUpdater": "Mécanisme existant conservé; nouveau numéro publié pour permettre son observation.",
+    "compatibility": "Correctif incrémental après V26.23/R2; ne pas rejouer les packages de migration ou inventaire."
+  }
+}
