@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.26" data-cdq-iphone-release="030a807f24a78eb3e8cba4e81133e47b5a9d6e0c03306d8f0eb281c065a34cbb">
+<html data-cdq-iphone-version="26.27" data-cdq-iphone-release="986b4e4adf8c26aecd2b1d4fce25962c446ca5685a6c6e8729d039978406244b">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -536,7 +536,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.01-v26.26-default-drive-admin">
+<meta name="cdq-package-build" content="2026.10.01-v26.27-stable-width-folder-return">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -814,7 +814,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.01-v26.26-default-drive-admin'
+    build:'2026.10.01-v26.27-stable-width-folder-return'
   });
 }
 
@@ -827,7 +827,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.01-v26.26-default-drive-admin'
+        build:'2026.10.01-v26.27-stable-width-folder-return'
       });
     }
   } catch(e) {}
@@ -9015,6 +9015,9 @@ function cdqReplaceFolderStateV2602(ids){
 }
 let cdqFolderRestoreTimerV2602=null;
 function cdqRestoreOpenFoldersV2602(){
+  if(window.cdqStableFoldersV2627?.mobile() && window.cdqStableFoldersV2627.hasTree()){
+    window.cdqStableFoldersV2627.restore();return;
+  }
   clearTimeout(cdqFolderRestoreTimerV2602);
   const wanted=cdqFolderOpenIdsV2602();
   if(!wanted.size)return;
@@ -9134,9 +9137,183 @@ window.cdqHandleAndroidBackV2602=function(){
   return false;
 };
 
+/* V26.27: reconcile the existing mobile tree; refreshing is not navigation.
+ * No Drive writes, no inventory import, no change to authentication. */
+(function () {
+  'use strict';
+  if (window.cdqStableFoldersV2627) return;
+  let tree = null, owner = '', restoring = false;
+  const nodes = new Map();
+  const fileState = new WeakMap(), folderState = new WeakMap();
+  const scope = () => String(typeof utilisateurCourantEmail === 'undefined' ? '' : utilisateurCourantEmail || '').toLowerCase() + '|' + String(typeof compagnieSelectionnee === 'undefined' ? '' : compagnieSelectionnee || '');
+  const mobile = () => document.documentElement.matches('.android,.ios,.mobile-device');
+  const direct = (el, selector) => el.querySelector(':scope > ' + selector);
+  function key(el) {
+    if (el.matches('.folder[data-folder-id]')) return 'd:' + el.dataset.folderId;
+    if (el.matches('.file-row')) {
+      const check = el.querySelector('.file-checkbox[data-file-id]');
+      return check ? 'f:' + check.dataset.fileId : '';
+    }
+    return '';
+  }
+  function rememberNodes(node) {
+    if (!node) return;
+    if (node.id != null) nodes.set(String(node.id), node);
+    for (const child of node.dossiers || []) rememberNodes(child);
+  }
+  function currentOpen() {
+    try { return new Set(window.cdqFolderStateV2602?.current?.() || []); }
+    catch (_) { return new Set(); }
+  }
+  function folderSignature(node) {
+    return JSON.stringify([node.nom, !!node.notePresente, !!node.photoPresente, !!node.favori]);
+  }
+  function newFolder(node) {
+    const fragment = document.createDocumentFragment();
+    afficherDossierRecursif({fichiers: [], dossiers: [node]}, fragment);
+    const el = fragment.querySelector('.folder[data-folder-id]');
+    if (!el) throw new Error('Création de dossier mobile impossible.');
+    folderState.set(el, folderSignature(node));
+    return el;
+  }
+  function reconcile(node, host, wanted = currentOpen(), depth = 0) {
+    if (!node || !host || depth > 80) return;
+    const old = new Map(Array.from(host.children).map(el => [key(el), el]).filter(([k]) => k));
+    const desired = [];
+    for (const file of node.fichiers || []) {
+      const id = 'f:' + String(file.id), signature = JSON.stringify(file);
+      let row = old.get(id);
+      if (!row || fileState.get(row) !== signature) {
+        const checked = row?.querySelector('.file-checkbox')?.checked || false;
+        const replacement = creerLigneFichier(file);
+        const check = replacement.querySelector('.file-checkbox');
+        if (check && checked) { check.checked = true; replacement.classList.add('selected'); }
+        if (row) row.replaceWith(replacement);
+        row = replacement;
+        fileState.set(row, signature);
+      }
+      desired.push(row);
+    }
+    for (const child of node.dossiers || []) {
+      const id = 'd:' + String(child.id);
+      let el = old.get(id);
+      if (!el) el = newFolder(child);
+      else if (folderState.get(el) !== folderSignature(child)) {
+        // Only a renamed/badged header is replaced, never the folder or its children.
+        const fresh = newFolder(child), head = direct(fresh, '.folder-header');
+        const previous = direct(el, '.folder-header');
+        // The factory's onclick captures its folder. Rebind it to the retained shell.
+        if (head && previous) {
+          previous.replaceWith(head);
+          head.onclick = function () {
+            const open = !el.classList.contains('open');
+            window.cdqFolderStateV2602?.remember?.(String(child.id), open, el);
+            if (open) {
+              try { cdqDossierOuvertId = String(child.id); cdqDossierOuvertNom = String(child.nom || ''); } catch (_) {}
+              window.cdqLazyOpenFolder(nodes.get(String(child.id)) || child, el, direct(el, '.folder-content'));
+            } else {
+              el.classList.remove('open');
+              try { if (String(cdqDossierOuvertId || '') === String(child.id)) { cdqDossierOuvertId = null; cdqDossierOuvertNom = ''; } } catch (_) {}
+              mettreAJourInterface();
+            }
+          };
+          delete el.dataset.cdqEnhanced;
+        }
+        for (const name of ['hasNote', 'favorite']) {
+          const value = name === 'hasNote' ? !!child.notePresente : !!child.favori;
+          el.dataset[name] = value ? '1' : '0';
+        }
+        folderState.set(el, folderSignature(child));
+      }
+      if (wanted.has(String(child.id))) {
+        el.classList.add('open');
+        // A partial parent listing must not erase an already loaded subtree.
+        if (child.charge || (child.fichiers || []).length || (child.dossiers || []).length) {
+          reconcile(child, direct(el, '.folder-content'), wanted, depth + 1);
+        }
+      } else if (el.classList.contains('open')) {
+        el.classList.remove('open');
+      }
+      desired.push(el);
+    }
+    const keep = new Set(desired);
+    for (const el of Array.from(host.children)) if (!keep.has(el)) el.remove();
+    let cursor = host.firstElementChild;
+    for (const el of desired) {
+      if (el !== cursor) host.insertBefore(el, cursor);
+      cursor = el.nextElementSibling;
+    }
+  }
+  function capture(host) {
+    const y = window.scrollY || 0, x = window.scrollX || 0, top = host.scrollTop;
+    const anchor = Array.from(host.querySelectorAll('.file-row,.folder-header'))
+      .find(el => el.getBoundingClientRect().height > 0 && el.getBoundingClientRect().bottom > 0);
+    return {y, x, top, anchor, anchorTop: anchor?.getBoundingClientRect().top, owner: scope()};
+  }
+  function keepPosition(state, host) {
+    if (!state || state.owner !== scope()) return;
+    host.scrollTop = state.top;
+    const delta = state.anchor?.isConnected ? state.anchor.getBoundingClientRect().top - state.anchorTop : 0;
+    const target = Math.max(0, state.y + (Number.isFinite(delta) ? delta : 0));
+    if (Math.abs((window.scrollY || 0) - target) > 0.5) window.scrollTo({left: state.x, top: target, behavior: 'instant'});
+  }
+  function render(value, host) {
+    const nextOwner = scope();
+    const same = owner === nextOwner && tree && String(tree.id) === String(value?.id);
+    const state = same ? capture(host) : null;
+    if (!same) { nodes.clear(); host.replaceChildren(); }
+    owner = nextOwner;
+    tree = value;
+    nodes.clear(); rememberNodes(tree);
+    reconcile(tree, host);
+    keepPosition(state, host);
+    window.dispatchEvent(new CustomEvent('cdq:folder-render-v2627'));
+  }
+  function restore() {
+    if (restoring || !tree || owner !== scope() || !mobile()) return;
+    if (typeof cdqSelectionWorkActiveV2605 === 'function' && cdqSelectionWorkActiveV2605()) return;
+    const host = document.getElementById('filesContainer');
+    if (!host) return;
+    restoring = true;
+    try {
+      const state = capture(host), wanted = currentOpen();
+      reconcile(tree, host, wanted);
+      // Network is needed only for an expanded folder with no cached contents.
+      for (const el of host.querySelectorAll('.folder.open[data-folder-id]')) {
+        const node = nodes.get(String(el.dataset.folderId));
+        if (node && !node.charge && !(node.fichiers || []).length && !(node.dossiers || []).length && !el.classList.contains('cdq-folder-loading') && el.dataset.cdqLoadFailedV2627 !== '1') {
+          window.cdqLazyOpenFolder?.(node, el, direct(el, '.folder-content'));
+        }
+      }
+      keepPosition(state, host);
+    } finally { restoring = false; }
+    window.dispatchEvent(new CustomEvent('cdq:folder-render-v2627'));
+  }
+  window.cdqStableFoldersV2627 = {
+    version: '26.27', render, reconcile, restore, mobile,
+    node: id => nodes.get(String(id)) || null,
+    adopt: node => { rememberNodes(node); },
+    scope,
+    hasTree: () => !!tree && owner === scope()
+  };
+})();
+
 function afficherContenu(
   contenu
 ){
+  if(window.cdqStableFoldersV2627.mobile() && contenu){
+    if(cdqSelectionWorkActiveV2605()){cdqDeferredClientRenderV2605=contenu;return;}
+    const host=document.getElementById('filesContainer');
+    if(!host)return;
+    trierContenuRecursif(contenu);
+    window.cdqStableFoldersV2627.render(contenu,host);
+    window.cdqStableFoldersV2627.restore();
+    mettreAJourInfosClient(contenu);
+    appliquerFiltresFichiers();
+    mettreAJourInterface();
+    return;
+  }
+
   // Background refreshes may update the cache, but never rebuild the visible
   // folder tree while the technician is selecting reports.
   if(cdqSelectionWorkActiveV2605()){
@@ -11414,7 +11591,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.01-v26.26-default-drive-admin";
+  const CDQ_BUILD = "2026.10.01-v26.27-stable-width-folder-return";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -11740,27 +11917,35 @@ function cdqCreateFolderLoaderV2527(options) {
   }
 
   window.cdqLazyOpenFolder=function(folder,folderEl,contentEl){
-    if(!folderEl || !contentEl) return;
-    folderEl.classList.add("cdq-folder-loading");
+    if(!folder || !folderEl || !contentEl)return;
+    const api=window.cdqStableFoldersV2627;
+    const owner=api.scope(), id=String(folder.id||'');
+    folder=cdqFindFolder(id)||folder;
+    const request=(folderEl.__cdqLoadV2627||0)+1;
+    folderEl.__cdqLoadV2627=request;
+    delete folderEl.dataset.cdqLoadFailedV2627;
+    folderEl.classList.add('open','cdq-folder-loading');
+    const valid=()=>owner===api.scope() && folderEl.isConnected && folderEl.__cdqLoadV2627===request;
     cdqLoadFolderNode(folder,function(){
-      folderEl.classList.remove("cdq-folder-loading");
-      contentEl.innerHTML="";
-      afficherDossierRecursif(folder,contentEl);
-      folderEl.classList.add("open");
+      if(!valid())return;
+      folderEl.classList.remove('cdq-folder-loading');
+      // A late response cannot undo the technician's explicit close/back action.
+      if(!window.cdqFolderStateV2602.current().has(id) || !folderEl.classList.contains('open'))return;
+      const current=cdqFindFolder(id)||folder;
+      api.adopt(current);
+      api.reconcile(current,contentEl);
       cdqEnhanceMobileFolders();
       appliquerFiltresFichiers();
       mettreAJourInterface();
       cdqSchedulePhotoPresenceRefresh();
-      if(window.cdqFolderStateV2602)window.cdqFolderStateV2602.restoreSoon();
-    },function(e){
-      folderEl.classList.remove("cdq-folder-loading");
-      const message=String(e&&e.message||e||"");
-      if(/Le dossier actif a changé|Actualisation du dossier/.test(message)){
-        folderEl.classList.remove("open");
-        if(window.cdqFolderStateV2602)window.cdqFolderStateV2602.restoreSoon();
-        return;
-      }
-      afficherErreur(e);
+      api.restore();
+    },function(error){
+      if(!valid())return;
+      folderEl.classList.remove('cdq-folder-loading');
+      folderEl.dataset.cdqLoadFailedV2627='1';
+      const message=String(error&&error.message||error||'');
+      if(!/Le dossier actif a changé|Actualisation du dossier/.test(message))afficherErreur(error);
+      // Preserve the open shell and cached contents; a refresh failure is not navigation.
     });
   };
 
@@ -12649,6 +12834,8 @@ function cdqViewportWidthV2216(){
 }
 
 function cdqSetEffectiveScaleV2216(zoom){
+  // The current mobile layout owns width and density. Never apply legacy CSS zoom over it.
+  if(document.documentElement.classList.contains("cdq-mobile-layout"))return;
   const container=document.querySelector(".container");
   if(!container)return;
 
@@ -13700,7 +13887,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.01-v26.26-default-drive-admin";
+const CDQ_V19_BUILD = "2026.10.01-v26.27-stable-width-folder-return";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15419,7 +15606,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.01-v26.26-default-drive-admin";
+const CDQ_V20_BUILD = "2026.10.01-v26.27-stable-width-folder-return";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16267,7 +16454,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.01-v26.26-default-drive-admin";
+const CDQ_V21_BUILD = "2026.10.01-v26.27-stable-width-folder-return";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16791,7 +16978,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.01-v26.26-default-drive-admin';
+const BUILD='2026.10.01-v26.27-stable-width-folder-return';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20472,7 +20659,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.01-v26.26-default-drive-admin';
+  const BUILD='2026.10.01-v26.27-stable-width-folder-return';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -21746,7 +21933,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop{position:fixed;inset:0;background:#00
 html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
 
 </style>
-<script id="cdqMobileLayoutJs">
+<script id="cdqMobileLayoutJs" data-cdq-stable-workspace="26.27">
 (function () {
   'use strict';
   const root = document.documentElement;
@@ -21768,6 +21955,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     each(selector, {'width': px(size), 'height': px(size), 'min-width': px(size), 'max-width': px(size),
       'min-height': px(size), 'max-height': px(size), 'font-size': px(size), 'line-height': '1', 'flex-shrink': '0'});
   }
+  let lastMenuMetrics = {unit:1, textScale:1};
   function apply() {
     if (!root.matches('.android,.ios,.mobile-device') && window.innerWidth > 899) return;
     root.classList.add('cdq-mobile-layout');
@@ -21775,18 +21963,19 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     const g = setting('General'), t = setting('Text'), i = setting('Icon');
     // Reference photo is 709 px wide: normalize its proportions to a 384 CSS px phone.
     // All three controls meet at this reference, without rewriting saved preferences.
-    const cdqViewportWidthNowV2606=Math.max(240,Math.round(document.documentElement.clientWidth||window.innerWidth||384));
-    const cdqOrientationV2606=(screen.orientation&&screen.orientation.type)||((window.innerWidth||0)>(window.innerHeight||0)?'landscape':'portrait');
-    let cdqViewportStateV2606=window.__cdqViewportStateV2606;
-    if(!cdqViewportStateV2606||cdqViewportStateV2606.orientation!==cdqOrientationV2606){
-      cdqViewportStateV2606={width:cdqViewportWidthNowV2606,orientation:cdqOrientationV2606};
-      window.__cdqViewportStateV2606=cdqViewportStateV2606;
+    // Layout viewport only: keyboard height, scrolling and pinch do not resize the app.
+    const cdqViewportWidthNowV2606 = Math.max(240, Math.round(window.innerWidth || root.clientWidth || 384));
+    let cdqViewportStateV2606 = window.__cdqViewportStateV2606;
+    if (!cdqViewportStateV2606 || Math.abs(cdqViewportStateV2606.width - cdqViewportWidthNowV2606) >= 2) {
+      cdqViewportStateV2606 = {width: cdqViewportWidthNowV2606};
+      window.__cdqViewportStateV2606 = cdqViewportStateV2606;
     }
-    const reference = Math.min(480, Math.max(240, cdqViewportStateV2606.width)) / 384;
+    const reference = Math.min(480, cdqViewportStateV2606.width) / 384;
     const around50 = (value, low, high) => value <= 50
       ? low + (1 - low) * value / 50 : 1 + (high - 1) * (value - 50) / 50;
     const density = window.cdqPersonalSizing?.factor('General',g,x=>around50(x,.78,1.25)) ?? around50(g,.78,1.25), unit = reference * density;
     const textScale = window.cdqPersonalSizing?.factor('Text',t,x=>around50(x,.78,1.35)) ?? around50(t,.78,1.35), iconScale = window.cdqPersonalSizing?.factor('Icon',i,x=>around50(x,.65,1.5)) ?? around50(i,.65,1.5);
+    lastMenuMetrics = {unit, textScale};
     const top = 18 * unit * iconScale, bottom = 22 * unit * iconScale;
     const label = 8 * unit * textScale, text = 18.5 * unit * textScale;
     const action = 16 * unit * iconScale;
@@ -21880,10 +22069,17 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     requestAnimationFrame(() => { queued = false; apply(); });
   }
   window.cdqMobileLayout = {apply, schedule};
-  window.addEventListener('resize', schedule, {passive: true});
+  function viewportChangedV2627() {
+    const width = Math.max(240, Math.round(window.innerWidth || root.clientWidth || 384));
+    if (!window.__cdqViewportStateV2606 || Math.abs(width - window.__cdqViewportStateV2606.width) >= 2) schedule();
+    // A keyboard may change available height: resize its chooser, not the whole page.
+    layoutCompanyMenu(lastMenuMetrics.unit, lastMenuMetrics.textScale);
+  }
+  window.addEventListener('resize', viewportChangedV2627, {passive:true});
+  window.addEventListener('orientationchange', viewportChangedV2627, {passive:true});
   if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', schedule, {passive: true});
-    window.visualViewport.addEventListener('scroll', schedule, {passive: true});
+    window.visualViewport.addEventListener('resize', viewportChangedV2627, {passive:true});
+    window.visualViewport.addEventListener('scroll', viewportChangedV2627, {passive:true});
   }
   document.addEventListener('input', e => {
     if (e.target.matches('#cdqGeneralScaleRange,#cdqTextScaleRange,#cdqIconScaleRange')) schedule();
@@ -21897,7 +22093,8 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     installSwipeReturn();
     // Observe new/replaced icons only. Style writes cannot re-trigger this observer.
     new MutationObserver(records => {
-      if (records.some(r => r.addedNodes.length || r.removedNodes.length)) schedule();
+      // Updating a date, a status label or a STYLE text node is not a geometry change.
+      if (records.some(r => Array.from(r.addedNodes).some(n => n.nodeType === 1 && !/^(STYLE|SCRIPT)$/.test(n.tagName)))) schedule();
     }).observe(document.body, {subtree: true, childList: true});
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once: true});
@@ -22698,7 +22895,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.01-v26.26-default-drive-admin',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.01-v26.27-stable-width-folder-return',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23253,7 +23450,7 @@ html:is(.android,.ios,.mobile-device) .bottom-nav{
       const state=captureScroll();
       const result=previous.apply(this,arguments);
       measure();
-      restoreScroll(state);
+      if(!window.cdqStableFoldersV2627?.mobile() || !window.cdqStableFoldersV2627.hasTree())restoreScroll(state);
       return result;
     };
     wrapped.__cdqPageFitV2604=true;

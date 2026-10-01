@@ -1,290 +1,148 @@
-/* Balance CDQ V26.18 — durable client/folder work context across Sheets/PDF handoffs. */
+/* Balance CDQ V26.27 — one document handoff, one restoration, one targeted refresh.
+ * Public V26.18 bridge names remain compatible with installed Android shells. */
 (() => {
   'use strict';
   if (window.cdqDocumentReturnV2618) return;
-
-  const KEY = 'cdq_work_context_v2618';
-  const MAX_AGE = 12 * 60 * 60 * 1000;
-  let restoring = false;
-  let restoreToken = 0;
-  let lastSnapshotAt = 0;
-
-  const esc = value => {
-    try { return CSS.escape(String(value)); }
-    catch (_) { return String(value).replace(/["\\]/g, '\\$&'); }
-  };
-
-  function currentClient() {
-    try { return String(typeof compagnieSelectionnee === 'undefined' ? '' : compagnieSelectionnee || ''); }
-    catch (_) { return ''; }
-  }
-
-  function currentEmail() {
-    try { return String(typeof utilisateurCourantEmail === 'undefined' ? '' : utilisateurCourantEmail || '').trim().toLowerCase(); }
-    catch (_) { return ''; }
-  }
-
+  const KEY = 'cdq_work_context_v2618', MAX_AGE = 12 * 60 * 60 * 1000;
+  let restoring = false, pending = null, restoreToken = 0, snapshotTimer = 0;
+  let lastHandled = '', lastRefreshAt = 0, interaction = 0;
+  const currentClient = () => String(typeof compagnieSelectionnee === 'undefined' ? '' : compagnieSelectionnee || '');
+  const currentEmail = () => String(typeof utilisateurCourantEmail === 'undefined' ? '' : utilisateurCourantEmail || '').trim().toLowerCase();
+  const ready = () => typeof cdqAccessState === 'undefined' || cdqAccessState === 'ready';
   function openFolders() {
-    try {
-      if (window.cdqFolderStateV2602?.current) return Array.from(window.cdqFolderStateV2602.current()).map(String).filter(Boolean);
-    } catch (_) {}
-    return Array.from(document.querySelectorAll('#filesContainer .folder.open[data-folder-id]'))
-      .map(el => String(el.dataset.folderId || '')).filter(Boolean);
+    try { return Array.from(window.cdqFolderStateV2602?.current?.() || []).map(String).filter(Boolean); }
+    catch (_) { return Array.from(document.querySelectorAll('#filesContainer .folder.open[data-folder-id]')).map(el => el.dataset.folderId); }
   }
-
-  function activeFolderId() {
+  function read() {
     try {
-      const direct = String(typeof cdqDossierOuvertId === 'undefined' ? '' : cdqDossierOuvertId || '');
-      if (direct) return direct;
-    } catch (_) {}
-    const rows = Array.from(document.querySelectorAll('#filesContainer .folder.open[data-folder-id]'));
-    return rows.length ? String(rows[rows.length - 1].dataset.folderId || '') : '';
+      const state = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (!state?.clientId || Date.now() - Number(state.savedAt || 0) > MAX_AGE) return null;
+      if (currentEmail() && state.email && state.email.toLowerCase() !== currentEmail()) return null;
+      state.open = Array.isArray(state.open) ? state.open.map(String).filter(Boolean) : [];
+      return state;
+    } catch (_) { return null; }
   }
-
-  function snapshot(kind = '') {
+  function snapshot(kind = '', handoff = false) {
+    // Never replace the departure snapshot while Sheets/PDF or restoration is active.
+    if ((restoring || pending) && !handoff) return pending || read();
     const clientId = currentClient();
-    if (!clientId) return null;
+    if (!clientId || !currentEmail()) return null;
     const state = {
-      clientId,
-      email: currentEmail(),
-      open: openFolders(),
-      activeFolderId: activeFolderId(),
-      scrollY: Math.max(0, Math.round(window.scrollY || document.documentElement.scrollTop || 0)),
-      filesScroll: Math.max(0, Math.round(document.getElementById('filesContainer')?.scrollTop || 0)),
-      kind: String(kind || ''),
+      clientId, email: currentEmail(), open: openFolders(),
+      activeFolderId: String(typeof cdqDossierOuvertId === 'undefined' ? '' : cdqDossierOuvertId || ''),
+      activeFolderName: String(typeof cdqDossierOuvertNom === 'undefined' ? '' : cdqDossierOuvertNom || ''),
+      scrollY: Math.max(0, window.scrollY || 0),
+      filesScroll: Math.max(0, document.getElementById('filesContainer')?.scrollTop || 0),
+      kind: String(kind || ''), savedAt: Date.now(),
+      handoffId: handoff ? Date.now() + ':' + Math.random().toString(36).slice(2) : '',
       modification: {
         fileId: String(sessionStorage.getItem('fichierEnModification') || ''),
         baseline: String(sessionStorage.getItem('ancienneDateModification') || ''),
         moment: String(sessionStorage.getItem('momentModification') || '')
-      },
-      savedAt: Date.now()
+      }
     };
     try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (_) {}
-    lastSnapshotAt = Date.now();
+    if (handoff) pending = state;
     return state;
   }
-
-  function read() {
-    try {
-      const state = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (!state || !state.clientId || Date.now() - Number(state.savedAt || 0) > MAX_AGE) return null;
-      const email = currentEmail();
-      if (email && state.email && String(state.email).toLowerCase() !== email) return null;
-      state.open = Array.isArray(state.open) ? state.open.map(String).filter(Boolean) : [];
-      state.modification = state.modification && typeof state.modification === 'object'
-        ? state.modification : { fileId:'', baseline:'', moment:'' };
-      return state;
-    } catch (_) { return null; }
-  }
-
-  function restoreModificationState(state) {
-    const mod = state && state.modification;
-    if (!mod || !mod.fileId) return false;
-    try {
-      sessionStorage.setItem('fichierEnModification', String(mod.fileId));
-      if (mod.baseline) sessionStorage.setItem('ancienneDateModification', String(mod.baseline));
-      if (mod.moment) sessionStorage.setItem('momentModification', String(mod.moment));
-      return true;
-    } catch (_) { return false; }
-  }
-
-  function restoreFolderState(state) {
-    if (!state) return;
-    try {
-      if (window.cdqFolderStateV2602?.replace) {
-        window.cdqFolderStateV2602.replace(new Set(state.open || []));
-      }
-    } catch (_) {}
-
-    const delays = [0, 60, 140, 280, 520, 900, 1400];
-    delays.forEach(delay => setTimeout(() => {
-      try { window.cdqFolderStateV2602?.restoreSoon?.(); } catch (_) {}
-      for (const id of (state.open || [])) {
-        const el = document.querySelector('.folder[data-folder-id="' + esc(id) + '"]');
-        if (!el || el.classList.contains('open')) continue;
-        const header = el.querySelector(':scope > .folder-header');
-        if (header) header.click();
-      }
-    }, delay));
-
-    setTimeout(() => {
-      try {
-        const host = document.getElementById('filesContainer');
-        if (host && state.filesScroll) host.scrollTop = state.filesScroll;
-        if (state.scrollY) window.scrollTo({ top: state.scrollY, behavior: 'auto' });
-      } catch (_) {}
-    }, 650);
-  }
-
   function immediateRefresh() {
-    let triggered = false;
-    let fileRefresh = false;
-
-    // First refresh only the document that was just edited. This calls
-    // obtenirMetaFichier(id) and updates the visible row/checkmark without
-    // rebuilding the whole client tree.
+    if (!ready() || !currentClient() || navigator.onLine === false) return false;
+    if (Date.now() - lastRefreshAt < 500) return false;
+    const a = window.actualiserApresModification;
+    if (a?.active && !a.active.done) return true;
     try {
-      const a = window.actualiserApresModification;
-      if (typeof a === 'function') {
-        a();
-        triggered = true;
-        fileRefresh = true;
-      } else if (a && typeof a === 'object') {
-        for (const method of ['refresh','run','trigger','start','check','verifier']) {
-          if (typeof a[method] === 'function') {
-            a[method]();
-            triggered = true;
-            fileRefresh = true;
-            break;
-          }
-        }
+      if (typeof a === 'function') { lastRefreshAt = Date.now(); a(); return true; }
+      for (const method of ['refresh', 'run', 'trigger', 'start', 'check', 'verifier']) {
+        if (typeof a?.[method] === 'function') { lastRefreshAt = Date.now(); a[method](); return true; }
+      }
+      // Existing periodic sync still handles folder additions/deletions.
+      for (const name of ['cdqLiveSyncFolderV2200', 'cdqRefreshActiveFolderV2603']) {
+        if (typeof window[name] === 'function') { lastRefreshAt = Date.now(); window[name](true); return true; }
       }
     } catch (_) {}
-
-    const call = name => {
-      try {
-        const fn = window[name];
-        if (typeof fn === 'function') {
-          fn(true);
-          triggered = true;
-          return true;
-        }
-      } catch (_) {}
-      return false;
+    return false;
+  }
+  function restoreModification(state) {
+    const mod = state.modification;
+    if (!mod?.fileId) return;
+    sessionStorage.setItem('fichierEnModification', mod.fileId);
+    if (mod.baseline) sessionStorage.setItem('ancienneDateModification', mod.baseline);
+    if (mod.moment) sessionStorage.setItem('momentModification', mod.moment);
+  }
+  function restoreScrollAfterRecreation(state, startedInteraction) {
+    let finished = false, timeout;
+    const finish = () => { finished = true; clearTimeout(timeout); window.removeEventListener('cdq:folder-render-v2627', apply); };
+    const apply = () => {
+      if (finished || startedInteraction !== interaction || currentClient() !== state.clientId || currentEmail() !== state.email) { finish(); return; }
+      const host = document.getElementById('filesContainer');
+      if (!host || !window.cdqStableFoldersV2627?.hasTree()) return;
+      const wanted = new Set(state.open);
+      for (const el of host.querySelectorAll('.folder[data-folder-id]')) if (wanted.has(el.dataset.folderId)) wanted.delete(el.dataset.folderId);
+      if (wanted.size || host.querySelector('.cdq-folder-loading')) return;
+      host.scrollTop = state.filesScroll || 0;
+      window.scrollTo({top: state.scrollY || 0, left: 0, behavior: 'instant'});
+      finish();
     };
-
-    // Only fall back to a folder/client sync when the direct edited-file
-    // refresh is unavailable. A delayed lightweight sync still reconciles
-    // additions/deletions without blocking the technician's next file.
-    if (!fileRefresh) {
-      call('cdqLiveSyncFolderV2200') ||
-        call('cdqRefreshActiveFolderV2603') ||
-        call('actualiserDossierOuvert') ||
-        call('actualiserContenuCompagnie') ||
-        call('actualiserCompagnieSelectionnee');
-    } else {
-      setTimeout(() => { try { window.cdqLiveSyncFolderV2200?.(true); } catch (_) {} }, 1100);
-    }
-
-    try { window.dispatchEvent(new Event('focus')); } catch (_) {}
-    try { document.dispatchEvent(new Event('visibilitychange')); } catch (_) {}
-    try { window.dispatchEvent(new PageTransitionEvent('pageshow', { persisted: true })); } catch (_) {}
-
-    try { window.cdqFolderStateV2602?.restoreSoon?.(); } catch (_) {}
-    try { if (typeof mettreAJourInterface === 'function') mettreAJourInterface(); } catch (_) {}
-    return triggered;
+    window.addEventListener('cdq:folder-render-v2627', apply);
+    timeout = setTimeout(finish, 5000);
+    apply();
   }
-
-  function findCompanyButton(clientId) {
-    const selector = '[data-company-id="' + esc(clientId) + '"]';
-    const candidates = Array.from(document.querySelectorAll(selector));
-    return candidates.find(el => !el.hidden && getComputedStyle(el).display !== 'none') || candidates[0] || null;
-  }
-
-  function restore(state, token, attempt = 0) {
-    if (!state || token !== restoreToken) return;
-    if (attempt > 120) { restoring = false; return; }
-
-    try {
-      if (typeof cdqAccessState !== 'undefined' && cdqAccessState !== 'ready') {
-        setTimeout(() => restore(state, token, attempt + 1), 100);
-        return;
-      }
-    } catch (_) {}
-
-    const selected = currentClient();
-    if (selected !== String(state.clientId)) {
-      const button = findCompanyButton(state.clientId);
-      if (button) {
-        try { button.click(); } catch (_) {}
-      }
-      setTimeout(() => restore(state, token, attempt + 1), button ? 90 : 120);
-      return;
-    }
-
-    restoreModificationState(state);
-    restoreFolderState(state);
-    immediateRefresh();
-
-    // Refresh twice more while Drive metadata settles. These are targeted,
-    // preserving the visible client/folder tree.
-    setTimeout(immediateRefresh, 220);
-    setTimeout(immediateRefresh, 700);
-    setTimeout(() => {
-      restoreFolderState(state);
-      snapshot(state.kind || '');
-      restoring = false;
-    }, 950);
-  }
-
   function restoreAfterDocument(kind = '') {
-    const state = read();
-    if (!state) {
-      immediateRefresh();
-      return false;
-    }
-    if (kind) state.kind = String(kind);
-    restoreToken += 1;
+    const state = pending || read();
+    if (!state) { immediateRefresh(); return false; }
+    const identity = state.handoffId || String(state.savedAt);
+    if (restoring || identity === lastHandled) return true;
+    const token = ++restoreToken, startedInteraction = interaction;
+    const rebuilding = !currentClient() || !window.cdqStableFoldersV2627?.hasTree();
     restoring = true;
-    restore(state, restoreToken, 0);
+    let selectedOnce = false;
+    const finish = (handled = true) => {
+      if (token !== restoreToken) return;
+      if (handled) lastHandled = identity;
+      pending = null; restoring = false;
+    };
+    function attempt(n) {
+      if (token !== restoreToken) return;
+      if (n > 120 || startedInteraction !== interaction) { finish(); return; }
+      if (!ready() || !currentEmail()) { setTimeout(() => attempt(n + 1), 100); return; }
+      if (state.email && state.email.toLowerCase() !== currentEmail()) { finish(); return; }
+      const selected = currentClient();
+      // A new client chosen by the technician always wins over an old handoff.
+      if (selected && selected !== state.clientId) { finish(); return; }
+      if (!selected) {
+        if (!selectedOnce) {
+          const button = Array.from(document.querySelectorAll('[data-company-id]')).find(el => el.dataset.companyId === state.clientId);
+          if (button) { selectedOnce = true; button.click(); }
+        }
+        setTimeout(() => attempt(n + 1), 100); return;
+      }
+      restoreModification(state);
+      window.cdqFolderStateV2602?.replace?.(new Set(state.open));
+      try { cdqDossierOuvertId = state.activeFolderId || null; cdqDossierOuvertNom = state.activeFolderName || ''; } catch (_) {}
+      window.cdqStableFoldersV2627?.restore();
+      if (!window.cdqStableFoldersV2627) window.cdqFolderStateV2602?.restoreSoon?.();
+      if (rebuilding) restoreScrollAfterRecreation(state, startedInteraction);
+      immediateRefresh();
+      finish();
+    }
+    attempt(0);
     return true;
   }
-
-  window.cdqPersistDocumentContextV2618 = function(kind) {
-    snapshot(kind || '');
-    return true;
-  };
-
-  window.cdqNativeDocumentReturnedV2618 = function(kind) {
-    restoreAfterDocument(kind || '');
-    return true;
-  };
-
   function scheduleSnapshot() {
-    setTimeout(() => snapshot(''), 0);
-    setTimeout(() => snapshot(''), 120);
+    if (restoring || pending || document.visibilityState === 'hidden') return;
+    clearTimeout(snapshotTimer);
+    snapshotTimer = setTimeout(() => snapshot(''), 80);
   }
-
+  window.cdqPersistDocumentContextV2618 = kind => { snapshot(kind || '', true); return true; };
+  window.cdqNativeDocumentReturnedV2618 = kind => { restoreAfterDocument(kind || ''); return true; };
+  document.addEventListener('pointerdown', () => { interaction++; }, {capture:true, passive:true});
   document.addEventListener('click', scheduleSnapshot, true);
   document.addEventListener('change', scheduleSnapshot, true);
+  window.addEventListener('scroll', scheduleSnapshot, {passive:true});
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') snapshot('');
-  }, { passive: true });
-  window.addEventListener('pagehide', () => snapshot(''), { passive: true });
-
-  // Keep the durable state warm while a technician works through many reports.
-  setInterval(() => {
-    if (document.visibilityState === 'visible' && currentClient() && Date.now() - lastSnapshotAt > 1200) snapshot('');
-  }, 1500);
-
-  // When the V26.02 folder tracker is available, mirror its state to localStorage.
-  let hookAttempts = 0;
-  const hook = () => {
-    hookAttempts += 1;
-    const api = window.cdqFolderStateV2602;
-    if (!api) {
-      if (hookAttempts < 80) setTimeout(hook, 100);
-      return;
-    }
-    for (const name of ['remember','replace']) {
-      const original = api[name];
-      if (typeof original !== 'function' || original.__cdq2618) continue;
-      const wrapped = function() {
-        const result = original.apply(this, arguments);
-        scheduleSnapshot();
-        return result;
-      };
-      wrapped.__cdq2618 = true;
-      api[name] = wrapped;
-    }
-  };
-  hook();
-
-  window.cdqDocumentReturnV2618 = {
-    snapshot,
-    read,
-    restore: restoreAfterDocument,
-    refresh: immediateRefresh,
-    version: '26.18'
-  };
+    if (document.visibilityState === 'hidden') { if (!pending) snapshot(''); }
+  }, {passive:true});
+  window.addEventListener('pagehide', () => { if (!pending) snapshot(''); }, {passive:true});
+  // pageshow/focus remain real browser events: never synthesize them to force a refresh.
+  window.cdqDocumentReturnV2618 = {snapshot, read, restore:restoreAfterDocument, refresh:immediateRefresh, version:'26.27'};
 })();
