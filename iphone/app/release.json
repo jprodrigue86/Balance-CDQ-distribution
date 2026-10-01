@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.20",
-  "release": "c1cc1868765bd732d36d5486a630ec3156bbd6ee2c3e33dc41555e35ec731cfd",
+  "version": "26.24",
+  "release": "141c3541a20b2e9827392b72c70932a50a8b04532dff2c578a46597ef05bb18b",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.09.30-v26.20-drive-account-gate",
-  "androidSelectorSha256": "01240e27e202a1a1e6904bd1f0cdd05127e688fa7fc3f4232f1975e0a4d67ebe",
+  "androidSourceBuild": "2026.10.01-v26.24-catalog-auto-update",
+  "androidSelectorSha256": "096a7286abaed572bb31b40cd4a39a495798233d6258bcaee33afbe252ab48fb",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
   "files": 291
 }
