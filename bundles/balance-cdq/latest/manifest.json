@@ -52,11 +52,10 @@
     {
       "id": "selector-no-google-activation-fallback",
       "file": "Selector.html",
-      "op": "replace_literal",
+      "op": "replace_literal_if_present",
       "search": "      if(/Reconnectez-vous avec votre compte Google/i.test(msg)){\n        \n        \n        \n        if(status)status.textContent=\"Confirmation du compte Google...\";\n        if(pinInput)pinInput.value=code;\n        cdqSauverTicketGoogleV42(\"\");\n        cdqGooglePromptDelegatedV42=true;\n        cdqDemanderConnexionGoogleV42(\"Confirmez votre compte Google pour terminer l’activation.\");\n        return;\n      }",
       "replacement": "      if(/Reconnectez-vous avec votre compte Google/i.test(msg)){\n        if(status)status.textContent=\"Activation Balance CDQ\";\n        if(error){\n          error.textContent=\"Le service CDQ doit être mis à jour en V26.19. Aucun compte Google n’est requis pour activer l’application.\";\n          error.style.display=\"block\";\n        }\n        if(pinInput){pinInput.value=\"\";try{pinInput.focus();}catch(e){}}\n        return;\n      }",
-      "expected": 1,
-      "ignoreLineTrailingSpaces": true
+      "expected": 1
     },
     {
       "id": "drive-gate-defer-client-list",
@@ -271,6 +270,7 @@
     "serializedUnitsImport": "La feuille Unites existante est sauvegardée puis réinitialisée lors de l'import initial V26.23, car le fichier source ne fournit aucun numéro de série. Cela évite les unités orphelines liées aux anciens articleId.",
     "shopImport": "Les 1 055 unités physiques du fichier source sont initialisées dans Shop (Atelier), car le fichier source ne contient aucune répartition par camion.",
     "catalogCorrections": "Corrections sûres de fabricant/catégorie/modèle sans modifier les cinq colonnes source. Exemple : KPC 461-3k => Kilotech / Balances / plateformes / KPC 461-3K.",
-    "imageResolver": "Si imageUrl est vide mais qu’une imageSourceUrl fabricant est connue, V26.23 résout paresseusement og:image/twitter:image via UrlFetchApp, mémorise l’URL et l’affiche ensuite. Les photos Drive manuelles gardent la priorité."
+    "imageResolver": "Si imageUrl est vide mais qu’une imageSourceUrl fabricant est connue, V26.23 résout paresseusement og:image/twitter:image via UrlFetchApp, mémorise l’URL et l’affiche ensuite. Les photos Drive manuelles gardent la priorité.",
+    "liveSourceCompatibility": "Le bloc Selector.html de repli Google peut varier par espaces/lignes vides dans la source V26.16. V26.23 le traite comme optionnel; l’authentification serveur V26.21 reste l’autorité et ne requiert pas Google."
   }
 }
