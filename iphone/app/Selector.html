@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.27" data-cdq-iphone-release="986b4e4adf8c26aecd2b1d4fce25962c446ca5685a6c6e8729d039978406244b">
+<html data-cdq-iphone-version="26.28" data-cdq-iphone-release="19853906807778039816ac5fe99a583d717ecb09c6b23354e18f846cc098e58e">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -536,7 +536,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.01-v26.27-stable-width-folder-return">
+<meta name="cdq-package-build" content="2026.10.01-v26.28-owner-recovery">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -814,7 +814,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.01-v26.27-stable-width-folder-return'
+    build:'2026.10.01-v26.28-owner-recovery'
   });
 }
 
@@ -827,7 +827,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.01-v26.27-stable-width-folder-return'
+        build:'2026.10.01-v26.28-owner-recovery'
       });
     }
   } catch(e) {}
@@ -7373,6 +7373,7 @@ function cdqDemanderConnexionGoogleV42(message){
     .creerDefiConnexionGoogleCDQ();
 }
 function cdqTraiterCredentialGoogleV42(d){
+  if(window.cdqCreatorRecoveryV2628&&window.cdqCreatorRecoveryV2628.isActive()){window.cdqCreatorRecoveryV2628.credential(d);return;}
   if(!d||!d.credential||!d.challengeId)return;
   if(window.__cdqDriveGateGooglePendingV2620){
     if(cdqGoogleAuthPendingV42)return;
@@ -11591,7 +11592,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.01-v26.27-stable-width-folder-return";
+  const CDQ_BUILD = "2026.10.01-v26.28-owner-recovery";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13887,7 +13888,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.01-v26.27-stable-width-folder-return";
+const CDQ_V19_BUILD = "2026.10.01-v26.28-owner-recovery";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15606,7 +15607,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.01-v26.27-stable-width-folder-return";
+const CDQ_V20_BUILD = "2026.10.01-v26.28-owner-recovery";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16454,7 +16455,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.01-v26.27-stable-width-folder-return";
+const CDQ_V21_BUILD = "2026.10.01-v26.28-owner-recovery";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16978,7 +16979,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.01-v26.27-stable-width-folder-return';
+const BUILD='2026.10.01-v26.28-owner-recovery';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20659,7 +20660,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.01-v26.27-stable-width-folder-return';
+  const BUILD='2026.10.01-v26.28-owner-recovery';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22895,7 +22896,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.01-v26.27-stable-width-folder-return',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.01-v26.28-owner-recovery',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23847,6 +23848,108 @@ window.cdqDriveAccessGateV2620=Object.freeze({
 })();
 </script>
 
+
+<style id="cdq-creator-style-v2628">.cdq-creator-recovery-v2628{margin-top:12px;text-align:left}.cdq-creator-recovery-v2628 p{overflow-wrap:anywhere;line-height:1.45}.cdq-creator-recovery-v2628 label{display:block;margin:12px 0 6px}.cdq-creator-recovery-v2628 input:not([type=checkbox]){box-sizing:border-box;width:100%;padding:14px;border-radius:14px;border:1px solid #657180;background:#101318;color:#fff;font-size:22px}.cdq-creator-recovery-v2628 button,.cdq-creator-entry-v2628{box-sizing:border-box;width:100%;min-height:48px;margin-top:10px;padding:12px;border:1px solid #4389ad;border-radius:12px;background:#123b53;color:#fff;font-weight:bold}.cdq-creator-recovery-v2628 .secondary,.cdq-creator-entry-v2628{background:#242b33;border-color:#68737f}.cdq-creator-recovery-v2628 .recovery-error{color:#ffb5b5}.cdq-creator-recovery-v2628 .reset-confirm{font-size:14px}.cdq-creator-recovery-v2628 .reset-confirm input{width:auto;margin-right:6px}.cdq-creator-recovery-v2628 a{color:#8ad4ff}.cdq-creator-recovery-v2628 button:disabled{opacity:.6}</style>
+<script id="cdq-creator-recovery-v2628">
+/* CDQ creator recovery: Google verifies identity; the server alone grants access. */
+(function(){
+'use strict';
+if(window.cdqCreatorRecoveryV2628)return;
+const OWNER='jp.rodrigue86@gmail.com';
+const MANAGER='https://jprodrigue86.github.io/Balance-CDQ-distribution/apps-script-manager/?bundle=v26.28';
+let active=false,busy=false,seq=0,ticket='',owner='',hasPin=false,mode='google',panel=null;
+function el(tag,text){const n=document.createElement(tag);if(text)n.textContent=text;return n;}
+function errorText(e){return String(e&&e.message||e||'La récupération n’a pas abouti. Réessayez.');}
+function rpc(name,args){return new Promise(function(resolve,reject){try{cdqApiRun().withSuccessHandler(resolve).withFailureHandler(reject)[name].apply(null,args);}catch(e){reject(e);}});}
+function hideGoogle(){cdqGoogleAuthPendingV42=false;cdqGooglePromptDelegatedV42=false;cdqPostToPwa({type:'CDQ_GOOGLE_AUTH_HIDE',authProtocol:42});}
+function getPanel(){
+ if(panel)return panel;
+ panel=el('div');panel.id='cdqCreatorPanelV2628';panel.className='cdq-creator-recovery-v2628';panel.style.display='none';
+ const card=document.querySelector('#accessOverlay .access-card');if(card)card.appendChild(panel);return panel;
+}
+function button(text,fn,secondary){const b=el('button',text);b.type='button';if(secondary)b.className='secondary';b.onclick=fn;return b;}
+function field(id,label){const l=el('label',label),i=el('input');l.htmlFor=id;i.id=id;i.type='password';i.inputMode='numeric';i.maxLength=4;i.autocomplete=mode==='new'?'new-password':'current-password';i.placeholder='••••';i.addEventListener('input',function(){i.value=i.value.replace(/\D/g,'').slice(0,4);});panel.append(l,i);return i;}
+function render(message,isError){
+ const p=getPanel();cdqMasquerPanneauxAcces();p.replaceChildren();p.style.display='block';
+ const overlay=document.getElementById('accessOverlay');if(overlay)overlay.style.display='flex';
+ const status=document.getElementById('accessStatus');if(status)status.textContent='Récupération de l’accès créateur';
+ cdqNettoyerErreurAcces();cdqSetAccessState('input');
+ p.appendChild(el('p',owner||OWNER));
+ if(message){const m=el('p',message);m.className=isError?'recovery-error':'recovery-info';m.setAttribute('role',isError?'alert':'status');p.appendChild(m);}
+ if(mode==='pin'){
+  field('cdqCreatorPinV2628','Votre NIP personnel à 4 chiffres');
+  p.appendChild(button('Réactiver cet appareil',function(){submit(false);}));
+  p.appendChild(button('J’ai oublié mon NIP',function(){mode='new';render('Choisissez un nouveau NIP. Les anciennes sessions de votre compte seront révoquées.',false);},true));
+ }else if(mode==='new'){
+  field('cdqCreatorPinV2628','Choisissez votre NIP personnel');field('cdqCreatorConfirmV2628','Confirmez votre NIP');
+  if(hasPin){const l=el('label'),c=el('input');c.type='checkbox';c.id='cdqCreatorResetConfirmV2628';l.className='reset-confirm';l.append(c,document.createTextNode(' Je confirme le remplacement de mon NIP et la révocation de mes anciennes sessions.'));p.appendChild(l);}
+  p.appendChild(button('Enregistrer et réactiver',function(){submit(true);}));
+  if(hasPin)p.appendChild(button('Garder mon NIP actuel',function(){mode='pin';render();},true));
+ }else if(mode==='server'){
+  const a=el('a','Ouvrir le correctif Apps Script V26.28');a.href=MANAGER;a.target='_blank';a.rel='noopener';p.appendChild(a);
+  p.appendChild(button('Réessayer après le déploiement',start));
+ }else if(!busy){p.appendChild(button('Confirmer mon compte Google créateur',start));}
+ if(!busy)p.appendChild(button('Annuler',cancel,true));
+ if(busy)p.querySelectorAll('button,input').forEach(function(n){n.disabled=true;});
+}
+function fail(e){busy=false;hideGoogle();render(errorText(e),true);}
+async function start(){
+ if(busy)return;active=true;busy=true;ticket='';owner='';hasPin=false;mode='google';const id=++seq;
+ render('Vérification du service de récupération…',false);
+ try{
+  const state=await rpc('obtenirEtatAcces',['','']);if(id!==seq||!active)return;
+  const m=String(state&&state.versionBackend||'').match(/-v(\d+)\.(\d+)/i);
+  if(!m||Number(m[1])*100+Number(m[2])<2628){busy=false;mode='server';render('Déployez le petit correctif Apps Script V26.28 une fois. Il ne réimporte aucune donnée.',true);return;}
+  busy=false;cdqDemanderConnexionGoogleV42('Récupération créateur : confirmez '+OWNER+'. Aucun code administrateur à générer.');
+ }catch(e){if(id===seq&&active)fail(e);}
+}
+async function credential(data){
+ if(!active||busy||!data||!data.credential||!data.challengeId)return;
+ busy=true;const id=seq;cdqGoogleAuthPendingV42=true;
+ try{
+  const proof=await rpc('verifierJetonGoogleCDQ',[String(data.credential),String(data.challengeId)]);
+  if(id!==seq||!active)return;
+  if(!proof||!proof.ok||!proof.ticket||String(proof.email||'').trim().toLowerCase()!==OWNER)throw Error('Choisissez le compte Google créateur '+OWNER+'. Le compte Drive et les autres comptes administrateurs ne remplacent pas cette vérification.');
+  ticket=String(proof.ticket);owner=String(proof.email);hideGoogle();
+  const state=await rpc('connecterAvecCodeAcces',[owner,'',ticket,'',{creatorRecovery:true,action:'state'}]);
+  if(id!==seq||!active)return;
+  if(!state||state.creatorRecovery!==true||state.email!==OWNER)throw Error('Le serveur n’a pas confirmé l’accès créateur.');
+  hasPin=state.hasPin===true;mode=hasPin?'pin':'new';busy=false;
+  render(hasPin?'Votre NIP a été conservé. Entrez-le pour réenregistrer ce téléphone.':'Compte créateur confirmé. Choisissez votre NIP personnel.',false);
+ }catch(e){if(id===seq&&active){ticket='';owner='';mode='google';fail(e);}}
+}
+async function submit(newPin){
+ if(!active||busy||!ticket)return;
+ const p=document.getElementById('cdqCreatorPinV2628'),c=document.getElementById('cdqCreatorConfirmV2628'),r=document.getElementById('cdqCreatorResetConfirmV2628');
+ const nip=String(p&&p.value||''),confirmation=String(c&&c.value||'');
+ if(!/^\d{4}$/.test(nip)){render('Entrez exactement 4 chiffres.',true);return;}
+ if(newPin&&nip!==confirmation){render('Les deux NIP ne correspondent pas.',true);return;}
+ if(newPin&&hasPin&&!(r&&r.checked)){render('Confirmez le remplacement de votre NIP avant de continuer.',true);return;}
+ const opts={creatorRecovery:true,action:newPin?'set-pin':'unlock',confirmation:confirmation,confirmReset:newPin&&hasPin&&!!(r&&r.checked)};
+ busy=true;const id=seq;p.value='';if(c)c.value='';render('Vérification sécurisée…',false);
+ try{
+  const state=await rpc('connecterAvecCodeAcces',[owner,nip,ticket,'',opts]);
+  if(id!==seq||!active)return;
+  if(!state||state.autorise!==true||state.email!==OWNER||!state.jetonAppareil||!state.jetonSession)throw Error('Récupération non confirmée. Aucun accès n’a été ouvert.');
+  ticket='';owner='';active=false;busy=false;seq++;hideGoogle();getPanel().style.display='none';
+  cdqSauverJetonAppareil(state.jetonAppareil);
+  if(cdqEstAndroid()&&cdqPwaAvailable())cdqPostToPwa({type:'CDQ_BIOMETRIC_REGISTER',email:state.email});
+  appliquerAccesAutorise(state);
+ }catch(e){if(id===seq&&active)fail(e);}
+}
+function cancel(){if(busy)return;seq++;active=false;ticket='';owner='';hideGoogle();getPanel().replaceChildren();getPanel().style.display='none';afficherConnexionCodePersonnel('Connexion Balance CDQ','');}
+const oldHide=cdqMasquerPanneauxAcces;
+cdqMasquerPanneauxAcces=function(){if(panel)panel.style.display='none';return oldHide.apply(this,arguments);};
+const oldGoogleError=cdqAfficherErreurGoogleV42;
+cdqAfficherErreurGoogleV42=function(message){if(active){mode='google';fail(message);return;}return oldGoogleError.apply(this,arguments);};
+for(const parentId of ['accessLogin','accessUnlock']){
+ const host=document.getElementById(parentId);if(!host)continue;
+ const b=button('Récupérer mon accès créateur',start,true);b.classList.add('cdq-creator-entry-v2628');b.id='cdqCreatorEntryV2628-'+parentId;host.appendChild(b);
+}
+window.cdqCreatorRecoveryV2628=Object.freeze({isActive:function(){return active;},credential:credential,start:start,cancel:cancel});
+})();
+
+</script>
 </body>
 </html>
 
