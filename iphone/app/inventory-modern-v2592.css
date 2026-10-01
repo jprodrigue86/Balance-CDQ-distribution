@@ -48,3 +48,37 @@
 .cdq-im-price-row .cdq-im-thumb img,.cdq-im-alert-thumb img{width:100%;height:100%;object-fit:contain}
 .cdq-im-thumb img,.cdq-im-photo img{background:#f3f5f6}
 
+
+/* A definite frame prevents intrinsic image dimensions from stretching grid rows. */
+#cdqInventoryModernV2592 .cdq-im-detailtop{align-items:start}
+#cdqInventoryModernV2592 .cdq-im-photo{
+ position:relative!important;display:grid!important;place-items:center!important;
+ width:100%!important;min-width:0!important;min-height:0!important;
+ height:auto!important;aspect-ratio:1.2!important;align-self:start;
+ background:#fff!important;overflow:hidden!important;isolation:isolate;
+}
+#cdqInventoryModernV2592 .cdq-im-photo>img{
+ position:absolute!important;inset:12px!important;
+ width:calc(100% - 24px)!important;height:calc(100% - 24px)!important;
+ max-width:none!important;max-height:none!important;min-width:0!important;min-height:0!important;
+ margin:0!important;padding:0!important;display:block;
+ object-fit:contain!important;object-position:50% 50%!important;
+ background:#fff!important;transform:none!important;
+}
+#cdqInventoryModernV2592 :is(.cdq-im-thumb,.cdq-im-alert-thumb)>img{object-fit:contain!important;object-position:center!important}
+#cdqInventoryModernV2592 .cdq-im-head{align-items:center!important;gap:10px!important}
+#cdqInventoryModernV2592 :is(.cdq-im-back,.cdq-im-close){
+ flex:0 0 44px!important;width:44px!important;height:44px!important;
+ min-width:44px!important;min-height:44px!important;
+ padding:0!important;margin:0!important;display:flex!important;
+ align-items:center!important;justify-content:center!important;line-height:0!important;
+ transform:none!important;align-self:center!important;
+}
+#cdqInventoryModernV2592 :is(.cdq-im-back,.cdq-im-close)>svg{
+ display:block!important;flex:0 0 24px!important;width:24px!important;height:24px!important;
+ margin:0!important;padding:0!important;fill:none;stroke:currentColor;
+ stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round;pointer-events:none;
+}
+#cdqInventoryModernV2592 .cdq-im-back[hidden]{display:none!important}
+#cdqInventoryModernV2592 :is(.cdq-im-back,.cdq-im-close):focus-visible{outline:2px solid #49d5ef;outline-offset:2px}
+@media(max-width:460px){#cdqInventoryModernV2592 .cdq-im-photo{aspect-ratio:1!important}}

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.29" data-cdq-iphone-release="bbb99192fbe905a089db854aad9bd511514846e3807128af27bcc9ba9c313291">
+<html data-cdq-iphone-version="26.30" data-cdq-iphone-release="85a9628d2dc590fd8ff68df6dc9aeba726cf422f6449dbf6290eca3ad5a9e3d3">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -536,7 +536,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.01-v26.29-account-home-ui">
+<meta name="cdq-package-build" content="2026.10.01-v26.30-inventory-presentation">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -814,7 +814,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.01-v26.29-account-home-ui'
+    build:'2026.10.01-v26.30-inventory-presentation'
   });
 }
 
@@ -827,7 +827,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.01-v26.29-account-home-ui'
+        build:'2026.10.01-v26.30-inventory-presentation'
       });
     }
   } catch(e) {}
@@ -11592,7 +11592,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.01-v26.29-account-home-ui";
+  const CDQ_BUILD = "2026.10.01-v26.30-inventory-presentation";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13888,7 +13888,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.01-v26.29-account-home-ui";
+const CDQ_V19_BUILD = "2026.10.01-v26.30-inventory-presentation";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15607,7 +15607,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.01-v26.29-account-home-ui";
+const CDQ_V20_BUILD = "2026.10.01-v26.30-inventory-presentation";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16454,7 +16454,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.01-v26.29-account-home-ui";
+const CDQ_V21_BUILD = "2026.10.01-v26.30-inventory-presentation";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16978,7 +16978,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.01-v26.29-account-home-ui';
+const BUILD='2026.10.01-v26.30-inventory-presentation';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20659,7 +20659,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.01-v26.29-account-home-ui';
+  const BUILD='2026.10.01-v26.30-inventory-presentation';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22034,7 +22034,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     compactClientInfo();
     each('.file-row, .folder-header', {'min-height':px(54 * unit), 'height':'auto',
       'padding-top':px(5 * unit),'padding-bottom':px(5 * unit),'padding-left':px(10 * unit),'padding-right':px(8 * unit),'gap':px(6 * unit)});
-    each('.company-wrapper', {'margin-top':px(7 * unit),'margin-bottom':'0','gap':px(4 * unit)});
+    each('.company-wrapper', {'margin-top':px(7 * unit),'margin-bottom':px(Math.max(8,8 * unit)),'gap':px(4 * unit)});
     const companyHeight = Math.max(35 * unit, 17 * unit * textScale * 1.2 + 8 * unit);
     each('.company-button, .company-reset-button', {'min-height':px(companyHeight),'height':px(companyHeight),'padding-top':'0','padding-bottom':'0'});
     each('.company-button', {'font-size':px(17 * unit * textScale),'padding-left':px(12 * unit),'padding-right':px(10 * unit)});
@@ -22895,7 +22895,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.01-v26.29-account-home-ui',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.01-v26.30-inventory-presentation',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
