@@ -1,9 +1,9 @@
 {
   "schema": "cdq-script-bundle-v3",
   "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
-  "version": "V26.23",
-  "build": "2026.09.30-v26.23-real-inventory-price-photos",
-  "title": "Balance CDQ V26.23 — inventaire réel, disponibilité vente, prix client et photos",
+  "version": "V26.22",
+  "build": "2026.09.30-v26.22-invoice-root-send-archive",
+  "title": "Balance CDQ V26.22 — factures dans le CDQ Système actuel et archive des PDF envoyés",
   "requiresBuild": [
     "2026.09.30-v26.16-inventory-label-photo-serial"
   ],
@@ -14,7 +14,7 @@
       "from": [
         "2026.09.30-v26.16-inventory-label-photo-serial"
       ],
-      "to": "2026.09.30-v26.23-real-inventory-price-photos"
+      "to": "2026.09.30-v26.22-invoice-root-send-archive"
     },
     {
       "file": "Selector.html",
@@ -22,7 +22,7 @@
       "from": [
         "2026.09.30-v26.16-inventory-label-photo-serial"
       ],
-      "to": "2026.09.30-v26.23-real-inventory-price-photos"
+      "to": "2026.09.30-v26.22-invoice-root-send-archive"
     },
     {
       "id": "auth-identity-without-google",
@@ -121,115 +121,20 @@
       "search": "  GmailApp.sendEmail(email, sujet, corps, {\n    attachments: piecesJointes,\n    name: CONFIG.NOM_EXPEDITEUR\n  });\n\n  enregistrerHistoriqueEnvoi_(fichiersIds, email, nomCompagnie, idCompagnie);\n\n  ecrireProgressionEnvoi_(sessionId, {\n    phase: 'termine', total: total, termine: total, message: 'Envoi terminé.'\n  });\n\n  return {\n    message: 'Courriel envoyé avec succès.',\n    total: total,\n    timestamp: Date.now()\n  };\n",
       "replacement": "  GmailApp.sendEmail(email, sujet, corps, {\n    attachments: piecesJointes,\n    name: CONFIG.NOM_EXPEDITEUR\n  });\n\n  let archiveEnvoi = null;\n  let archiveErreur = '';\n  try {\n    archiveEnvoi = cdqArchiverPiecesEnvoyeesV2622_(piecesJointes, idCompagnie, {\n      sessionId: sessionId,\n      email: email,\n      nomCompagnie: nomCompagnie\n    });\n  } catch (archiveError) {\n    archiveErreur = archiveError && archiveError.message ? archiveError.message : String(archiveError);\n    console.log('CDQ V26.22 archivage après envoi impossible : ' + archiveErreur);\n  }\n\n  enregistrerHistoriqueEnvoi_(fichiersIds, email, nomCompagnie, idCompagnie);\n\n  ecrireProgressionEnvoi_(sessionId, {\n    phase: 'termine', total: total, termine: total,\n    message: archiveErreur ? 'Courriel envoyé; archive non créée : ' + archiveErreur : 'Envoi terminé.'\n  });\n\n  return {\n    message: archiveErreur\n      ? 'Courriel envoyé avec succès, mais l’archive n’a pas pu être créée.'\n      : (archiveEnvoi && archiveEnvoi.archives\n          ? 'Courriel envoyé avec succès. ' + archiveEnvoi.archives + ' PDF archivé(s) dans ' + archiveEnvoi.chemin + '.'\n          : 'Courriel envoyé avec succès.'),\n    total: total,\n    archive: archiveEnvoi,\n    archiveErreur: archiveErreur,\n    timestamp: Date.now()\n  };\n",
       "expected": 1
-    },
-    {
-      "id": "inventory-item-name-first-v2623",
-      "file": "Selector.html",
-      "op": "replace_literal",
-      "search": "function articleLabel(a){return clean((a&&a.numero)||'')||clean((a&&a.description)||'')||'Article'}",
-      "replacement": "function articleLabel(a){return clean((a&&a.description)||'')||clean((a&&a.numero)||'')||'Article'}",
-      "expected": 1
-    },
-    {
-      "id": "inventory-search-source-sku-v2623",
-      "file": "Selector.html",
-      "op": "replace_literal",
-      "search": "function articleSearchText(a){return [a.numero,a.description,a.categorie,a.fabricant,a.modele,a.codeBarres].map(clean).join(' ').toLocaleLowerCase('fr')}",
-      "replacement": "function articleSearchText(a){return [a.numero,a.skuSource,a.description,a.categorie,a.fabricant,a.modele,a.codeBarres].map(clean).join(' ').toLocaleLowerCase('fr')}",
-      "expected": 1
-    },
-    {
-      "id": "inventory-official-photo-fallback-v2623",
-      "file": "Selector.html",
-      "op": "replace_literal",
-      "search": "function thumbHTML(a,cls){return '<div class=\"'+(cls||'cdq-im-thumb')+'\" data-photo=\"'+esc(a&&a.articleId||'')+'\"><span>'+esc(catIcon(a))+'</span></div>'}",
-      "replacement": "function thumbHTML(a,cls){var remote=clean(a&&a.imageUrl),fallback='<span>'+esc(catIcon(a))+'</span>';var visual=remote?'<img src=\"'+esc(remote)+'\" alt=\"'+esc(articleLabel(a))+'\" loading=\"lazy\" referrerpolicy=\"no-referrer\" onerror=\"this.style.display=\\'none\\';if(this.nextElementSibling)this.nextElementSibling.style.display=\\'inline\\'\"><span style=\"display:none\">'+esc(catIcon(a))+'</span>':fallback;return '<div class=\"'+(cls||'cdq-im-thumb')+'\" data-photo=\"'+esc(a&&a.articleId||'')+'\">'+visual+'</div>'}",
-      "expected": 1
-    },
-    {
-      "id": "inventory-price-available-v2623",
-      "file": "Selector.html",
-      "op": "replace_literal",
-      "search": "  if(showPrice)return '<div class=\"cdq-im-price-row\" data-detail=\"'+esc(a.articleId)+'\">'+thumbHTML(a)+'<span><strong>'+esc(articleLabel(a))+'</strong><small>'+esc(maker(a))+' · # '+esc(a.numero||a.modele||'')+'</small></span><span class=\"cdq-im-price-actions\"><span class=\"cdq-im-price\">'+money(a.prixClient)+'</span>'+(isAdmin()?'<button class=\"cdq-im-editprice\" data-price=\"'+esc(a.articleId)+'\" type=\"button\">✎</button>':'')+'</span></div>';",
-      "replacement": "  if(showPrice)return '<div class=\"cdq-im-price-row\" data-detail=\"'+esc(a.articleId)+'\">'+thumbHTML(a)+'<span><strong>'+esc(articleLabel(a))+'</strong><small>'+esc(maker(a))+' · # '+esc(a.numero||a.modele||'')+' · Disponible vente : '+Number(a.disponibleVente||0)+'</small></span><span class=\"cdq-im-price-actions\"><span class=\"cdq-im-price\">'+money(a.prixClient)+'</span>'+(isAdmin()?'<button class=\"cdq-im-editprice\" data-price=\"'+esc(a.articleId)+'\" type=\"button\">✎</button>':'')+'</span></div>';",
-      "expected": 1
-    },
-    {
-      "id": "inventory-detail-photo-v2623",
-      "file": "Selector.html",
-      "op": "replace_literal",
-      "search": "  body.innerHTML='<div class=\"cdq-im-detailtop\"><div class=\"cdq-im-photo\" data-photo=\"'+esc(a.articleId)+'\"><span>'+esc(catIcon(a))+'</span></div><div class=\"cdq-im-meta\"><h2>'+esc(articleLabel(a))+'</h2>",
-      "replacement": "  body.innerHTML='<div class=\"cdq-im-detailtop\">'+thumbHTML(a,'cdq-im-photo')+'<div class=\"cdq-im-meta\"><h2>'+esc(articleLabel(a))+'</h2>",
-      "expected": 1
-    },
-    {
-      "id": "inventory-detail-sale-qty-v2623",
-      "file": "Selector.html",
-      "op": "replace_literal",
-      "search": "<div><dt>Code-barres</dt><dd>'+esc(a.codeBarres||'Non associé')+'</dd></div></dl></div></div>'",
-      "replacement": "<div><dt>Code-barres</dt><dd>'+esc(a.codeBarres||'Non associé')+'</dd></div><div><dt>Disponible vente</dt><dd>'+Number(a.disponibleVente||0)+'</dd></div></dl></div></div>'",
-      "expected": 1
-    },
-    {
-      "id": "inventory-image-css-v2623",
-      "file": "Selector.html",
-      "op": "insert_before_literal",
-      "before": "</body>",
-      "text": "\n<style id=\"cdq-inventory-images-v2623\">\n.cdq-im-price-row .cdq-im-thumb img,.cdq-im-alert-thumb img{width:100%;height:100%;object-fit:contain}\n.cdq-im-thumb img,.cdq-im-photo img{background:#f3f5f6}\n</style>\n"
-    },
-    {
-      "id": "inventory-stock-sale-summary-v2623",
-      "file": "Selector.html",
-      "op": "replace_literal",
-      "search": "  return '<button class=\"cdq-im-row\" data-detail=\"'+esc(a.articleId)+'\">'+thumbHTML(a)+'<span><strong>'+esc(articleLabel(a))+'</strong><small>'+esc(maker(a))+' · # '+esc(a.numero||a.modele||'')+'</small></span><span class=\"stock'+(low?' low':'')+'\">'+total+'<small>'+(low?'stock faible':'en stock')+'</small></span><span class=\"chev\">›</span></button>';",
-      "replacement": "  return '<button class=\"cdq-im-row\" data-detail=\"'+esc(a.articleId)+'\">'+thumbHTML(a)+'<span><strong>'+esc(articleLabel(a))+'</strong><small>'+esc(maker(a))+' · # '+esc(a.numero||a.modele||'')+' · Vente : '+Number(a.disponibleVente||0)+'</small></span><span class=\"stock'+(low?' low':'')+'\">'+total+'<small>'+(low?'stock faible':'physique')+'</small></span><span class=\"chev\">›</span></button>';",
-      "expected": 1
-    },
-    {
-      "id": "inventory-lazy-official-image-v2623",
-      "file": "Selector.html",
-      "op": "replace_literal",
-      "search": "function loadPhoto(a,box){if(!a||!a.photoFileId||!box||box.dataset.loaded==='1')return;box.dataset.loaded='1';var key=String(a.articleId||'');if(photoCache.has(key)){var cached=document.createElement('img');cached.alt=articleLabel(a);cached.src=photoCache.get(key);box.replaceChildren(cached);return}rpc('cdqInventoryGetPhotoV2593',[a.articleId]).then(r=>{if(r&&r.dataUrl){photoCache.set(key,r.dataUrl);var im=document.createElement('img');im.alt=articleLabel(a);im.src=r.dataUrl;box.replaceChildren(im)}}).catch(()=>{})}",
-      "replacement": "function loadPhoto(a,box){if(!a||!box||box.dataset.loaded==='1')return;box.dataset.loaded='1';var key=String(a.articleId||'');function show(src){if(!src)return;photoCache.set(key,src);var im=document.createElement('img');im.alt=articleLabel(a);im.src=src;box.replaceChildren(im)}if(photoCache.has(key)){show(photoCache.get(key));return}if(a.photoFileId){rpc('cdqInventoryGetPhotoV2593',[a.articleId]).then(r=>{if(r&&r.dataUrl)show(r.dataUrl)}).catch(()=>{});return}if(a.imageUrl){show(a.imageUrl);return}if(a.imageSourceUrl){rpc('cdqInventoryResolveOfficialImageV2623',[a.articleId]).then(r=>{if(r&&r.imageUrl){a.imageUrl=r.imageUrl;show(r.imageUrl)}}).catch(()=>{})}}",
-      "expected": 1
     }
   ],
   "extraFiles": [
     {
       "name": "CDQDriveGateV2620.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.23/files/CDQDriveGateV2620.gs"
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.22/files/CDQDriveGateV2620.gs"
     },
     {
       "name": "CDQInvoicesV2590.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.23/files/CDQInvoicesV2590.gs"
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.22/files/CDQInvoicesV2590.gs"
     },
     {
       "name": "CDQSendArchiveV2622.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.23/files/CDQSendArchiveV2622.gs"
-    },
-    {
-      "name": "CDQInventoryV2593.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.23/files/CDQInventoryV2593.gs"
-    },
-    {
-      "name": "CDQInventoryImportV2623.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.23/files/CDQInventoryImportV2623.gs"
-    },
-    {
-      "name": "CDQInventorySeedV2623_0.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.23/files/CDQInventorySeedV2623_0.gs"
-    },
-    {
-      "name": "CDQInventorySeedV2623_1.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.23/files/CDQInventorySeedV2623_1.gs"
-    },
-    {
-      "name": "CDQInventorySeedV2623_2.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.23/files/CDQInventorySeedV2623_2.gs"
-    },
-    {
-      "name": "CDQInventorySeedV2623_3.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.23/files/CDQInventorySeedV2623_3.gs"
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.22/files/CDQSendArchiveV2622.gs"
     }
   ],
   "removeFiles": [],
@@ -253,24 +158,6 @@
     "archiveScope": "Écriture refusée si le client n'est pas directement rattaché au dossier maître historique 1cU0ekKqfuf9nOytUsnH1Mbljx8gWWe77. Aucun fichier n'est copié vers CDQ Système 1.0.",
     "archiveTiming": "L'archive est créée après GmailApp.sendEmail. En cas d'échec d'archive, le résultat indique que le courriel est parti afin d'éviter un renvoi accidentel.",
     "archiveContent": "Seules les pièces jointes PDF sont archivées; les ZIP de dossiers ou autres formats ne sont pas copiés dans l'archive PDF.",
-    "deployment": "AUTORISÉ — migration terminée; package cumulatif V26.23 prêt à ÉCRIRE + DÉPLOYER.",
-    "inventorySource": "Résumé de l’inventaire (4).xlsx — 136 lignes d’articles.",
-    "skuRule": "Le préfixe CDQ est retiré uniquement lorsqu’il est au début du SKU. Le reste du SKU devient le numéro d’article; les SKU vides restent vides.",
-    "skuCounts": "40 SKU avec préfixe CDQ nettoyés; 68 lignes sans SKU conservées sans numéro inventé.",
-    "quantityRule": "quantity_available = stock physique initial à la Shop; quantity_available_for_sale = quantité disponible à la vente, conservée séparément.",
-    "priceRule": "La colonne rate devient prixClient et correspond au prix de vente affiché au client dans Liste de prix.",
-    "duplicateNumbers": "Les numéros visibles 29 et 3791 existent chacun sur deux articles différents; ils sont conservés et distingués par articleId interne.",
-    "negativeAvailability": "La valeur -1 de disponibleVente pour l’article 7663 est conservée telle quelle afin de refléter fidèlement le fichier source.",
-    "importSafety": "Au premier chargement Inventaire après déploiement V26.23, Articles, Stock et Unites (si présente) sont sauvegardés avant import. Articles et Stock sont remplacés; Unites est réinitialisée; Mouvements, Alertes et PushTokens restent intacts.",
-    "imagePolicy": "64 correspondances produit à haute confiance utilisent une image fabricant/officielle ou une page produit officielle vérifiée; une photo Drive ajoutée manuellement reste prioritaire. Les 72 articles ambigus restent sans image automatique.",
-    "priceListPresentation": "La Liste de prix montre nom de l’article, numéro, fabricant, disponibilité à la vente, photo quand disponible et prix client.",
-    "inventoryPresentation": "Inventaire général : stock physique + disponible à la vente; détail : stock physique par emplacement + disponible à la vente séparé.",
-    "sourceIntegrity": "136 articles; stock physique total 1055; disponible à la vente total 902; empreinte des cinq colonnes source essentielles 0x540f1af7.",
-    "imageCoverage": "Couverture validée notamment chez Rice Lake, VPG Tedea-Huntleigh, Avery Weigh-Tronix, ANYLOAD, Kilotech, OHAUS, Epson, Neutrik, Totalcomp et Flintec.",
-    "categoryRefinement": "Corrections sûres de classement : châssis/accessoires, options électroniques, connecteurs et afficheurs distants. Aucun fabricant incertain n’est inventé.",
-    "serializedUnitsImport": "La feuille Unites existante est sauvegardée puis réinitialisée lors de l'import initial V26.23, car le fichier source ne fournit aucun numéro de série. Cela évite les unités orphelines liées aux anciens articleId.",
-    "shopImport": "Les 1 055 unités physiques du fichier source sont initialisées dans Shop (Atelier), car le fichier source ne contient aucune répartition par camion.",
-    "catalogCorrections": "Corrections sûres de fabricant/catégorie/modèle sans modifier les cinq colonnes source. Exemple : KPC 461-3k => Kilotech / Balances / plateformes / KPC 461-3K.",
-    "imageResolver": "Si imageUrl est vide mais qu’une imageSourceUrl fabricant est connue, V26.23 résout paresseusement og:image/twitter:image via UrlFetchApp, mémorise l’URL et l’affiche ensuite. Les photos Drive manuelles gardent la priorité."
+    "deployment": "EN ATTENTE — ne pas faire ÉCRIRE + DÉPLOYER pendant la migration."
   }
 }
