@@ -49,11 +49,11 @@ function ensureNav(){
     const host=$(':scope > span',b);if(host)host.innerHTML=indicatorSvg(28);
     b.dataset.calTheme=selectedTheme;
   }
-  const label=$('small',b),color=selectedTheme==='minimal'?'#b7f6ec':selectedTheme==='metal-music'?'#64f3d7':'#64e8d4';
+  const label=$('small',b),color='var(--cdq-accent)' ;
   if(label){setImportant(label,'color',color);setImportant(label,'-webkit-text-fill-color',color);setImportant(label,'text-shadow',selectedTheme==='minimal'?'none':'0 0 8px #11ac8c');}
   // Keep all destinations available in clients as well as on the home screen.
   b.hidden=false;
-  const order=['Accueil','Dossier','Favoris','Rapport','Calibration','Inventaire','Factures','Corbeille'];
+  const order=['Accueil','Dossier','Favoris','Rapport','Calibration','Calcul','Inventaire','Factures','Opportunités','Drive général','Corbeille'];
   const items=$$(':scope > .bottom-nav-item',nav);
   const sorted=items.slice().sort((a,b)=>order.indexOf($('small',a)?.textContent.trim())-order.indexOf($('small',b)?.textContent.trim()));
   // Move only newly inserted/out-of-order buttons. Never rebuild the rail or
@@ -63,7 +63,7 @@ function ensureNav(){
 }
 function ensureDialog(){if(dialog?.isConnected)return dialog;dialog=document.createElement('dialog');dialog.id='cdqCalibrationDialogV2565';document.body.append(dialog);dialog.addEventListener('cancel',e=>{e.preventDefault();dialog.close();});return dialog;}
 function header(title,back){return '<header class="cdq-cal-head">'+(back?'<button type="button" data-cal-back aria-label="Retour">←</button>':'')+indicatorSvg(31)+'<h2>'+esc(title)+'</h2><button type="button" data-cal-close aria-label="Fermer">✕</button></header>';}
-function shell(title,body,back){const d=ensureDialog();d.innerHTML='<div class="cdq-cal-shell">'+header(title,back)+'<main class="cdq-cal-body">'+body+'</main></div>'; $('[data-cal-close]',d).onclick=()=>d.close();const b=$('[data-cal-back]',d);if(b)b.onclick=goBack;if(!d.open)d.showModal();}
+function shell(title,body,back){const d=ensureDialog();d.innerHTML='<div class="cdq-cal-shell">'+header(title,back)+'<main class="cdq-cal-body">'+body+'</main></div>'; $('[data-cal-close]',d).onclick=()=>d.close();const b=$('[data-cal-back]',d);if(b)b.onclick=goBack;if(!d.open)d.show();window.cdqWorkspaceV2638?.navigate('calibration',{adopt:true});}
 function goBack(){
   if(state.view==='device'){if(state.returnView){const r=state.returnView;state.returnView=null;return setView(r);}if(state.manufacturer)return showManufacturer(state.category,state.manufacturer);if(state.category)return showCategory(state.category);return showRoot();}
   if(state.view==='manufacturer')return showCategory(state.category);if(state.view==='category')return showRoot();showRoot();

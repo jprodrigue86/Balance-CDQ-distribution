@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="26.37" data-cdq-iphone-release="2b39fc2d8affa4eba90a45001bb8dbf8e922766a6dc479954436ef5145c1680c">
+<html lang="fr" data-cdq-iphone-version="26.38" data-cdq-iphone-release="7c74ee3ea218df322b2df462835fd691d7d256d16a8a137f0cb10ffe76c73735">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./iphone-update.js"></script>
@@ -474,7 +474,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 </div>
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.02-v26.37-bundled-pdf-reports';
+const CDQ_PWA_BUILD = '2026.10.02-v26.38-workspace-calcul-opportunites';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1623,7 +1623,7 @@ function cdqAfficherPdf(data){
 function cdqAfficherPdfV2304(data,source){
   if(cdqPdfV2304Context)return false;
   const ctx={source,fileId:String(data.fileId||''),pending:new Map()};cdqPdfV2304Context=ctx;
-  cdqAfficherPdf({...data,
+  cdqAfficherPdf({...data,workspaceSource:source,
     onOpened:()=>replyToSelector(source,{type:'CDQ_PDF_OPENED_V2523',fileId:ctx.fileId}),
     onClose:()=>{if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId});},
     onError:error=>{cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,error:error.message});},

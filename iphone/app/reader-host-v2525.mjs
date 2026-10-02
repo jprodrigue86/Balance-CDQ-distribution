@@ -6,6 +6,20 @@ export function openReader(data){
   frame.src=new URL('./reader-v2525.html',import.meta.url).href;frame.referrerPolicy='origin';
   frame.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:#101820';
   const origin=new URL(frame.src).origin,saves=new Map();let closed=false,guard=false,ready=false;
+  let workspaceRoute='',workspaceOwner='';
+  function layout(message){
+    if(!data.workspaceSource)return;
+    try{
+      const source=data.workspaceSource,doc=source.document,root=doc.documentElement;
+      if(!root.classList.contains('cdq-mobile-layout'))return;
+      workspaceRoute||=root.dataset.cdqWorkspace||'dossier';workspaceOwner||=root.dataset.cdqWorkspaceOwner||'';
+      if(message&&(!message.canRead||workspaceOwner&&message.owner!==workspaceOwner)){close();return;}
+      const bounds=source.frameElement?.getBoundingClientRect(),offset=bounds?.top||0;
+      const top=offset+(doc.getElementById('appHeader')?.getBoundingClientRect().bottom||0),bottom=Math.max(0,innerHeight-offset-(doc.querySelector('.bottom-nav')?.getBoundingClientRect().top||innerHeight));
+      frame.style.inset=top+'px 0 '+bottom+'px';frame.style.height='auto';
+      frame.hidden=!!message&&message.route!==workspaceRoute;
+    }catch{}
+  }
   const marker='cdq-reader-'+crypto.randomUUID();
   const tell=message=>{if(!closed)frame.contentWindow?.postMessage(message,origin)};
   function pop(){if(closed)return;history.pushState({cdqReader:marker},'',location.href);tell({type:'CDQ_READER_REQUEST_CLOSE'});}
@@ -16,6 +30,7 @@ export function openReader(data){
     data.onClose?.();
   }
   async function receive(event){
+    if(!closed&&data.workspaceSource&&event.source===data.workspaceSource&&event.origin===location.origin&&event.data?.type==='CDQ_WORKSPACE_LAYOUT_V2638'){layout(event.data);return;}
     if(closed||event.source!==frame.contentWindow||event.origin!==origin)return;
     const m=event.data||{};
     if(m.type==='CDQ_READER_READY'){
@@ -37,6 +52,6 @@ export function openReader(data){
     }
   }
   const timer=setTimeout(()=>{if(!ready){close();data.onError?.(new Error('Le lecteur n’a pas démarré. Mettez à jour l’application puis réessayez.'));}},30000);
-  window.addEventListener('message',receive);document.body.append(frame);
+  window.addEventListener('message',receive);document.body.append(frame);layout();
   active={requestClose:()=>tell({type:'CDQ_READER_REQUEST_CLOSE'})};return active;
 }

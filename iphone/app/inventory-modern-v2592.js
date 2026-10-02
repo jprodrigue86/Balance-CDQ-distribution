@@ -465,7 +465,7 @@ function open(){syncInventoryScopeV2631();
 function close(){if(!page||page.hidden)return;page.hidden=true;document.documentElement.classList.remove('cdq-inventory-modern-open-v2592')}
 function inventoryButton(){var nav=$('.bottom-nav');if(!nav)return null;return $$(':scope > .bottom-nav-item',nav).find(b=>String($('small',b)?.textContent||'').trim()==='Inventaire')||null}
 function install(){
-  window.cdqInventoryModernV2592={open,close,refresh:()=>load(true).then(render)};
+  window.cdqInventoryModernV2592={open,close,resume:()=>{if(!page||!inventoryAllowedV2631()||inventoryOwnerV2631!==inventoryScopeV2631()||!state.inv)return open();page.hidden=false;document.documentElement.classList.add('cdq-inventory-modern-open-v2592');position();},refresh:()=>load(true).then(render)};
   window.ouvrirInventaireCDQ=open;
   document.addEventListener('click',function(e){var nav=$('.bottom-nav');if(!nav)return;var b=e.target.closest('.bottom-nav-item');if(!b)return;var label=String($('small',b)?.textContent||'').trim();if(label==='Inventaire'){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();if(page&&!page.hidden)close();else open();return}if(page&&!page.hidden)close()},true);
   addEventListener('resize',()=>{if(!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;position()})}},{passive:true});

@@ -185,6 +185,36 @@ set('Mettler Toledo',['IND226'],method('METTLER TOLEDO IND221/IND226 — Mode d�
     step('Enregistrer','Attendre donE. ON/OFF affiche SAVE; PRINT enregistre. Contrôler le zéro et plusieurs charges.','donE → SAVE')
   ]));
 
+const method38=(...args)=>Object.assign(method(...args),{revision:'2026-10-02.1',checkedAt:'2026-10-02'});
+set('Mettler Toledo',['IND360'],method38('METTLER TOLEDO IND360 — 30654701 rév. 04, §3.5.1.3','https://www.mt.com/dam/product_organizations/industry/Load_Cells/Downloads/Transmitter/ind360/manuals/30654701_04_MAN_UG_IND360_EN.pdf',
+  'Interface Web, voie analogique standard de cette révision. Les voies POWERCELL et précision ont leurs propres sections; confirmer la technologie avant de commencer.',[
+    step('Préparer','Ouvrir la configuration autorisée, Scale → Calibration. Vérifier GEO, unité et linéarité sans changer les paramètres de la balance.','Scale → Calibration'),
+    step('Zéro','Dans Zero Adjust, vider la balance, attendre la stabilité puis START. Attendre Completed; rejeter une capture dynamique et corriger la stabilité.','Zero Adjust',['START']),
+    step('Charges','Dans Span Adjust, saisir chaque masse totale cumulative. Poser la première charge puis START. Si plusieurs points sont activés, Continue puis appliquer chaque charge totale demandée.','Span Adjust',['START','Continue']),
+    step('Terminer','Completed confirme la capture. Done termine; ESC abandonne sans enregistrer. Retirer les masses et contrôler zéro et charges connues.','Completed',['Done'])
+  ]));
+set('Mettler Toledo',['IND780'],method38('METTLER TOLEDO IND780 — 64057242 rév. 15, §3.5.1.4','https://www.mt.com/dam/product_organizations/industry/IndustrialTerminals/64057242_R15_IND780_TM_EN.pdf',
+  'Captures pour une voie analogique ou POWERCELL. IDNet et SICS utilisent des commandes distinctes; ne pas leur appliquer cette séquence.',[
+    step('Choisir la voie','Dans la configuration autorisée, ouvrir la calibration de la balance sélectionnée. Vérifier unités, GEO et points de linéarité.','Scale → Calibration'),
+    step('Zéro','Capture Zero : vider la balance, attendre la stabilité, START. Vérifier la réussite puis EXIT. Si du mouvement est signalé, ESC rejette la capture.','Capture Zero',['START','EXIT']),
+    step('Span','Capture Span : saisir Test Load 1 et les autres charges si la linéarité est active; ENTER. Poser la première charge, START, puis suivre les charges demandées.','Capture Span',['ENTER','START']),
+    step('Contrôle','Attendre Capture Span OK puis EXIT. Une Calibration Failure demande de corriger la cause et recommencer. Retirer les masses, contrôler le zéro et plusieurs charges.','Capture Span OK',['EXIT'])
+  ]));
+set('A&D',['AD4321'],method38('A&D AD-4321 A/B — imno-4321-022a/b rév. 2, p. 12–14','https://www.aandd.jp/products/manual/indicators/ad4321.pdf',
+  'Le manuel distingue deux générations. Stabiliser thermiquement l’ensemble et vérifier capacité/division sur les DIP avant la calibration.',[
+    step('Après janvier 1986','Commutateur CAL vers le haut. STANDBY/OPERATE affiche CAL; ZERO choisit CAL-1.','CAL → CAL-1'),
+    step('Zéro et span — CAL-1','Plateau vide et stable : STANDBY/OPERATE. Appliquer les masses. ZERO déplace le curseur à gauche, TARE à droite, GROSS/NET augmente le chiffre. Saisir la masse exacte puis STANDBY/OPERATE.'),
+    step('Ancienne génération','Écran en veille : CAL vers le haut, STANDBY/OPERATE. Plateau vide et stable, STANDBY/OPERATE. Poser la pleine capacité; ZERO, GROSS/NET et TARE règlent les trois chiffres selon la capacité (voir schéma p. 13). Valider STANDBY/OPERATE.'),
+    step('Enregistrer et vérifier','Après une capture réussie, CAL vers le bas mémorise les valeurs. Vérifier retour à zéro et masses. Si un code d’erreur apparaît, consulter p. 13–14 avant de poursuivre.','CAL OFF')
+  ]));
+set('Cardinal',['210-FE'],method38('Cardinal 210FE avec USB — 8200-0727-2M rév. A, p. 31–33 et 42–43','https://cardinalscale.com/themes/ee/site/default/asset/img/resources/resources_brochures/8200-0727-2M_210FE_USB-Installation-Technical.pdf',
+  'Procédure du matériel avec USB de ce manuel. Confirmer cette variante sur l’appareil. Ajustage complet à deux points : balance vide, puis masse connue.',[
+    step('Accéder à CAL','Appareil allumé : presser puis relâcher le commutateur de calibration accessible à l’arrière. Répéter jusqu’au menu CAL. ENTER, 1/YES, ENTER.','CAL',['ENTER','1/YES','ENTER']),
+    step('Premier point : zéro','À CAL1, vider la balance, attendre la stabilité puis ENTER. Attendre les tirets puis CAL2.','CAL1',['ENTER']),
+    step('Second point : masse','À CAL2, saisir la valeur des masses avec le clavier numérique. Poser exactement ces masses, attendre la stabilité puis ENTER. Attendre le retour au menu SIO.','CAL2 → SIO',['ENTER']),
+    step('Quitter et contrôler','Les données validées par ENTER sont conservées. Revenir à un menu avec le commutateur puis quitter par la touche de sortie indiquée au manuel, ou éteindre/rallumer. Contrôler zéro et plusieurs charges.')
+  ]));
+
 const reviews={
   'Rice Lake::SCT2200':['Commandes à vérifier','Le manuel technique décrit la calibration par masse connue (§4.2.3). Les pictogrammes de commande doivent encore être vérifiés avant de publier une séquence de touches.','https://www.ricelake.com/media/yuqb2sk2/m_183522_sct-2200_tech_enus_revg.pdf'],
   'Mettler Toledo::IND360':['Variante à préciser','Préciser la version logicielle, l’application (standard, réservoir, dosage…) et le type de plateforme pour choisir la procédure correspondante.','https://www.mt.com/es/es/home/library/datasheets/industrial-scales/terminals/ind360-downloads.html'],
