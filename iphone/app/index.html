@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="26.33" data-cdq-iphone-release="aa8e8844e1b82f8230784554a7e9d38aeee5ad0b2c33a5975af74f33df30cdef">
+<html lang="fr" data-cdq-iphone-version="26.34" data-cdq-iphone-release="8397705d03507c7fa476dc334bf2d8208fd9661143b32504d3cb8ead2ba836a4">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./iphone-update.js"></script>
@@ -474,7 +474,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 </div>
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.02-v26.33-confirmed-admin-access';
+const CDQ_PWA_BUILD = '2026.10.02-v26.34-biometric-current-access';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1553,6 +1553,8 @@ if (data.type === 'CDQ_BIOMETRIC_REQUEST') {
 ouvrirPontBiometrique('unlock',event.source,String(data.email||''),String(data.requestId||''));
 }
 if (data.type === 'CDQ_BIOMETRIC_CANCEL') {
+window.cdqStartupUnlockV2529?.cancel(String(data.requestId||''));
+window.cdqWarmUnlockV2540?.cancel(String(data.requestId||''));
 if (!data.requestId || (bioContext && data.requestId === bioContext.requestId)) annulerPontBiometrique();
 }
 });
@@ -1736,6 +1738,7 @@ bioContext=null;
 if(ctx&&ctx.controller)ctx.controller.abort();
 if(ctx&&ctx.native){
   window.cdqStartupUnlockV2529?.cancel(String(ctx.requestId||''));
+  window.cdqWarmUnlockV2540?.cancel(String(ctx.requestId||''));
   try{
     if(window.BalanceCDQNative&&typeof BalanceCDQNative.cancelBiometric==='function')
       BalanceCDQNative.cancelBiometric(String(ctx.requestId||''));
