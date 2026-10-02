@@ -20,7 +20,7 @@
 
   const account=()=>String(typeof utilisateurCourantEmail!=='undefined'?utilisateurCourantEmail:'').trim().toLowerCase();
   const client=()=>String(typeof compagnieSelectionnee!=='undefined'?compagnieSelectionnee:'');
-  const ready=()=>String(typeof cdqAccessState!=='undefined'?cdqAccessState:'')==='ready'&&!!account();
+  const ready=()=>String(typeof cdqAccessState!=='undefined'?cdqAccessState:'')==='ready'&&!!account()&&(!window.cdqDriveEntryV2632||window.cdqDriveEntryV2632.canRead());
 
   function storageKey(){
     return 'cdqRecentClientsV2544:'+(account()||'sans-compte');
@@ -314,6 +314,8 @@ html:is(.android,.ios,.mobile-device) #cdqGlobalProgressV2293[data-cdq-integrate
   },true);
 
   window.addEventListener('cdq:access-ready',()=>setTimeout(prewarm,30));
+  window.addEventListener('cdq:drive-ready-v2632',()=>setTimeout(prewarm,30));
+  window.addEventListener('cdq:drive-cleared-v2632',()=>{warmJobs.clear();serverJobs.clear();prewarmBatch=null;});
   window.addEventListener('cdq:access-state-v2527',event=>{
     if(event.detail==='ready')setTimeout(prewarm,30);
     else{warmJobs.clear();serverJobs.clear();}

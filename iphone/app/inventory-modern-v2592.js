@@ -193,7 +193,7 @@ function searchHome(value){state.query=clean(value);state.category='Tous';state.
 var inventoryOwnerV2631='',inventoryEpochV2631=0,inventoryRevisionV2631=0,inventoryLoadedAtV2631=0,inventoryPendingV2631=null,inventoryWarmTimerV2631=0;
 var photoPendingV2631=new Map(),historyPendingV2631=null;
 function inventoryScopeV2631(){return email()+'|'+String(typeof utilisateurCourantRole==='undefined'?'':utilisateurCourantRole||'')}
-function inventoryAllowedV2631(){return !!email()&&(typeof cdqAccessState==='undefined'||cdqAccessState==='ready')}
+function inventoryAllowedV2631(){return (!window.cdqDriveEntryV2632||window.cdqDriveEntryV2632.canRead())&&!!email()&&(typeof cdqAccessState==='undefined'||cdqAccessState==='ready')}
 function resetInventoryCacheV2631(){inventoryEpochV2631++;inventoryPendingV2631=null;historyPendingV2631=null;inventoryLoadedAtV2631=0;clearTimeout(inventoryWarmTimerV2631);state.inv=null;state.article=null;state.history=[];state.serialServerReady=null;photoCache.clear();photoPendingV2631.clear();inventoryOwnerV2631=inventoryScopeV2631()}
 function syncInventoryScopeV2631(){if(inventoryOwnerV2631!==inventoryScopeV2631())resetInventoryCacheV2631()}
 function queueInventoryWarmV2631(){clearTimeout(inventoryWarmTimerV2631);var epoch=inventoryEpochV2631;inventoryWarmTimerV2631=setTimeout(()=>{if(epoch===inventoryEpochV2631&&inventoryAllowedV2631()&&navigator.onLine!==false)load(false).catch(()=>{})},1800)}
@@ -454,7 +454,14 @@ function ensurePage(){
   document.body.append(page);body=$('#cdqImBody',page);titleEl=$('#cdqImTitle',page);subEl=$('#cdqImSub',page);backBtn=$('#cdqImBack',page);statusEl=$('#cdqImStatus',page);backBtn.onclick=back;$('#cdqImClose',page).onclick=close;position();return page
 }
 function position(){if(!page||page.hidden)return;var h=$('#appHeader'),n=$('.bottom-nav'),top=Math.max(0,Math.round(h?.getBoundingClientRect().bottom||0),Math.round(document.documentElement.matches('.android,.ios,.mobile-device')?($('.company-wrapper')?.getBoundingClientRect().bottom||0)+8:0)),bottom=Math.max(0,Math.round(innerHeight-(n?.getBoundingClientRect().top||innerHeight)));page.style.top=top+'px';page.style.bottom=bottom+'px'}
-function open(){syncInventoryScopeV2631();clearInventoryLabelContext();state.serialServerReady=null;if(typeof cdqAccessState!=='undefined'&&cdqAccessState!=='ready'){if(typeof afficherMessage==='function')afficherMessage('Connectez-vous avant d’ouvrir Inventaire.',false);return}ensurePage();state.view='home';state.query='';state.category='Tous';state.locationFilter='';page.hidden=false;document.documentElement.classList.add('cdq-inventory-modern-open-v2592');position();var displayedV2631=state.inv;if(state.inv)render();else if(body)body.innerHTML='<div class="cdq-im-loader">Chargement de l’inventaire…</div>';load(false).then(()=>{if(page&&!page.hidden&&state.inv!==displayedV2631&&state.view==='home'&&!document.activeElement?.closest('#cdqImBody input'))render()}).catch(()=>{if(page&&!page.hidden&&!state.inv&&state.view==='home')render()})}
+function open(){syncInventoryScopeV2631();
+    if(window.cdqDriveEntryV2632&&!window.cdqDriveEntryV2632.canRead()){
+      resetInventoryCacheV2631();ensurePage();state.view='home';page.hidden=false;
+      document.documentElement.classList.add('cdq-inventory-modern-open-v2592');
+      titleEl.textContent='Inventaire';subEl.textContent='Lecture seule';
+      body.innerHTML='<section class="cdq-im-card"><h2>Aucune donnée d’inventaire accessible</h2><p>Vous pouvez consulter l’interface. Les articles et les stocks restent masqués sans permission Drive. Aucune modification n’est autorisée.</p></section>';
+      setStatus('');position();return;
+    }clearInventoryLabelContext();state.serialServerReady=null;if(typeof cdqAccessState!=='undefined'&&cdqAccessState!=='ready'){if(typeof afficherMessage==='function')afficherMessage('Connectez-vous avant d’ouvrir Inventaire.',false);return}ensurePage();state.view='home';state.query='';state.category='Tous';state.locationFilter='';page.hidden=false;document.documentElement.classList.add('cdq-inventory-modern-open-v2592');position();var displayedV2631=state.inv;if(state.inv)render();else if(body)body.innerHTML='<div class="cdq-im-loader">Chargement de l’inventaire…</div>';load(false).then(()=>{if(page&&!page.hidden&&state.inv!==displayedV2631&&state.view==='home'&&!document.activeElement?.closest('#cdqImBody input'))render()}).catch(()=>{if(page&&!page.hidden&&!state.inv&&state.view==='home')render()})}
 function close(){if(!page||page.hidden)return;page.hidden=true;document.documentElement.classList.remove('cdq-inventory-modern-open-v2592')}
 function inventoryButton(){var nav=$('.bottom-nav');if(!nav)return null;return $$(':scope > .bottom-nav-item',nav).find(b=>String($('small',b)?.textContent||'').trim()==='Inventaire')||null}
 function install(){
@@ -463,7 +470,7 @@ function install(){
   document.addEventListener('click',function(e){var nav=$('.bottom-nav');if(!nav)return;var b=e.target.closest('.bottom-nav-item');if(!b)return;var label=String($('small',b)?.textContent||'').trim();if(label==='Inventaire'){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();if(page&&!page.hidden)close();else open();return}if(page&&!page.hidden)close()},true);
   addEventListener('resize',()=>{if(!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;position()})}},{passive:true});
   try{visualViewport?.addEventListener('resize',position,{passive:true})}catch(_){}
-  window.addEventListener('cdq:access-ready',()=>{resetInventoryCacheV2631();queueInventoryWarmV2631()});
+  window.addEventListener('cdq:access-ready',()=>{resetInventoryCacheV2631();queueInventoryWarmV2631()});window.addEventListener('cdq:drive-cleared-v2632',()=>{resetInventoryCacheV2631();close()});window.addEventListener('cdq:drive-ready-v2632',()=>queueInventoryWarmV2631());
   window.addEventListener('cdq:access-state-v2527',e=>{if(e.detail!=='ready'){resetInventoryCacheV2631();close();if(body)body.replaceChildren();}});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
