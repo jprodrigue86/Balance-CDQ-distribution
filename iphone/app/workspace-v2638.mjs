@@ -6,6 +6,7 @@ const fmt=v=>Number(v).toLocaleString('fr-CA',{maximumFractionDigits:8});
 const GENERAL='1F7rgU20Hc1PmjxQHY7ALTqkqArN6RSsf';
 const paths={calcul:'<rect x="6" y="3" width="20" height="26" rx="3"/><path d="M10 7h12v5H10zM10 17h2m4 0h2m4 0h0M10 22h2m4 0h2m4 0v3"/>',opportunities:'<path d="M4 26h24M7 23V13h5v10m4 0V9h5v14m4-9V4M19 4h6v6M7 9l7-4 4 2 7-3"/>',drive:'<path d="M3 9V6h10l3 4h13v16H3z"/>',folder:'<path d="M3 9V6h10l3 4h13v16H3z"/>',report:'<path d="M7 3h13l6 6v20H7zM20 3v6h6M11 14h11m-11 5h11m-11 5h7"/>',camera:'<path d="M3 10h6l3-5h8l3 5h6v17H3z"/><circle cx="16" cy="18" r="6"/>',gallery:'<rect x="3" y="4" width="26" height="24" rx="3"/><circle cx="22" cy="10" r="2"/><path d="M4 24l8-10 7 7 4-4 6 7"/>',file:'<path d="M7 3h13l6 6v20H7zM20 3v6h6"/>'};
 export function workspaceIcon(key,style='current'){
+  if(style==='metal-music'&&['calcul','opportunities','drive'].includes(key))return '<img class="cdq-workspace-art-v2639" src="./assets/navigation-v2639/'+key+'.webp" alt="" aria-hidden="true" draggable="false">';
   const body=paths[key]||paths.file,weight=style==='minimal'?1.6:style==='dark-pro'?2:2.4;
   const frame=style==='metal-music'?'<path d="M3 4l3-3h20l3 3v24l-3 3H6l-3-3z" stroke-opacity=".3"/>':style==='isometric'?'<path d="M2 7l6-4 22 5v21l-6 3L2 26z" stroke-opacity=".3"/>':'';
   return '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="'+weight+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+frame+body+'</svg>';
@@ -20,6 +21,7 @@ let active='',observedOwner='',queued=false,driveEpoch=0,driveState={mode:'drive
 const pageByRoute={dossier:'cdqDossierPageV2638',drive:'cdqDrivePageV2638',favorites:'cdqDrivePageV2638',calcul:'cdqCalculPageV2638',opportunities:'cdqOpportunitiesPageV2638',report:'cdqReportOverlayV2578',calibration:'cdqCalibrationDialogV2565',inventory:'cdqInventoryModernV2592',invoices:'cdqInvoicePageV2590'};
 const labels={Accueil:'home',Dossier:'dossier',Favoris:'favorites',Rapport:'report',Calibration:'calibration',Calcul:'calcul',Inventaire:'inventory',Factures:'invoices',Opportunités:'opportunities','Drive général':'drive',Corbeille:'trash'};
 const order=Object.values(labels),cache=new Map();
+const navColors={home:'#45d6ff',dossier:'#ff6285',favorites:'#ffd34d',report:'#458fff',calibration:'#63edcf',calcul:'#ffb64d',inventory:'#d783ff',invoices:'#6be9a9',opportunities:'#65eda4',drive:'#48ceff',trash:'#ddd4c8'};
 function page(id,title,subtitle=''){
   let p=$('#'+id);if(p)return p;p=document.createElement('section');p.id=id;p.className='cdq-workspace-page';p.hidden=true;p.setAttribute('aria-label',title);
   p.innerHTML='<header class="cdq-workspace-head"><h2>'+esc(title)+'<small>'+esc(subtitle)+'</small></h2><button type="button" data-workspace-close aria-label="Fermer la page">×</button></header><main class="cdq-workspace-body"></main>';
@@ -49,11 +51,11 @@ function syncNav(){
     const name=$('small',b)?.textContent.trim(),key=labels[name]||b.dataset.workspaceRoute;if(!key)continue;b.dataset.workspaceRoute=key;
     const current=(active?key===active:key==='home')?'true':'false';if(b.dataset.cdqCurrent!==current)b.dataset.cdqCurrent=current;
     if(b.getAttribute('aria-current')!==(current==='true'?'page':'false'))b.setAttribute('aria-current',current==='true'?'page':'false');
-    if(['calcul','opportunities','drive','report'].includes(key)){
+    if(['calcul','opportunities','drive'].includes(key)){
       let host=$(':scope > span',b);if(host&&host.dataset.workspaceTheme!==theme){host.className='cdq-workspace-icon';host.innerHTML=workspaceIcon(key,theme);host.dataset.workspaceTheme=theme;}
     }
-    if(b.style.getPropertyValue('--cdq-nav-accent')!=='var(--cdq-accent)')b.style.setProperty('--cdq-nav-accent','var(--cdq-accent)');
-    const label=$('small',b);if(label){for(const prop of ['color','-webkit-text-fill-color'])if(label.style.getPropertyValue(prop)!=='var(--cdq-accent)')label.style.setProperty(prop,'var(--cdq-accent)','important');}
+    const color=navColors[key]||'#48ceff';if(b.style.getPropertyValue('--cdq-nav-accent')!==color)b.style.setProperty('--cdq-nav-accent',color);
+    const label=$('small',b);if(label){for(const prop of ['color','-webkit-text-fill-color'])if(label.style.getPropertyValue(prop)!=='var(--cdq-nav-accent)')label.style.setProperty(prop,'var(--cdq-nav-accent)','important');}
   }
   const sorted=$$('.bottom-nav-item',nav).sort((a,b)=>(order.indexOf(a.dataset.workspaceRoute)+1||99)-(order.indexOf(b.dataset.workspaceRoute)+1||99));
   sorted.forEach((b,i)=>{if(nav.children[i]!==b)nav.insertBefore(b,nav.children[i]||null);});
@@ -194,9 +196,9 @@ function start(){
   window.addEventListener('resize',measure,{passive:true});window.visualViewport?.addEventListener('resize',measure,{passive:true});
   if(window.ResizeObserver){const ro=new ResizeObserver(measure);for(const el of [$('#appHeader'),$('.bottom-nav')])if(el)ro.observe(el);}
   new MutationObserver(records=>{if(records.some(r=>r.type==='childList'||r.attributeName==='hidden'||r.attributeName==='open'))schedule();}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','open']});
-  document.addEventListener('cdq:icons-changed',schedule);window.addEventListener('cdq:access-ready',schedule);window.addEventListener('cdq:drive-cleared-v2632',clearPrivate);window.addEventListener('cdq:access-state-v2527',e=>{if(e.detail!=='ready')clearPrivate();});
+  document.addEventListener('cdq:icons-changed',schedule);window.addEventListener('storage',schedule);window.addEventListener('cdq:access-ready',schedule);window.addEventListener('cdq:drive-cleared-v2632',clearPrivate);window.addEventListener('cdq:access-state-v2527',e=>{if(e.detail!=='ready')clearPrivate();});
   // Existing data modules are bundled and may be warmed only after both checks.
   window.addEventListener('cdq:drive-ready-v2632',()=>{if(!canRead())return;import('./calibration-db-v2565.mjs').catch(()=>{});});
 }
-window.cdqWorkspaceV2638={navigate,measure,active:()=>active,version:'26.38'};
+window.cdqWorkspaceV2638={navigate,measure,active:()=>active,version:'26.39'};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();

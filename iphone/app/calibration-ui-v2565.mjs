@@ -49,7 +49,7 @@ function ensureNav(){
     const host=$(':scope > span',b);if(host)host.innerHTML=indicatorSvg(28);
     b.dataset.calTheme=selectedTheme;
   }
-  const label=$('small',b),color='var(--cdq-accent)' ;
+  const label=$('small',b),color='var(--cdq-nav-accent)' ;
   if(label){setImportant(label,'color',color);setImportant(label,'-webkit-text-fill-color',color);setImportant(label,'text-shadow',selectedTheme==='minimal'?'none':'0 0 8px #11ac8c');}
   // Keep all destinations available in clients as well as on the home screen.
   b.hidden=false;

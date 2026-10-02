@@ -7,14 +7,22 @@ html.cdq-mobile-layout #resetCompanyButton{display:none!important}
 html.cdq-mobile-layout .company-wrapper{grid-template-columns:minmax(0,1fr)!important;gap:0!important}
 html.cdq-mobile-layout .company-button{width:100%!important;max-width:100%!important}
 html.cdq-mobile-layout body .bottom-nav{z-index:2147483500!important;border-top:1px solid var(--cdq-line)!important;background:var(--cdq-page)!important}
-html.cdq-mobile-layout body .bottom-nav .bottom-nav-item{position:relative!important;flex-shrink:0!important}
+html.cdq-mobile-layout body .bottom-nav .bottom-nav-item{position:relative!important;flex-shrink:0!important;--cdq-accent:var(--cdq-nav-accent)}
 html.cdq-mobile-layout body .bottom-nav .bottom-nav-item::after{display:block!important;content:''!important;position:absolute!important;bottom:0!important;left:20%!important;right:20%!important;height:3px!important;border-radius:3px!important;background:transparent!important}
 html.cdq-mobile-layout body .bottom-nav .bottom-nav-item[data-cdq-current="true"]::after{background:var(--cdq-nav-accent,var(--cdq-accent))!important;box-shadow:0 0 5px var(--cdq-nav-accent,var(--cdq-accent))!important}
-html.cdq-mobile-layout body .bottom-nav .bottom-nav-item small{color:var(--cdq-nav-accent,var(--cdq-accent))!important;-webkit-text-fill-color:var(--cdq-nav-accent,var(--cdq-accent))!important;text-shadow:none!important}
+html.cdq-mobile-layout body .bottom-nav .bottom-nav-item small{color:var(--cdq-nav-accent,var(--cdq-accent))!important;-webkit-text-fill-color:var(--cdq-nav-accent,var(--cdq-accent))!important;text-shadow:0 0 7px var(--cdq-nav-accent)!important}
 html.cdq-mobile-layout body .bottom-nav .cdq-workspace-icon{color:var(--cdq-nav-accent,var(--cdq-accent));background:none!important;display:grid!important;place-items:center!important;filter:none!important}
 html.cdq-mobile-layout body .bottom-nav .cdq-workspace-icon::after{display:none!important}
-html.cdq-mobile-layout body .bottom-nav .cdq-workspace-icon svg{display:block!important;width:100%!important;height:100%!important;max-width:none!important;stroke:currentColor;filter:var(--cdq-nav-filter,none)}
-.cdq-workspace-page{box-sizing:border-box;position:fixed;inset:var(--cdq-workspace-top,0px) 0 var(--cdq-workspace-bottom,85px);z-index:2147483150;background:var(--cdq-page,#050b10);color:var(--cdq-ink,#edf4f8);overflow:auto;overscroll-behavior:contain;font:15px/1.45 system-ui,sans-serif;color-scheme:dark;max-width:100%;margin:0;border:0;padding:0}
+html.cdq-mobile-layout body .bottom-nav .cdq-workspace-icon :is(svg,img){display:block!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;object-fit:contain;stroke:currentColor;filter:none!important}
+.cdq-workspace-page{box-sizing:border-box;position:fixed;inset:var(--cdq-workspace-top,0px) 0 var(--cdq-workspace-bottom,85px);z-index:2147483150;background:var(--cdq-page,#050b10);color:var(--cdq-ink,#edf4f8);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;font:15px/1.45 system-ui,sans-serif;color-scheme:dark;max-width:100%;margin:0;border:0;padding:0}
+.cdq-workspace-page,.cdq-workspace-page *{box-sizing:border-box!important}
+.cdq-workspace-page :is(form,.cdq-workspace-grid,label){min-width:0!important;max-width:100%!important}
+.cdq-workspace-page :is(input,select,textarea){display:block;width:100%!important;min-width:0!important;max-width:100%!important}
+.cdq-workspace-page :is(h2,h3,label,p){overflow-wrap:anywhere}
+#cdqOpportunitiesPageV2638 .cdq-workspace-body{container-type:inline-size}
+#cdqOpportunitiesPageV2638 .cdq-workspace-grid{grid-template-columns:1fr}
+#cdqOpportunitiesPageV2638 .cdq-workspace-grid .wide{grid-column:1/-1}
+@container(min-width:620px){#cdqOpportunitiesPageV2638 .cdq-workspace-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .cdq-workspace-page[hidden]{display:none!important}
 html.cdq-mobile-layout #cdqReaderFrame{inset:var(--cdq-workspace-top) 0 var(--cdq-workspace-bottom)!important;height:auto!important;z-index:2147483300!important}
 html.cdq-mobile-layout #cdqReaderFrame[hidden]{display:none!important}
@@ -82,15 +90,8 @@ html.cdq-mobile-layout :is(#modalOverlay,#createFolderModalOverlay,#renameModalO
 @media(max-width:360px){.cdq-workspace-body{padding:10px}.cdq-workspace-grid{grid-template-columns:1fr}.cdq-workspace-grid .wide{grid-column:auto}}
 
 html.cdq-mobile-layout[data-cdq-workspace-unlocked="false"] .bottom-nav{visibility:hidden!important;pointer-events:none!important}
-html.cdq-mobile-layout .bottom-nav svg{color:var(--cdq-accent)!important;stroke:currentColor!important}
-html.cdq-mobile-layout[data-cdq-palette="metal"] .bottom-nav .cdq-icon-host-v2514::after,
-html.cdq-mobile-layout[data-cdq-palette="steel"] .bottom-nav :is(.cdq-icon-host-v2514)::after{filter:grayscale(1)!important}
-html.cdq-mobile-layout[data-cdq-palette="light"] .bottom-nav :is(.cdq-icon-host-v2514)::after{filter:grayscale(1) brightness(.65) sepia(1) saturate(4) hue-rotate(155deg)!important}
-html.cdq-mobile-layout[data-cdq-palette="electric"] .bottom-nav :is(.cdq-icon-host-v2514)::after{filter:grayscale(1) sepia(1) saturate(3) hue-rotate(155deg)!important}
-html.cdq-mobile-layout[data-cdq-palette="violet"] .bottom-nav :is(.cdq-icon-host-v2514)::after{filter:grayscale(1) sepia(1) saturate(3) hue-rotate(220deg)!important}
-
-html.cdq-mobile-layout[data-cdq-palette="metal"] .bottom-nav img.cdq-calibration-indicator{filter:grayscale(1)!important}
-html.cdq-mobile-layout[data-cdq-palette="steel"] .bottom-nav img.cdq-calibration-indicator{filter:grayscale(1)!important}
-html.cdq-mobile-layout[data-cdq-palette="light"] .bottom-nav img.cdq-calibration-indicator{filter:grayscale(1) brightness(.65) sepia(1) saturate(4) hue-rotate(155deg)!important}
-html.cdq-mobile-layout[data-cdq-palette="electric"] .bottom-nav img.cdq-calibration-indicator{filter:grayscale(1) sepia(1) saturate(3) hue-rotate(155deg)!important}
-html.cdq-mobile-layout[data-cdq-palette="violet"] .bottom-nav img.cdq-calibration-indicator{filter:grayscale(1) sepia(1) saturate(3) hue-rotate(220deg)!important}
+/* Preserve the approved colored artwork; a page palette must not desaturate it. */
+html.cdq-mobile-layout .bottom-nav svg{color:var(--cdq-nav-accent)!important;stroke:currentColor!important}
+html.cdq-mobile-layout .bottom-nav .cdq-icon-host-v2514::after,
+html.cdq-mobile-layout .bottom-nav img.cdq-calibration-indicator{filter:none!important}
+html.cdq-mobile-layout[data-cdq-palette="light"] .bottom-nav .bottom-nav-item small{text-shadow:none!important}
