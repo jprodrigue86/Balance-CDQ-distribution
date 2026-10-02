@@ -103,3 +103,9 @@ html.cdq-mobile-layout #cdqCreateClientV2640[hidden],html.cdq-mobile-layout .cdq
 #cdqClientActionsV2640 button{min-height:44px;max-width:100%;padding:10px 12px;border:1px solid var(--cdq-line);border-radius:10px;font:600 14px system-ui;color:var(--cdq-ink);background:var(--cdq-raised)}
 
 #cdqClientActionsV2640 [data-balance-list-status]{flex:1 0 100%;margin:0;font-size:13px;color:var(--cdq-muted)}
+
+/* The dialog must stay inside the viewport; the method body owns scrolling. */
+html.cdq-mobile-layout #cdqCalibrationDialogV2565{position:fixed!important;box-sizing:border-box!important;height:calc(100dvh - var(--cdq-workspace-top) - var(--cdq-workspace-bottom))!important;min-height:0!important;overflow:hidden!important}
+html.cdq-mobile-layout #cdqCalibrationDialogV2565 .cdq-cal-shell{height:100%!important;min-height:0!important;overflow:hidden!important}
+html.cdq-mobile-layout #cdqCalibrationDialogV2565 .cdq-cal-head{flex:0 0 auto!important}
+html.cdq-mobile-layout #cdqCalibrationDialogV2565 .cdq-cal-body{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding-bottom:24px!important}

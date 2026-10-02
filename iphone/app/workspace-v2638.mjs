@@ -217,5 +217,5 @@ function start(){
   // Existing data modules are bundled and may be warmed only after both checks.
   window.addEventListener('cdq:drive-ready-v2632',()=>{if(!canRead())return;import('./calibration-db-v2565.mjs').catch(()=>{});});
 }
-window.cdqWorkspaceV2638={navigate,measure,readerClosed,readerCancelled,active:()=>active,version:'26.40'};
+window.cdqWorkspaceV2638={navigate,measure,readerClosed,readerCancelled,active:()=>active,version:'26.41'};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
