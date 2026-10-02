@@ -11,6 +11,19 @@ try{const o=new URL(document.referrer).origin;if(o===location.origin||/^https:\/
 const tell=data=>{if(hosted&&parentOrigin)parent.postMessage(data,parentOrigin)};
 let api,viewer,scripting,doc,touch,form,readOnly=false,dirty=false,version=0,savedVersion=0,saving=false;
 let lastAttempt=null,fieldDefinitions=null,nativeInput,readerCalibration=null,choices=null;
+const touchedIdentity=new Set();let lateIdentity=null;
+function applyLateIdentity(){
+  if(!lateIdentity||!doc||opening||readOnly||closed)return;
+  const values=lateIdentity;lateIdentity=null;
+  for(const [name,value] of Object.entries(values)){
+    if(!/^client_(adresse|ville|province|code_postal|telephone)$/.test(name)||typeof value!=='string'||value.length>1000||!value.trim()||touchedIdentity.has(name))continue;
+    const state=cdqStoredFieldStateV2581(name);if(state.readOnly||String(state.value||'').trim())continue;
+    const defs=cdqFieldDefinitionsV2581(name);if(!defs.length)continue;
+    for(const def of defs)doc.annotationStorage.setValue(def.id,{value});
+    for(const input of $('viewer').querySelectorAll('input,textarea'))if(input.name===name&&!input.disabled&&!input.readOnly){input.value=value;input.dispatchEvent(new Event('change',{bubbles:true}));}
+    dirty=true;version++;
+  }
+}
 let cdqStableLayerHoldUntilV2556=0;
 function cdqWrapStableAnnotationLayerV2556(pageView){
   const layer=pageView?.annotationLayer;
@@ -231,6 +244,7 @@ async function open(data){
   if(fields?.size||fields&&Object.keys(fields).length||actions){const deadline=Date.now()+12000;while(!scripting.ready){if(Date.now()>deadline)throw Error('Les calculs du PDF n’ont pas pu démarrer. Fermez le document puis réessayez.');await new Promise(r=>setTimeout(r,25));}}
   cdqRestoreInteractiveFieldsV2581();choices.refresh();form.refresh();
   opening=false;busy(false);$('viewer').dataset.ready='true';status(readOnly?'Consultation seulement':'');
+  applyLateIdentity();
   tell({type:'CDQ_READER_OPENED'});
 }
 function menu(hide=false){$('more').hidden=hide?true:!$('more').hidden;$('menu').setAttribute('aria-expanded',String(!$('more').hidden));}
@@ -256,6 +270,7 @@ $('discard').onclick=()=>{
 };
 $('closeDialog').addEventListener('cancel',e=>{if(saving)e.preventDefault();else tell({type:'CDQ_READER_CLOSE_CANCELLED_V2640'});closeAfterSave=false;});
 $('viewer').addEventListener('input',modified);$('viewer').addEventListener('change',modified);
+for(const type of ['input','change'])$('viewer').addEventListener(type,e=>{if(e.isTrusted&&e.target.name)touchedIdentity.add(e.target.name);});
 $('viewer').addEventListener('input',()=>readerCalibration?.refresh());$('viewer').addEventListener('change',()=>readerCalibration?.refresh());
 $('viewer').addEventListener('pointerdown',e=>{
   if(cdqTextEntryFieldV2550(e.target)){
@@ -283,6 +298,7 @@ window.addEventListener('message',async e=>{
   if(!hosted||e.source!==parent||!parentOrigin||e.origin!==parentOrigin)return;
   const d=e.data||{};
   if(d.type==='CDQ_READER_THEME'){applyReaderTheme(d.theme);return;}
+  if(d.type==='CDQ_READER_PREFILL_V2642'&&String(d.fileId||'')===fileId){lateIdentity={...lateIdentity,...d.values};applyLateIdentity();return;}
   if(d.type==='CDQ_READER_REQUEST_CLOSE'){requestClose();return;}
   if(d.type==='CDQ_READER_SAVED'&&pending&&d.requestId===pending.id){
     clearTimeout(pending.timer);const snapshot=pending.version,discarding=pending.discard;pending=null;

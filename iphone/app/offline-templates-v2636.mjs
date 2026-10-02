@@ -85,6 +85,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   const {get,put,all}=storage;
   let session=null,localEmail='',profile=null,chain=Promise.resolve(),epoch=0,documentReaderWarmed=false;
   const inflight=new Map(),requested=new Set();
+  const readers=new Map();
   // Le moteur hors ligne reste actif, mais aucun bouton séparé n'est montré.
   // Les modèles locaux sont utilisés depuis les boutons principaux du Selector.
   const launch=document.createElement('button');launch.type='button';launch.id='cdq-offline-launch';launch.textContent='Modèles hors ligne';launch.hidden=true;
@@ -318,6 +319,20 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
     if(data.type==='CDQ_OFFLINE_DESTINATION'&&validDestination(data)){
       await put('destinations',{id:current.email+':'+data.folderId,email:current.email,clientId:data.clientId,folderId:data.folderId,name:data.name,savedAt:Date.now()});await refresh();
     }
+    if(data.type==='CDQ_OFFLINE_PREFILL_V2642'){
+      const c=await get('copies',String(data.requestId||''));
+      if(!current.canWrite||!c||c.email!==current.email||stamp!==epoch||current!==session)return;
+      const values=Object.fromEntries(Object.entries(data.values||{}).filter(([k,v])=>/^client_(adresse|ville|code_postal|province|telephone)$/.test(k)&&typeof v==='string'&&v.length<=1000));
+      const reader=readers.get(c.id);if(reader?.epoch===stamp){const handle=await reader.handle;if(stamp!==epoch||current!==session||!current.canWrite)return;handle?.prefill?.(values);}
+      // Preserve the late coordinates on disk too. Saved answers are never replaced.
+      if(!c.readerRequestId&&Object.keys(values).length){
+        const blob=await fillInFrame(values,{blob:c.blob,strict:false,onlyEmpty:true});
+        if(stamp!==epoch||current!==session)return;
+        const latest=await get('copies',c.id);if(latest?.readerRequestId)return;
+        await put('copies',{...latest,blob,editVersion:(latest.editVersion||0)+1,uploadId:'pdf_'+crypto.randomUUID(),status:'pending'});await sync();
+      }
+      return;
+    }
     if(data.type==='CDQ_OFFLINE_CREATE_LOCAL'){
       const id=String(data.requestId||'');
       try{
@@ -336,8 +351,9 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         // The PDF is durable before the reader opens. Never wait for a network copy.
         if(data.open===true)Promise.resolve().then(()=>{
           if(stamp!==epoch||session!==current)return;
-          return openPdf({blob:c.blob,name:c.name,fileId:c.id,modeleId:c.modeleId,readOnly:false,
-            onSave:(blob,requestId)=>saveCopy(c.id,current.email,blob,requestId)});
+          const handle=Promise.resolve(openPdf({blob:c.blob,name:c.name,fileId:c.id,modeleId:c.modeleId,readOnly:false,
+            onClose:()=>readers.delete(c.id),onSave:(blob,requestId)=>saveCopy(c.id,current.email,blob,requestId)}));
+          readers.set(c.id,{epoch:stamp,handle});return handle;
         }).catch(e=>{status.textContent='Copie conservée dans Mes copies locales. '+(e.message||String(e));});
         await sync();
       }catch(e){send({type:'CDQ_OFFLINE_CREATE_LOCAL_RESULT',requestId:id,ok:false,message:e.message||String(e)});}
@@ -358,6 +374,5 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   window.addEventListener('offline',()=>serial(refresh).catch(()=>{}));
   refresh().catch(()=>{});
   return {handle(data){const stamp=epoch;return serial(()=>handleNow(data,stamp)).catch(e=>{status.textContent=e.message||String(e);});},
-    lock(){epoch++;session=null;localEmail='';for(const job of inflight.values())clearTimeout(job.timer);inflight.clear();requested.clear();panel.hidden=true;},refresh};
+    lock(){epoch++;session=null;localEmail='';for(const job of inflight.values())clearTimeout(job.timer);inflight.clear();requested.clear();readers.clear();panel.hidden=true;},refresh};
 }
-

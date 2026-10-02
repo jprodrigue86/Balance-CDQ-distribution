@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.41",
-  "release": "bdca8be4fdf81b0ba141b83ff607759524a424311e1e6413ebd8d5df8345f811",
+  "version": "26.42",
+  "release": "ae2efe2cbc5341227fcca395ef5e1e20c440ce7e9edeb21405ee89f7c1f6eae0",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.02-v26.41-calibration-method-scroll",
-  "androidSelectorSha256": "0d85157e428c73da8aee7cc287dffd753a2131a709211517f0b60a33bc59a322",
+  "androidSourceBuild": "2026.10.02-v26.42-startup-report-zoho",
+  "androidSelectorSha256": "bd0c749ecb4708260220ed38e9eac8197b678212ef7d119e0190021185f1a6d6",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
-  "files": 402
+  "files": 403
 }

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.41" data-cdq-iphone-release="bdca8be4fdf81b0ba141b83ff607759524a424311e1e6413ebd8d5df8345f811">
+<html data-cdq-iphone-version="26.42" data-cdq-iphone-release="ae2efe2cbc5341227fcca395ef5e1e20c440ce7e9edeb21405ee89f7c1f6eae0">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -542,7 +542,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.02-v26.41-calibration-method-scroll">
+<meta name="cdq-package-build" content="2026.10.02-v26.42-startup-report-zoho">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -820,7 +820,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.02-v26.41-calibration-method-scroll'
+    build:'2026.10.02-v26.42-startup-report-zoho'
   });
 }
 
@@ -833,7 +833,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.02-v26.41-calibration-method-scroll'
+        build:'2026.10.02-v26.42-startup-report-zoho'
       });
     }
   } catch(e) {}
@@ -11601,7 +11601,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.02-v26.41-calibration-method-scroll";
+  const CDQ_BUILD = "2026.10.02-v26.42-startup-report-zoho";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13897,7 +13897,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.02-v26.41-calibration-method-scroll";
+const CDQ_V19_BUILD = "2026.10.02-v26.42-startup-report-zoho";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -14149,6 +14149,21 @@ function reportRuntimeV2636(){
     cdqReaderGuardV2520(email);
     if(!['admin','technicien'].includes(utilisateurCourantRole))throw Error('Accès en lecture seule.');
   }
+  const contexts=new Map();
+  function peek(clientId){
+    const email=cdqReaderOwnerV2520();guard(email);
+    let values={};try{values=JSON.parse(localStorage.getItem('cdq-client-context23:'+email+':'+clientId)||'{}');}catch{}
+    return {...values,client_nom:String(clientId)===String(compagnieSelectionnee)?String(nomCompagnieSelectionnee||''):String(values.client_nom||''),client_technicien:String(utilisateurCourantNomRapport||'').trim()};
+  }
+  function warm(clientId){
+    if(!clientId)return Promise.resolve({});
+    const email=cdqReaderOwnerV2520();guard(email);const key=email+':'+clientId,old=contexts.get(key);
+    if(old&&Date.now()-old.at<300000)return old.promise;
+    const entry={at:Date.now(),promise:Promise.resolve().then(()=>window.cdqCreationV2523.context(clientId)).then(values=>{guard(email);return values;}).catch(error=>{contexts.delete(key);throw error;})};
+    contexts.set(key,entry);while(contexts.size>12)contexts.delete(contexts.keys().next().value);entry.promise.catch(()=>{});return entry.promise;
+  }
+  window.cdqFastContextV2642={peek,warm};
+  window.addEventListener('cdq:drive-cleared-v2632',()=>contexts.clear());
   async function encode(blob){
     if(!(blob instanceof Blob)||blob.type!=='application/pdf'||blob.size<8||blob.size>32*1024*1024)throw Error('PDF invalide.');
     const bytes=new Uint8Array(await blob.arrayBuffer());let bin='';
@@ -14161,15 +14176,10 @@ function reportRuntimeV2636(){
     if(!model||!/^cdq-bundled-/.test(String(data.templateId||''))||!/^[\w-]{8,100}$/.test(String(data.requestId||'')))throw Error('Modèle de rapport invalide.');
     const payload=await encode(data.blob);guard(email);
     const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(email+':'+data.requestId)))].map(x=>x.toString(16).padStart(2,'0')).join('');
-    const result=await window.cdqAppelServeur('copierElementCDQV2522',[model.sourceId,data.folderId,'copy-'+hash]);guard(email);
-    if(!result?.ok||!result.id||String(result.clientId)!==String(data.clientId))throw Error('La destination du rapport n’a pas été confirmée.');
-    // Retrying the same creation sends the same immutable initial PDF. Edits sync separately.
-    const meta=await window.cdqAppelServeur('obtenirPdfLecteurCDQV2520',[result.id,'']);guard(email);
-    const saved=await window.cdqAppelServeur('enregistrerPdfLecteurCDQV2520',[result.id,payload,'init-'+hash,meta.revision]);guard(email);
-    if(!saved?.ok||saved.id!==result.id||!saved.revision)throw Error('L’intégration du modèle PDF n’a pas été confirmée.');
     const name=String(data.name||model.name);
-    await window.cdqAppelServeur('renommerFichier',[result.id,name,data.clientId]);guard(email);
-    const finalMeta=await window.cdqAppelServeur('obtenirPdfLecteurCDQV2520',[result.id,'']);guard(email);
+    const result=await window.cdqAppelServeur('creerRapportLocalCDQV2642',[data.modeleId,data.folderId,data.clientId,name,'copy-'+hash,payload]);guard(email);
+    if(!result?.ok||!result.id||!result.revision||String(result.clientId)!==String(data.clientId))throw Error('La destination du rapport n’a pas été confirmée.');
+    const finalMeta=result;
     const record={id:result.id,nom:name,revision:finalMeta.revision,clientId:data.clientId,type:'PDF',taille:data.blob.size,blob:data.blob};
     await cdqV19PutRecord('document-pdf',result.id,record);guard(email);
     const confirmed={...result,nom:name,revision:finalMeta.revision};
@@ -14179,14 +14189,15 @@ function reportRuntimeV2636(){
   };
   window.cdqCreateReportV2636=async function(key,folderId,clientId,destinationName,requestId){
     const email=cdqReaderOwnerV2520();guard(email);
-    const {bundledTemplate}=await catalog();
     if(!cdqPwaAvailable()){
+      const {bundledTemplate}=await catalog();
       const t=await bundledTemplate(key);guard(email);
       const blob=await window.cdqCreationV2523.fill(t.blob,clientId);guard(email);
       const result=await window.cdqBundledReportCopyV2636({...t,blob,clientId,folderId,requestId,name:t.name},email);guard(email);
       await cdqOpenPdfInternal(result.id);return result;
     }
-    const prefill=await window.cdqCreationV2523.context(clientId);guard(email);
+    // Cached identity opens immediately; slow address discovery cannot hold the reader.
+    const prefill=peek(clientId);guard(email);
     cdqPublierSessionHorsLigne();
     return new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>{window.removeEventListener('message',receive);reject(Error('Le stockage du rapport n’a pas répondu.'));},65000);
@@ -14197,6 +14208,7 @@ function reportRuntimeV2636(){
       }
       window.addEventListener('message',receive);
       cdqPostToPwa({type:'CDQ_OFFLINE_CREATE_LOCAL',requestId,modeleId:key,clientId,folderId,destinationName,prefill,open:true});
+      warm(clientId).then(values=>{guard(email);cdqPostToPwa({type:'CDQ_OFFLINE_PREFILL_V2642',email,requestId,values});}).catch(()=>{});
     });
   };
 }
@@ -15690,7 +15702,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.02-v26.41-calibration-method-scroll";
+const CDQ_V20_BUILD = "2026.10.02-v26.42-startup-report-zoho";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16537,7 +16549,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.02-v26.41-calibration-method-scroll";
+const CDQ_V21_BUILD = "2026.10.02-v26.42-startup-report-zoho";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -17061,7 +17073,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.02-v26.41-calibration-method-scroll';
+const BUILD='2026.10.02-v26.42-startup-report-zoho';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20742,7 +20754,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.02-v26.41-calibration-method-scroll';
+  const BUILD='2026.10.02-v26.42-startup-report-zoho';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -23000,7 +23012,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.02-v26.41-calibration-method-scroll',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.02-v26.42-startup-report-zoho',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -24335,6 +24347,7 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
 <link rel="stylesheet" href="./workspace-v2638.css">
 <script type="module" src="./workspace-v2638.mjs"></script>
 <script type="module" src="./balance-list-v2638.mjs"></script>
+<script type="module" src="./inventory-zoho-v2642.mjs"></script>
 </body>
 </html>
 

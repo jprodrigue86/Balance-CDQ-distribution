@@ -208,7 +208,7 @@ function start(){
   // another route switches; unsaved invoice inputs remain in their existing DOM.
   window.addEventListener('click',e=>{const b=e.target.closest?.('.bottom-nav-item');if(!b)return;const route=b.dataset.workspaceRoute||labels[$('small',b)?.textContent.trim()];if(!route)return;e.preventDefault();e.stopImmediatePropagation();if(route==='home'){requestHome();return;}navigate(route,{toggle:true});},true);
   window.addEventListener('message',e=>{if(!homeReaderSource||e.source!==homeReaderSource)return;if(e.data?.type==='CDQ_READER_CLOSE')readerClosed();if(e.data?.type==='CDQ_READER_CLOSE_CANCELLED_V2640')readerCancelled();});
-  const choose=window.choisirCompagnie;if(typeof choose==='function')window.choisirCompagnie=function(...args){const r=choose.apply(this,args);if(canRead())navigate('');schedule();return r;};
+  const choose=window.choisirCompagnie;if(typeof choose==='function')window.choisirCompagnie=function(...args){const r=choose.apply(this,args);if(canRead()){navigate('');window.cdqFastContextV2642?.warm(companyId());}schedule();return r;};
   if(window.cdqDriveV2521){window.cdqDriveV2521.open=()=>navigate('dossier');window.cdqDriveV2521.openFavorites=()=>navigate('favorites');window.cdqDriveV2521.close=()=>{if(['dossier','favorites'].includes(active))navigate('');};}
   window.addEventListener('resize',measure,{passive:true});window.visualViewport?.addEventListener('resize',measure,{passive:true});
   if(window.ResizeObserver){const ro=new ResizeObserver(measure);for(const el of [$('#appHeader'),$('.bottom-nav')])if(el)ro.observe(el);}
@@ -217,5 +217,5 @@ function start(){
   // Existing data modules are bundled and may be warmed only after both checks.
   window.addEventListener('cdq:drive-ready-v2632',()=>{if(!canRead())return;import('./calibration-db-v2565.mjs').catch(()=>{});});
 }
-window.cdqWorkspaceV2638={navigate,measure,readerClosed,readerCancelled,active:()=>active,version:'26.41'};
+window.cdqWorkspaceV2638={navigate,measure,readerClosed,readerCancelled,active:()=>active,version:'26.42'};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();

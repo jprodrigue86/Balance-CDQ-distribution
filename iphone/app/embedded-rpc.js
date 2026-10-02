@@ -14,7 +14,7 @@
   const endpoint='https://script.google.com/macros/s/AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw/exec';
   const allowed=new Set(['cdqRpc','reprendreActivationCDQ','creerDefiConnexionGoogleCDQ','verifierJetonGoogleCDQ','obtenirEtatAcces','connecterAvecCodeAcces','definirNip4ApresActivation','deverrouillerAvecNip','restaurerSessionApresBiometrie','reprendreSessionCourteCDQV2524']);
   const channel=crypto.randomUUID(), pending=new Map();
-  let frame, peer, peerRelay=null, peerOrigin='', serial=0, failed='', sessionToken='';
+  let frame, peer, peerRelay=null, peerOrigin='', serial=0, failed='', sessionToken='',preparedSessionToken='',authEpoch=0;
   const unavailable='La connexion CDQ ne répond pas. Vérifiez Internet et réessayez. Si CDQ est déjà installé, actualisez l’application iPhone.';
   function settle(id,ok,value){
     const job=pending.get(id);if(!job)return;
@@ -59,6 +59,7 @@
   }
   function flushHeld(){
     if(provisional())return;
+    if(preparedSessionToken){sessionToken=preparedSessionToken;preparedSessionToken='';}
     for(const [id,job] of [...pending.entries()]){
       if(!allowed.has(job.name)&&!sessionToken){
         settle(id,false,'Session serveur incomplète. Réessayez.');
@@ -83,7 +84,7 @@
             )
           ))return;
         }
-        const id=String(++serial),job={id,name,args,success,failure,userObject,sent:false,timer:null};
+        const id=String(++serial),job={id,name,args,success,failure,userObject,sent:false,timer:null,preparing:bypassStartup&&name==='restaurerSessionApresBiometrie',authEpoch};
         pending.set(id,job);
         // During trusted local startup the unchanged Selector may call its
         // normal background methods before it has received jetonSession.
@@ -133,7 +134,7 @@
       const id=String(data.id),job=pending.get(id);
       if(data.ok===true&&data.value&&typeof data.value==='object'){
         const token=String(data.value.jetonSession||'').trim();
-        if(data.value.autorise===true&&token)sessionToken=token;
+        if(data.value.autorise===true&&token&&job?.authEpoch===authEpoch){if(job.preparing)preparedSessionToken=token;else sessionToken=token;}
         else if(data.value.autorise===false&&job&&(
           job.name==='restaurerSessionApresBiometrie'||
           job.name==='reprendreSessionCourteCDQV2524'||
@@ -146,7 +147,7 @@
   window.addEventListener('cdq:startup-confirmed-v2539',flushHeld);
   window.addEventListener('cdq:warm-confirmed-v2540',flushHeld);
   function revokeHeld(){
-    sessionToken='';
+    authEpoch++;sessionToken='';preparedSessionToken='';
     for(const [id,job] of [...pending.entries()])
       if(!job.sent)settle(id,false,'La session locale a été révoquée par le serveur.');
   }

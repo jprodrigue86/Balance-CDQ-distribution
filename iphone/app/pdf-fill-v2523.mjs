@@ -4,7 +4,7 @@ const assets=new URL('./vendor/pdfjs-6.3.289/',import.meta.url).href;
 export const rawField=/^(client_(nom|telephone|technicien|adresse|ville|province|code_postal)|(?:prochain_etalonnage|date_etalonnage)_[123]|frequence_etalonnage|(?:indicateur|base_balance)_(fabricant|modele|numero_serie|numero_am)|imprimante_(fabricant|modele|numero_serie)|identification_balance|etendue_verifiee|legal_pour_commerce|capacite_maximale|unite_mesure|echelon|etalon_utilise|charge_point_[1-6]_(charge_utilisee|avant_correction|apres_correction)|charge_excentricite|excentricite_(avant|apres)_(arriere_gauche|avant_gauche|arriere_droit|avant_droit))$/;
 let engine;
 const norm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
-export async function fillPdf(values,{blob,strict=true}={}){
+export async function fillPdf(values,{blob,strict=true,onlyEmpty=false}={}){
   const entries=Object.entries(values||{}).filter(([,v])=>v!==null&&v!==undefined&&String(v).trim()!=='');
   for(const [k,v] of entries)if(!rawField.test(k)||String(v).length>1000)throw Error('Champ de transfert refusé : '+k);
   let bytes=new Uint8Array(await (blob||(await floorTemplate()).blob).arrayBuffer());
@@ -22,6 +22,26 @@ export async function fillPdf(values,{blob,strict=true}={}){
       else if(name==='client_technicien'||name==='etalon_utilise'){field.addOptions([String(value).trim()]);changed=true;}
       else throw Error('Choix inconnu pour '+name+' : '+value);
     }
+  }
+  // Identity-only prefill has no measurement calculations. Keep the approved
+  // JavaScript and editable fields, without booting PDF.js + QuickJS a first time.
+  if(entries.every(([name])=>/^client_/.test(name))){
+    for(const [name,value] of entries){
+      const field=form.getFieldMaybe(name);if(!field)continue;
+      if(field instanceof globalThis.PDFLib.PDFTextField){if(!onlyEmpty||!String(field.getText()||'').trim())field.setText(String(value));}
+      else if(field instanceof globalThis.PDFLib.PDFDropdown)field.select(String(value));
+    }
+    const font=await lib.embedFont(globalThis.PDFLib.StandardFonts.Helvetica);
+    for(const [name] of entries){
+      const field=form.getFieldMaybe(name);if(!field)continue;
+      // Some approved PDFs contain a non-widget kid without a rectangle.
+      // Update only identity widgets with actual geometry; keep every field,
+      // script and original kid in the document unchanged.
+      const original=field.acroField.getWidgets;
+      const widgets=original.call(field.acroField).filter(w=>{try{const r=w.getRectangle();return [r.x,r.y,r.width,r.height].every(Number.isFinite);}catch{return false;}});
+      if(widgets.length){try{field.acroField.getWidgets=()=>widgets;field.defaultUpdateAppearances(font);}finally{field.acroField.getWidgets=original;}}
+    }
+    return new Blob([await lib.save({updateFieldAppearances:false})],{type:'application/pdf'});
   }
   if(changed)bytes=await lib.save({updateFieldAppearances:false});
   engine||=import(assets+'build/pdf.mjs');const api=await engine;api.GlobalWorkerOptions.workerSrc=assets+'build/pdf.worker.mjs';

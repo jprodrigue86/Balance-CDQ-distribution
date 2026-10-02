@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="26.41" data-cdq-iphone-release="bdca8be4fdf81b0ba141b83ff607759524a424311e1e6413ebd8d5df8345f811">
+<html lang="fr" data-cdq-iphone-version="26.42" data-cdq-iphone-release="ae2efe2cbc5341227fcca395ef5e1e20c440ce7e9edeb21405ee89f7c1f6eae0">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./iphone-update.js"></script>
@@ -474,7 +474,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 </div>
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.02-v26.41-calibration-method-scroll';
+const CDQ_PWA_BUILD = '2026.10.02-v26.42-startup-report-zoho';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1790,6 +1790,7 @@ try{
     ctx.native=true;
     if(mode==='unlock' && window.cdqStartupUnlockV2529?.attach(email,requestId,
       (ok,message)=>window.cdqNativeBiometricResultV2507(requestId,ok,message)))return;
+    if(mode==='unlock')window.cdqWarmUnlockV2540?.prepare(email,requestId);
     BalanceCDQNative.biometric(String(requestId||''));
     return;
   }
