@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.32" data-cdq-iphone-release="e3903c6082473e606ba365cadb632fd3425bf133bcae630e6e280b8b35d02bdf">
+<html data-cdq-iphone-version="26.33" data-cdq-iphone-release="aa8e8844e1b82f8230784554a7e9d38aeee5ad0b2c33a5975af74f33df30cdef">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -542,7 +542,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.01-v26.32-cdq-entry-drive-permissions">
+<meta name="cdq-package-build" content="2026.10.02-v26.33-confirmed-admin-access">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -820,7 +820,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.01-v26.32-cdq-entry-drive-permissions'
+    build:'2026.10.02-v26.33-confirmed-admin-access'
   });
 }
 
@@ -833,7 +833,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.01-v26.32-cdq-entry-drive-permissions'
+        build:'2026.10.02-v26.33-confirmed-admin-access'
       });
     }
   } catch(e) {}
@@ -7319,7 +7319,7 @@ function appliquerAccesAutorise(etat){
   utilisateurCourantRole=String(etat.role||"technicien").trim().toLowerCase();
   appliquerDroitsRoleInterface();
   cdqSetAccessState("ready");
-  if(window.cdqDriveAccessGateV2620)window.cdqDriveAccessGateV2620.afterLogin(etat.compagniesInitiales);
+  if(window.cdqDriveAccessGateV2620)window.cdqDriveAccessGateV2620.afterLogin(etat.compagniesInitiales,etat);
   else chargerClients(false,etat.compagniesInitiales);
   setTimeout(function(){if(cdqAccessState==="ready")nettoyerAncienCache();},3000);
   window.dispatchEvent(new Event("cdq:access-ready"));
@@ -11598,7 +11598,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.01-v26.32-cdq-entry-drive-permissions";
+  const CDQ_BUILD = "2026.10.02-v26.33-confirmed-admin-access";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13894,7 +13894,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.01-v26.32-cdq-entry-drive-permissions";
+const CDQ_V19_BUILD = "2026.10.02-v26.33-confirmed-admin-access";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15613,7 +15613,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.01-v26.32-cdq-entry-drive-permissions";
+const CDQ_V20_BUILD = "2026.10.02-v26.33-confirmed-admin-access";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16460,7 +16460,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.01-v26.32-cdq-entry-drive-permissions";
+const CDQ_V21_BUILD = "2026.10.02-v26.33-confirmed-admin-access";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16984,7 +16984,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.01-v26.32-cdq-entry-drive-permissions';
+const BUILD='2026.10.02-v26.33-confirmed-admin-access';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20665,7 +20665,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.01-v26.32-cdq-entry-drive-permissions';
+  const BUILD='2026.10.02-v26.33-confirmed-admin-access';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22923,7 +22923,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.01-v26.32-cdq-entry-drive-permissions',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.02-v26.33-confirmed-admin-access',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -24018,10 +24018,12 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
   'use strict';
   if (window.cdqDriveEntryV2632) return;
   let epoch = 0, allowed = '', checking = false, checkingEmail = '', checkPromise = null;
-  let assignedRole = '', roleAccount = '';
+  let assignedRole = '', roleAccount = '', sessionConfirmed = false;
+  let accessStatus = 'pending';
   const email = () => String(typeof utilisateurCourantEmail !== 'undefined' ? utilisateurCourantEmail : '').trim().toLowerCase();
   const ready = () => typeof cdqAccessState !== 'undefined' && cdqAccessState === 'ready' && !!email();
-  const canRead = () => ready() && allowed === email();
+  const confirmed = () => ready() && sessionConfirmed && roleAccount === email();
+  const canRead = () => confirmed() && allowed === email();
   const originalClients = window.chargerClients;
   const originalRun = window.cdqApiRun;
   // Preview only needs sign-in and the current account's presentation settings.
@@ -24033,11 +24035,39 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
   ]);
   const protectedMethod = name => !entryMethods.has(String(name));
 
+  function syncAdminSettings(admin) {
+    const button = document.getElementById('cdqAdminSettingsButton');
+    if (!admin) {
+      button?.remove();
+      document.getElementById('cdqDiagnosticSettingsButton')?.remove();
+      const modal = document.getElementById('adminModalOverlay');
+      if (modal) modal.style.display = 'none';
+      for (const id of ['adminUserList', 'adminCodesOutput']) {
+        const el = document.getElementById(id);
+        if (el) { el.replaceChildren(); if ('value' in el) el.value = ''; }
+      }
+      return;
+    }
+    if (button) return;
+    const panel = document.getElementById('cdq-settings-panel-advanced');
+    const share = panel?.querySelector('#cdqInstallShareSettingsButton');
+    if (!share) return;
+    const action = document.createElement('button');
+    action.id = 'cdqAdminSettingsButton'; action.type = 'button';
+    action.className = 'cdq-admin-settings-button cdq-user-management-settings-v2614';
+    action.textContent = 'Gestion des utilisateurs';
+    action.onclick = () => {
+      if (canRead() && assignedRole === 'admin' && typeof ouvrirGestionUtilisateurs === 'function') ouvrirGestionUtilisateurs();
+    };
+    share.insertAdjacentElement('afterend', action);
+  }
+
   function applyRole() {
     if (!ready()) return;
     if (typeof utilisateurCourantRole !== 'undefined') utilisateurCourantRole = canRead() && roleAccount === email() ? assignedRole : 'lecture';
     try { if (typeof appliquerDroitsRoleInterface === 'function') appliquerDroitsRoleInterface(); } catch (_) {}
     const admin = canRead() && assignedRole === 'admin';
+    syncAdminSettings(admin);
     for (const id of ['adminButton','headerAdminButton']) {
       const el = document.getElementById(id); if (el) el.style.display = admin ? (id === 'headerAdminButton' ? 'grid' : 'block') : 'none';
     }
@@ -24079,22 +24109,27 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
       button.textContent = 'Actualiser l’accès'; button.onclick = () => check(true);
       card.append(title, text, button); files.parentNode.insertBefore(card, files);
     }
-    card.hidden = !ready() || canRead();
+    card.hidden = !ready() || canRead() || accessStatus === 'pending';
+    card.querySelector('strong').textContent = accessStatus === 'error'
+      ? 'Accès Drive à vérifier'
+      : 'Compte CDQ connecté — lecture seule';
     card.querySelector('p').textContent = message;
     card.querySelector('button').disabled = busy;
     const legacy = document.getElementById('cdqDriveGateV2620');
     if (legacy) { legacy.classList.remove('show'); legacy.style.display = 'none'; }
   }
 
-  function deny(message) {
+  function deny(message, error = false) {
+    accessStatus = error ? 'error' : 'denied';
     allowed = ''; applyRole(); clearClientView();
     paint(message || 'Vous pouvez consulter l’interface. Les clients, les fichiers et l’inventaire restent masqués, et les modifications sont désactivées. Ajoutez cette adresse CDQ au partage Drive pour activer les accès prévus par votre rôle.');
   }
 
   function check(force = false) {
-    if (!ready()) return Promise.resolve(false);
+    if (!confirmed()) return Promise.resolve(false);
     if (checking && checkingEmail === email() && !force) return checkPromise;
     const account = email(), token = ++epoch;
+    accessStatus = 'pending';
     allowed = ''; checking = true; checkingEmail = account; applyRole(); clearClientView();
     paint('Vérification de vos permissions sur les dossiers clients…', true);
     checkPromise = new Promise(resolve => {
@@ -24105,13 +24140,14 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
         if (!current()) { resolve(false); return; }
         checking = false; checkPromise = null;
         if (result?.ok === true && String(result.email || '').trim().toLowerCase() === account) {
+          accessStatus = 'allowed';
           allowed = account; applyRole(); paint('');
           // Only read account-scoped client caches after the Drive permission check.
           if (typeof originalClients === 'function') originalClients.call(window, !!force);
           window.dispatchEvent(new Event('cdq:drive-ready-v2632'));
           resolve(true);
         } else {
-          deny(error ? 'Les permissions Drive n’ont pas pu être vérifiées. Vous pouvez utiliser l’application et réessayer plus tard.' : undefined);
+          deny(error ? 'Les permissions Drive n’ont pas pu être vérifiées. Vous pouvez utiliser l’application et réessayer plus tard.' : undefined, error);
           resolve(false);
         }
       };
@@ -24175,10 +24211,26 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
     if (force || !canRead()) return check(!!force);
     return originalClients?.call(this, false, ...args);
   };
-  window.cdqDriveEntryV2632 = Object.freeze({ version: '26.32', canRead, refresh: () => check(true), approvedEmail: () => canRead() ? allowed : '' });
+  window.cdqDriveEntryV2632 = Object.freeze({ version: '26.33', canRead, refresh: () => check(true), approvedEmail: () => canRead() ? allowed : '' });
   // Preserve the historical login call site, while replacing the blocking gate.
   window.cdqDriveAccessGateV2620 = Object.freeze({
-    version: '26.32', afterLogin: () => { roleAccount = email(); assignedRole = String(typeof utilisateurCourantRole !== 'undefined' ? utilisateurCourantRole : 'lecture'); return check(); }, retry: () => check(true), chooseOther: () => check(true),
+    version: '26.33', afterLogin: (_companies, state) => {
+      // A biometric/local ticket reveals only a provisional, read-only frame.
+      // Wait for the actual server session before checking Drive or storing a role.
+      ++epoch; allowed = ''; checking = false; checkingEmail = ''; checkPromise = null;
+      accessStatus = 'pending';
+      roleAccount = email();
+      sessionConfirmed = state?.autorise === true && String(state.email || '').trim().toLowerCase() === roleAccount &&
+        !state.cdqReadOnlyStartupV2539 && !state.cdqWarmReadOnlyV2540;
+      const role = String(state?.role || '').trim().toLowerCase();
+      assignedRole = sessionConfirmed && ['admin', 'technicien', 'lecture'].includes(role) ? role : 'lecture';
+      if (!confirmed()) {
+        applyRole(); clearClientView();
+        paint('Vérification de votre connexion…', true);
+        return Promise.resolve(false);
+      }
+      return check();
+    }, retry: () => check(true), chooseOther: () => check(true),
     googleResult: () => check(true), approvedEmail: () => canRead() ? allowed : '', applicationLogin: 'email-code-pin'
   });
   window.cdqNativeDriveGateV2620 = () => {}; // A late native callback cannot grant client access.
@@ -24186,7 +24238,9 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
   window.__cdqDriveGateNativeRequestV2620 = '';
   window.addEventListener('cdq:access-state-v2527', event => {
     if (event.detail !== 'ready') {
-      ++epoch; allowed = ''; assignedRole = ''; roleAccount = ''; checking = false; checkPromise = null;
+      ++epoch; allowed = ''; assignedRole = ''; roleAccount = ''; sessionConfirmed = false; checking = false; checkPromise = null;
+      accessStatus = 'pending';
+      syncAdminSettings(false);
       clearClientView(); paint('');
     }
   });
