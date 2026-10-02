@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.45" data-cdq-iphone-release="5187653d388de13ac39a6f6da465038c6e951d7fe510f579a10d4bb22a7b8235">
+<html data-cdq-iphone-version="26.47" data-cdq-iphone-release="cc1cc69c30bf261001f08cfb6f40ec0bf5d978a5f6d8d85f63a669d74905f788">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -542,7 +542,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.02-v26.45-direct-access">
+<meta name="cdq-package-build" content="2026.10.02-v26.47-home-account-conversions">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -820,7 +820,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.02-v26.45-direct-access'
+    build:'2026.10.02-v26.47-home-account-conversions'
   });
 }
 
@@ -833,7 +833,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.02-v26.45-direct-access'
+        build:'2026.10.02-v26.47-home-account-conversions'
       });
     }
   } catch(e) {}
@@ -11238,7 +11238,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.02-v26.45-direct-access";
+  const CDQ_BUILD = "2026.10.02-v26.47-home-account-conversions";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13534,7 +13534,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.02-v26.45-direct-access";
+const CDQ_V19_BUILD = "2026.10.02-v26.47-home-account-conversions";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15339,7 +15339,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.02-v26.45-direct-access";
+const CDQ_V20_BUILD = "2026.10.02-v26.47-home-account-conversions";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16186,7 +16186,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.02-v26.45-direct-access";
+const CDQ_V21_BUILD = "2026.10.02-v26.47-home-account-conversions";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16674,6 +16674,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
     const reader=localStorage.getItem('cdqPdfReaderPreferenceV1')||'ask';
     m.innerHTML=header('Réglages','Ton affichage, tes fichiers et ton compte, au même endroit.')+`<div class="pc17-scroll pc17-settings"><section><h2>Thème</h2><div class="pc17-theme-choices">${themes.map(([id,name])=>`<button type="button" data-pc-theme="${id}" aria-pressed="${preferences.theme===id}"><i class="pc17-swatch ${id}"></i>${name}</button>`).join('')}</div></section><section><h2>Lisibilité sur ce PC</h2>${[['text','Taille des noms de fichiers et clients'],['icons','Taille des icônes de fichiers'],['density','Espacement des lignes']].map(([key,label])=>`<label class="pc17-range">${label}<output id="pc17Value-${key}">${preferences[key]} / 100</output><input type="range" min="0" max="100" value="${preferences[key]}" data-pc-range="${key}" aria-label="${label}"></label>`).join('')}<p>La sélection multiple s’active en maintenant le clic de la souris pendant 0,7 seconde.</p></section><section class="cdq-display-group"><div class="cdq-display-label">Thème</div></section><section><h2>Compte Google pour les documents</h2><p>Choisis le compte proposé à Google pour ouvrir les fichiers sur ce PC.</p><label class="pc18-account-label">Adresse Google<input id="pc18GoogleEmail" type="email" autocomplete="email" placeholder="nom@gmail.com" value="${esc(account)}"></label><div class="pc17-setting-buttons">${button('pc18SaveAccount','Enregistrer')}${button('pc18CurrentAccount','Utiliser mon compte CDQ')}${button('pc18ResetAccount','Demander le compte à chaque ouverture')}</div><p id="pc18AccountStatus" role="status">${account?'Compte enregistré : '+esc(account):'Aucun compte par défaut'}</p></section><section><h2>Lecteur PDF</h2><div class="pc17-setting-buttons">${[['ask','Demander'],['cdq','Lecteur CDQ'],['ilovepdf','iLovePDF'],['acrobat','Acrobat']].map(([id,label])=>`<button type="button" class="pc17-button" data-pc-reader="${id}" aria-pressed="${reader===id}">${label}</button>`).join('')}</div><p>Lecteur CDQ : remplissage dans l’application et enregistrement dans le dossier client. Les lecteurs externes doivent être installés.</p></section><section><h2>Application et mises à jour</h2><p>Version installée : <strong>V25.23</strong></p><div class="pc17-setting-buttons">${button('pc18CheckUpdate','Vérifier les mises à jour','refresh')}${button('pc18Manager','Ouvrir Script Manager')}${button('pc17Sync','Synchroniser les préférences','refresh')}</div><p id="pc18UpdateStatus" role="status"></p></section>${typeof utilisateurCourantRole!=='undefined'&&utilisateurCourantRole==='admin'?`<section><h2>Administration</h2><div class="pc17-setting-buttons">${button('pc18Users','Gestion des utilisateurs')}${button('pc18Diagnostic','Diagnostic de l’application')}</div></section>`:''}</div>`;
     window.cdqIconThemesV2514?.mount(m);
+    const advanced=document.createElement('section');const heading=document.createElement('h2');heading.textContent='Avancé';advanced.append(heading);m.querySelector('.pc17-settings').append(advanced);window.cdqAccountV2647?.mount(advanced);
     const note=$('.cdq-icon-picker-v2514 > p',m);if(note)note.textContent='Le même jeu d’icônes personnel sur PC et Android.';
     $$('[data-pc-theme]',m).forEach(b=>b.onclick=()=>{preferences.theme=b.dataset.pcTheme;savePreferences();$$('[data-pc-theme]',m).forEach(x=>x.setAttribute('aria-pressed',String(x===b)))});
     $$('[data-pc-range]',m).forEach(input=>input.oninput=()=>{preferences[input.dataset.pcRange]=+input.value;$('#pc17Value-'+input.dataset.pcRange).textContent=input.value+' / 100';savePreferences()});
@@ -16710,7 +16711,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.02-v26.45-direct-access';
+const BUILD='2026.10.02-v26.47-home-account-conversions';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20391,7 +20392,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.02-v26.45-direct-access';
+  const BUILD='2026.10.02-v26.47-home-account-conversions';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22649,7 +22650,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.02-v26.45-direct-access',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.02-v26.47-home-account-conversions',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -22978,9 +22979,7 @@ html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item{box-shadow:
 <script src="./document-return-v2618.js"></script>
 <script type="module" src="./calibration-ui-v2565.mjs"></script>
 
-<style id="cdqHomeUnderlineV2531">
-html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item.cdq-nav-home.active::after{content:none!important;display:none!important}
-</style>
+
 <style id="cdqReportStyleV2578">#quickButtons{display:none!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important}.cdq-report-nav-item-v2578>span{display:inline-flex!important;align-items:center;justify-content:center;background:none!important;filter:none!important}.cdq-report-icon-v2578{display:block;width:100%!important;height:100%!important;object-fit:contain;border-radius:7px;filter:drop-shadow(0 0 5px #1677ff)}.bottom-nav .cdq-report-nav-item-v2578>small{color:#3f8cff!important;-webkit-text-fill-color:#3f8cff!important;text-shadow:0 0 9px #1267ff99!important}#cdqReportOverlayV2578{position:fixed;inset:0;z-index:2147483100;background:#000c;display:grid;place-items:end center;padding:0}#cdqReportOverlayV2578[hidden]{display:none!important}.cdq-report-sheet-v2578{width:min(720px,100%);max-height:92dvh;overflow:auto;box-sizing:border-box;background:linear-gradient(180deg,#08131d,#0d2332);border:1px solid #33566f;border-radius:22px 22px 0 0;color:#eef7fc;padding:calc(12px + env(safe-area-inset-top)) 14px calc(22px + env(safe-area-inset-bottom));box-shadow:0 -14px 45px #000b;font-family:Arial,Helvetica,sans-serif}.cdq-report-sheet-v2578 header{position:sticky;top:-12px;z-index:2;display:flex;align-items:center;gap:10px;background:#0b1d2af2;padding:9px 0 11px;border-bottom:1px solid #29475c}.cdq-report-sheet-v2578 header>img{width:46px;height:46px;object-fit:contain;border-radius:9px;filter:drop-shadow(0 0 6px #1677ff)}.cdq-report-sheet-v2578 header>div{flex:1;min-width:0}.cdq-report-sheet-v2578 h2{margin:0;font-size:21px}.cdq-report-sheet-v2578 header small{display:block;color:#a9c8da;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cdq-report-sheet-v2578 header button{width:42px;height:42px;border:1px solid #456b82;border-radius:11px;background:#173347;color:white;font-size:19px;font-weight:800}.cdq-report-grid-v2578{display:grid;gap:11px;margin-top:14px}.cdq-report-root-v2578{grid-template-columns:1fr}.cdq-report-models-v2578{grid-template-columns:repeat(2,minmax(0,1fr))}.cdq-report-choice-v2578{min-height:76px;width:100%;border:1px solid #315b74;border-radius:14px;background:#102b3d;color:#fff;padding:13px;text-align:left}.cdq-report-choice-v2578 strong{display:block;font-size:16px;line-height:1.2}.cdq-report-choice-v2578 small{display:block;color:#a8cadc;margin-top:5px;line-height:1.25}.cdq-report-choice-v2578:active{transform:scale(.985);background:#15384e}.cdq-report-choice-v2578:disabled{opacity:.5}.cdq-report-status-v2578{min-height:22px;margin:14px 2px 0;color:#9fe8ff;line-height:1.4}.cdq-report-status-v2578.error{color:#ffaaa8}.cdq-report-open-v2578{overflow:hidden!important}@media(max-width:520px){.cdq-report-models-v2578{grid-template-columns:1fr 1fr}.cdq-report-choice-v2578{min-height:72px;padding:11px}.cdq-report-choice-v2578 strong{font-size:15px}}@media(max-width:350px){.cdq-report-models-v2578{grid-template-columns:1fr}}</style><script id="cdqReportMenuV2578">(function reportRuntimeV2578(){
   'use strict';
   const ICON='data:image/jpeg;base64,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';
@@ -23684,7 +23683,7 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
   const entryMethods = new Set([
     'reprendreActivationCDQ','creerDefiConnexionGoogleCDQ','verifierJetonGoogleCDQ','obtenirEtatAcces',
     'connecterAvecCodeAcces','definirNip4ApresActivation','deverrouillerAvecNip','restaurerSessionApresBiometrie',
-    'reprendreSessionCourteCDQV2524','obtenirPreferencesUtilisateurCDQV72','obtenirStyleIconesCDQV2514'
+    'reprendreSessionCourteCDQV2524','obtenirPreferencesUtilisateurCDQV72','obtenirStyleIconesCDQV2514','deconnecterAppareil'
   ]);
   const protectedMethod = name => !entryMethods.has(String(name));
 
@@ -23914,6 +23913,57 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
 <script type="module" src="./workspace-v2638.mjs"></script>
 <script type="module" src="./balance-list-v2638.mjs"></script>
 <script type="module" src="./inventory-zoho-v2642.mjs"></script>
+<style id="cdq-nav-current-v2647">
+html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route][data-cdq-current]::after{content:''!important;display:block!important;position:absolute!important;bottom:0!important;left:20%!important;right:20%!important;height:3px!important;border-radius:3px!important;background:transparent!important;box-shadow:none!important}
+html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route][data-cdq-current="true"]::after{background:var(--cdq-nav-accent,var(--cdq-accent))!important;box-shadow:0 0 5px var(--cdq-nav-accent,var(--cdq-accent))!important}
+</style><script id="cdq-account-home-v2647">/* Forget only this application's connection; retain documents and drafts. */
+(() => {
+  'use strict';
+  let leaving=false;
+  function mount(panel){
+    if(!panel||panel.querySelector('[data-cdq-account-logout]'))return;
+    const card=document.createElement('section');card.className='cdq-display-group cdq-settings-card-v2294';
+    const title=document.createElement('h2');title.textContent='Compte CDQ';
+    const account=document.createElement('p');account.textContent=String(utilisateurCourantEmail||'');
+    const button=document.createElement('button');button.type='button';button.dataset.cdqAccountLogout='';
+    button.className='pc17-button';button.textContent='Déconnecter le compte';button.onclick=logout;
+    card.append(title,account,button);panel.append(card);
+  }
+  function logout(){
+    if(leaving)return;leaving=true;
+    const token=cdqObtenirJetonAppareil();
+    // Capture the authenticated request before removing the local session.
+    const revoke=new Promise(resolve=>{
+      try{cdqApiRun().withSuccessHandler(resolve).withFailureHandler(resolve).deconnecterAppareil(token);}
+      catch(_){resolve();}
+    });
+    ++cdqDirectAttemptV2645;
+    utilisateurCourantEmail='';utilisateurCourantRole='';
+    for(const key of ['cdqLastUnlockEmailV2511','cdqResumeSessionV2524','cdqDefaultGoogleAccountV2294',
+      'cdqDefaultGoogleAccountV2296','cdqDefaultGoogleAccountV2297','cdqDefaultGoogleAccountV2298','cdqDefaultGoogleAccountV2299']){
+      try{localStorage.removeItem(key);}catch(_){}
+    }
+    cdqSauverJetonAppareil('');cdqSauverSessionRpcV58('');cdqSauverTicketGoogleV42('');cdqGarderActivationV41(null);
+    cdqActivationToken='';cdqActivationEmail='';
+    try{sessionStorage.removeItem('cdq_drive_gate_email_v2620');}catch(_){}
+    cdqPostToPwa({type:'CDQ_DEFAULT_GOOGLE_ACCOUNT_SET',email:'',reset:true});
+    try{(window.BalanceCDQNative||window.parent.BalanceCDQNative)?.setDefaultGoogleAccount?.('',true);}catch(_){}
+    cdqSetAccessState('input');
+    try{(window.cdqEmbeddedRpcV2529||window.parent.cdqEmbeddedRpcV2529)?.resetSession();}catch(_){}
+    afficherConnexionCodePersonnel('Compte déconnecté. Connectez votre compte CDQ autorisé.','');
+    document.querySelectorAll('[data-cdq-account-logout]').forEach(b=>{b.disabled=true;});
+    // The parent keeps the revocation request alive while the Selector starts clean.
+    // Offline or unresponsive servers cannot keep the local account connected.
+    const timeout=new Promise(resolve=>setTimeout(resolve,1500));
+    return Promise.race([revoke,timeout]).then(()=>location.reload());
+  }
+  const organize=window.cdqOrganizeSettings;
+  if(typeof organize==='function')window.cdqOrganizeSettings=function(modal){
+    const result=organize.apply(this,arguments);mount(modal.querySelector('#cdq-settings-panel-advanced'));return result;
+  };
+  window.cdqAccountV2647=Object.freeze({mount,logout});
+})();
+</script>
 </body>
 </html>
 

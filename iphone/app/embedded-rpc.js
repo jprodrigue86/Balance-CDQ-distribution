@@ -120,6 +120,13 @@
   });
   window.google={script:{run:runner()}};
   window.cdqEmbeddedRpcV2529={run:window.google.script.run,
+    resetSession(){
+      ++authEpoch;sessionToken='';
+      for(const [id,job] of [...pending.entries()]){
+        if(job.name==='cdqRpc'&&job.args[0]==='deconnecterAppareil')continue;
+        settle(id,false,'Compte CDQ déconnecté.');
+      }
+    },
     prepareSession:token=>new Promise((resolve,reject)=>runner(resolve,reject,undefined,true).obtenirEtatAcces(token,''))};
   window.dispatchEvent?.(new Event('cdq:rpc-ready-v2529'));
   function boot(){

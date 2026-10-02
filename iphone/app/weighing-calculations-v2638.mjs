@@ -1,5 +1,6 @@
 // Pure calculations: no account, network or customer data is needed.
-export const KG_PER_LB=0.45359237;
+export const LB_PER_KG=2.20462;
+export const KG_PER_LB=1/LB_PER_KG;
 export const massUnits=Object.freeze({kg:1,g:0.001,mg:0.000001,lb:KG_PER_LB,oz:KG_PER_LB/16,t:1000});
 export function numberFR(value){
   const s=String(value??'').trim().replace(/[\s\u00a0\u202f]/g,'').replace(',','.');
