@@ -1,26 +1,26 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.4.2",
-  "versionCode": 14002,
+  "version": "1.5.0",
+  "versionCode": 15000,
   "minShellVersion": 11000,
-  "releasedAt": "2026-09-30T22:30:21.529245+00:00",
+  "releasedAt": "2026-10-02T02:02:06.888817+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "1593b5e365c4c850fbdb150edd2e3a5c127d980557016c3328c8a357a6ace43b",
-  "htmlSha256": "893e16bb06a60214cf33266ce9e993cdc3dff6608662ef166767b8a18980a5ef",
-  "packageBytes": 1175209,
-  "htmlBytes": 660140,
+  "packageSha256": "5b7d2541b221b8d0a6be2277cd8dc03d108dde6782167b34c475a779052ba36d",
+  "htmlSha256": "840e4e8aedfe95df3d0db91e9154cfdfc9fd4b0f7fd06390ae9037745bdcb019",
+  "packageBytes": 13098281,
+  "htmlBytes": 7367065,
   "notes": [
-    "Correction mobile : suppression de l’encadré/gouttière claire autour des cartes de chiffres dans les thèmes sombres.",
-    "Le bouton Envoyé reste utilisable lorsqu’un arrondi au plus proche dépasserait légèrement l’ancien stock.",
-    "Dans ce cas seulement, Envoyé applique automatiquement l’arrondi inférieur à la ligne archivée pour éviter le dépassement.",
-    "Le clic sur Envoyé n’active plus la carte derrière le bouton; la ligne est déplacée directement vers l’Historique.",
-    "Aucun autre calcul, donnée, thème ou écran n’est modifié."
+    "Current Orders Ahead/Behind : lecture locale du tableau jaune en photo.",
+    "Enregistrement des analyses, commentaires et export CSV.",
+    "Envoyé : archivage avec arrondi inférieur automatique.",
+    "Conteneur mobile sans gouttière claire.",
+    "Moteur Android 15000 requis pour la caméra et la lecture OCR."
   ],
+  "androidApk": "Calculs-Atelier-Android-1.5.0.apk",
   "verification": {
-    "signature": "RSA-SHA256 validée avec la clé historique",
-    "mobileDarkTheme": "gouttière claire supprimée",
-    "sendToHistory": "bouton Envoyé actif; arrondi inférieur automatique seulement si nécessaire",
+    "signature": "RSA-SHA256 avec la clé historique",
+    "androidSignature": "APK v2/v3 avec le certificat historique",
     "physicalDeviceTest": false
   },
-  "privacy": "Contenu applicatif compilé uniquement. Aucune saisie utilisateur, aucun historique local, aucune clé privée."
+  "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée."
 }
