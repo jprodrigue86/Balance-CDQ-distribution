@@ -18,7 +18,7 @@ const canWrite=()=>canRead()&&['admin','technicien'].includes(calibrationIdentit
 const ownerKey=()=>calibrationIdentity().email+'|'+calibrationIdentity().role;
 async function rpc(name,...args){const key=ownerKey();if(!canRead())throw Error('Accès Drive requis.');const result=await calibrationRpc(name,...args);if(key!==ownerKey()||!canRead())throw Error('Le compte a changé.');return result;}
 let homeAfterReader=false,homeReaderSource=null;
-let active='',observedOwner='',queued=false,driveEpoch=0,driveState={mode:'drive',id:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false},opportunities=[],opportunityEpoch=0;
+let active='',observedOwner='',queued=false,driveEpoch=0,driveState={mode:'drive',id:GENERAL,lastDriveId:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false},opportunities=[],opportunityEpoch=0;
 const pageByRoute={dossier:'cdqDrivePageV2638',favorites:'cdqDrivePageV2638',calcul:'cdqCalculPageV2638',opportunities:'cdqOpportunitiesPageV2638',report:'cdqReportOverlayV2578',calibration:'cdqCalibrationDialogV2565',inventory:'cdqInventoryModernV2592',invoices:'cdqInvoicePageV2590'};
 const labels={Accueil:'home',Dossier:'dossier',Dossiers:'dossier',Favoris:'favorites',Rapport:'report',Calibration:'calibration',Calcul:'calcul',Inventaire:'inventory',Factures:'invoices',Opportunités:'opportunities',Corbeille:'trash'};
 const order=[...new Set(Object.values(labels))],cache=new Map();
@@ -47,7 +47,7 @@ function syncNav(){
     if($('[data-workspace-route="'+key+'"]',nav))continue;
     const b=document.createElement('button');b.type='button';b.className='bottom-nav-item';b.dataset.workspaceRoute=key;b.setAttribute('aria-label',label);b.innerHTML='<span class="cdq-workspace-icon">'+workspaceIcon(key)+'</span><small>'+label+'</small>';nav.append(b);
   }
-  for(const b of $$('.bottom-nav-item',nav))if(b.dataset.workspaceRoute==='drive'||['Drive général','Mon Drive'].includes($('small',b)?.textContent.trim()))b.remove();
+  for(const b of $$('.bottom-nav-item',nav))if(['drive','favorites'].includes(b.dataset.workspaceRoute)||['Drive général','Mon Drive','Favoris'].includes($('small',b)?.textContent.trim()))b.remove();
   syncHome();
   const theme=iconTheme();
   for(const b of $$('.bottom-nav-item',nav)){
@@ -74,14 +74,15 @@ function hidePages(){
   document.documentElement.classList.remove('cdq-report-open-v2578','cdq-inventory-modern-open-v2592','cdq-invoice-open-v2590');
 }
 export function navigate(route,{toggle=false,adopt=false}={}){
-  if(route==='drive')route='dossier';if(route==='home')route='';if(toggle&&active===route)route='';
+  const favorites=route==='favorites';
+  if(route==='drive'||favorites)route='dossier';if(route==='home')route='';if(toggle&&active===route)route='';
   if(!calibrationIdentity().email)return;
   const target=$('#'+pageByRoute[route]);
   if(!adopt)hidePages();else if(active&&active!==route){for(const [key,id] of Object.entries(pageByRoute)){const p=$('#'+id);if(p&&p!==target){if(p instanceof HTMLDialogElement&&p.open)p.close();else if(!(p instanceof HTMLDialogElement))p.hidden=true;}}}
   active=route;document.documentElement.classList.toggle('cdq-workspace-open',!!route);document.documentElement.dataset.cdqWorkspace=route;
   if(!route){driveEpoch++;opportunityEpoch++;document.getElementById('companyMenu')?.style.setProperty('display','none');measure();syncNav();return;}
   if(!adopt){
-    if(route==='dossier'||route==='favorites')openDrive(route==='favorites'?'favorites':'drive');
+    if(route==='dossier')openDrive(favorites?'favorites':'drive');
     else if(route==='calcul')openCalcul();
     else if(route==='opportunities')openOpportunities();
     else if(route==='report')window.cdqRapportsV2578?.open?.();
@@ -113,10 +114,12 @@ function drivePage(){return page(pageByRoute.dossier,driveState.mode==='favorite
 function driveCacheKey(mode,id){return ownerKey()+'|'+mode+'|'+id;}
 function openDrive(mode){
   const p=drivePage();p.hidden=false;if(!canRead()){$('.cdq-workspace-body',p).innerHTML='<section class="cdq-workspace-card"><h3>Lecture seule</h3><p>Les dossiers et favoris restent masqués sans accès Drive.</p></section>';return;}
-  const same=mode===driveState.mode;driveState={...driveState,mode,id:mode==='favorites'?'':(same?driveState.id||GENERAL:GENERAL),query:''};loadDrive(false);
+  if(mode==='favorites'&&driveState.mode==='drive')driveState.lastDriveId=driveState.id||GENERAL;
+  const id=mode==='favorites'?'':driveState.mode==='drive'?driveState.id||GENERAL:driveState.lastDriveId||GENERAL;
+  driveState={...driveState,mode,id,query:''};loadDrive(false);
 }
 async function loadDrive(append=false,id=driveState.id){
-  const p=drivePage(),mode=driveState.mode,key=driveCacheKey(mode,id),epoch=++driveEpoch,account=ownerKey();driveState.id=id;driveState.loading=true;
+  const p=drivePage(),mode=driveState.mode,key=driveCacheKey(mode,id),epoch=++driveEpoch,account=ownerKey();driveState.id=id;if(mode==='drive')driveState.lastDriveId=id;driveState.loading=true;
   const old=cache.get(key);if(!append){driveState.items=old?.items||[];driveState.crumbs=old?.crumbs||[];driveState.token=old?.token||'';}renderDrive();status(p,old&&!append?'Actualisation…':'Chargement…');
   try{const result=await rpc(mode==='favorites'?'obtenirFavorisGenerauxCDQV2521':'obtenirDossierGeneralCDQV2521',...(mode==='favorites'?[append?driveState.token:'']:[id,append?driveState.token:'']));if(epoch!==driveEpoch||account!==ownerKey()||!['dossier','favorites'].includes(active))return;
     const seen=new Set();driveState.items=(append?[...driveState.items,...(result.items||[])]:result.items||[]).filter(x=>!seen.has(x.id)&&seen.add(x.id));driveState.crumbs=result.crumbs||[];driveState.token=result.nextPageToken||'';driveState.loading=false;
@@ -125,11 +128,12 @@ async function loadDrive(append=false,id=driveState.id){
 }
 function renderDrive(){
   const p=drivePage(),body=$('.cdq-workspace-body',p),mode=driveState.mode;$('.cdq-workspace-head h2',p).innerHTML=(mode==='favorites'?'Favoris':'Dossiers')+'<small>'+esc(mode==='favorites'?'Vos raccourcis personnels':driveState.crumbs.at(-1)?.nom||'Dossiers partagés CDQ')+'</small>';
-  body.innerHTML='<input class="cdq-workspace-search" data-drive-search type="search" aria-label="Rechercher dans cette liste" placeholder="Rechercher dans cette liste" value="'+esc(driveState.query)+'"><div class="cdq-workspace-actions"><button data-drive-back>← Retour</button><button data-drive-root>Racine</button><button data-drive-refresh>Actualiser</button></div><nav class="cdq-workspace-crumbs" aria-label="Chemin du dossier"></nav><div class="cdq-workspace-list" data-drive-list></div><div class="cdq-workspace-actions"><button data-drive-more>Charger la suite</button></div><p data-workspace-status role="status" class="cdq-workspace-status"></p>';
+  body.innerHTML='<input class="cdq-workspace-search" data-drive-search type="search" aria-label="Rechercher dans cette liste" placeholder="Rechercher dans cette liste" value="'+esc(driveState.query)+'"><div class="cdq-workspace-actions cdq-drive-toolbar"><button type="button" data-drive-back>← Retour</button><button type="button" data-drive-root>Racine</button><button type="button" data-drive-favorites aria-pressed="'+(mode==='favorites')+'">★ Favoris</button><button type="button" data-drive-refresh>Actualiser</button></div><nav class="cdq-workspace-crumbs" aria-label="Chemin du dossier"></nav><div class="cdq-workspace-list" data-drive-list></div><div class="cdq-workspace-actions"><button data-drive-more>Charger la suite</button></div><p data-workspace-status role="status" class="cdq-workspace-status"></p>';
   $('[data-drive-search]',p).oninput=e=>{driveState.query=e.target.value;renderDriveRows(p);};
-  $('[data-drive-back]',p).disabled=mode==='favorites'||driveState.crumbs.length<2;$('[data-drive-back]',p).onclick=()=>loadDrive(false,driveState.crumbs.at(-2).id);
+  $('[data-drive-back]',p).disabled=mode!=='favorites'&&driveState.crumbs.length<2;$('[data-drive-back]',p).onclick=()=>mode==='favorites'?openDrive('drive'):loadDrive(false,driveState.crumbs.at(-2).id);
+  $('[data-drive-favorites]',p).onclick=()=>openDrive('favorites');
   $('[data-drive-root]',p).onclick=()=>{driveState.mode='drive';active='dossier';document.documentElement.dataset.cdqWorkspace=active;syncNav();loadDrive(false,GENERAL);};$('[data-drive-refresh]',p).onclick=()=>loadDrive(false);
-  for(const crumb of driveState.crumbs){const b=document.createElement('button');b.textContent=crumb.nom;b.onclick=()=>loadDrive(false,crumb.id);$('.cdq-workspace-crumbs',p).append(b);}
+  for(const crumb of mode==='favorites'?[]:driveState.crumbs){const b=document.createElement('button');b.textContent=crumb.nom;b.onclick=()=>loadDrive(false,crumb.id);$('.cdq-workspace-crumbs',p).append(b);}
   $('[data-drive-more]',p).hidden=!driveState.token;$('[data-drive-more]',p).disabled=driveState.loading;$('[data-drive-more]',p).onclick=()=>loadDrive(true);renderDriveRows(p);
 }
 function renderDriveRows(p){
@@ -183,7 +187,7 @@ function adoptPages(){
   const p=$('#'+pageByRoute[active]);if(p&&(p instanceof HTMLDialogElement?!p.open:p.hidden)){active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
 }
 function restoreDossierControls(){const host=document.querySelector('.desktop-main')||document.body;for(const name of ['selectionBar','filesContainer','sendArea','message']){const el=document.getElementById(name);if(el&&el.closest('#cdqDossierPageV2638'))host.append(el);}}
-function clearPrivate(){homeAfterReader=false;homeReaderSource=null;driveEpoch++;opportunityEpoch++;cache.clear();opportunities=[];driveState={mode:'drive',id:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false};restoreDossierControls();for(const id of ['cdqDossierPageV2638','cdqDrivePageV2638','cdqOpportunitiesPageV2638'])$('#'+id)?.remove();hidePages();active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
+function clearPrivate(){homeAfterReader=false;homeReaderSource=null;driveEpoch++;opportunityEpoch++;cache.clear();opportunities=[];driveState={mode:'drive',id:GENERAL,lastDriveId:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false};restoreDossierControls();for(const id of ['cdqDossierPageV2638','cdqDrivePageV2638','cdqOpportunitiesPageV2638'])$('#'+id)?.remove();hidePages();active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
 function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;if(observedOwner!==ownerKey()){observedOwner=ownerKey();clearPrivate();}syncNav();adoptPages();});}
 function returnHome(){
   homeAfterReader=false;homeReaderSource=null;navigate('');
@@ -217,5 +221,5 @@ function start(){
   // Existing data modules are bundled and may be warmed only after both checks.
   window.addEventListener('cdq:drive-ready-v2632',()=>{if(!canRead())return;import('./calibration-db-v2565.mjs').catch(()=>{});});
 }
-window.cdqWorkspaceV2638={navigate,measure,readerClosed,readerCancelled,active:()=>active,version:'26.42'};
+window.cdqWorkspaceV2638={navigate,measure,readerClosed,readerCancelled,active:()=>active,version:'26.44'};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();

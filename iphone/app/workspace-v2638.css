@@ -109,3 +109,8 @@ html.cdq-mobile-layout #cdqCalibrationDialogV2565{position:fixed!important;box-s
 html.cdq-mobile-layout #cdqCalibrationDialogV2565 .cdq-cal-shell{height:100%!important;min-height:0!important;overflow:hidden!important}
 html.cdq-mobile-layout #cdqCalibrationDialogV2565 .cdq-cal-head{flex:0 0 auto!important}
 html.cdq-mobile-layout #cdqCalibrationDialogV2565 .cdq-cal-body{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding-bottom:24px!important}
+
+/* Favorites are a view within Dossiers, beside the existing root control. */
+.cdq-drive-toolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.cdq-drive-toolbar button{min-width:0;padding:10px 4px;font-size:clamp(12px,3.4vw,16px);line-height:1.2}
+.cdq-drive-toolbar [data-drive-favorites][aria-pressed="true"]{background:var(--cdq-selected);border-color:var(--cdq-accent);color:var(--cdq-accent)}
