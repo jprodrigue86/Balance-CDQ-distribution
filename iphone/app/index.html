@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="26.34" data-cdq-iphone-release="8397705d03507c7fa476dc334bf2d8208fd9661143b32504d3cb8ead2ba836a4">
+<html lang="fr" data-cdq-iphone-version="26.36" data-cdq-iphone-release="ab357342ef7b7e8f27e0c20df9020f4ca779ec0d9cd6f2e3b1466628f36d5956">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./iphone-update.js"></script>
@@ -474,7 +474,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 </div>
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.02-v26.34-biometric-current-access';
+const CDQ_PWA_BUILD = '2026.10.02-v26.36-bundled-pdf-reports';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -606,7 +606,7 @@ let accessWaitTimer = null;
 let selectorWindow = null;
 let selectorOrigin = '';
 let backendBuild = '';
-const cdqOffline = import('./offline-templates-v2527.mjs').then(module=>module.createOfflineTemplates({
+const cdqOffline = import('./offline-templates-v2636.mjs').then(module=>module.createOfflineTemplates({
 send:data=>replyToSelector(selectorWindow,data),
 openPdf:data=>cdqAfficherPdf(data),
 warmPdf:data=>{
