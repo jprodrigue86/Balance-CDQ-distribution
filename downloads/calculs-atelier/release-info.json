@@ -1,20 +1,21 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.5.7",
-  "versionCode": 15007,
+  "version": "1.5.8",
+  "versionCode": 15008,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-02T21:43:18.070525+00:00",
+  "releasedAt": "2026-10-02T22:19:55.807402+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "f54daa3e5e59f7b6f65b4a770a35c354b20a4c0ecb999352b7b5ac3956b1321e",
-  "htmlSha256": "d3c9829d361a62daf80f81789383bccb65afb8f7e3ff5054710e3c5c7f7a5ec2",
-  "packageBytes": 16355465,
-  "htmlBytes": 9199153,
+  "packageSha256": "2ba16f8a9b97f105326be082bd9a8351089d35b0ea6e0e30c457f7556b80899c",
+  "htmlSha256": "dcb7fc4b154da72c4519f73f7c5559e482260a9af92f88446ac8258fd9c3610b",
+  "packageBytes": 16359181,
+  "htmlBytes": 9201254,
   "notes": [
-    "Relecture renforcée des titres quand la reconnaissance initiale échoue à 25 %, avec le modèle de mots embarqué et un cadrage plus large des titres.",
-    "Traitement des fonds colorés pendant la relecture; retour au modèle numérique pour les ordres et les dates, sans téléchargement OCR.",
-    "Les colonnes Original End et Current End restent identifiées par leur titre pour préserver les calculs."
+    "Le cadrage affiche la zone réellement analysée et assombrit les parties retirées de la photo.",
+    "Les marges indiquent clairement les pourcentages retirés; un bouton rétablit la photo entière.",
+    "Quand le cadrage masque le tableau ou ses titres, l’analyse recherche le tableau sur la photo entière.",
+    "Modifier le cadrage efface le message et l’aperçu de l’analyse précédente."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.5.7.apk",
+  "androidApk": "Calculs-Atelier-Android-1.5.8.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
     "androidSignature": "APK v2/v3 avec le certificat historique",
