@@ -6,18 +6,19 @@ export function openReader(data){
   frame.src=new URL('./reader-v2525.html',import.meta.url).href;frame.referrerPolicy='origin';
   frame.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:#101820';
   const origin=new URL(frame.src).origin,saves=new Map();let closed=false,guard=false,ready=false;
-  let workspaceRoute='',workspaceOwner='';
+  let workspaceRoute=null,workspaceOwner=null;
   function layout(message){
     if(!data.workspaceSource)return;
     try{
       const source=data.workspaceSource,doc=source.document,root=doc.documentElement;
       if(!root.classList.contains('cdq-mobile-layout'))return;
-      workspaceRoute||=root.dataset.cdqWorkspace||'dossier';workspaceOwner||=root.dataset.cdqWorkspaceOwner||'';
+      workspaceRoute??=root.dataset.cdqWorkspace||'';workspaceOwner??=root.dataset.cdqWorkspaceOwner||'';
       if(message&&(!message.canRead||workspaceOwner&&message.owner!==workspaceOwner)){close();return;}
-      const bounds=source.frameElement?.getBoundingClientRect(),offset=bounds?.top||0;
-      const top=offset+(doc.getElementById('appHeader')?.getBoundingClientRect().bottom||0),bottom=Math.max(0,innerHeight-offset-(doc.querySelector('.bottom-nav')?.getBoundingClientRect().top||innerHeight));
-      frame.style.inset=top+'px 0 '+bottom+'px';frame.style.height='auto';
-      frame.hidden=!!message&&message.route!==workspaceRoute;
+      const route=message?.route??root.dataset.cdqWorkspace??'';
+      frame.hidden=route!==workspaceRoute;root.classList.toggle('cdq-workspace-reader-open',!frame.hidden);
+      const bounds=source.frameElement?.getBoundingClientRect(),offset=bounds?.top||0,viewport=window.visualViewport?.height||innerHeight;
+      const top=Math.max(0,offset+(doc.getElementById('appHeader')?.getBoundingClientRect().bottom||0)),bottom=Math.max(0,viewport-offset-(doc.querySelector('.bottom-nav')?.getBoundingClientRect().top||viewport));
+      frame.style.inset=top+'px 0 '+bottom+'px';frame.style.height=Math.max(0,viewport-top-bottom)+'px';
     }catch{}
   }
   const marker='cdq-reader-'+crypto.randomUUID();
@@ -25,12 +26,14 @@ export function openReader(data){
   function pop(){if(closed)return;history.pushState({cdqReader:marker},'',location.href);tell({type:'CDQ_READER_REQUEST_CLOSE'});}
   function close(){
     if(closed)return;closed=true;active=null;clearTimeout(timer);
-    window.removeEventListener('message',receive);window.removeEventListener('popstate',pop);frame.remove();
+    window.removeEventListener('message',receive);window.removeEventListener('popstate',pop);window.removeEventListener('resize',resize);window.visualViewport?.removeEventListener('resize',resize);frame.remove();
+    try{data.workspaceSource?.document.documentElement.classList.remove('cdq-workspace-reader-open');data.workspaceSource?.cdqWorkspaceV2638?.readerClosed();data.workspaceSource?.cdqWorkspaceV2638?.measure();}catch{}
     if(guard&&history.state?.cdqReader===marker)history.back();
     data.onClose?.();
   }
   async function receive(event){
     if(!closed&&data.workspaceSource&&event.source===data.workspaceSource&&event.origin===location.origin&&event.data?.type==='CDQ_WORKSPACE_LAYOUT_V2638'){layout(event.data);return;}
+    if(!closed&&data.workspaceSource&&event.source===data.workspaceSource&&event.origin===location.origin&&event.data?.type==='CDQ_WORKSPACE_READER_HOME_V2640'){tell({type:'CDQ_READER_REQUEST_CLOSE'});return;}
     if(closed||event.source!==frame.contentWindow||event.origin!==origin)return;
     const m=event.data||{};
     if(m.type==='CDQ_READER_READY'){
@@ -40,6 +43,7 @@ export function openReader(data){
     }
     if(m.type==='CDQ_READER_OPENED')data.onOpened?.();
     if(m.type==='CDQ_READER_CLOSE')close();
+    if(m.type==='CDQ_READER_CLOSE_CANCELLED_V2640')data.workspaceSource?.cdqWorkspaceV2638?.readerCancelled();
     if(m.type==='CDQ_READER_DISCARD'&&/^discard-[\w-]{8,80}$/.test(String(m.requestId||''))){
       try{await data.onDiscard?.();tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:true});}
       catch(e){tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:false,error:e.message||String(e)});}
@@ -52,6 +56,8 @@ export function openReader(data){
     }
   }
   const timer=setTimeout(()=>{if(!ready){close();data.onError?.(new Error('Le lecteur n’a pas démarré. Mettez à jour l’application puis réessayez.'));}},30000);
+  const resize=()=>layout();
+  window.addEventListener('resize',resize);window.visualViewport?.addEventListener('resize',resize);
   window.addEventListener('message',receive);document.body.append(frame);layout();
   active={requestClose:()=>tell({type:'CDQ_READER_REQUEST_CLOSE'})};return active;
 }

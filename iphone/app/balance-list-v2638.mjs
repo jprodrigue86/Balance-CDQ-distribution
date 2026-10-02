@@ -3,7 +3,7 @@ const allowed=()=>window.cdqDriveEntryV2632?.canRead()&&['admin','technicien'].i
 const folder=()=>{try{if(!compagnieSelectionnee)return '';return String((typeof cdqDossierOuvertId!=='undefined'&&cdqDossierOuvertId)||compagnieSelectionnee);}catch{return '';}};
 let epoch=0,owner='',observed='',timer=0,pending=null;
 const attempts=new Map();
-function paint(text,error=false){const p=document.getElementById('cdqDossierPageV2638');if(!p||p.hidden)return;let el=p.querySelector('[data-balance-list-status]');if(!el){el=document.createElement('p');el.dataset.balanceListStatus='';el.className='cdq-workspace-status';el.setAttribute('role','status');p.querySelector('.cdq-workspace-body').append(el);}el.textContent=text;el.classList.toggle('cdq-workspace-error',error);}
+function paint(text,error=false){const p=document.getElementById('cdqClientActionsV2640');if(!p||p.hidden)return;let el=p.querySelector('[data-balance-list-status]');if(!el){el=document.createElement('p');el.dataset.balanceListStatus='';el.className='cdq-workspace-status';el.setAttribute('role','status');p.append(el);}el.textContent=text;el.classList.toggle('cdq-workspace-error',error);}
 async function call(name,id,...args){const key=calibrationIdentity().email,version=epoch;if(!allowed())throw Error('Un compte technicien autorisé au Drive est nécessaire.');const r=await calibrationRpc(name,id,...args);if(version!==epoch||key!==calibrationIdentity().email||!allowed())throw Error('Le compte a changé.');return r;}
 async function poll(id,open,version){
   const start=Date.now();while(version===epoch&&allowed()&&Date.now()-start<180000){
@@ -25,7 +25,7 @@ async function refresh(open=false){
   }catch(e){if(version===epoch&&id===folder())paint(e.message,true);if(open)throw e;return {status:'error',message:e.message};}finally{if(pending===job)pending=null;}})();pending=job;return job.promise;
 }
 function reset(){epoch++;owner=calibrationIdentity().email;observed='';attempts.clear();pending=null;clearTimeout(timer);document.querySelector('[data-balance-list-status]')?.remove();}
-function inspect(){if(owner!==calibrationIdentity().email)reset();if(!allowed()||window.cdqWorkspaceV2638?.active()!=='dossier')return;const id=folder();if(id!==observed){observed=id;refresh(false).catch(()=>{});}}
+function inspect(){if(owner!==calibrationIdentity().email)reset();if(!allowed()||window.cdqWorkspaceV2638?.active()!=='')return;const id=folder();if(id!==observed){observed=id;refresh(false).catch(()=>{});}}
 window.cdqBalanceListV2638={refresh};
 window.addEventListener('cdq:access-ready',reset);window.addEventListener('cdq:drive-cleared-v2632',reset);
 for(const event of ['cdq:copied','cdq:pdf-saved'])window.addEventListener(event,()=>{const key=calibrationIdentity().email+'|'+folder();attempts.delete(key);refresh(false).catch(()=>{});});

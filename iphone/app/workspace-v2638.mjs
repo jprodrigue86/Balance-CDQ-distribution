@@ -17,10 +17,11 @@ const canRead=()=>!!window.cdqDriveEntryV2632?.canRead();
 const canWrite=()=>canRead()&&['admin','technicien'].includes(calibrationIdentity().role);
 const ownerKey=()=>calibrationIdentity().email+'|'+calibrationIdentity().role;
 async function rpc(name,...args){const key=ownerKey();if(!canRead())throw Error('Accès Drive requis.');const result=await calibrationRpc(name,...args);if(key!==ownerKey()||!canRead())throw Error('Le compte a changé.');return result;}
+let homeAfterReader=false,homeReaderSource=null;
 let active='',observedOwner='',queued=false,driveEpoch=0,driveState={mode:'drive',id:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false},opportunities=[],opportunityEpoch=0;
-const pageByRoute={dossier:'cdqDossierPageV2638',drive:'cdqDrivePageV2638',favorites:'cdqDrivePageV2638',calcul:'cdqCalculPageV2638',opportunities:'cdqOpportunitiesPageV2638',report:'cdqReportOverlayV2578',calibration:'cdqCalibrationDialogV2565',inventory:'cdqInventoryModernV2592',invoices:'cdqInvoicePageV2590'};
-const labels={Accueil:'home',Dossier:'dossier',Favoris:'favorites',Rapport:'report',Calibration:'calibration',Calcul:'calcul',Inventaire:'inventory',Factures:'invoices',Opportunités:'opportunities','Drive général':'drive',Corbeille:'trash'};
-const order=Object.values(labels),cache=new Map();
+const pageByRoute={dossier:'cdqDrivePageV2638',favorites:'cdqDrivePageV2638',calcul:'cdqCalculPageV2638',opportunities:'cdqOpportunitiesPageV2638',report:'cdqReportOverlayV2578',calibration:'cdqCalibrationDialogV2565',inventory:'cdqInventoryModernV2592',invoices:'cdqInvoicePageV2590'};
+const labels={Accueil:'home',Dossier:'dossier',Dossiers:'dossier',Favoris:'favorites',Rapport:'report',Calibration:'calibration',Calcul:'calcul',Inventaire:'inventory',Factures:'invoices',Opportunités:'opportunities',Corbeille:'trash'};
+const order=[...new Set(Object.values(labels))],cache=new Map();
 const navColors={home:'#45d6ff',dossier:'#ff6285',favorites:'#ffd34d',report:'#458fff',calibration:'#63edcf',calcul:'#ffb64d',inventory:'#d783ff',invoices:'#6be9a9',opportunities:'#65eda4',drive:'#48ceff',trash:'#ddd4c8'};
 function page(id,title,subtitle=''){
   let p=$('#'+id);if(p)return p;p=document.createElement('section');p.id=id;p.className='cdq-workspace-page';p.hidden=true;p.setAttribute('aria-label',title);
@@ -34,7 +35,7 @@ function measure(){
   const set=(key,value)=>{if(root.style.getPropertyValue(key)!==value)root.style.setProperty(key,value);};
   set('--cdq-workspace-top',top+'px');set('--cdq-workspace-bottom',bottom+'px');
   root.dataset.cdqWorkspaceOwner=ownerKey();
-  const reader=$('#cdqReaderFrame');if(reader){reader.dataset.workspaceRoute||=active||'dossier';reader.hidden=!active||reader.dataset.workspaceRoute!==active;}
+  const reader=$('#cdqReaderFrame');if(reader){reader.dataset.workspaceRoute??=active;reader.hidden=reader.dataset.workspaceRoute!==active||!canRead();root.classList.toggle('cdq-workspace-reader-open',!reader.hidden);const readerTop=Math.max(0,Math.ceil(header?.getBoundingClientRect().bottom||0));reader.style.setProperty('height',Math.max(0,h-readerTop-bottom)+'px','important');set('--cdq-workspace-top',readerTop+'px');}
   const payload={type:'CDQ_WORKSPACE_LAYOUT_V2638',top,bottom,route:active,owner:ownerKey(),canRead:canRead()};
   const signature=JSON.stringify(payload);if(measure.last!==signature){measure.last=signature;window.parent.postMessage(payload,location.origin);}
 }
@@ -42,10 +43,12 @@ function iconTheme(){try{return JSON.parse(localStorage.getItem('cdqIconThemeV25
 function syncNav(){
   const nav=$('.bottom-nav');if(!nav)return;
   document.documentElement.dataset.cdqWorkspaceUnlocked=calibrationIdentity().email?'true':'false';
-  for(const [label,key] of [['Calcul','calcul'],['Opportunités','opportunities'],['Drive général','drive']]){
+  for(const [label,key] of [['Calcul','calcul'],['Opportunités','opportunities']]){
     if($('[data-workspace-route="'+key+'"]',nav))continue;
     const b=document.createElement('button');b.type='button';b.className='bottom-nav-item';b.dataset.workspaceRoute=key;b.setAttribute('aria-label',label);b.innerHTML='<span class="cdq-workspace-icon">'+workspaceIcon(key)+'</span><small>'+label+'</small>';nav.append(b);
   }
+  for(const b of $$('.bottom-nav-item',nav))if(b.dataset.workspaceRoute==='drive'||['Drive général','Mon Drive'].includes($('small',b)?.textContent.trim()))b.remove();
+  syncHome();
   const theme=iconTheme();
   for(const b of $$('.bottom-nav-item',nav)){
     const name=$('small',b)?.textContent.trim(),key=labels[name]||b.dataset.workspaceRoute;if(!key)continue;b.dataset.workspaceRoute=key;
@@ -71,15 +74,14 @@ function hidePages(){
   document.documentElement.classList.remove('cdq-report-open-v2578','cdq-inventory-modern-open-v2592','cdq-invoice-open-v2590');
 }
 export function navigate(route,{toggle=false,adopt=false}={}){
-  if(route==='home')route='';if(toggle&&active===route)route='';
+  if(route==='drive')route='dossier';if(route==='home')route='';if(toggle&&active===route)route='';
   if(!calibrationIdentity().email)return;
   const target=$('#'+pageByRoute[route]);
   if(!adopt)hidePages();else if(active&&active!==route){for(const [key,id] of Object.entries(pageByRoute)){const p=$('#'+id);if(p&&p!==target){if(p instanceof HTMLDialogElement&&p.open)p.close();else if(!(p instanceof HTMLDialogElement))p.hidden=true;}}}
   active=route;document.documentElement.classList.toggle('cdq-workspace-open',!!route);document.documentElement.dataset.cdqWorkspace=route;
   if(!route){driveEpoch++;opportunityEpoch++;document.getElementById('companyMenu')?.style.setProperty('display','none');measure();syncNav();return;}
   if(!adopt){
-    if(route==='dossier')openDossier();
-    else if(route==='drive'||route==='favorites')openDrive(route==='favorites'?'favorites':'drive');
+    if(route==='dossier'||route==='favorites')openDrive(route==='favorites'?'favorites':'drive');
     else if(route==='calcul')openCalcul();
     else if(route==='opportunities')openOpportunities();
     else if(route==='report')window.cdqRapportsV2578?.open?.();
@@ -91,26 +93,23 @@ export function navigate(route,{toggle=false,adopt=false}={}){
   measure();syncNav();
   if(route==='report'&&!$('#cdqReportOverlayV2578:not([hidden])')){active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
 }
-function openDossier(){
-  const p=page(pageByRoute.dossier,'Dossier',companyName()||'Choisir un client'),body=$('.cdq-workspace-body',p);p.hidden=false;
-  if(!canRead()){restoreDossierControls();body.replaceChildren();body.innerHTML='<section class="cdq-workspace-card"><h3>Lecture seule</h3><p>Les clients et les fichiers restent masqués sans accès Drive.</p></section>';return;}
-  if(!companyId()){
-    for(const id of ['selectionBar','filesContainer','sendArea','message']){const el=document.getElementById(id);if(el&&p.contains(el))document.querySelector('.desktop-main')?.append(el);}
-    body.replaceChildren();const search=document.createElement('input');search.className='cdq-workspace-search';search.type='search';search.placeholder='Rechercher un client';search.setAttribute('aria-label','Rechercher un client');const list=document.createElement('div');list.className='cdq-workspace-list';body.append(search,list);
-    const render=()=>{let clients=[];try{clients=toutesLesCompagnies||[];}catch{}list.replaceChildren();for(const c of clients.filter(c=>c.nom.toLocaleLowerCase('fr').includes(search.value.toLocaleLowerCase('fr')))){const b=document.createElement('button');b.textContent=c.nom;b.onclick=()=>{window.choisirCompagnie?.(c);openDossier();};list.append(b);}if(!list.children.length)list.textContent='Aucun client disponible.';};search.oninput=render;render();return;
+function syncHome(){
+  restoreDossierControls();
+  const wrapper=$('.company-wrapper');
+  if(wrapper&&!$('#cdqCreateClientV2640')){
+    const create=document.createElement('button');create.type='button';create.id='cdqCreateClientV2640';create.className='company-reset-button';create.textContent='+';create.title='Créer un nouveau dossier client';create.setAttribute('aria-label','Créer un nouveau dossier client');
+    create.onclick=()=>{if(!canWrite()||companyId())return;try{ouvrirCreationDossier();}catch(e){window.afficherErreur?.(e);}};wrapper.append(create);
   }
-  // Move existing controls, preserving their handlers, selection, lazy folders and account guards.
-  if(!p.querySelector('#filesContainer')){
-    body.replaceChildren();const actions=document.createElement('div');actions.className='cdq-workspace-actions';
-    const create=document.createElement('button');create.textContent='Nouveau dossier';create.disabled=!canWrite();create.onclick=()=>{try{ouvrirCreationDossier();}catch(e){window.afficherErreur?.(e);}};
-    const list=document.createElement('button');list.textContent='Liste de balance';list.onclick=()=>window.cdqBalanceListV2638?.refresh?.(true).catch(e=>status(p,e.message,true));
-    actions.append(create,list);body.append(actions);
-    for(const id of ['selectionBar','filesContainer','sendArea','message']){const el=document.getElementById(id);if(el)body.append(el);}
+  const create=$('#cdqCreateClientV2640');if(create){const hidden=!!companyId();if(create.hidden!==hidden)create.hidden=hidden;create.disabled=!canWrite();}
+  let actions=$('#cdqClientActionsV2640');const files=$('#filesContainer');
+  if(!actions&&files){actions=document.createElement('div');actions.id='cdqClientActionsV2640';actions.className='cdq-workspace-actions';
+    actions.innerHTML='<button type="button" data-client-folder>Nouveau dossier</button><button type="button" data-client-list>Liste de balance</button>';files.before(actions);
+    $('[data-client-folder]',actions).onclick=()=>{if(!companyId()||!canWrite())return;try{ouvrirCreationDossier();}catch(e){window.afficherErreur?.(e);}};
+    $('[data-client-list]',actions).onclick=()=>{if(companyId()&&canRead())window.cdqBalanceListV2638?.refresh?.(true).catch(e=>window.afficherErreur?.(e));};
   }
-  $('.cdq-workspace-head h2',p).innerHTML='Dossier<small>'+esc(companyName())+'</small>';
-  window.cdqBalanceListV2638?.refresh?.(false).catch(()=>{});
+  if(actions){const hidden=!!active||!companyId()||!canRead();if(actions.hidden!==hidden)actions.hidden=hidden;$('[data-client-folder]',actions).disabled=!canWrite();}
 }
-function drivePage(){return page(pageByRoute.drive,driveState.mode==='favorites'?'Favoris':'Drive général','Dossiers partagés CDQ');}
+function drivePage(){return page(pageByRoute.dossier,driveState.mode==='favorites'?'Favoris':'Dossiers','Dossiers partagés CDQ');}
 function driveCacheKey(mode,id){return ownerKey()+'|'+mode+'|'+id;}
 function openDrive(mode){
   const p=drivePage();p.hidden=false;if(!canRead()){$('.cdq-workspace-body',p).innerHTML='<section class="cdq-workspace-card"><h3>Lecture seule</h3><p>Les dossiers et favoris restent masqués sans accès Drive.</p></section>';return;}
@@ -119,24 +118,24 @@ function openDrive(mode){
 async function loadDrive(append=false,id=driveState.id){
   const p=drivePage(),mode=driveState.mode,key=driveCacheKey(mode,id),epoch=++driveEpoch,account=ownerKey();driveState.id=id;driveState.loading=true;
   const old=cache.get(key);if(!append){driveState.items=old?.items||[];driveState.crumbs=old?.crumbs||[];driveState.token=old?.token||'';}renderDrive();status(p,old&&!append?'Actualisation…':'Chargement…');
-  try{const result=await rpc(mode==='favorites'?'obtenirFavorisGenerauxCDQV2521':'obtenirDossierGeneralCDQV2521',...(mode==='favorites'?[append?driveState.token:'']:[id,append?driveState.token:'']));if(epoch!==driveEpoch||account!==ownerKey()||!['drive','favorites'].includes(active))return;
+  try{const result=await rpc(mode==='favorites'?'obtenirFavorisGenerauxCDQV2521':'obtenirDossierGeneralCDQV2521',...(mode==='favorites'?[append?driveState.token:'']:[id,append?driveState.token:'']));if(epoch!==driveEpoch||account!==ownerKey()||!['dossier','favorites'].includes(active))return;
     const seen=new Set();driveState.items=(append?[...driveState.items,...(result.items||[])]:result.items||[]).filter(x=>!seen.has(x.id)&&seen.add(x.id));driveState.crumbs=result.crumbs||[];driveState.token=result.nextPageToken||'';driveState.loading=false;
     cache.set(key,{items:driveState.items.map(x=>({...x})),crumbs:driveState.crumbs,token:driveState.token});while(cache.size>12)cache.delete(cache.keys().next().value);renderDrive();status(p,driveState.items.length+' élément(s)'+(driveState.token?' · autres éléments disponibles':''));
   }catch(e){if(epoch===driveEpoch&&account===ownerKey()){driveState.loading=false;renderDrive();status(p,e.message,true);}}
 }
 function renderDrive(){
-  const p=drivePage(),body=$('.cdq-workspace-body',p),mode=driveState.mode;$('.cdq-workspace-head h2',p).innerHTML=(mode==='favorites'?'Favoris':'Drive général')+'<small>'+esc(mode==='favorites'?'Vos raccourcis personnels':driveState.crumbs.at(-1)?.nom||'Dossiers partagés CDQ')+'</small>';
+  const p=drivePage(),body=$('.cdq-workspace-body',p),mode=driveState.mode;$('.cdq-workspace-head h2',p).innerHTML=(mode==='favorites'?'Favoris':'Dossiers')+'<small>'+esc(mode==='favorites'?'Vos raccourcis personnels':driveState.crumbs.at(-1)?.nom||'Dossiers partagés CDQ')+'</small>';
   body.innerHTML='<input class="cdq-workspace-search" data-drive-search type="search" aria-label="Rechercher dans cette liste" placeholder="Rechercher dans cette liste" value="'+esc(driveState.query)+'"><div class="cdq-workspace-actions"><button data-drive-back>← Retour</button><button data-drive-root>Racine</button><button data-drive-refresh>Actualiser</button></div><nav class="cdq-workspace-crumbs" aria-label="Chemin du dossier"></nav><div class="cdq-workspace-list" data-drive-list></div><div class="cdq-workspace-actions"><button data-drive-more>Charger la suite</button></div><p data-workspace-status role="status" class="cdq-workspace-status"></p>';
   $('[data-drive-search]',p).oninput=e=>{driveState.query=e.target.value;renderDriveRows(p);};
   $('[data-drive-back]',p).disabled=mode==='favorites'||driveState.crumbs.length<2;$('[data-drive-back]',p).onclick=()=>loadDrive(false,driveState.crumbs.at(-2).id);
-  $('[data-drive-root]',p).onclick=()=>{driveState.mode='drive';active='drive';syncNav();loadDrive(false,GENERAL);};$('[data-drive-refresh]',p).onclick=()=>loadDrive(false);
+  $('[data-drive-root]',p).onclick=()=>{driveState.mode='drive';active='dossier';document.documentElement.dataset.cdqWorkspace=active;syncNav();loadDrive(false,GENERAL);};$('[data-drive-refresh]',p).onclick=()=>loadDrive(false);
   for(const crumb of driveState.crumbs){const b=document.createElement('button');b.textContent=crumb.nom;b.onclick=()=>loadDrive(false,crumb.id);$('.cdq-workspace-crumbs',p).append(b);}
   $('[data-drive-more]',p).hidden=!driveState.token;$('[data-drive-more]',p).disabled=driveState.loading;$('[data-drive-more]',p).onclick=()=>loadDrive(true);renderDriveRows(p);
 }
 function renderDriveRows(p){
   const list=$('[data-drive-list]',p);list.replaceChildren();const q=driveState.query.toLocaleLowerCase('fr'),items=driveState.items.filter(x=>(x.nom+' '+(x.path||'')).toLocaleLowerCase('fr').includes(q));
   for(const item of items){const row=document.createElement('article');row.className='cdq-workspace-row';row.innerHTML='<button type="button" class="open">'+workspaceIcon(item.kind==='folder'?'folder':'file')+'<span><strong>'+esc(item.nom)+'</strong><small>'+esc(item.path||(item.kind==='folder'?'Dossier':/pdf/.test(item.mimeType)?'PDF':'Fichier'))+'</small></span></button><button type="button" class="pin" aria-label="'+esc(item.favori?'Retirer des favoris':'Ajouter aux favoris')+'" aria-pressed="'+!!item.favori+'">'+(item.favori?'★':'☆')+'</button>';
-    $('.open',row).onclick=async()=>{if(item.kind==='folder'){driveState.mode='drive';active='drive';syncNav();await loadDrive(false,item.id);}else try{if(item.mimeType==='application/pdf')await window.cdqOpenPdfV2520?.(item.id,{nom:item.nom});else if(item.mimeType==='application/vnd.google-apps.spreadsheet')await window.cdqOpenSheetV2526?.(item.id);else window.open('https://drive.google.com/file/d/'+encodeURIComponent(item.id)+'/view','_blank','noopener');}catch(e){status(p,e.message,true);}};
+    $('.open',row).onclick=async()=>{if(item.kind==='folder'){driveState.mode='drive';active='dossier';document.documentElement.dataset.cdqWorkspace=active;syncNav();await loadDrive(false,item.id);}else try{if(item.mimeType==='application/pdf')await window.cdqOpenPdfV2520?.(item.id,{nom:item.nom});else if(item.mimeType==='application/vnd.google-apps.spreadsheet')await window.cdqOpenSheetV2526?.(item.id);else window.open('https://drive.google.com/file/d/'+encodeURIComponent(item.id)+'/view','_blank','noopener');}catch(e){status(p,e.message,true);}};
     const pin=$('.pin',row);pin.onclick=async()=>{pin.disabled=true;try{const r=await rpc('definirFavoriGeneralCDQV2521',item.id,!item.favori);item.favori=r.favori;cache.clear();if(driveState.mode==='favorites')driveState.items=driveState.items.filter(x=>x.id!==item.id||item.favori);if(!p.hidden)renderDriveRows(p);}catch(e){status(p,e.message,true);}finally{pin.disabled=false;}};list.append(row);
   }
   if(!items.length)list.innerHTML='<section class="cdq-workspace-card"><h3>'+esc(q?'Aucun résultat':driveState.loading?'Chargement…':driveState.mode==='favorites'?'Aucun favori':'Dossier vide')+'</h3><p>'+esc(driveState.mode==='favorites'?'Touchez l’étoile d’un dossier ou d’un fichier pour le retrouver ici.':'Les dossiers s’ouvrent dans cette page; utilisez le chemin pour remonter.')+'</p></section>';
@@ -184,21 +183,39 @@ function adoptPages(){
   const p=$('#'+pageByRoute[active]);if(p&&(p instanceof HTMLDialogElement?!p.open:p.hidden)){active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
 }
 function restoreDossierControls(){const host=document.querySelector('.desktop-main')||document.body;for(const name of ['selectionBar','filesContainer','sendArea','message']){const el=document.getElementById(name);if(el&&el.closest('#cdqDossierPageV2638'))host.append(el);}}
-function clearPrivate(){driveEpoch++;opportunityEpoch++;cache.clear();opportunities=[];driveState={mode:'drive',id:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false};restoreDossierControls();for(const id of ['cdqDossierPageV2638','cdqDrivePageV2638','cdqOpportunitiesPageV2638'])$('#'+id)?.remove();hidePages();active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
+function clearPrivate(){homeAfterReader=false;homeReaderSource=null;driveEpoch++;opportunityEpoch++;cache.clear();opportunities=[];driveState={mode:'drive',id:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false};restoreDossierControls();for(const id of ['cdqDossierPageV2638','cdqDrivePageV2638','cdqOpportunitiesPageV2638'])$('#'+id)?.remove();hidePages();active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
 function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;if(observedOwner!==ownerKey()){observedOwner=ownerKey();clearPrivate();}syncNav();adoptPages();});}
+function returnHome(){
+  homeAfterReader=false;homeReaderSource=null;navigate('');
+  try{deselectionnerCompagnie();if(typeof cdqDossierOuvertId!=='undefined')cdqDossierOuvertId=null;if(typeof cdqDossierOuvertNom!=='undefined')cdqDossierOuvertNom='';}catch{}
+  syncNav();window.scrollTo({top:0,left:0,behavior:'auto'});
+}
+function readerClosed(){if(homeAfterReader)returnHome();}
+function readerCancelled(){homeAfterReader=false;homeReaderSource=null;}
+function requestHome(){
+  const reader=$('#cdqReaderFrame');
+  if(document.documentElement.classList.contains('cdq-workspace-reader-open')){
+    homeAfterReader=true;
+    if(reader&&!reader.hidden){homeReaderSource=reader.contentWindow;homeReaderSource?.postMessage({type:'CDQ_READER_REQUEST_CLOSE'},new URL(reader.src||location.href,location.href).origin);}
+    else window.parent.postMessage({type:'CDQ_WORKSPACE_READER_HOME_V2640'},location.origin);
+    return;
+  }
+  returnHome();
+}
 function start(){
   observedOwner=ownerKey();syncNav();
   // Capture at window before legacy navigation handlers. The same route closes,
   // another route switches; unsaved invoice inputs remain in their existing DOM.
-  window.addEventListener('click',e=>{const b=e.target.closest?.('.bottom-nav-item');if(!b)return;const route=b.dataset.workspaceRoute||labels[$('small',b)?.textContent.trim()];if(!route)return;e.preventDefault();e.stopImmediatePropagation();if(route==='home'){navigate('');try{deselectionnerCompagnie();if(typeof cdqDossierOuvertId!=='undefined')cdqDossierOuvertId=null;if(typeof cdqDossierOuvertNom!=='undefined')cdqDossierOuvertNom='';}catch{}window.scrollTo({top:0,left:0,behavior:'auto'});return;}navigate(route,{toggle:true});},true);
-  const choose=window.choisirCompagnie;if(typeof choose==='function')window.choisirCompagnie=function(...args){const r=choose.apply(this,args);if(canRead())navigate('dossier');return r;};
-  if(window.cdqDriveV2521){window.cdqDriveV2521.open=()=>navigate('drive');window.cdqDriveV2521.openFavorites=()=>navigate('favorites');window.cdqDriveV2521.close=()=>{if(['drive','favorites'].includes(active))navigate('');};}
+  window.addEventListener('click',e=>{const b=e.target.closest?.('.bottom-nav-item');if(!b)return;const route=b.dataset.workspaceRoute||labels[$('small',b)?.textContent.trim()];if(!route)return;e.preventDefault();e.stopImmediatePropagation();if(route==='home'){requestHome();return;}navigate(route,{toggle:true});},true);
+  window.addEventListener('message',e=>{if(!homeReaderSource||e.source!==homeReaderSource)return;if(e.data?.type==='CDQ_READER_CLOSE')readerClosed();if(e.data?.type==='CDQ_READER_CLOSE_CANCELLED_V2640')readerCancelled();});
+  const choose=window.choisirCompagnie;if(typeof choose==='function')window.choisirCompagnie=function(...args){const r=choose.apply(this,args);if(canRead())navigate('');schedule();return r;};
+  if(window.cdqDriveV2521){window.cdqDriveV2521.open=()=>navigate('dossier');window.cdqDriveV2521.openFavorites=()=>navigate('favorites');window.cdqDriveV2521.close=()=>{if(['dossier','favorites'].includes(active))navigate('');};}
   window.addEventListener('resize',measure,{passive:true});window.visualViewport?.addEventListener('resize',measure,{passive:true});
   if(window.ResizeObserver){const ro=new ResizeObserver(measure);for(const el of [$('#appHeader'),$('.bottom-nav')])if(el)ro.observe(el);}
-  new MutationObserver(records=>{if(records.some(r=>r.type==='childList'||r.attributeName==='hidden'||r.attributeName==='open'))schedule();}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','open']});
+  new MutationObserver(records=>{if(records.some(r=>[...r.removedNodes].some(n=>n.id==='cdqReaderFrame')))document.documentElement.classList.remove('cdq-workspace-reader-open');if(records.some(r=>r.type==='childList'||r.attributeName==='hidden'||r.attributeName==='open'))schedule();}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','open']});
   document.addEventListener('cdq:icons-changed',schedule);window.addEventListener('storage',schedule);window.addEventListener('cdq:access-ready',schedule);window.addEventListener('cdq:drive-cleared-v2632',clearPrivate);window.addEventListener('cdq:access-state-v2527',e=>{if(e.detail!=='ready')clearPrivate();});
   // Existing data modules are bundled and may be warmed only after both checks.
   window.addEventListener('cdq:drive-ready-v2632',()=>{if(!canRead())return;import('./calibration-db-v2565.mjs').catch(()=>{});});
 }
-window.cdqWorkspaceV2638={navigate,measure,active:()=>active,version:'26.39'};
+window.cdqWorkspaceV2638={navigate,measure,readerClosed,readerCancelled,active:()=>active,version:'26.40'};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();

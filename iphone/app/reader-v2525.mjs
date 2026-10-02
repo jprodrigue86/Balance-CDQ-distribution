@@ -246,7 +246,7 @@ for(const type of ['pointerup','pointercancel'])$('container').addEventListener(
 $('save').onclick=()=>save();$('download').onclick=()=>{menu(true);save(true);};$('external').onclick=()=>{menu(true);save(true);};
 $('back').onclick=requestClose;$('saveClose').onclick=()=>{$('closeDialog').close();finishDocument();};
 $('doneFields').addEventListener('click',()=>{requestClose();});
-$('keepEditing').onclick=()=>{$('closeDialog').close();closeAfterSave=false;};
+$('keepEditing').onclick=()=>{$('closeDialog').close();closeAfterSave=false;tell({type:'CDQ_READER_CLOSE_CANCELLED_V2640'});};
 $('discard').onclick=()=>{
   if(!hosted||!fileId){close();return;}
   busy(true);status('Fermeture…');
@@ -254,7 +254,7 @@ $('discard').onclick=()=>{
   pending={id:requestId,discard:true,timer:setTimeout(()=>{pending=null;fail(new Error('La fermeture n’a pas été confirmée. Réessayez.'));},15000)};
   tell({type:'CDQ_READER_DISCARD',requestId});
 };
-$('closeDialog').addEventListener('cancel',e=>{if(saving)e.preventDefault();closeAfterSave=false;});
+$('closeDialog').addEventListener('cancel',e=>{if(saving)e.preventDefault();else tell({type:'CDQ_READER_CLOSE_CANCELLED_V2640'});closeAfterSave=false;});
 $('viewer').addEventListener('input',modified);$('viewer').addEventListener('change',modified);
 $('viewer').addEventListener('input',()=>readerCalibration?.refresh());$('viewer').addEventListener('change',()=>readerCalibration?.refresh());
 $('viewer').addEventListener('pointerdown',e=>{
