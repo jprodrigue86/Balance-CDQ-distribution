@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.42",
-  "release": "ae2efe2cbc5341227fcca395ef5e1e20c440ce7e9edeb21405ee89f7c1f6eae0",
+  "version": "26.43",
+  "release": "db74e6f462b19cc7e2f2e56ced6068f40a9861921748c8158ef89a082b08f21f",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.02-v26.42-startup-report-zoho",
-  "androidSelectorSha256": "bd0c749ecb4708260220ed38e9eac8197b678212ef7d119e0190021185f1a6d6",
+  "androidSourceBuild": "2026.10.02-v26.43-inventory-zoho-hidden",
+  "androidSelectorSha256": "eba24d237a8ba7ed17313e11c38af87bca99b5375b92f8f4128c853b27b2ac2c",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
   "files": 403
 }
