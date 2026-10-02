@@ -1,10 +1,9 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="26.44" data-cdq-iphone-release="d5130dcbabf831d3f0ff42006a70afad8535c8e65254f7e9babb77acf1619848">
+<html lang="fr" data-cdq-iphone-version="26.45" data-cdq-iphone-release="5187653d388de13ac39a6f6da465038c6e951d7fe510f579a10d4bb22a7b8235">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./iphone-update.js"></script>
 <script src="https://accounts.google.com/gsi/client" defer></script>
-<script src="./warm-unlock-v2540.js"></script>
 <script src="./embedded-rpc.js"></script>
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <meta charset="utf-8">
@@ -463,18 +462,9 @@ referrerpolicy="strict-origin-when-cross-origin">
 </div>
 </div>
 
-<div id="bio-setup" aria-live="polite">
-<div class="bio-card">
-<div class="bio-icon">🔐</div>
-<h2 id="bio-title">Biométrie CDQ</h2>
-<p id="bio-text">Utilisez la biométrie de votre téléphone.</p>
-<button id="bio-action" type="button">Continuer</button>
-<button id="bio-cancel" type="button">Annuler</button>
-</div>
-</div>
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.02-v26.44-folders-favorites';
+const CDQ_PWA_BUILD = '2026.10.02-v26.45-direct-access';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -622,25 +612,8 @@ window.addEventListener('message',warm);document.body.append(frame);
 setTimeout(()=>{window.removeEventListener('message',warm);frame.remove();},30000);
 },
 unlock:async email=>{
-if(window.BalanceCDQNative&&typeof BalanceCDQNative.biometric==='function'){
-  return new Promise((resolve,reject)=>{
-    const id='offline-unlock-'+crypto.randomUUID(),previous=window.cdqNativeBiometricResultV2507;
-    const cleanup=()=>{clearTimeout(timer);if(window.cdqNativeBiometricResultV2507===receive)window.cdqNativeBiometricResultV2507=previous;};
-    const receive=(rid,ok,message)=>{if(rid!==id){previous?.(rid,ok,message);return;}cleanup();ok?resolve():reject(Error(message||'Déverrouillage annulé.'));};
-    const timer=setTimeout(()=>{cleanup();reject(Error('Déverrouillage expiré. Réessayez.'));},60000);
-    window.cdqNativeBiometricResultV2507=receive;
-    try{BalanceCDQNative.biometric(id);}catch(e){cleanup();reject(e);}
-  });
-}
-
-const saved=bioLoadMap()[email];
-if(!saved?.id)throw new Error('Activez la biométrie dans CDQ avec Internet pour déverrouiller les copies au prochain démarrage hors ligne.');
-const assertion=await navigator.credentials.get({mediation:'required',publicKey:{
-challenge:bioRandomBytes(32),allowCredentials:[{type:'public-key',id:bioFromB64Url(saved.id),transports:['internal']}],
-hints:['client-device'],userVerification:'required',timeout:60000
-}});
-if(!assertion || bioB64Url(assertion.rawId)!==saved.id || !(new Uint8Array(assertion.response.authenticatorData)[32]&4))
-throw new Error('Le déverrouillage de l’appareil n’a pas été confirmé.');
+  const saved=String(localStorage.getItem('cdqLastUnlockEmailV2511')||'').trim().toLowerCase();
+  if(!saved||saved!==String(email||'').trim().toLowerCase()||!localStorage.getItem('cdq_auth_device_token_v2'))throw Error('Connectez d’abord votre compte CDQ avec Internet.');
 }
 })).catch(()=>({handle(){},lock(){}}));
 let loadingTimer = null;
@@ -971,7 +944,7 @@ if(pcOneWall){app.style.visibility='visible';loading.classList.add('pc-frame-rea
 // Dernier secours si le Selector cesse complètement de répondre.
 if (!wasPending) accessWaitTimer = setTimeout(() => {
 if (!selectorAwaitingAccess) return;
-annulerPontBiometrique();
+
 loading.style.display='none';
 loadHelp.style.display='flex';
 document.getElementById('load-title').textContent='Connexion Balance CDQ';
@@ -1056,7 +1029,7 @@ cdqFirstFrameStableV2543=!window.BalanceCDQNative;
 cdqFirstFrameStableSourceV2543=window.BalanceCDQNative?'':'non-native';
 clearTimeout(cdqFirstFrameFallbackV2543);
 clearTimeout(accessWaitTimer);
-annulerPontBiometrique();
+
 selectorWindow = null;
 selectorOrigin = '';
 const pcOneWall=window.matchMedia && matchMedia('(min-width:900px) and (min-aspect-ratio:4/3)').matches;
@@ -1546,17 +1519,7 @@ permission:('Notification' in window ? Notification.permission : 'unsupported')
 });
 }
 }
-if (data.type === 'CDQ_BIOMETRIC_REGISTER') {
-ouvrirPontBiometrique('register',event.source,String(data.email||''),String(data.requestId||''));
-}
-if (data.type === 'CDQ_BIOMETRIC_REQUEST') {
-ouvrirPontBiometrique('unlock',event.source,String(data.email||''),String(data.requestId||''));
-}
-if (data.type === 'CDQ_BIOMETRIC_CANCEL') {
-window.cdqStartupUnlockV2529?.cancel(String(data.requestId||''));
-window.cdqWarmUnlockV2540?.cancel(String(data.requestId||''));
-if (!data.requestId || (bioContext && data.requestId === bioContext.requestId)) annulerPontBiometrique();
-}
+
 });
 
 window.addEventListener('resize',function(){
@@ -1645,200 +1608,6 @@ function cdqPdfSaveResultV2304(data,source){
   if(data.ok)p.resolve({queued:!!data.queued});else p.reject(new Error(data.error||'Enregistrement impossible.'));
   return true;
 }
-
-/* =====================================================
-CDQ V21.19 — PONT BIOMÉTRIQUE ANDROID (WebAuthn)
-Le secret d'application reste côté serveur. Le PWA
-fournit seulement la preuve locale de présence utilisateur.
-===================================================== */
-const bioSetup = document.getElementById('bio-setup');
-const bioTitle = document.getElementById('bio-title');
-const bioText = document.getElementById('bio-text');
-const bioAction = document.getElementById('bio-action');
-const bioCancel = document.getElementById('bio-cancel');
-let bioContext = null;
-let bioAbortController = null;
-
-function bioRandomBytes(n){
-const a=new Uint8Array(n);crypto.getRandomValues(a);return a;
-}
-function bioB64Url(buf){
-const bytes=new Uint8Array(buf);
-let s='';bytes.forEach(b=>s+=String.fromCharCode(b));
-return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-function bioFromB64Url(s){
-s=String(s||'').replace(/-/g,'+').replace(/_/g,'/');
-while(s.length%4)s+='=';
-const bin=atob(s),a=new Uint8Array(bin.length);
-for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);
-return a;
-}
-function bioLoadMap(){
-try{return JSON.parse(localStorage.getItem('cdq_biometric_credentials_v1')||'{}')||{};}catch(e){return {};}
-}
-function bioSaveMap(m){
-try{localStorage.setItem('cdq_biometric_credentials_v1',JSON.stringify(m||{}));}catch(e){}
-}
-function bioReply(source,type,payload){
-replyToSelector(source,Object.assign({type},payload||{}));
-}
-async function bioSupported(){
-if(!window.PublicKeyCredential || !navigator.credentials)return false;
-if(typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable==='function'){
-try{return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();}catch(e){return false;}
-}
-return true;
-}
-function bioEnsureCurrent(ctx){
-if(bioContext!==ctx || ctx.controller.signal.aborted)throw new Error('Demande annulée.');
-}
-async function bioRegister(email,ctx){
-if(!(await bioSupported()))throw new Error('Biométrie indisponible.');
-bioEnsureCurrent(ctx);
-const map=bioLoadMap();
-if(map[email]&&map[email].id)return map[email];
-const cred=await navigator.credentials.create({
-publicKey:{
-challenge:bioRandomBytes(32),rp:{name:'Balance CDQ'},
-user:{id:bioRandomBytes(24),name:email,displayName:email},
-pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
-authenticatorSelection:{authenticatorAttachment:'platform',residentKey:'discouraged',userVerification:'required'},
-timeout:60000,attestation:'none'
-},signal:ctx.controller.signal
-});
-bioEnsureCurrent(ctx);
-if(!cred)throw new Error('Enregistrement annulé.');
-map[email]={id:bioB64Url(cred.rawId),createdAt:Date.now()};
-bioSaveMap(map);
-return map[email];
-}
-async function bioUnlock(email,ctx){
-const saved=bioLoadMap()[email];
-// L'absence d'inscription doit mener au NIP, jamais à une inscription
-// biométrique pendant une tentative de déverrouillage.
-if(!saved||!saved.id)throw new Error('Biométrie non activée pour ce compte.');
-if(!(await bioSupported()))throw new Error('Biométrie indisponible.');
-bioEnsureCurrent(ctx);
-const assertion=await navigator.credentials.get({
-mediation:'required',
-publicKey:{
-challenge:bioRandomBytes(32),
-allowCredentials:[{type:'public-key',id:bioFromB64Url(saved.id),transports:['internal']}],
-hints:['client-device'],userVerification:'required',timeout:60000
-},signal:ctx.controller.signal
-});
-bioEnsureCurrent(ctx);
-if(!assertion)throw new Error('Biométrie non reconnue.');
-return true;
-}
-function annulerPontBiometrique(){
-const ctx=bioContext;
-bioContext=null;
-if(ctx&&ctx.controller)ctx.controller.abort();
-if(ctx&&ctx.native){
-  window.cdqStartupUnlockV2529?.cancel(String(ctx.requestId||''));
-  window.cdqWarmUnlockV2540?.cancel(String(ctx.requestId||''));
-  try{
-    if(window.BalanceCDQNative&&typeof BalanceCDQNative.cancelBiometric==='function')
-      BalanceCDQNative.cancelBiometric(String(ctx.requestId||''));
-  }catch(_){}
-}
-bioAbortController=null;
-bioSetup.style.display='none';
-bioAction.disabled=false;
-}
-async function executerPontBiometrique(ctx){
-if(bioContext!==ctx || ctx.running)return;
-ctx.running=true;
-ctx.controller=new AbortController();
-bioAbortController=ctx.controller;
-bioAction.disabled=true;
-try{
-if(ctx.mode==='register')await bioRegister(ctx.email,ctx);
-else await bioUnlock(ctx.email,ctx);
-bioEnsureCurrent(ctx);
-bioReply(ctx.source,ctx.mode==='register'?'CDQ_BIOMETRIC_REGISTERED':'CDQ_BIOMETRIC_RESULT',{
-success:true,requestId:ctx.requestId
-});
-}catch(e){
-if(bioContext!==ctx)return;
-bioReply(ctx.source,ctx.mode==='register'?'CDQ_BIOMETRIC_UNAVAILABLE':'CDQ_BIOMETRIC_RESULT',{
-success:false,requestId:ctx.requestId,message:'Entrez votre NIP à 4 chiffres.'
-});
-}finally{
-if(bioContext===ctx){
-bioContext=null;bioAbortController=null;
-bioSetup.style.display='none';bioAction.disabled=false;
-}
-}
-}
-function ouvrirPontBiometrique(mode,source,email,requestId){
-email=String(email||'').trim().toLowerCase();
-if(bioContext && bioContext.mode===mode && bioContext.source===source &&
-bioContext.email===email && bioContext.requestId===requestId)return;
-annulerPontBiometrique();
-if(!email){bioReply(source,'CDQ_BIOMETRIC_UNAVAILABLE',{requestId,message:'Compte inconnu.'});return;}
-const ctx={mode,source,email,requestId,running:false,controller:null,native:false};
-bioContext=ctx;
-bioReply(source,'CDQ_BIOMETRIC_READY',{requestId});
-
-// Dans l'application Android native, WebAuthn n'est plus utilisé : on appelle
-// directement la boîte biométrique système via le pont de l'APK 25.07+.
-try{
-  if(window.BalanceCDQNative && typeof BalanceCDQNative.biometric==='function'){
-    ctx.native=true;
-    if(mode==='unlock' && window.cdqStartupUnlockV2529?.attach(email,requestId,
-      (ok,message)=>window.cdqNativeBiometricResultV2507(requestId,ok,message)))return;
-    if(mode==='unlock')window.cdqWarmUnlockV2540?.prepare(email,requestId);
-    BalanceCDQNative.biometric(String(requestId||''));
-    return;
-  }
-}catch(_){ctx.native=false;}
-
-if(mode==='unlock'){
-executerPontBiometrique(ctx);
-return;
-}
-// La proposition initiale d'activation reste un choix explicite.
-bioTitle.textContent='Activer la biométrie';
-bioText.textContent='Activez le déverrouillage de CDQ avec la sécurité de ce téléphone.';
-bioAction.textContent='Activer la biométrie';
-bioSetup.style.display='flex';
-}
-window.cdqNativeBiometricResultV2507=function(requestId,success,message,grant){
-if(window.cdqStartupUnlockV2529?.receive(requestId,success,message,grant))return;
-try{
-  const __ctx=bioContext;
-  if(__ctx&&__ctx.mode==='unlock')window.cdqWarmUnlockV2540?.observe(requestId,success,message,grant);
-}catch(_){ }
-const ctx=bioContext;
-if(!ctx||!ctx.native||String(ctx.requestId||'')!==String(requestId||''))return;
-bioContext=null;
-bioAbortController=null;
-bioSetup.style.display='none';
-bioAction.disabled=false;
-if(success){
-  bioReply(ctx.source,ctx.mode==='register'?'CDQ_BIOMETRIC_REGISTERED':'CDQ_BIOMETRIC_RESULT',{
-    success:true,requestId:ctx.requestId
-  });
-}else{
-  bioReply(ctx.source,ctx.mode==='register'?'CDQ_BIOMETRIC_UNAVAILABLE':'CDQ_BIOMETRIC_RESULT',{
-    success:false,requestId:ctx.requestId,message:String(message||'Entrez votre NIP à 4 chiffres.')
-  });
-}
-};
-
-bioAction.addEventListener('click',()=>{
-if(bioContext)executerPontBiometrique(bioContext);
-});
-bioCancel.addEventListener('click',()=>{
-const ctx=bioContext;
-annulerPontBiometrique();
-if(ctx)bioReply(ctx.source,ctx.mode==='unlock'?'CDQ_BIOMETRIC_RESULT':'CDQ_BIOMETRIC_UNAVAILABLE',{
-success:false,requestId:ctx.requestId,message:'Biométrie annulée.'
-});
-});
 
 /* =====================================================
 CDQ V21 — PONT PUSH FCM

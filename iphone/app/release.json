@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.44",
-  "release": "d5130dcbabf831d3f0ff42006a70afad8535c8e65254f7e9babb77acf1619848",
+  "version": "26.45",
+  "release": "5187653d388de13ac39a6f6da465038c6e951d7fe510f579a10d4bb22a7b8235",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.02-v26.44-folders-favorites",
-  "androidSelectorSha256": "2e3f4d4be114a5bbbf508ec80ee8cdf8b3b5aa341867292246704f10741b80d4",
+  "androidSourceBuild": "2026.10.02-v26.45-direct-access",
+  "androidSelectorSha256": "6c7adc03689ac04cf46c0a0424af05bbc0907dd1c80b8146a096cb644d2aca2d",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
   "files": 403
 }

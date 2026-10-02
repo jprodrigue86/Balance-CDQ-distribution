@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.44" data-cdq-iphone-release="d5130dcbabf831d3f0ff42006a70afad8535c8e65254f7e9babb77acf1619848">
+<html data-cdq-iphone-version="26.45" data-cdq-iphone-release="5187653d388de13ac39a6f6da465038c6e951d7fe510f579a10d4bb22a7b8235">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -542,7 +542,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.02-v26.44-folders-favorites">
+<meta name="cdq-package-build" content="2026.10.02-v26.45-direct-access">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -820,7 +820,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.02-v26.44-folders-favorites'
+    build:'2026.10.02-v26.45-direct-access'
   });
 }
 
@@ -833,7 +833,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.02-v26.44-folders-favorites'
+        build:'2026.10.02-v26.45-direct-access'
       });
     }
   } catch(e) {}
@@ -5810,42 +5810,6 @@ document.addEventListener('DOMContentLoaded',function(){
       </p>
     </div>
 
-    <div id="accessPinSetup" class="access-login">
-      <div class="access-security-user" id="accessPinSetupUser"></div>
-
-      <label for="accessNewPin4">Choisissez votre NIP à 4 chiffres</label>
-      <input id="accessNewPin4" type="password" inputmode="numeric"
-             autocomplete="new-password" maxlength="4" pattern="[0-9]*"
-             placeholder="••••">
-
-      <label for="accessNewPin4Confirm">Confirmez le NIP</label>
-      <input id="accessNewPin4Confirm" type="password" inputmode="numeric"
-             autocomplete="new-password" maxlength="4" pattern="[0-9]*"
-             placeholder="••••">
-
-      <button id="accessPinSetupButton" type="button" onclick="creerNip4DepuisInterface()">
-        Enregistrer mon NIP
-      </button>
-
-      <p class="access-login-help">
-        Sur PC, ce NIP sera demandé à chaque ouverture. Sur Android, il sert de secours à la biométrie.
-      </p>
-    </div>
-
-    <div id="accessUnlock" class="access-login">
-      <div class="access-security-user" id="accessUnlockUser"></div>
-
-      <div id="accessPinFallback">
-        <label for="accessUnlockPin4">NIP à 4 chiffres</label>
-        <input id="accessUnlockPin4" type="password" inputmode="numeric"
-               autocomplete="current-password" maxlength="4" pattern="[0-9]*"
-               placeholder="••••">
-
-        <button id="accessUnlockButton" type="button" onclick="deverrouillerAvecNipDepuisInterface()">
-          Déverrouiller
-        </button>
-      </div>
-    </div>
     </div>
   </div>
 </div>
@@ -5857,7 +5821,7 @@ document.addEventListener('DOMContentLoaded',function(){
   <div class="cdq-admin-scroll">
    <section data-admin-panel="users"><label class="cdq-admin-search">Rechercher un utilisateur<input id="cdqAdminSearchV2521" type="search" placeholder="Nom ou courriel…"></label><p id="cdqAdminCountV2521" role="status"></p><div id="adminUserList"></div></section>
    <section data-admin-panel="add" hidden><h3>Ajouter un utilisateur</h3><div class="admin-add-row"><label>Courriel<input id="adminEmailInput" type="email" autocomplete="email" placeholder="nom@entreprise.com"></label><label>Nom affiché sur les rapports<input id="adminNomInput" type="text" maxlength="80" placeholder="Prénom et nom"></label><label>Rôle<select id="adminRoleInput" class="admin-role"><option value="technicien">Technicien</option><option value="lecture">Lecture seule</option><option value="admin">Administrateur</option></select></label><button type="button" onclick="ajouterUtilisateurDepuisInterface()">Ajouter l’utilisateur</button></div></section>
-   <section data-admin-panel="codes" hidden><h3>Codes d’activation</h3><p>Génère les codes manquants pour les nouveaux utilisateurs. Les comptes déjà activés conservent leur NIP.</p><div class="admin-security-actions"><button type="button" onclick="genererCodesManquantsDepuisInterface()">Générer les codes manquants</button></div><div id="adminCodesPanel" class="admin-codes-panel" style="display:none;"><label for="adminCodesOutput">Codes générés — à copier avant de fermer</label><textarea id="adminCodesOutput" readonly></textarea><button type="button" onclick="copierCodesAdmin()">Copier les codes</button></div></section>
+   <section data-admin-panel="codes" hidden><h3>Codes d’activation</h3><p>Génère les codes manquants pour les nouveaux utilisateurs. Les appareils déjà enregistrés se reconnectent automatiquement.</p><div class="admin-security-actions"><button type="button" onclick="genererCodesManquantsDepuisInterface()">Générer les codes manquants</button></div><div id="adminCodesPanel" class="admin-codes-panel" style="display:none;"><label for="adminCodesOutput">Codes générés — à copier avant de fermer</label><textarea id="adminCodesOutput" readonly></textarea><button type="button" onclick="copierCodesAdmin()">Copier les codes</button></div></section>
   </div>
   <footer class="modal-buttons"><button type="button" class="modal-button cancel-button" onclick="fermerGestionUtilisateurs()">Fermer</button></footer>
  </div>
@@ -7099,12 +7063,6 @@ function cdqSauverTicketGoogleV42(ticket){
 let cdqActivationToken = "";
 let cdqActivationEmail = "";
 let cdqEtatDeverrouillage = null;
-let cdqBiometricSequence = 0;
-let cdqBiometricRequestId = "";
-let cdqBiometricPending = false;
-let cdqBiometricReplyTimer = null;
-let cdqBiometricFallbackActive = false;
-let cdqFastUnlockV2511 = false;
 
 
 let cdqJetonMemoireV41 = null;
@@ -7130,8 +7088,6 @@ const CDQ_RPC_DIRECT_V58 = new Set([
   "verifierJetonGoogleCDQ",
   "obtenirEtatAcces",
   "connecterAvecCodeAcces",
-  "definirNip4ApresActivation",
-  "deverrouillerAvecNip",
   "restaurerSessionApresBiometrie",
   "reprendreSessionCourteCDQV2524"
 ]);
@@ -7191,7 +7147,8 @@ function cdqReprendreOuVerifierV41(pending){
   const p=pending||cdqLireActivationV41();
   if(!p || !p.token || Number(p.expiresAt)<=Date.now()){verifierAccesApplication();return;}
   cdqApiRun().withSuccessHandler(function(etat){
-    if(etat&&etat.activationValidee&&etat.doitCreerNip){afficherCreationNip4(etat);return;}
+    if(etat?.autorise===true&&etat.jetonAppareil&&etat.jetonSession){cdqGarderActivationV41(null);appliquerAccesAutorise(etat);return;}
+    if(etat&&etat.activationValidee&&etat.doitCreerNip){cdqFinaliserActivationV2645(etat);return;}
     cdqGarderActivationV41(null);verifierAccesApplication();
   }).withFailureHandler(function(){cdqGarderActivationV41(null);verifierAccesApplication();})
     .reprendreActivationCDQ(String(p.token));
@@ -7248,54 +7205,8 @@ function afficherConnexionCodePersonnel(message,emailPrefill){
   cdqNettoyerErreurAcces();
   cdqSetAccessState("input");
 }
-function afficherCreationNip4(etat){
-  cdqMasquerPanneauxAcces();
-  cdqActivationToken=String(etat&&etat.jetonActivation||"");
-  cdqActivationEmail=String(etat&&etat.email||"").trim().toLowerCase();
-  cdqGarderActivationV41(etat);
-
-  const panel=document.getElementById("accessPinSetup");
-  const user=document.getElementById("accessPinSetupUser");
-  const status=document.getElementById("accessStatus");
-  if(panel)panel.style.display="block";
-  if(user)user.textContent=cdqActivationEmail;
-  if(status)status.textContent="Code utilisé avec succès — créez maintenant votre NIP personnel.";
-  cdqNettoyerErreurAcces();
-
-  const a=document.getElementById("accessNewPin4");
-  const b=document.getElementById("accessNewPin4Confirm");
-  if(a)a.value="";
-  if(b)b.value="";
-  cdqSetAccessState("input");
-  setTimeout(function(){try{if(a)a.focus();}catch(e){}},50);
-}
-function cdqEstAndroid(){
-  return document.documentElement.classList.contains("android");
-}
-function afficherDeverrouillageNip(etat,message){
-  cdqMasquerPanneauxAcces();
-  cdqEtatDeverrouillage=etat||cdqEtatDeverrouillage||{};
-  const panel=document.getElementById("accessUnlock");
-  const user=document.getElementById("accessUnlockUser");
-  const status=document.getElementById("accessStatus");
-  const pin=document.getElementById("accessPinFallback");
-  if(panel)panel.style.display="block";
-  if(user)user.textContent=String(cdqEtatDeverrouillage.email||"");
-  if(status)status.textContent=message||"Déverrouillage requis";
-  if(pin)pin.style.display="block";
-  cdqNettoyerErreurAcces();
-  cdqSetAccessState("input");
-  const input=document.getElementById("accessUnlockPin4");
-  if(input){input.value="";setTimeout(function(){try{input.focus();}catch(e){}},50);}
-}
-function afficherDeverrouillageBiometrique(etat){
-  cdqMasquerPanneauxAcces();
-  cdqEtatDeverrouillage=etat||{};
-  cdqDemanderBiometrie();
-}
 function appliquerAccesAutorise(etat){
-  // Local biometric tickets prove presence, never current application access.
-  if(!etat || etat.autorise!==true || etat.cdqReadOnlyStartupV2539 || etat.cdqWarmReadOnlyV2540)return false;
+  if(etat?.autorise!==true||!String(etat.email||'').trim()||!String(etat.jetonSession||'').trim())return false;
   try{if(etat&&etat.email&&cdqObtenirJetonAppareil())localStorage.setItem('cdqLastUnlockEmailV2511',String(etat.email));}catch(_){}
 
   if(etat&&etat.jetonSession)cdqSauverSessionRpcV58(etat.jetonSession);
@@ -7476,93 +7387,55 @@ const cdqSession24 = (() => {
   return {resume,clear,remember};
 })();
 
-function verifierAccesApplication(skipFastBiometric){
-  if(!skipFastBiometric && !window.parent.cdqStartupUnlockV2529?.activeFor(cdqObtenirJetonAppareil()) && cdqSession24.resume(()=>verifierAccesApplication(true)))return;
-  
-  cdqSauverSessionRpcV58("");
-  cdqSetAccessState("pending");
-  const retry=document.getElementById('accessConnectionRetryV41');
-  if(retry)retry.style.display='none';
-  const jeton=cdqObtenirJetonAppareil();
-  let lastEmail='';
-  try{lastEmail=localStorage.getItem('cdqLastUnlockEmailV2511')||'';}catch(_){}
-  if(!skipFastBiometric && jeton && lastEmail && /BalanceCDQAndroid\//.test(navigator.userAgent||'') && cdqPwaAvailable()){
-    cdqFastUnlockV2511=true;
-    afficherDeverrouillageBiometrique({email:lastEmail});
-    return;
-  }
-  cdqFastUnlockV2511=false;
-  cdqApiRun()
-    .withSuccessHandler(function(etat){
-      cdqPostToPwa({type:'CDQ_BACKEND_STATUS',build:String((etat||{}).versionBackend||'inconnue')});
-      const status=document.getElementById("accessStatus");
-      const error=document.getElementById("accessError");
-
-      if(etat&&etat.autorise){appliquerAccesAutorise(etat);return;}
-
-      if(etat&&etat.oublierJeton)cdqSauverJetonAppareil("");
-
-      if(etat&&etat.connexionGoogleRequise){
-        cdqSauverTicketGoogleV42("");
-        const emailLogin=document.getElementById("accessEmailInput");
-        if(emailLogin)emailLogin.readOnly=false;
-        afficherConnexionCodePersonnel(
-          "Entrez votre adresse courriel autorisée et votre code d’activation à 6 chiffres.",
-          ""
-        );
-        if(status)status.textContent="Connexion Balance CDQ";
-        if(error){
-          error.textContent="La connexion à l’application utilise votre compte CDQ, pas votre compte Google Drive.";
-          error.style.display="block";
-        }
-        return;
-      }
-
-      if(etat&&etat.doitCreerNip&&etat.activationValidee){
-        afficherCreationNip4(etat);
-        return;
-      }
-
-      if(etat&&etat.doitDeverrouiller){
-        if(etat.jetonAppareil)cdqSauverJetonAppareil(etat.jetonAppareil);
-        if(cdqEstAndroid() && cdqPwaAvailable()){
-          afficherDeverrouillageBiometrique(etat);
-        }else{
-          afficherDeverrouillageNip(etat,"Entrez votre NIP à 4 chiffres.");
-        }
-        return;
-      }
-
-      if(etat&&etat.doitActiverNip){
-        afficherConnexionCodePersonnel(etat.message||"Activation requise",etat.email||"");
-        const email=document.getElementById("accessEmailInput");
-        if(email)email.readOnly=true;
-        return;
-      }
-
-      const email=document.getElementById("accessEmailInput");
-      if(email)email.readOnly=false;
-      afficherConnexionCodePersonnel((etat&&etat.message)||"Activation requise",(etat&&etat.emailSuggere)||"");
-      if(error&&etat&&etat.connexionRequise===false){error.textContent=etat.message||"Accès refusé";error.style.display="block";}
-      if(status&&etat&&etat.message)status.textContent=etat.message;
-    })
-    .withFailureHandler(function(erreur){
-      
-      
-      cdqMasquerPanneauxAcces();
-      const status=document.getElementById('accessStatus');
-      const error=document.getElementById('accessError');
-      const retry=document.getElementById('accessConnectionRetryV41');
-      if(status)status.textContent='Connexion momentanément indisponible';
-      if(error){error.textContent=erreur&&erreur.message?erreur.message:String(erreur);error.style.display='block';}
-      if(retry)retry.style.display='block';
-      cdqSetAccessState('input');
-    })
-    .obtenirEtatAcces(jeton,cdqLireTicketGoogleV42());
+let cdqDirectAttemptV2645=0;
+function cdqDirectRpcV2645(name,args){
+  return new Promise((resolve,reject)=>cdqApiRun().withSuccessHandler(resolve).withFailureHandler(reject)[name].apply(null,args));
 }
+function cdqDirectFailureV2645(error){
+  const overlay=document.getElementById('accessOverlay');if(overlay)overlay.style.display='flex';
+  cdqMasquerPanneauxAcces();cdqSauverSessionRpcV58('');
+  const status=document.getElementById('accessStatus');if(status)status.textContent='Connexion CDQ';
+  const el=document.getElementById('accessError');if(el){el.textContent=String(error&&error.message||error||'Connexion indisponible.');el.style.display='block';}
+  const retry=document.getElementById('accessConnectionRetryV41');if(retry)retry.style.display='block';
+  cdqSetAccessState('input');
+}
+async function verifierAccesApplication(){
+  const attempt=++cdqDirectAttemptV2645,token=cdqObtenirJetonAppareil();
+  cdqSauverSessionRpcV58('');cdqSetAccessState('pending');cdqMasquerPanneauxAcces();cdqNettoyerErreurAcces();
+  const retry=document.getElementById('accessConnectionRetryV41');if(retry)retry.style.display='none';
+  const current=()=>attempt===cdqDirectAttemptV2645&&cdqObtenirJetonAppareil()===token;
+  try{
+    let prepared;try{prepared=window.parent.cdqDirectStartupV2645?.take(token);}catch(_){}
+    let state=await(prepared||cdqDirectRpcV2645('obtenirEtatAcces',[token,cdqLireTicketGoogleV42()]));
+    if(!current())return;
+    // Compatibility with the existing deployed server: this legacy API name
+    // restores the registered device, without any local prompt or PIN entry.
+    if(token&&state?.appareilConnu&&state?.doitDeverrouiller)state=await cdqDirectRpcV2645('restaurerSessionApresBiometrie',[token]);
+    if(!current())return;
+    cdqPostToPwa({type:'CDQ_BACKEND_STATUS',build:String(state?.versionBackend||'inconnue')});
+    if(state?.autorise===true&&String(state.email||'').trim()&&String(state.jetonSession||'').trim()){
+      const expected=String(localStorage.getItem('cdqLastUnlockEmailV2511')||'').trim().toLowerCase();
+      if(token&&expected&&String(state.email).trim().toLowerCase()!==expected)throw Error('Le compte CDQ ne correspond pas à cet appareil.');
+      appliquerAccesAutorise(state);return;
+    }
+    if(state?.oublierJeton)cdqSauverJetonAppareil('');
+    if(state?.activationValidee&&state?.jetonActivation){cdqFinaliserActivationV2645(state);return;}
+    if(state?.connexionGoogleRequise){cdqDemanderConnexionGoogleV42(state.message);return;}
+    afficherConnexionCodePersonnel(state?.message||'Connectez votre compte CDQ autorisé.',state?.emailSuggere||'');
+  }catch(error){if(current())cdqDirectFailureV2645(error);}
+}
+async function cdqFinaliserActivationV2645(state){
+  const attempt=++cdqDirectAttemptV2645;
+  cdqSetAccessState('pending');cdqMasquerPanneauxAcces();
+  try{
+    const confirmed=await cdqDirectRpcV2645('reprendreActivationCDQ',[String(state.jetonActivation||'')]);
+    if(attempt!==cdqDirectAttemptV2645)return;
+    if(!confirmed?.autorise||!confirmed.jetonSession||!confirmed.jetonAppareil||confirmed.email!==state.email)throw Error('Déployez la mise à jour serveur V26.45 pour terminer cette activation.');
+    cdqGarderActivationV41(null);appliquerAccesAutorise(confirmed);
+  }catch(error){if(attempt===cdqDirectAttemptV2645)cdqDirectFailureV2645(error);}
+}
+
 let cdqActivationSubmitPendingV57=false;
-let cdqNipSetupSubmitPendingV57=false;
-let cdqNipUnlockSubmitPendingV57=false;
 
 function connecterAvecCodeDepuisInterface(){
   if(cdqActivationSubmitPendingV57)return;
@@ -7588,7 +7461,7 @@ function connecterAvecCodeDepuisInterface(){
       if(btn){btn.disabled=false;btn.textContent="Continuer";}
       if(pinInput)pinInput.value="";
       if(etat&&etat.doitCreerNip&&etat.activationValidee){
-        afficherCreationNip4(etat);
+        cdqFinaliserActivationV2645(etat);
         return;
       }
       if(etat&&etat.autorise){
@@ -7631,242 +7504,6 @@ function connecterAvecCodeDepuisInterface(){
   });
 })();
 
-function creerNip4DepuisInterface(){
-  if(cdqNipSetupSubmitPendingV57)return;
-  const a=document.getElementById("accessNewPin4");
-  const b=document.getElementById("accessNewPin4Confirm");
-  const btn=document.getElementById("accessPinSetupButton");
-  const status=document.getElementById("accessStatus");
-  const error=document.getElementById("accessError");
-  const nip=String(a&&a.value||"").replace(/\D/g,"");
-  const confirmation=String(b&&b.value||"").replace(/\D/g,"");
-
-  if(nip.length!==4){if(error){error.textContent="Choisissez un NIP de 4 chiffres.";error.style.display="block";}return;}
-  if(nip!==confirmation){if(error){error.textContent="Les deux NIP ne correspondent pas.";error.style.display="block";}return;}
-
-  cdqNipSetupSubmitPendingV57=true;
-  if(btn){btn.disabled=true;btn.textContent="Enregistrement...";}
-  if(error)error.style.display="none";
-  if(status)status.textContent="Enregistrement sécurisé du NIP...";
-
-  cdqApiRun()
-    .withSuccessHandler(function(etat){
-      cdqNipSetupSubmitPendingV57=false;
-      if(btn){btn.disabled=false;btn.textContent="Enregistrer mon NIP";}
-      if(!etat||!etat.autorise){if(error){error.textContent="Impossible de terminer l’activation.";error.style.display="block";}return;}
-      if(etat.jetonAppareil)cdqSauverJetonAppareil(etat.jetonAppareil);
-
-      
-      if(cdqEstAndroid() && cdqPwaAvailable()){
-        try{
-          cdqPostToPwa({
-            type:"CDQ_BIOMETRIC_REGISTER",
-            email:String(etat.email||"")
-          });
-        }catch(e){}
-      }
-
-      cdqActivationToken="";
-      cdqActivationEmail="";
-      cdqSauverTicketGoogleV42("");
-      appliquerAccesAutorise(etat);
-    })
-    .withFailureHandler(function(erreur){
-      cdqNipSetupSubmitPendingV57=false;
-      if(btn){btn.disabled=false;btn.textContent="Enregistrer mon NIP";}
-      if(status)status.textContent="Création du NIP";
-      if(error){error.textContent=erreur&&erreur.message?erreur.message:String(erreur);error.style.display="block";}
-    })
-    .definirNip4ApresActivation(cdqActivationEmail,cdqActivationToken,nip,confirmation);
-}
-function deverrouillerAvecNipDepuisInterface(){
-  if(cdqNipUnlockSubmitPendingV57)return;
-  const input=document.getElementById("accessUnlockPin4");
-  const btn=document.getElementById("accessUnlockButton");
-  const status=document.getElementById("accessStatus");
-  const error=document.getElementById("accessError");
-  const nip=String(input&&input.value||"").replace(/\D/g,"");
-  const jeton=cdqObtenirJetonAppareil();
-
-  if(nip.length!==4){if(error){error.textContent="Entrez votre NIP à 4 chiffres.";error.style.display="block";}return;}
-  cdqNipUnlockSubmitPendingV57=true;
-  if(btn){btn.disabled=true;btn.textContent="Déverrouillage...";}
-  if(error)error.style.display="none";
-  if(status)status.textContent="Vérification du NIP...";
-
-  cdqApiRun()
-    .withSuccessHandler(function(etat){
-      cdqNipUnlockSubmitPendingV57=false;
-      if(btn){btn.disabled=false;btn.textContent="Déverrouiller";}
-      if(input)input.value="";
-      if(etat&&etat.autorise){appliquerAccesAutorise(etat);return;}
-      if(error){error.textContent="Déverrouillage refusé.";error.style.display="block";}
-    })
-    .withFailureHandler(function(erreur){
-      cdqNipUnlockSubmitPendingV57=false;
-      if(btn){btn.disabled=false;btn.textContent="Déverrouiller";}
-      if(status)status.textContent="NIP requis";
-      if(error){error.textContent=erreur&&erreur.message?erreur.message:String(erreur);error.style.display="block";}
-      if(input){input.value="";try{input.focus();}catch(e){}}
-    })
-    .deverrouillerAvecNip(jeton,nip);
-}
-
-
-
-
-let cdqNipAutoUnlockBusyV14=false;
-let cdqNipAutoSetupBusyV14=false;
-function cdqInstallerNipRapideV14(){
-  const unlock=document.getElementById('accessUnlockPin4');
-  const unlockBtn=document.getElementById('accessUnlockButton');
-  if(unlock && !unlock.dataset.cdqAutoV14){
-    unlock.dataset.cdqAutoV14='1';
-    unlock.addEventListener('input',function(){
-      const propre=String(unlock.value||'').replace(/\D/g,'').slice(0,4);
-      if(unlock.value!==propre)unlock.value=propre;
-      if(propre.length===4 && !cdqNipAutoUnlockBusyV14 && !(unlockBtn&&unlockBtn.disabled)){
-        cdqNipAutoUnlockBusyV14=true;
-        requestAnimationFrame(function(){
-          try{deverrouillerAvecNipDepuisInterface();}
-          finally{setTimeout(function(){cdqNipAutoUnlockBusyV14=false;},320);}
-        });
-      }
-    });
-    unlock.addEventListener('keydown',function(e){
-      if(e.key!=='Enter')return;
-      e.preventDefault();
-      if(cdqNipUnlockSubmitPendingV57 || cdqNipAutoUnlockBusyV14 || (unlockBtn&&unlockBtn.disabled))return;
-      deverrouillerAvecNipDepuisInterface();
-    });
-  }
-  const a=document.getElementById('accessNewPin4');
-  const b=document.getElementById('accessNewPin4Confirm');
-  const setupBtn=document.getElementById('accessPinSetupButton');
-  if(a && !a.dataset.cdqAutoV14){
-    a.dataset.cdqAutoV14='1';
-    a.addEventListener('input',function(){
-      const propre=String(a.value||'').replace(/\D/g,'').slice(0,4);
-      if(a.value!==propre)a.value=propre;
-      if(propre.length===4 && b)setTimeout(function(){try{b.focus();b.select();}catch(_){ }},10);
-    });
-  }
-  if(b && !b.dataset.cdqAutoV14){
-    b.dataset.cdqAutoV14='1';
-    b.addEventListener('input',function(){
-      const propre=String(b.value||'').replace(/\D/g,'').slice(0,4);
-      if(b.value!==propre)b.value=propre;
-      const nip=String(a&&a.value||'').replace(/\D/g,'').slice(0,4);
-      const err=document.getElementById('accessError');
-      if(propre.length===4 && nip.length===4){
-        if(propre===nip && !cdqNipAutoSetupBusyV14 && !(setupBtn&&setupBtn.disabled)){
-          if(err)err.style.display='none';
-          cdqNipAutoSetupBusyV14=true;
-          requestAnimationFrame(function(){
-            try{creerNip4DepuisInterface();}
-            finally{setTimeout(function(){cdqNipAutoSetupBusyV14=false;},420);}
-          });
-        }else if(propre!==nip && err){err.textContent='Les deux NIP ne correspondent pas.';err.style.display='block';}
-      }
-    });
-  }
-}
-window.addEventListener('load',function(){setTimeout(cdqInstallerNipRapideV14,0);});
-
-function cdqArreterDelaiBiometrique(){
-  clearTimeout(cdqBiometricReplyTimer);
-  cdqBiometricReplyTimer=null;
-}
-function cdqAfficherPlanBNip(message){
-  const overlay=document.getElementById('accessOverlay');
-  if(overlay)overlay.style.display='flex';
-  cdqSauverSessionRpcV58('');
-  cdqSession24.clear();
-  cdqFastUnlockV2511=false;
-  const requestId=cdqBiometricRequestId;
-  cdqBiometricFallbackActive=true;
-  cdqBiometricPending=false;
-  cdqBiometricRequestId="";
-  cdqArreterDelaiBiometrique();
-  try{cdqPostToPwa({type:"CDQ_BIOMETRIC_CANCEL",requestId:requestId});}catch(e){}
-  afficherDeverrouillageNip(cdqEtatDeverrouillage,message||"Entrez votre NIP à 4 chiffres.");
-}
-function cdqDemanderBiometrie(){
-  if(cdqBiometricPending)return;
-  if(!cdqEstAndroid() || !cdqPwaAvailable()){
-    cdqAfficherPlanBNip("Entrez votre NIP à 4 chiffres.");
-    return;
-  }
-  cdqBiometricFallbackActive=false;
-  cdqBiometricPending=true;
-  cdqBiometricRequestId=String(Date.now())+"-"+(++cdqBiometricSequence);
-  cdqMasquerPanneauxAcces();
-  cdqNettoyerErreurAcces();
-  cdqSetAccessState("pending");
-  cdqArreterDelaiBiometrique();
-  cdqBiometricReplyTimer=setTimeout(function(){
-    if(cdqBiometricPending)cdqAfficherPlanBNip("Entrez votre NIP à 4 chiffres.");
-  },5000);
-  try{
-    const sent=cdqPostToPwa({
-      type:"CDQ_BIOMETRIC_REQUEST",
-      requestId:cdqBiometricRequestId,
-      email:String((cdqEtatDeverrouillage&&cdqEtatDeverrouillage.email)||"")
-    });
-    if(!sent)cdqAfficherPlanBNip("Entrez votre NIP à 4 chiffres.");
-  }catch(e){cdqAfficherPlanBNip("Entrez votre NIP à 4 chiffres.");}
-}
-function cdqTerminerBiometrieSucces(){
-  const requestId=cdqBiometricRequestId;
-  const jeton=cdqObtenirJetonAppareil();
-  
-  cdqArreterDelaiBiometrique();
-  cdqBiometricReplyTimer=setTimeout(function(){
-    if(cdqBiometricRequestId===requestId)cdqAfficherPlanBNip("La connexion prend trop de temps. Entrez votre NIP.");
-  },20000);
-  function actuel(){return !cdqBiometricFallbackActive && cdqBiometricRequestId===requestId;}
-  cdqApiRun()
-    .withSuccessHandler(function(etat){
-      if(!actuel())return;
-      // Leave the deadline armed if an older bridge sends a local ticket.
-      if(etat&&(etat.cdqReadOnlyStartupV2539||etat.cdqWarmReadOnlyV2540))return;
-      cdqArreterDelaiBiometrique();
-      const email=String(cdqEtatDeverrouillage&&cdqEtatDeverrouillage.email||'').trim().toLowerCase();
-      if(etat&&etat.autorise===true&&email&&String(etat.email||'').trim().toLowerCase()===email&&String(etat.jetonSession||'').trim()){
-        cdqBiometricRequestId="";
-        appliquerAccesAutorise(etat);
-        return;
-      }
-      cdqAfficherPlanBNip(etat&&etat.message||"Ce compte n’a pas l’autorisation d’utiliser l’application.");
-    })
-    .withFailureHandler(function(erreur){
-      if(!actuel())return;
-      cdqAfficherPlanBNip(erreur&&erreur.message||"Impossible de vérifier l’autorisation. Vérifiez Internet et réessayez avec votre NIP.");
-    })
-    .restaurerSessionApresBiometrie(jeton);
-}
-window.addEventListener("message",function(e){
-  if(!cdqFromPwa(e))return;
-  const d=e.data||{};
-  if(!["CDQ_BIOMETRIC_READY","CDQ_BIOMETRIC_RESULT","CDQ_BIOMETRIC_UNAVAILABLE"].includes(d.type))return;
-  if(!cdqBiometricPending || cdqBiometricFallbackActive)return;
-  
-  if(d.requestId && d.requestId!==cdqBiometricRequestId)return;
-  cdqArreterDelaiBiometrique();
-  if(d.type==="CDQ_BIOMETRIC_READY"){
-    cdqBiometricReplyTimer=setTimeout(function(){
-      if(cdqBiometricPending)cdqAfficherPlanBNip("Entrez votre NIP à 4 chiffres.");
-    },65000);
-    return;
-  }
-  cdqBiometricPending=false;
-  if(d.type==="CDQ_BIOMETRIC_RESULT" && d.success){
-    cdqTerminerBiometrieSucces();
-  }else{
-    cdqAfficherPlanBNip("Entrez votre NIP à 4 chiffres.");
-  }
-});
-
 let cdqAdminOpenerV2521=null;
 function cdqAdminApiV2521(){
  const owner=String(utilisateurCourantEmail||'');let ok=()=>{},fail=()=>{};
@@ -7904,7 +7541,7 @@ function chargerUtilisateursAdmin(){
   (utilisateurs||[]).forEach(u=>{
    const row=el('details','cdq-user-card');row.dataset.email=u.email;row.dataset.search=(String(u.nomRapport||'')+' '+u.email).toLocaleLowerCase('fr');row.open=opened.has(u.email);
    const summary=el('summary','cdq-user-summary'),identity=el('span','cdq-user-identity');identity.append(el('strong','',u.nomRapport||u.email),el('small','',u.nomRapport?u.email:'Nom de technicien à renseigner'));
-   const createur=!!u.accesCreateur,securise=!!u.nipDefini,activation=!!u.codeDefini,principal=String(u.email||'').toLowerCase()==='jp.rodrigue86@gmail.com';
+   const createur=!!u.accesCreateur,securise=!u.codeDefini,activation=!!u.codeDefini,principal=String(u.email||'').toLowerCase()==='jp.rodrigue86@gmail.com';
    const status=el('span','cdq-user-state',createur?'Créateur':securise?'Activé':activation?'Activation en attente':'Code requis');summary.append(identity,status,el('span','cdq-user-expand','⌄'));row.append(summary);
    const body=el('div','cdq-user-edit'),roleLabel=el('label','','Rôle (appliqué au changement)'),role=el('select','admin-role');
    for(const [value,text] of [['technicien','Technicien'],['lecture','Lecture seule'],['admin','Administrateur']]){const o=el('option','',text);o.value=value;role.append(o)}role.value=['admin','technicien','lecture'].includes(String(u.role).toLowerCase())?String(u.role).toLowerCase():'technicien';role.disabled=principal;roleLabel.append(role);
@@ -11601,7 +11238,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.02-v26.44-folders-favorites";
+  const CDQ_BUILD = "2026.10.02-v26.45-direct-access";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13897,7 +13534,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.02-v26.44-folders-favorites";
+const CDQ_V19_BUILD = "2026.10.02-v26.45-direct-access";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15702,7 +15339,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.02-v26.44-folders-favorites";
+const CDQ_V20_BUILD = "2026.10.02-v26.45-direct-access";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16549,7 +16186,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.02-v26.44-folders-favorites";
+const CDQ_V21_BUILD = "2026.10.02-v26.45-direct-access";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -17073,7 +16710,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.02-v26.44-folders-favorites';
+const BUILD='2026.10.02-v26.45-direct-access';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20754,7 +20391,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.02-v26.44-folders-favorites';
+  const BUILD='2026.10.02-v26.45-direct-access';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -23012,7 +22649,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.02-v26.44-folders-favorites',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.02-v26.45-direct-access',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23965,102 +23602,31 @@ window.cdqDriveAccessGateV2620=Object.freeze({
 
 <style id="cdq-creator-style-v2628">.cdq-creator-recovery-v2628{margin-top:12px;text-align:left}.cdq-creator-recovery-v2628 p{overflow-wrap:anywhere;line-height:1.45}.cdq-creator-recovery-v2628 label{display:block;margin:12px 0 6px}.cdq-creator-recovery-v2628 input:not([type=checkbox]){box-sizing:border-box;width:100%;padding:14px;border-radius:14px;border:1px solid #657180;background:#101318;color:#fff;font-size:22px}.cdq-creator-recovery-v2628 button,.cdq-creator-entry-v2628{box-sizing:border-box;width:100%;min-height:48px;margin-top:10px;padding:12px;border:1px solid #4389ad;border-radius:12px;background:#123b53;color:#fff;font-weight:bold}.cdq-creator-recovery-v2628 .secondary,.cdq-creator-entry-v2628{background:#242b33;border-color:#68737f}.cdq-creator-recovery-v2628 .recovery-error{color:#ffb5b5}.cdq-creator-recovery-v2628 .reset-confirm{font-size:14px}.cdq-creator-recovery-v2628 .reset-confirm input{width:auto;margin-right:6px}.cdq-creator-recovery-v2628 a{color:#8ad4ff}.cdq-creator-recovery-v2628 button:disabled{opacity:.6}</style>
 <script id="cdq-creator-recovery-v2628">
-/* CDQ creator recovery: Google verifies identity; the server alone grants access. */
-(function(){
-'use strict';
-if(window.cdqCreatorRecoveryV2628)return;
-const OWNER='jp.rodrigue86@gmail.com';
-const MANAGER='https://jprodrigue86.github.io/Balance-CDQ-distribution/apps-script-manager/?bundle=v26.28';
-let active=false,busy=false,seq=0,ticket='',owner='',hasPin=false,mode='google',panel=null;
-function el(tag,text){const n=document.createElement(tag);if(text)n.textContent=text;return n;}
-function errorText(e){return String(e&&e.message||e||'La récupération n’a pas abouti. Réessayez.');}
-function rpc(name,args){return new Promise(function(resolve,reject){try{cdqApiRun().withSuccessHandler(resolve).withFailureHandler(reject)[name].apply(null,args);}catch(e){reject(e);}});}
-function hideGoogle(){cdqGoogleAuthPendingV42=false;cdqGooglePromptDelegatedV42=false;cdqPostToPwa({type:'CDQ_GOOGLE_AUTH_HIDE',authProtocol:42});}
-function getPanel(){
- if(panel)return panel;
- panel=el('div');panel.id='cdqCreatorPanelV2628';panel.className='cdq-creator-recovery-v2628';panel.style.display='none';
- const card=document.querySelector('#accessOverlay .access-card');if(card)card.appendChild(panel);return panel;
-}
-function button(text,fn,secondary){const b=el('button',text);b.type='button';if(secondary)b.className='secondary';b.onclick=fn;return b;}
-function field(id,label){const l=el('label',label),i=el('input');l.htmlFor=id;i.id=id;i.type='password';i.inputMode='numeric';i.maxLength=4;i.autocomplete=mode==='new'?'new-password':'current-password';i.placeholder='••••';i.addEventListener('input',function(){i.value=i.value.replace(/\D/g,'').slice(0,4);});panel.append(l,i);return i;}
-function render(message,isError){
- const p=getPanel();cdqMasquerPanneauxAcces();p.replaceChildren();p.style.display='block';
- const overlay=document.getElementById('accessOverlay');if(overlay)overlay.style.display='flex';
- const status=document.getElementById('accessStatus');if(status)status.textContent='Récupération de l’accès créateur';
- cdqNettoyerErreurAcces();cdqSetAccessState('input');
- p.appendChild(el('p',owner||OWNER));
- if(message){const m=el('p',message);m.className=isError?'recovery-error':'recovery-info';m.setAttribute('role',isError?'alert':'status');p.appendChild(m);}
- if(mode==='pin'){
-  field('cdqCreatorPinV2628','Votre NIP personnel à 4 chiffres');
-  p.appendChild(button('Réactiver cet appareil',function(){submit(false);}));
-  p.appendChild(button('J’ai oublié mon NIP',function(){mode='new';render('Choisissez un nouveau NIP. Les anciennes sessions de votre compte seront révoquées.',false);},true));
- }else if(mode==='new'){
-  field('cdqCreatorPinV2628','Choisissez votre NIP personnel');field('cdqCreatorConfirmV2628','Confirmez votre NIP');
-  if(hasPin){const l=el('label'),c=el('input');c.type='checkbox';c.id='cdqCreatorResetConfirmV2628';l.className='reset-confirm';l.append(c,document.createTextNode(' Je confirme le remplacement de mon NIP et la révocation de mes anciennes sessions.'));p.appendChild(l);}
-  p.appendChild(button('Enregistrer et réactiver',function(){submit(true);}));
-  if(hasPin)p.appendChild(button('Garder mon NIP actuel',function(){mode='pin';render();},true));
- }else if(mode==='server'){
-  const a=el('a','Ouvrir le correctif Apps Script V26.28');a.href=MANAGER;a.target='_blank';a.rel='noopener';p.appendChild(a);
-  p.appendChild(button('Réessayer après le déploiement',start));
- }else if(!busy){p.appendChild(button('Confirmer mon compte Google créateur',start));}
- if(!busy)p.appendChild(button('Annuler',cancel,true));
- if(busy)p.querySelectorAll('button,input').forEach(function(n){n.disabled=true;});
-}
-function fail(e){busy=false;hideGoogle();render(errorText(e),true);}
-async function start(){
- if(busy)return;active=true;busy=true;ticket='';owner='';hasPin=false;mode='google';const id=++seq;
- render('Vérification du service de récupération…',false);
- try{
-  const state=await rpc('obtenirEtatAcces',['','']);if(id!==seq||!active)return;
-  const m=String(state&&state.versionBackend||'').match(/-v(\d+)\.(\d+)/i);
-  if(!m||Number(m[1])*100+Number(m[2])<2628){busy=false;mode='server';render('Déployez le petit correctif Apps Script V26.28 une fois. Il ne réimporte aucune donnée.',true);return;}
-  busy=false;cdqDemanderConnexionGoogleV42('Récupération créateur : confirmez '+OWNER+'. Aucun code administrateur à générer.');
- }catch(e){if(id===seq&&active)fail(e);}
-}
-async function credential(data){
- if(!active||busy||!data||!data.credential||!data.challengeId)return;
- busy=true;const id=seq;cdqGoogleAuthPendingV42=true;
- try{
-  const proof=await rpc('verifierJetonGoogleCDQ',[String(data.credential),String(data.challengeId)]);
-  if(id!==seq||!active)return;
-  if(!proof||!proof.ok||!proof.ticket||String(proof.email||'').trim().toLowerCase()!==OWNER)throw Error('Choisissez le compte Google créateur '+OWNER+'. Le compte Drive et les autres comptes administrateurs ne remplacent pas cette vérification.');
-  ticket=String(proof.ticket);owner=String(proof.email);hideGoogle();
-  const state=await rpc('connecterAvecCodeAcces',[owner,'',ticket,'',{creatorRecovery:true,action:'state'}]);
-  if(id!==seq||!active)return;
-  if(!state||state.creatorRecovery!==true||state.email!==OWNER)throw Error('Le serveur n’a pas confirmé l’accès créateur.');
-  hasPin=state.hasPin===true;mode=hasPin?'pin':'new';busy=false;
-  render(hasPin?'Votre NIP a été conservé. Entrez-le pour réenregistrer ce téléphone.':'Compte créateur confirmé. Choisissez votre NIP personnel.',false);
- }catch(e){if(id===seq&&active){ticket='';owner='';mode='google';fail(e);}}
-}
-async function submit(newPin){
- if(!active||busy||!ticket)return;
- const p=document.getElementById('cdqCreatorPinV2628'),c=document.getElementById('cdqCreatorConfirmV2628'),r=document.getElementById('cdqCreatorResetConfirmV2628');
- const nip=String(p&&p.value||''),confirmation=String(c&&c.value||'');
- if(!/^\d{4}$/.test(nip)){render('Entrez exactement 4 chiffres.',true);return;}
- if(newPin&&nip!==confirmation){render('Les deux NIP ne correspondent pas.',true);return;}
- if(newPin&&hasPin&&!(r&&r.checked)){render('Confirmez le remplacement de votre NIP avant de continuer.',true);return;}
- const opts={creatorRecovery:true,action:newPin?'set-pin':'unlock',confirmation:confirmation,confirmReset:newPin&&hasPin&&!!(r&&r.checked)};
- busy=true;const id=seq;p.value='';if(c)c.value='';render('Vérification sécurisée…',false);
- try{
-  const state=await rpc('connecterAvecCodeAcces',[owner,nip,ticket,'',opts]);
-  if(id!==seq||!active)return;
-  if(!state||state.autorise!==true||state.email!==OWNER||!state.jetonAppareil||!state.jetonSession)throw Error('Récupération non confirmée. Aucun accès n’a été ouvert.');
-  ticket='';owner='';active=false;busy=false;seq++;hideGoogle();getPanel().style.display='none';
-  cdqSauverJetonAppareil(state.jetonAppareil);
-  if(cdqEstAndroid()&&cdqPwaAvailable())cdqPostToPwa({type:'CDQ_BIOMETRIC_REGISTER',email:state.email});
-  appliquerAccesAutorise(state);
- }catch(e){if(id===seq&&active)fail(e);}
-}
-function cancel(){if(busy)return;seq++;active=false;ticket='';owner='';hideGoogle();getPanel().replaceChildren();getPanel().style.display='none';afficherConnexionCodePersonnel('Connexion Balance CDQ','');}
-const oldHide=cdqMasquerPanneauxAcces;
-cdqMasquerPanneauxAcces=function(){if(panel)panel.style.display='none';return oldHide.apply(this,arguments);};
-const oldGoogleError=cdqAfficherErreurGoogleV42;
-cdqAfficherErreurGoogleV42=function(message){if(active){mode='google';fail(message);return;}return oldGoogleError.apply(this,arguments);};
-for(const parentId of ['accessLogin','accessUnlock']){
- const host=document.getElementById(parentId);if(!host)continue;
- const b=button('Récupérer mon accès créateur',start,true);b.classList.add('cdq-creator-entry-v2628');b.id='cdqCreatorEntryV2628-'+parentId;host.appendChild(b);
-}
-window.cdqCreatorRecoveryV2628=Object.freeze({isActive:function(){return active;},credential:credential,start:start,cancel:cancel});
+/* Verified creator identity registers the device once; reopens are automatic. */
+(() => {
+  'use strict';
+  let active=false,busy=false,sequence=0;
+  const owner='jp.rodrigue86@gmail.com';
+  const fail=error=>{busy=false;cdqGoogleAuthPendingV42=false;cdqDirectFailureV2645(error);};
+  function start(){if(busy)return;active=true;sequence++;cdqDemanderConnexionGoogleV42('Confirmez votre compte Google créateur.');}
+  async function credential(data){
+    if(!active||busy||!data?.credential||!data.challengeId)return;
+    busy=true;const attempt=sequence;
+    try{
+      const proof=await cdqDirectRpcV2645('verifierJetonGoogleCDQ',[String(data.credential),String(data.challengeId)]);
+      if(attempt!==sequence||!active)return;
+      if(proof?.ok!==true||!proof.ticket||String(proof.email||'').trim().toLowerCase()!==owner)throw Error('Choisissez le compte Google créateur '+owner+'.');
+      const state=await cdqDirectRpcV2645('obtenirEtatAcces',['',String(proof.ticket)]);
+      if(attempt!==sequence||!active)return;
+      if(state?.autorise!==true||state.email!==owner||!state.jetonAppareil||!state.jetonSession)throw Error('Déployez la mise à jour serveur V26.45 pour récupérer cet appareil sans NIP.');
+      active=false;busy=false;sequence++;cdqGoogleAuthPendingV42=false;
+      appliquerAccesAutorise(state);
+    }catch(error){if(attempt===sequence&&active)fail(error);}
+  }
+  function cancel(){active=false;busy=false;sequence++;cdqGoogleAuthPendingV42=false;afficherConnexionCodePersonnel('Connexion CDQ','');}
+  const host=document.getElementById('accessLogin');
+  if(host){const button=document.createElement('button');button.type='button';button.textContent='Récupérer mon accès créateur';button.className='cdq-creator-entry-v2628';button.onclick=start;host.appendChild(button);}
+  window.cdqCreatorRecoveryV2628={isActive:()=>active,credential,start,cancel};
 })();
 
 </script>
