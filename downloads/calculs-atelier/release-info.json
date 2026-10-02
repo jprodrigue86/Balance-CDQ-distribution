@@ -1,21 +1,20 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.5.6",
-  "versionCode": 15006,
+  "version": "1.5.7",
+  "versionCode": 15007,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-02T21:14:49.967042+00:00",
+  "releasedAt": "2026-10-02T21:43:18.070525+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "a3129d88fd3a71b78925a9e5dbbcece2ba2c4f83aff5448abbad51c07a35586a",
-  "htmlSha256": "3b9edab801a189699943ffb5c334d444842be94e04ba3fbb73a68e47ca92288c",
-  "packageBytes": 16354281,
-  "htmlBytes": 9198379,
+  "packageSha256": "f54daa3e5e59f7b6f65b4a770a35c354b20a4c0ecb999352b7b5ac3956b1321e",
+  "htmlSha256": "d3c9829d361a62daf80f81789383bccb65afb8f7e3ff5054710e3c5c7f7a5ec2",
+  "packageBytes": 16355465,
+  "htmlBytes": 9199153,
   "notes": [
-    "Une lecture incorrecte de l’écart imprimé n’efface plus une date reconnue : le calcul reste disponible à partir des deux fins.",
-    "Lecture plus rapide : moins de relectures, contrôles ciblés sur les cellules incertaines et arrêt dès que les lectures concordent.",
-    "Les grandes photos fournissent directement leurs pixels originaux à l’analyse, sans réduction préalable de leur netteté.",
-    "Tableau Android défilant avec toutes les lignes, titres fixes et retour au même endroit après les détails. Précédent / Suivant supprimés."
+    "Relecture renforcée des titres quand la reconnaissance initiale échoue à 25 %, avec le modèle de mots embarqué et un cadrage plus large des titres.",
+    "Traitement des fonds colorés pendant la relecture; retour au modèle numérique pour les ordres et les dates, sans téléchargement OCR.",
+    "Les colonnes Original End et Current End restent identifiées par leur titre pour préserver les calculs."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.5.6.apk",
+  "androidApk": "Calculs-Atelier-Android-1.5.7.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
     "androidSignature": "APK v2/v3 avec le certificat historique",
