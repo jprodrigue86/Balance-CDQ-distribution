@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.36" data-cdq-iphone-release="ab357342ef7b7e8f27e0c20df9020f4ca779ec0d9cd6f2e3b1466628f36d5956">
+<html data-cdq-iphone-version="26.37" data-cdq-iphone-release="2b39fc2d8affa4eba90a45001bb8dbf8e922766a6dc479954436ef5145c1680c">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqHomeIconsV2571">
@@ -542,7 +542,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.02-v26.36-bundled-pdf-reports">
+<meta name="cdq-package-build" content="2026.10.02-v26.37-bundled-pdf-reports">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -820,7 +820,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.02-v26.36-bundled-pdf-reports'
+    build:'2026.10.02-v26.37-bundled-pdf-reports'
   });
 }
 
@@ -833,7 +833,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.02-v26.36-bundled-pdf-reports'
+        build:'2026.10.02-v26.37-bundled-pdf-reports'
       });
     }
   } catch(e) {}
@@ -11601,7 +11601,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.02-v26.36-bundled-pdf-reports";
+  const CDQ_BUILD = "2026.10.02-v26.37-bundled-pdf-reports";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13897,7 +13897,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.02-v26.36-bundled-pdf-reports";
+const CDQ_V19_BUILD = "2026.10.02-v26.37-bundled-pdf-reports";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -14141,8 +14141,10 @@ function cdqV19OfflineStatus(text,state,clientId){
 ===================================================== */
 const CDQ_TEMPLATE_REVISION = "plancher-fillable-v22.91-20260921";
 function reportRuntimeV2636(){
-  const base=CDQ_PWA_ORIGIN+'/Balance-CDQ-distribution/';
-  const catalog=()=>import(base+'report-templates-v2636.mjs');
+  // A literal asset URL is relocated into the APK by the packaging script and
+  // into the iPhone application by its builder. A constructed root URL would
+  // bypass those bundled files and depend on the legacy public repository.
+  const catalog=()=>import('https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/report-templates-v2636.mjs');
   function guard(email){
     cdqReaderGuardV2520(email);
     if(!['admin','technicien'].includes(utilisateurCourantRole))throw Error('Accès en lecture seule.');
@@ -15684,7 +15686,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.02-v26.36-bundled-pdf-reports";
+const CDQ_V20_BUILD = "2026.10.02-v26.37-bundled-pdf-reports";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16531,7 +16533,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.02-v26.36-bundled-pdf-reports";
+const CDQ_V21_BUILD = "2026.10.02-v26.37-bundled-pdf-reports";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -17055,7 +17057,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.02-v26.36-bundled-pdf-reports';
+const BUILD='2026.10.02-v26.37-bundled-pdf-reports';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20736,7 +20738,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.02-v26.36-bundled-pdf-reports';
+  const BUILD='2026.10.02-v26.37-bundled-pdf-reports';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22994,7 +22996,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.02-v26.36-bundled-pdf-reports',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.02-v26.37-bundled-pdf-reports',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
