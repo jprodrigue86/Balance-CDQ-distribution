@@ -48,6 +48,45 @@ html[data-cdq-browser-safe="1"] #loading {
 html[data-cdq-browser-safe="1"][data-cdq-keyboard="1"] {--cdq-window-bottom:0px}
 `;
   (document.head || root).appendChild(style);
+  // The IME shrinks the usable input area, but app navigation keeps its resting
+  // screen anchor behind the keyboard. Same-origin children inherit the inset.
+  let keyboardOffset = 0;
+  const keyboardStyle=document.createElement('style');
+  keyboardStyle.textContent=`
+html[data-cdq-keyboard="1"] .bottom-nav{translate:0 var(--cdq-keyboard-offset,0px)!important;visibility:hidden!important;pointer-events:none!important}
+html[data-cdq-keyboard="1"] body{padding-bottom:0!important}
+`;
+  (document.head||root).appendChild(keyboardStyle);
+  const children=()=>Array.from(document.querySelectorAll('iframe')).map(f=>f.contentWindow).filter(Boolean);
+  function setKeyboard(value){
+    const next=Math.max(0,Number(value)||0);
+    if(next>2000)return;
+    keyboardOffset=next;
+    root.style.setProperty('--cdq-keyboard-offset',next+'px');
+    root.dataset.cdqKeyboard=next>0?'1':'0';
+    for(const child of children())child.postMessage({type:'CDQ_KEYBOARD_INSETS_V2653',offset:next},location.origin);
+    window.dispatchEvent(new CustomEvent('cdq:keyboard-insets-v2653',{detail:{offset:next}}));
+    window.cdqMobileLayout?.apply?.();
+    window.cdqWorkspaceV2638?.measure?.();
+  }
+  window.cdqKeyboardInsetsV2653={set:setKeyboard,get:()=>keyboardOffset};
+  window.addEventListener('message',event=>{
+    if(event.origin!==location.origin)return;
+    if(event.source===window.parent&&window.parent!==window&&event.data?.type==='CDQ_KEYBOARD_INSETS_V2653')setKeyboard(event.data.offset);
+    if(children().includes(event.source)&&event.data?.type==='CDQ_KEYBOARD_QUERY_V2653')event.source.postMessage({type:'CDQ_KEYBOARD_INSETS_V2653',offset:keyboardOffset},location.origin);
+  });
+  if(window.parent!==window)window.parent.postMessage({type:'CDQ_KEYBOARD_QUERY_V2653'},location.origin);
+  if(role==='selector'){
+    const viewport=window.visualViewport;
+    const measureKeyboard=()=>{
+      if(nativeSafe||parentSafe||!viewport||Math.abs(viewport.scale-1)>.05)return;
+      const offset=Math.max(0,innerHeight-viewport.height-viewport.offsetTop);
+      setKeyboard(offset>120?offset:0);
+    };
+    viewport?.addEventListener('resize',measureKeyboard,{passive:true});
+    window.addEventListener('resize',measureKeyboard,{passive:true});
+    measureKeyboard();
+  }
   if (!browserShell) return;
   root.dataset.cdqBrowserSafe = '1';
   let pending = false;
@@ -64,7 +103,8 @@ html[data-cdq-browser-safe="1"][data-cdq-keyboard="1"] {--cdq-window-bottom:0px}
       if (root.style.getPropertyValue('--cdq-visible-'+name) !== px)
         root.style.setProperty('--cdq-visible-'+name,px);
     }
-    root.dataset.cdqKeyboard = window.innerHeight-height > 150 ? '1' : '0';
+    const offset=Math.max(0,window.innerHeight-height-(vv?.offsetTop||0));
+    setKeyboard(offset>150?offset:0);
   }
   function queue() {if(!pending){pending=true;requestAnimationFrame(measure);}}
   measure();

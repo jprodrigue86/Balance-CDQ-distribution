@@ -1,5 +1,6 @@
 // Fill raw inputs, then run the approved PDF's own JavaScript calculations.
 import {floorTemplate} from './floor-template-v2519.mjs';
+import {compactToleranceActions,centerSingleLineAppearances} from './reader-layout-v2653.mjs';
 const assets=new URL('./vendor/pdfjs-6.3.289/',import.meta.url).href;
 export const rawField=/^(client_(nom|telephone|technicien|adresse|ville|province|code_postal)|(?:prochain_etalonnage|date_etalonnage)_[123]|frequence_etalonnage|(?:indicateur|base_balance)_(fabricant|modele|numero_serie|numero_am)|imprimante_(fabricant|modele|numero_serie)|identification_balance|etendue_verifiee|legal_pour_commerce|capacite_maximale|unite_mesure|echelon|etalon_utilise|charge_point_[1-6]_(charge_utilisee|avant_correction|apres_correction)|charge_excentricite|excentricite_(avant|apres)_(arriere_gauche|avant_gauche|arriere_droit|avant_droit))$/;
 let engine;
@@ -10,6 +11,7 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false}={}){
   let bytes=new Uint8Array(await (blob||(await floorTemplate()).blob).arrayBuffer());
   await import('./vendor/pdf-lib-1.17.1.min.js');
   const lib=await globalThis.PDFLib.PDFDocument.load(bytes),form=lib.getForm();let changed=false;
+  changed=compactToleranceActions(lib,globalThis.PDFLib);
   for(const entry of entries){
     const [name,value]=entry;const field=form.getFieldMaybe(name);
     if(!field){if(strict)throw Error('Champ absent du modèle : '+name);continue;}
@@ -29,7 +31,7 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false}={}){
     for(const [name,value] of entries){
       const field=form.getFieldMaybe(name);if(!field)continue;
       if(field instanceof globalThis.PDFLib.PDFTextField){if(!onlyEmpty||!String(field.getText()||'').trim())field.setText(String(value));}
-      else if(field instanceof globalThis.PDFLib.PDFDropdown)field.select(String(value));
+      else if(field instanceof globalThis.PDFLib.PDFDropdown&&(!onlyEmpty||!field.getSelected().some(v=>String(v).trim())))field.select(String(value));
     }
     const font=await lib.embedFont(globalThis.PDFLib.StandardFonts.HelveticaBold);
     for(const [name] of entries){
@@ -41,6 +43,7 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false}={}){
       const widgets=original.call(field.acroField).filter(w=>{try{const r=w.getRectangle();return [r.x,r.y,r.width,r.height].every(Number.isFinite);}catch{return false;}});
       if(widgets.length){try{field.acroField.getWidgets=()=>widgets;field.defaultUpdateAppearances(font);}finally{field.acroField.getWidgets=original;}}
     }
+    centerSingleLineAppearances(lib,globalThis.PDFLib);
     return new Blob([await lib.save({updateFieldAppearances:false})],{type:'application/pdf'});
   }
   if(changed)bytes=await lib.save({updateFieldAppearances:false});

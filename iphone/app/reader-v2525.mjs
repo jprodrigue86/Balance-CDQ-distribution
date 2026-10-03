@@ -4,7 +4,8 @@ import {installTouchNavigation,installFormNavigation,installNativeTextInput} fro
 import {installReaderCalibration} from './reader-calibration-v2565.mjs';
 import {installReaderChoices} from './reader-choices-v2572.mjs';
 import {installReaderTheme,applyReaderTheme} from './reader-theme-v2572.mjs';
-import {saveEditableFormAppearance} from './reader-choice-appearance-v2572.mjs';
+import {saveEditableFormAppearance,normalizeEditableFormOnOpen} from './reader-choice-appearance-v2572.mjs';
+import {centerFieldGlyphs} from './reader-layout-v2653.mjs';
 installReaderTheme();
 const assets=new URL('./vendor/pdfjs-6.3.289/',import.meta.url).href;
 const $=id=>document.getElementById(id),hosted=parent!==window;
@@ -15,9 +16,12 @@ function applyFieldTypography(){
     if(!fieldTypography.has(field.name)||field.name.startsWith('_')||/statut/i.test(field.name))continue;
     const size=fieldTypography.get(field.name);
     field.style.setProperty('font-size','calc('+size+'px * var(--total-scale-factor))','important');
+    centerFieldGlyphs(field);
   }
 }
 function refreshResults(){if(!doc)return;paintReaderResults($('viewer'));}
+$('viewer').addEventListener('input',()=>requestAnimationFrame(applyFieldTypography));
+$('viewer').addEventListener('change',()=>requestAnimationFrame(applyFieldTypography));
 
 try{const o=new URL(document.referrer).origin;if(o===location.origin||/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(o))parentOrigin=o;}catch(_){}
 const tell=data=>{if(hosted&&parentOrigin)parent.postMessage(data,parentOrigin)};
@@ -243,7 +247,7 @@ async function open(data){
   if(doc)return; // A repeated READY/OPEN exchange must never erase current answers.
   opening=true;autoReportName=data.autoReportName===true;$('viewer').inert=true;name=String(data.name||name);fileId=String(data.fileId||'');readOnly=!!data.readOnly;
   $('name').textContent=name;$('empty').style.display='none';status('Ouverture du PDF…');
-  const sourceBytes=new Uint8Array(await blob.arrayBuffer());
+  const sourceBytes=await normalizeEditableFormOnOpen(new Uint8Array(await blob.arrayBuffer()));
   const task=api.getDocument({data:sourceBytes,standardFontDataUrl:assets+'standard_fonts/',cMapUrl:assets+'cmaps/',cMapPacked:true,wasmUrl:assets+'wasm/',isEvalSupported:false,enableXfa:false,enableHWA:true});
   doc=await task.promise;viewer.setDocument(doc);viewer.linkService.setDocument(doc);
   doc.annotationStorage.onSetModified=()=>{if(!readOnly&&!opening){dirty=true;status('');}};
@@ -376,7 +380,7 @@ try{
   eventBus.on('updatefromsandbox',event=>{
     const detail=event.detail||{};
     if(detail.id&&Object.hasOwn(detail,'formattedValue'))formattedFields.set(detail.id,detail.formattedValue??'');
-    setTimeout(refreshResults,0);
+    setTimeout(()=>{refreshResults();applyFieldTypography();},0);
   });
   // A technician can stop at the last reading without moving to another field.
   // Commit only complete numeric inputs, so partial decimals stay editable.

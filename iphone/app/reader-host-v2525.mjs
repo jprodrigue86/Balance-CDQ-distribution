@@ -26,7 +26,7 @@ export function openReader(data){
   function pop(){if(closed)return;history.pushState({cdqReader:marker},'',location.href);tell({type:'CDQ_READER_REQUEST_CLOSE'});}
   function close(){
     if(closed)return;closed=true;active=null;clearTimeout(timer);
-    window.removeEventListener('message',receive);window.removeEventListener('popstate',pop);window.removeEventListener('resize',resize);window.visualViewport?.removeEventListener('resize',resize);frame.remove();
+    window.removeEventListener('message',receive);window.removeEventListener('popstate',pop);window.removeEventListener('resize',resize);window.removeEventListener('cdq:keyboard-insets-v2653',resize);window.visualViewport?.removeEventListener('resize',resize);frame.remove();
     try{data.workspaceSource?.document.documentElement.classList.remove('cdq-workspace-reader-open');data.workspaceSource?.cdqWorkspaceV2638?.readerClosed();data.workspaceSource?.cdqWorkspaceV2638?.measure();}catch{}
     if(guard&&history.state?.cdqReader===marker)history.back();
     data.onClose?.();
@@ -57,7 +57,7 @@ export function openReader(data){
   }
   const timer=setTimeout(()=>{if(!ready){close();data.onError?.(new Error('Le lecteur n’a pas démarré. Mettez à jour l’application puis réessayez.'));}},30000);
   const resize=()=>layout();
-  window.addEventListener('resize',resize);window.visualViewport?.addEventListener('resize',resize);
+  window.addEventListener('resize',resize);window.addEventListener('cdq:keyboard-insets-v2653',resize);window.visualViewport?.addEventListener('resize',resize);
   window.addEventListener('message',receive);document.body.append(frame);layout();
   active={requestClose:()=>tell({type:'CDQ_READER_REQUEST_CLOSE'}),prefill:values=>{prefillValues={...prefillValues,...values};if(opened)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});}};return active;
 }

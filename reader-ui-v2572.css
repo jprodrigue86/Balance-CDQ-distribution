@@ -47,7 +47,10 @@ header#readerTop #save,#closeDialog .primary{background:var(--reader-accent)!imp
 .cdq-result-indicator.row-result.bad{background:#ef1717}
 #viewer .annotationLayer .cdq-result-indicator svg{position:static;inset:auto;height:90%;width:13%;flex:none;fill:none;stroke:#12e430;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 #viewer .annotationLayer .cdq-result-indicator.bad svg{stroke:#ff1515}
-#formNav button{flex:0 1 auto}
+/* All four controls share the available width, including with the keyboard. */
+body #formNav{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px!important;padding:2px 3px!important}
+body #formNav:not([hidden]){display:grid!important;padding:2px 3px!important}
+body.form-navigation #formNav button{width:100%!important;min-width:0!important;max-width:none!important;height:100%!important;min-height:0!important;margin:0!important;padding:0 2px!important;font-size:clamp(11px,3.4vw,16px)!important;white-space:nowrap;overflow:hidden;flex:1 1 0}
 /* PDF mirror fields paint labels only; they must not intercept a tap on a menu. */
 #viewer .annotationLayer section:has([name^="_cdq_affichage_"]),
 #viewer .annotationLayer [name^="_cdq_affichage_"],

@@ -1,5 +1,6 @@
 // Preserve an editable AcroForm when CDQ saves a client master PDF.
 // The client-facing copy may be flattened separately by the send workflow.
+import {compactToleranceActions,centerSingleLineAppearances,textInkMetrics} from './reader-layout-v2653.mjs';
 let library;
 async function pdfLibrary(){
   if(globalThis.PDFLib)return globalThis.PDFLib;
@@ -21,18 +22,22 @@ function rawNeedsAppearanceRepair(bytes){
 
 export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const data=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
-  if(!rawNeedsAppearanceRepair(data))return data;
-  const {PDFDocument,PDFName}=providedLibrary||await pdfLibrary();
+  const L=providedLibrary||await pdfLibrary();
+  const {PDFDocument,PDFName}=L;
   const pdf=await PDFDocument.load(data,{updateMetadata:false});
   const form=pdf.getForm();
+  const changed=compactToleranceActions(pdf,L)|centerSingleLineAppearances(pdf,L);
+  if(!changed&&!rawNeedsAppearanceRepair(data))return data;
   form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
   return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
 }
 
 export async function saveEditableFormAppearance(bytes,providedLibrary){
-  const {PDFDocument,PDFName,PDFArray,StandardFonts}=providedLibrary||await pdfLibrary();
+  const L=providedLibrary||await pdfLibrary();
+  const {PDFDocument,PDFName,PDFArray,StandardFonts}=L;
   const pdf=await PDFDocument.load(bytes,{updateMetadata:false});
   const form=pdf.getForm();
+  compactToleranceActions(pdf,L);
 
   // Older CDQ saves could leave NeedAppearances=true. Some viewers then paint
   // the saved appearance briefly and subsequently cover it with an empty form
@@ -72,8 +77,8 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
       for(;size>3.5;size-=.25){lines=wrap(size);if(lines.length*size*1.15<=h-1&&lines.every(line=>font.widthOfTextAtSize(line,size)<=available))break;}
       lines=wrap(size);
       const commands=[`q 0 0 ${w} ${h} re W n BT /CDQChoice ${size} Tf 0 g`];
-      const lineHeight=size*1.15,capHeight=font.heightAtSize(size,{descender:false});
-      const top=(h-capHeight-(lines.length-1)*lineHeight)/2+(lines.length-1)*lineHeight;
+      const lineHeight=size*1.15,first=textInkMetrics(lines[0],size),last=textInkMetrics(lines.at(-1),size);
+      const top=(h-first.ascent+last.descent-(lines.length-1)*lineHeight)/2+(lines.length-1)*lineHeight;
       lines.forEach((line,i)=>{
         const x=(w-font.widthOfTextAtSize(line,size))/2;
         commands.push(`1 0 0 1 ${Math.max(1,x)} ${top-i*lineHeight} Tm ${font.encodeText(line)} Tj`);
@@ -88,6 +93,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
 
   // Never flatten the client master. PDF.js has already serialized values and
   // appearances for edited fields; preserve those streams and every widget.
+  centerSingleLineAppearances(pdf,L);
   return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
 }
 

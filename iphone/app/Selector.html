@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.52" data-cdq-iphone-release="6281e0f8caaf8b81651d155e82ac66a20946351ad8e349d606ac3793c4a6b6e9">
+<html data-cdq-iphone-version="26.53" data-cdq-iphone-release="192ceaeabca0fe9605df6eb1e63095ed0a8846980ebb3547476e6b5892640633">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqThemeBootV2651">(function(){let t='dark';try{t=localStorage.getItem('cdqTheme')||(localStorage.getItem('modeRapports')==='light'?'light':'dark')}catch(_){}if(!['dark','light','metal','electric','steel','violet'].includes(t))t='dark';document.documentElement.dataset.cdqPalette=t;window.cdqThemeBootV2651=t;})();</script>
@@ -543,7 +543,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.03-v26.52-complete-startup">
+<meta name="cdq-package-build" content="2026.10.03-v26.53-keyboard-reader-layout">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -822,7 +822,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.03-v26.52-complete-startup'
+    build:'2026.10.03-v26.53-keyboard-reader-layout'
   });
 }
 
@@ -835,7 +835,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.03-v26.52-complete-startup'
+        build:'2026.10.03-v26.53-keyboard-reader-layout'
       });
     }
   } catch(e) {}
@@ -7773,7 +7773,8 @@ function toggleCompanyMenu(){
 
       ajusterMenuAndroid();
 
-      recherche.focus();
+      if(menu.style.display !== "block")return;
+      recherche.focus({preventScroll:true});
 
     },
     150
@@ -11274,7 +11275,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.03-v26.52-complete-startup";
+  const CDQ_BUILD = "2026.10.03-v26.53-keyboard-reader-layout";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13570,7 +13571,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.03-v26.52-complete-startup";
+const CDQ_V19_BUILD = "2026.10.03-v26.53-keyboard-reader-layout";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -14172,23 +14173,8 @@ window.cdqV19CreateModal=cdqV19CreateModal;
 /* =====================================================
    TECHNICIEN DYNAMIQUE DANS LES PDF — V21.79
 ===================================================== */
-async function cdqPersonnaliserBlobTechnicienPdf(blob){
-  if(!(blob instanceof Blob)||!blob.size)return blob;
-  if(!window.PDFLib||!window.PDFLib.PDFDocument){console.warn("PDF-Lib indisponible : technicien dynamique non appliqué.");return blob;}
-  const noms=cdqNomsTechniciensRapports(),nomCourant=String(utilisateurCourantNomRapport||"").trim();if(!noms.length&&!nomCourant)return blob;
-  try{
-    const pdf=await window.PDFLib.PDFDocument.load(await blob.arrayBuffer(),{ignoreEncryption:true,updateMetadata:false});const form=pdf.getForm();let champ=null;
-    ["client_technicien","technicien","Technicien"].some(function(n){try{champ=form.getDropdown(n);return !!champ;}catch(e){return false;}});if(!champ)return blob;
-    try{if(typeof champ.isReadOnly==="function"&&champ.isReadOnly())return blob;}catch(e){}
-    let selection="";try{const v=champ.getSelected();selection=Array.isArray(v)&&v.length?String(v[0]||"").trim():"";}catch(e){}
-    const options=[""],vus=new Set([""]);noms.forEach(function(n){const s=String(n||"").trim(),k=s.toLocaleLowerCase("fr-CA");if(s&&!vus.has(k)){vus.add(k);options.push(s);}});
-    if(selection){const k=selection.toLocaleLowerCase("fr-CA");if(!vus.has(k)){vus.add(k);options.push(selection);}}
-    if(nomCourant){const k=nomCourant.toLocaleLowerCase("fr-CA");if(!vus.has(k)){vus.add(k);options.push(nomCourant);}}
-    champ.setOptions(options);if(selection)champ.select(selection);else if(nomCourant)champ.select(nomCourant);
-    const bytes=await pdf.save({useObjectStreams:false,addDefaultPage:false,updateFieldAppearances:true});return new Blob([bytes],{type:"application/pdf"});
-  }catch(e){console.warn("Technicien dynamique PDF ignoré :",e);return blob;}
-}
-async function cdqPersonnaliserRecordTechnicienPdf(rec){if(!rec||!(rec.blob instanceof Blob))return rec;const cle=String(cdqTechniciensVersion||"cache")+"|"+String(utilisateurCourantEmail||"").toLowerCase()+"|"+String(utilisateurCourantNomRapport||"");if(rec.cdqTechVersion===cle)return rec;const b=await cdqPersonnaliserBlobTechnicienPdf(rec.blob);return Object.assign({},rec,{blob:b,taille:b.size,chunks:Math.ceil(b.size/(1024*1024)),cdqTechVersion:cle,cdqTechCachedAt:Date.now()});}
+async function cdqPersonnaliserBlobTechnicienPdf(blob){return blob;}
+async function cdqPersonnaliserRecordTechnicienPdf(rec){return rec;}
 const CDQ_DOCUMENT_MAX_BYTES=32*1024*1024;
 const cdqDocumentDownloads=new Map();
 function cdqDocumentMeta(id){
@@ -15397,7 +15383,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.03-v26.52-complete-startup";
+const CDQ_V20_BUILD = "2026.10.03-v26.53-keyboard-reader-layout";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16244,7 +16230,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.03-v26.52-complete-startup";
+const CDQ_V21_BUILD = "2026.10.03-v26.53-keyboard-reader-layout";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16769,7 +16755,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.03-v26.52-complete-startup';
+const BUILD='2026.10.03-v26.53-keyboard-reader-layout';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20417,7 +20403,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.03-v26.52-complete-startup';
+  const BUILD='2026.10.03-v26.53-keyboard-reader-layout';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -21884,7 +21870,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     if (!root.classList.contains('cdq-mobile-layout')) return;
     const nav = document.querySelector('.bottom-nav');
     if (!nav) return;
-    const height = px(nav.getBoundingClientRect().height);
+    const height = root.dataset.cdqKeyboard === "1" ? "0px" : px(nav.getBoundingClientRect().height);
     root.style.setProperty('--cdq-nav-height', height);
     set(document.body, {'padding-bottom':height});
   }
@@ -22683,7 +22669,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.03-v26.52-complete-startup',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.03-v26.53-keyboard-reader-layout',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
