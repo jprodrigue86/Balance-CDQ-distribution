@@ -1,28 +1,27 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.6.2",
-  "versionCode": 16002,
+  "version": "1.7.0",
+  "versionCode": 17000,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-03T01:55:24.183752+00:00",
+  "releasedAt": "2026-10-03T04:04:12.367319+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "70e0bb58017937b073fa32d1898ac2605da1e0f44630993c2a178b397a0b4a85",
-  "htmlSha256": "32258ce59a76c8aea8b848b6c83cea8eb162866c3e08950dc231db7c16d7e445",
-  "packageBytes": 16446925,
-  "htmlBytes": 9250156,
+  "packageSha256": "6284f7f9e9041cb65abd2b7b9fec1e601a4eaf1d697966a64dd8e63ecb6d6c42",
+  "htmlSha256": "e0b311e665c199c58c24072c04b73e162b46636f306b146174eb096427c6e0b1",
+  "packageBytes": 16437373,
+  "htmlBytes": 9245114,
   "notes": [
-    "Prise de photo directe rétablie : Prendre une photo → OK → import et analyse automatiques, sans retour ni sélection dans la galerie.",
-    "Le fichier plein format fourni par la caméra est conservé sans réduction; aucune miniature n’est utilisée pour la lecture.",
-    "Les analyses complètes prises par le bouton caméra sont enregistrées automatiquement sur cet appareil.",
-    "Le parcours natif direct nécessite l’APK Android 1.6.2 si l’APK 1.6.1 a été installé. Les moteurs antérieurs utilisant déjà la capture directe restent compatibles avec la mise à jour de contenu.",
-    "Correction des photos à haute résolution : la trame de l’écran et les chiffres alignés ne découpent plus les colonnes Original End / Current End; redressement à la résolution photographique avant lecture.",
-    "Vérification sur la photo fournie et une version agrandie à 4032 × 3024 : 16 ordres, numéros, dates et écarts exacts. Le tableau défilant et Augmentation 5 % / 10 % sont conservés."
+    "Nouveau lecteur photo : les titres Original End / Current End ne bloquent plus la lecture des ordres.",
+    "Les dates et les écarts visibles identifient les colonnes à partir de plusieurs lignes concordantes.",
+    "Photo entière, dates automatiques et lecture hors connexion. Nouveau traitement des reflets de trame et des tableaux inclinés.",
+    "Moins de passages de reconnaissance; seuls les champs incertains sont relus.",
+    "Prendre une photo, OK, analyse et enregistrement automatique des résultats vérifiés. Tableau défilant et historiques conservés."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.6.2.apk",
+  "androidApk": "Calculs-Atelier-Android-1.7.0.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
     "androidSignature": "APK v2/v3 avec le certificat historique; SDK Android recompilé",
     "physicalDeviceTest": false
   },
   "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée.",
-  "shellVersion": 16002
+  "shellVersion": 17000
 }
