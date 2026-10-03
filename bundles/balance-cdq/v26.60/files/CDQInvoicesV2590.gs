@@ -7,6 +7,63 @@ function cdqInvoiceCleanV2590_(value, maxLen) {
   return String(value == null ? '' : value).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, maxLen || 160);
 }
 
+// Invoice folders only: employee codes never change report names or permissions.
+var CDQ_INVOICE_TECHNICIANS_V2635 = [{"nom":"Jean-Pierre Rodrigue","code":"0016"},{"nom":"Karim Khalfaoui","code":"1014"},{"nom":"Samuel Pintal","code":"4017"},{"nom":"Simon Claveau","code":"5014"},{"nom":"Joel Guifo","code":"3001"}];
+
+function cdqInvoiceNormalizeNameV2635_(value) {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+}
+
+function cdqInvoiceTechnicianV2635_(value) {
+  var original = cdqInvoiceCleanV2590_(value,100);
+  var base = original.replace(/\s*[-–—]\s*\d{4}\s*$/,'').trim();
+  var key = cdqInvoiceNormalizeNameV2635_(base);
+  var record = CDQ_INVOICE_TECHNICIANS_V2635.filter(function(row){return cdqInvoiceNormalizeNameV2635_(row.nom) === key;})[0];
+  return record ? {nom:record.nom,code:record.code,dossier:record.nom+' - '+record.code,original:original}
+    : {nom:original,code:'',dossier:original,original:original};
+}
+
+function cdqInvoiceTechFoldersAtParentV2635_(parent, technicien) {
+  var identity=cdqInvoiceTechnicianV2635_(technicien),key=cdqInvoiceNormalizeNameV2635_(identity.nom);
+  var folders=parent.getFolders(),rows=[];
+  while(folders.hasNext()){
+    var folder=folders.next(),name=folder.getName();
+    var match=String(name).match(/^(.*?)\s*[-–—]\s*(\d{4})\s*$/);
+    if(match){
+      if(identity.code && match[2]===identity.code && cdqInvoiceNormalizeNameV2635_(match[1])===key)rows.push(folder);
+      else if(!identity.code && name===identity.dossier)rows.push(folder);
+    }else if(cdqInvoiceNormalizeNameV2635_(name)===key)rows.push(folder);
+  }
+  rows.sort(function(a,b){return Number(b.getName()===identity.dossier)-Number(a.getName()===identity.dossier);});
+  return rows;
+}
+
+function cdqInvoiceTechFolderForWriteV2635_(parent, technicien) {
+  var identity=cdqInvoiceTechnicianV2635_(technicien);
+  var rows=cdqInvoiceTechFoldersAtParentV2635_(parent,technicien);
+  if(rows.length){
+    var folder=rows[0];
+    if(identity.code && folder.getName()!==identity.dossier)folder.setName(identity.dossier);
+    return folder;
+  }
+  return cdqInvoiceChildFolderV2590_(parent,identity.dossier);
+}
+
+function cdqInvoiceExistingTechFoldersV2635_(technicien) {
+  var roots=[CDQ_INVOICE_ROOT_ID_V2590,CDQ_INVOICE_LEGACY_ROOT_ID_V2615],seen={},rows=[];
+  roots.forEach(function(rootId){
+    try{
+      var root=DriveApp.getFolderById(rootId),facture=cdqInvoiceFindChildV2590_(root,'Facture');
+      if(!facture)return;
+      cdqInvoiceTechFoldersAtParentV2635_(facture,technicien).forEach(function(tech){
+        var id=tech.getId();if(seen[id])return;seen[id]=true;
+        rows.push({root:root,facture:facture,tech:tech,rootId:rootId});
+      });
+    }catch(e){}
+  });
+  return rows;
+}
+
 function cdqInvoiceIdentityV2590_() {
   var name = '';
   var email = '';
@@ -23,7 +80,7 @@ function cdqInvoiceIdentityV2590_() {
   } catch (e) {}
   if (!name && email) name = email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
   if (!name) throw new Error('Le nom du technicien connecté n’est pas configuré.');
-  return {nom:name,email:email};
+  return {nom:name,email:email,dossier:cdqInvoiceTechnicianV2635_(name).dossier};
 }
 
 function cdqInvoiceSystemFolderV2590_() {
@@ -61,7 +118,7 @@ function cdqInvoiceDestinationV2590_(technicien, categorie, date) {
   if (CDQ_INVOICE_CATEGORIES_V2590.indexOf(categorie) < 0) throw new Error('Catégorie de facture invalide.');
   var root = cdqInvoiceSystemFolderV2590_();
   var facture = cdqInvoiceChildFolderV2590_(root, 'Facture');
-  var tech = cdqInvoiceChildFolderV2590_(facture, technicien);
+  var tech = cdqInvoiceTechFolderForWriteV2635_(facture, technicien);
   var monthName = cdqInvoiceMonthFolderNameV2615_(date);
   var month = cdqInvoiceChildFolderV2590_(tech, monthName);
   return {root:root,facture:facture,tech:tech,month:month,monthName:monthName};
@@ -85,16 +142,7 @@ function cdqInvoiceExistingTechV2590_(technicien) {
 }
 
 function cdqInvoiceExistingTechFoldersV2615_(technicien) {
-  var roots = [CDQ_INVOICE_ROOT_ID_V2590, CDQ_INVOICE_LEGACY_ROOT_ID_V2615];
-  var seen = {};
-  var rows = [];
-  roots.forEach(function(rootId) {
-    if (seen[rootId]) return;
-    seen[rootId] = true;
-    var existing = cdqInvoiceExistingTechAtRootV2615_(rootId, technicien);
-    if (existing) rows.push(existing);
-  });
-  return rows;
+  return cdqInvoiceExistingTechFoldersV2635_(technicien);
 }
 
 function cdqInvoiceAmountV2590_(value) {
@@ -145,13 +193,20 @@ function cdqInvoiceMetaV2590_(file, fallbackCategory) {
 }
 
 function cdqContexteFactureV2590() {
+  var user=cdqWsAccessV2638_(false);
   var identity = cdqInvoiceIdentityV2590_();
+  if(['admin','technicien'].indexOf(user.role)>=0){
+    cdqInvoiceDestinationV2590_(identity.nom,'Autre',Utilities.formatDate(new Date(),'America/Toronto','yyyy-MM-dd'));
+    cdqWsInstallV2638_();
+  }
   return {
     ok:true,
-    technicien:identity.nom,
+    technicien:identity.dossier,
+    nomTechnicien:identity.nom,
+    codeTechnicien:cdqInvoiceTechnicianV2635_(identity.nom).code,
     email:identity.email,
     categories:CDQ_INVOICE_CATEGORIES_V2590.slice(),
-    chemin:'CDQ System / Facture / ' + identity.nom + ' / [AAAA-MM - Mois]',
+    chemin:'CDQ System / Facture / ' + identity.dossier + ' / [AAAA-MM - Mois]',
     classement:'mensuel'
   };
 }
@@ -179,7 +234,7 @@ function cdqEnregistrerFactureV2590(payload) {
     var dest = cdqInvoiceDestinationV2590_(identity.nom, category, date);
     var unique = cdqInvoiceUniqueNameV2590_(dest.month, amount, date, requestId);
     if (unique.existing) {
-      return {ok:true,id:unique.existing.getId(),url:unique.existing.getUrl(),nom:unique.name,technicien:identity.nom,categorie:category,duplicate:true,mois:dest.monthName,chemin:'CDQ System / Facture / ' + identity.nom + ' / ' + dest.monthName};
+      return {ok:true,id:unique.existing.getId(),url:unique.existing.getUrl(),nom:unique.name,technicien:identity.dossier,categorie:category,duplicate:true,mois:dest.monthName,chemin:'CDQ System / Facture / ' + identity.dossier + ' / ' + dest.monthName};
     }
     var blob = Utilities.newBlob(bytes, 'image/jpeg', unique.name);
     var file = dest.month.createFile(blob);
@@ -197,7 +252,7 @@ function cdqEnregistrerFactureV2590(payload) {
       createdAt:new Date().toISOString()
     };
     try { file.setDescription(JSON.stringify(meta)); } catch (e) {}
-    return {ok:true,id:file.getId(),url:file.getUrl(),nom:file.getName(),technicien:identity.nom,categorie:category,mois:dest.monthName,chemin:'CDQ System / Facture / ' + identity.nom + ' / ' + dest.monthName};
+    return {ok:true,id:file.getId(),url:file.getUrl(),nom:file.getName(),technicien:identity.dossier,categorie:category,mois:dest.monthName,chemin:'CDQ System / Facture / ' + identity.dossier + ' / ' + dest.monthName};
   } finally {
     lock.releaseLock();
   }
