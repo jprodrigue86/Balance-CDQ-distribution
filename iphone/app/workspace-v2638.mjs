@@ -6,10 +6,15 @@ const fmt=v=>Number(v).toLocaleString('fr-CA',{maximumFractionDigits:8});
 const GENERAL='1F7rgU20Hc1PmjxQHY7ALTqkqArN6RSsf';
 const paths={calcul:'<rect x="6" y="3" width="20" height="26" rx="3"/><path d="M10 7h12v5H10zM10 17h2m4 0h2m4 0h0M10 22h2m4 0h2m4 0v3"/>',opportunities:'<path d="M4 26h24M7 23V13h5v10m4 0V9h5v14m4-9V4M19 4h6v6M7 9l7-4 4 2 7-3"/>',drive:'<path d="M3 9V6h10l3 4h13v16H3z"/>',folder:'<path d="M3 9V6h10l3 4h13v16H3z"/>',report:'<path d="M7 3h13l6 6v20H7zM20 3v6h6M11 14h11m-11 5h11m-11 5h7"/>',camera:'<path d="M3 10h6l3-5h8l3 5h6v17H3z"/><circle cx="16" cy="18" r="6"/>',gallery:'<rect x="3" y="4" width="26" height="24" rx="3"/><circle cx="22" cy="10" r="2"/><path d="M4 24l8-10 7 7 4-4 6 7"/>',file:'<path d="M7 3h13l6 6v20H7zM20 3v6h6"/>'};
 export function workspaceIcon(key,style='current'){
-  if(style==='metal-music'&&['calcul','opportunities','drive'].includes(key))return '<img class="cdq-workspace-art-v2639" src="./assets/navigation-v2639/'+key+'.webp" alt="" aria-hidden="true" draggable="false">';
-  const body=paths[key]||paths.file,weight=style==='minimal'?1.6:style==='dark-pro'?2:2.4;
-  const frame=style==='metal-music'?'<path d="M3 4l3-3h20l3 3v24l-3 3H6l-3-3z" stroke-opacity=".3"/>':style==='isometric'?'<path d="M2 7l6-4 22 5v21l-6 3L2 26z" stroke-opacity=".3"/>':'';
-  return '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="'+weight+'" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+frame+body+'</svg>';
+  if(!['current','minimal','dark-pro','metal-music','isometric'].includes(style))style='current';
+  if(style==='metal-music'&&['calcul','opportunities','drive'].includes(key))return '<img class="cdq-workspace-art-v2639" data-icon-theme="metal-music" src="./assets/navigation-v2639/'+key+'.webp" alt="" aria-hidden="true" draggable="false">';
+  const body=paths[key]||paths.file;
+  const drawing=style==='dark-pro'
+    ?'<rect x="1" y="1" width="30" height="30" rx="7" fill="#111a24" stroke="#71899f"/><g transform="translate(3 3) scale(.81)" stroke="#c5e5f5" stroke-width="2">'+body+'</g>'
+    :style==='isometric'
+    ?'<path d="m2 8 7-5 21 5v19l-7 5-21-5z" fill="#18394b" stroke="#84c5df"/><path d="m2 8 21 5 7-5M23 13v19" stroke="#9ee1f3"/><g transform="matrix(.68,.16,0,.67,2,6)" stroke="#e0fbff" stroke-width="2.4">'+body+'</g>'
+    :'<g stroke-width="'+(style==='minimal'?1.6:2.4)+'">'+body+'</g>';
+  return '<svg data-icon-theme="'+style+'" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+drawing+'</svg>';
 }
 const companyId=()=>{try{return String(compagnieSelectionnee||'');}catch{return '';}};
 const companyName=()=>{try{return String(nomCompagnieSelectionnee||'');}catch{return '';}};
@@ -39,7 +44,7 @@ function measure(){
   const payload={type:'CDQ_WORKSPACE_LAYOUT_V2638',top,bottom,route:active,owner:ownerKey(),canRead:canRead()};
   const signature=JSON.stringify(payload);if(measure.last!==signature){measure.last=signature;window.parent.postMessage(payload,location.origin);}
 }
-function iconTheme(){try{return JSON.parse(localStorage.getItem('cdqIconThemeV2514:'+calibrationIdentity().email)||'null')?.style||'current';}catch{return 'current';}}
+function iconTheme(){if(window.cdqIconThemesV2514?.getStyle)return window.cdqIconThemesV2514.getStyle();try{return JSON.parse(localStorage.getItem('cdqIconThemeV2514:'+calibrationIdentity().email)||'null')?.style||'current';}catch{return 'current';}}
 function syncNav(){
   const nav=$('.bottom-nav');if(!nav)return;
   document.documentElement.dataset.cdqWorkspaceUnlocked=calibrationIdentity().email?'true':'false';

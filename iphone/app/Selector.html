@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.50" data-cdq-iphone-release="80d05565083a0f9d33af2e5c4dfa21c2eea18c1c81cab91a99cf319641332caa">
+<html data-cdq-iphone-version="26.51" data-cdq-iphone-release="fa62f40c7a6bc0e5e2a301eeff25c552bd90bdd1d7d20ab526f19baf2fdffa37">
 <head>
 <script src="./iphone-update.js"></script>
+<script id="cdqThemeBootV2651">(function(){let t='dark';try{t=localStorage.getItem('cdqTheme')||(localStorage.getItem('modeRapports')==='light'?'light':'dark')}catch(_){}if(!['dark','light','metal','electric','steel','violet'].includes(t))t='dark';document.documentElement.dataset.cdqPalette=t;window.cdqThemeBootV2651=t;})();</script>
 <script id="cdqHomeIconsV2571">
 /* One live drawing per home action. Theme alternatives are data, not hidden DOM. */
 (function () {
@@ -542,7 +543,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.03-v26.50-reader-centered-results">
+<meta name="cdq-package-build" content="2026.10.03-v26.51-stable-icon-themes">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -821,7 +822,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.03-v26.50-reader-centered-results'
+    build:'2026.10.03-v26.51-stable-icon-themes'
   });
 }
 
@@ -834,7 +835,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.03-v26.50-reader-centered-results'
+        build:'2026.10.03-v26.51-stable-icon-themes'
       });
     }
   } catch(e) {}
@@ -5718,10 +5719,44 @@ html.windows .header-metal-banner{
 <style id="cdqDesktopBootV2517Css">html.windows.pc16-startup-lock,html.windows.pc16-startup-lock body,html.windows #accessOverlay{background:#080808 url("https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/assets/music-wall-pc-v2521.webp") center/cover no-repeat!important}</style>
 <link rel="stylesheet" href="./invoice-ui-v2590.css">
 <link rel="stylesheet" href="./inventory-modern-v2592.css">
+<style id="cdqThemePresentationV2651">
+/* Palette variables exist before the first visible frame; delayed icon refreshes
+   only update artwork and never install a temporary neon palette. */
+html.cdq-mobile-layout body #cdqTopActionsV2204 > .cdq-top-action{
+  background:var(--cdq-control-surface,var(--cdq-raised))!important;
+  color:var(--cdq-ink)!important;border:1px solid var(--cdq-line)!important;
+  box-shadow:inset 0 0 0 1px var(--cdq-line)!important;filter:none!important;
+  text-shadow:none!important;transition:none!important;animation:none!important;
+}
+html.cdq-mobile-layout body #cdqTopActionsV2204 > .cdq-top-action > :is(svg,span){
+  color:var(--cdq-ink)!important;stroke:var(--cdq-ink)!important;
+  filter:none!important;text-shadow:none!important;transition:none!important;animation:none!important;
+}
+.cdq-icon-choice-v2514{overflow:hidden!important;max-width:100%!important}
+.cdq-icon-choices-v2514{min-width:0!important;max-width:100%!important}
+.cdq-icon-preview-v2514{
+  display:flex!important;justify-content:flex-start!important;align-items:center!important;
+  width:100%!important;max-width:100%!important;min-width:0!important;box-sizing:border-box!important;
+  gap:8px!important;padding:8px 4px!important;overflow-x:auto!important;overflow-y:hidden!important;
+  overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;
+  scrollbar-width:thin;scrollbar-color:var(--cdq-muted,#91a6b5) transparent;
+  background:var(--cdq-page,#080e13)!important;color:var(--cdq-ink,#eef6fa)!important;
+}
+.cdq-icon-preview-v2514 .cdq-preview-item-v2651{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  flex:0 0 66px;min-width:66px;gap:5px;pointer-events:none;
+}
+.cdq-preview-art-v2651{display:flex;align-items:center;justify-content:center;width:38px;height:38px;flex:0 0 38px}
+.cdq-preview-art-v2651 > :is(svg,img){width:100%!important;height:100%!important;object-fit:contain;filter:none!important}
+.cdq-preview-art-v2651.cdq-icon-sample-v2514{width:38px!important;height:38px!important}
+.cdq-preview-item-v2651 > small{font:600 10px/1.15 Arial,Helvetica,sans-serif!important;color:var(--cdq-ink,#eef6fa)!important;text-shadow:none!important;white-space:nowrap}
+
+</style>
 </head>
 
 
 <body>
+<script>if(window.cdqThemeBootV2651==='light')document.body.classList.add('light');else if(window.cdqThemeBootV2651!=='dark')document.body.classList.add('cdq-theme-'+window.cdqThemeBootV2651);</script>
 
 
 <button
@@ -11239,7 +11274,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.03-v26.50-reader-centered-results";
+  const CDQ_BUILD = "2026.10.03-v26.51-stable-icon-themes";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13535,7 +13570,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.03-v26.50-reader-centered-results";
+const CDQ_V19_BUILD = "2026.10.03-v26.51-stable-icon-themes";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15362,7 +15397,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.03-v26.50-reader-centered-results";
+const CDQ_V20_BUILD = "2026.10.03-v26.51-stable-icon-themes";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16209,7 +16244,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.03-v26.50-reader-centered-results";
+const CDQ_V21_BUILD = "2026.10.03-v26.51-stable-icon-themes";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16734,7 +16769,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.03-v26.50-reader-centered-results';
+const BUILD='2026.10.03-v26.51-stable-icon-themes';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -18155,12 +18190,7 @@ function ensureTopActions(){
   exact.forEach(function(b){if(b.parentElement!==bar)bar.appendChild(b);});
   window.cdqHomeIconsV2571.orderTop(bar);
 
-  // Forcer les styles critiques directement pour éviter qu'un ancien CSS les écrase.
-  exact.forEach(function(b){
-    b.style.setProperty("color","#f7fbff","important");
-    b.style.setProperty("border-color","#0d9ee9","important");
-    b.style.setProperty("background","linear-gradient(180deg,#0a2639,#061721)","important");
-  });
+  // The selected palette owns presentation from the first frame.
 }
 
 function ensureInlinePanel(){
@@ -18903,15 +18933,6 @@ function cdqOrderTopV2206(){
   [offline,note,photos,display].filter(Boolean).forEach(function(b){
     if(b.parentElement!==bar)bar.appendChild(b);
     b.classList.add("cdq-top-action");
-    b.style.setProperty("border-color","#18aeea","important");
-    b.style.setProperty("background","linear-gradient(180deg,rgba(8,48,72,.96),rgba(4,24,38,.98))","important");
-    b.style.setProperty("color","#f8fbff","important");
-    b.style.setProperty("box-shadow","0 0 9px rgba(0,183,255,.17), inset 0 0 13px rgba(0,177,255,.055)","important");
-    const svg=b.querySelector("svg");
-    if(svg){
-      svg.style.setProperty("stroke","#f8fcff","important");
-      svg.style.setProperty("filter","drop-shadow(0 0 3px rgba(150,225,255,.45))","important");
-    }
   });
 }
 
@@ -19259,25 +19280,6 @@ function setTopIcon(btn,kind,label){
   btn.classList.add("cdq-top-action");
   window.cdqHomeIconsV2571.paintTop(btn,kind,kind==='display'?'Réglages':label);
 
-  btn.style.setProperty("border","2px solid #0aaee9","important");
-  btn.style.setProperty("background","linear-gradient(180deg,#0b2940,#061827)","important");
-  btn.style.setProperty("box-shadow","inset 0 0 0 1px rgba(111,216,255,.055),0 0 3px rgba(0,188,255,.18)","important");
-  btn.style.setProperty("filter","none","important");
-  btn.style.setProperty("text-shadow","none","important");
-
-  const s=btn.querySelector("svg");
-  const t=btn.querySelector("span");
-  if(s){
-    s.style.setProperty("stroke","#f5fbff","important");
-    s.style.setProperty("fill","none","important");
-    s.style.setProperty("filter","none","important");
-    s.style.setProperty("opacity","1","important");
-  }
-  if(t){
-    t.style.setProperty("color","#f7fbff","important");
-    t.style.setProperty("text-shadow","none","important");
-    t.style.setProperty("filter","none","important");
-  }
 }
 
 function crispTop(){
@@ -20415,7 +20417,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.03-v26.50-reader-centered-results';
+  const BUILD='2026.10.03-v26.51-stable-icon-themes';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -21913,7 +21915,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     each('.file-date,.client-stats,.cdq-ui-scale-note,.cdq-ui-scale-ticks', {'color':'var(--cdq-muted)'});
     each('.file-name,.folder-name,.client-info-name', {'color':'var(--cdq-ink)'});
     each('#cdqTopActionsV2204 > .cdq-top-action > span:last-child', {'color':'var(--cdq-ink)'});
-    each('#cdqTopActionsV2204 > .cdq-top-action > svg', {'color':'var(--cdq-ink)','stroke':'var(--cdq-ink)'});
+    each('#cdqTopActionsV2204 > .cdq-top-action > svg, #cdqTopActionsV2204 > .cdq-top-action > span:first-child', {'color':'var(--cdq-ink)','stroke':'var(--cdq-ink)','filter':'none','text-shadow':'none'});
     each('.container,.top-bar,.quick-buttons', {'background':'transparent'});
     each('#cdqTopActionsV2204', {'background':'var(--cdq-page)','border-color':'var(--cdq-line)'});
     each('.bottom-nav', {'background':'var(--cdq-page)'});
@@ -22249,21 +22251,28 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
       if (node.textContent !== text) node.textContent = text;
     });
   }
+  function currentStyle() {
+    // Cosmetic preference only: this does not restore identity or grant access.
+    if(owner)return state.style;
+    let previous='';try{previous=localStorage.getItem('cdqLastUnlockEmailV2511')||'';}catch(_){}
+    return load(email() || previous.trim().toLowerCase()).style;
+  }
   function paint() {
+    const styleId=currentStyle();
     document.querySelectorAll('.bottom-nav > .bottom-nav-item').forEach(button => {
       const host = button.querySelector(':scope > span');
       if (!host) return;
       // Match the current action, not the index: navigation items may be inserted or hidden.
       const label = button.querySelector('small')?.textContent.trim() || '';
       const index = names.indexOf(label);
-      const active = !!owner && state.style !== 'current' && index >= 0;
+      const active = styleId !== 'current' && index >= 0;
       host.classList.toggle('cdq-icon-host-v2514', active);
       if(index>=0)window.cdqHomeIconsV2571.paintBottom(host,['home','fav','folder','inventory','invoices','trash'][index]);
       // A filter on the parent would recolor/glow the entire raster rectangle.
       // Clear legacy inline !important rules too, not only the pseudo-element.
       presentation(host,active,{'filter':'none','text-shadow':'none','box-shadow':'none','background':'transparent'});
       presentation(button,active,{'filter':'none'});
-      if (active) sprite(host, state.style, index);
+      if (active) sprite(host, styleId, index);
       else {
         host.style.removeProperty('--cdq-art-size');
         host.style.removeProperty('--cdq-art-position');
@@ -22331,7 +22340,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     if (!theme || theme.querySelector('.cdq-icon-picker-v2514')) return;
     const section = document.createElement('section'); section.className = 'cdq-icon-picker-v2514';
     const title = document.createElement('h3'); title.textContent = 'Jeu d’icônes';
-    const note = document.createElement('p'); note.textContent = 'Choisis les icônes de ta navigation du bas.';
+    const note = document.createElement('p'); note.textContent = 'Fais glisser les aperçus vers la droite ou la gauche pour voir toutes les icônes.';
     const choices = document.createElement('div'); choices.className = 'cdq-icon-choices-v2514';
     choices.setAttribute('role','group'); choices.setAttribute('aria-label','Jeu d’icônes personnel');
     styles.forEach(style => {
@@ -22342,7 +22351,8 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
       const mark = document.createElement('span'); mark.className = 'cdq-icon-choice-mark-v2514'; mark.setAttribute('aria-hidden','true');
       head.append(name,mark);
       const preview = document.createElement('span'); preview.className = 'cdq-icon-preview-v2514'; preview.setAttribute('aria-hidden','true');
-      names.forEach((name,index) => { const icon = document.createElement('i'); icon.className = 'cdq-icon-sample-v2514'; sprite(icon,style.id,index); preview.appendChild(icon); });
+      preview.removeAttribute('aria-hidden');
+      window.cdqIconPreviewsV2651?.fill(preview,style.id);
       button.append(head,preview); button.onclick = () => choose(style.id); choices.appendChild(button);
     });
     const status = document.createElement('p'); status.className = 'cdq-icon-status-v2514'; status.setAttribute('role','status');
@@ -22377,7 +22387,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
   window.addEventListener('storage',event => {
     if (owner && event.key === 'cdqIconThemeV2514:' + owner) { state = load(owner); paint(); }
   });
-  window.cdqIconThemesV2514 = {synchronize,mount,choose,sprite,getStyle:()=>state.style};
+  window.cdqIconThemesV2514 = {synchronize,mount,choose,sprite,getStyle:currentStyle};
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',start,{once:true});
   else start();
 })();
@@ -22673,7 +22683,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.03-v26.50-reader-centered-results',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.03-v26.51-stable-icon-themes',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23994,6 +24004,7 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
 })();
 
 </script>
+<script type="module" src="./icon-previews-v2651.mjs"></script>
 </body>
 </html>
 

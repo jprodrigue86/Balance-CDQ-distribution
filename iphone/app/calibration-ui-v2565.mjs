@@ -8,6 +8,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 let dialog=null,state={view:'root',category:'',manufacturer:'',device:null,returnView:null},scheduled=false;
 
 function currentTheme(){
+  if(window.cdqIconThemesV2514?.getStyle)return window.cdqIconThemesV2514.getStyle();
   try{
     const email=String(typeof utilisateurCourantEmail!=='undefined'?utilisateurCourantEmail:'').trim().toLowerCase();
     return JSON.parse(localStorage.getItem('cdqIconThemeV2514:'+email)||'null')?.style||'current';
