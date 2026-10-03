@@ -132,17 +132,17 @@
     {
       "name": "CDQDirectAccessV2645.gs",
       "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.58/files/CDQDirectAccessV2645.gs",
-      "sha256": "dab210ca7b82a5a4d6593a383930c8d1659fe7c0d695a0b033384f90c2228e5f"
+      "sha256": "66a4702db0b52fb1a0280d33a5664dde647c3b74cec27c8b3be8bd03899778b0"
     },
     {
       "name": "CDQWorkspaceV2638.gs",
       "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.58/files/CDQWorkspaceV2638.gs",
-      "sha256": "89bb002cf2a55d2052fb1f2a42d3503fc7d913ddb5972c032beb3584e261469d"
+      "sha256": "bfc98b9a9e7fc3b750edae3da5004b418842d0633e1ea98f60fa21a54d970c26"
     },
     {
       "name": "CDQReportFastV2642.gs",
       "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.58/files/CDQReportFastV2642.gs",
-      "sha256": "eb3f1c602b6e9ed8828f9c94027c5a9fd2ffbeef2bfe790e19d037d03c953dc6"
+      "sha256": "b32c89402ed5c05aacd2bcdb66997325c81d64aa4a3ee8b052bf98ca551cbb10"
     },
     {
       "name": "CDQCalibrationIndexV2658.gs",

@@ -31,7 +31,7 @@ export function syncRequest(copy) {
 export function nextSync(copy,protocol=0) {
   if(copy.kind==='sheet')return null;
   if(copy.kind==='prepared')return !copy.removed&&copy.uploadId&&copy.uploadId!==copy.syncedUploadId&&protocol>=38
-    ?{type:'CDQ_OFFLINE_SAVE',requestId:copy.id,driveId:copy.driveId,revision:copy.revision,uploadId:copy.uploadId,blob:copy.blob}:null;
+    ?{type:'CDQ_OFFLINE_SAVE',requestId:copy.id,driveId:copy.driveId,revision:copy.revision,uploadId:copy.uploadId,blob:copy.blob,...(copy.autoReportName?{reportName:copy.name,clientId:copy.destination.clientId}:{})}:null;
   if(!known(copy.modeleId)||!validDestination(copy.destination))return null;
   // Blank-copy requests remain compatible with the parallel multi-model server fixes.
   // Filled-PDF uploads require the explicit protocol-38 acknowledgement.
@@ -87,7 +87,7 @@ function download(blob,name) {
 export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFile=openSheet,storage=nativeStorage}) {
   const {get,put,all}=storage;
   let session=null,localEmail='',profile=null,chain=Promise.resolve(),epoch=0,documentReaderWarmed=false;
-  const inflight=new Map(),requested=new Set();
+  const inflight=new Map(),requested=new Set(),copyJobs=new Map();
   const readers=new Map();
   // Le moteur hors ligne reste actif, mais aucun bouton séparé n'est montré.
   // Les modèles locaux sont utilisés depuis les boutons principaux du Selector.
@@ -100,8 +100,9 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   const status=document.createElement('p');status.setAttribute('role','status');panel.append(status);
   const content=document.createElement('div');panel.append(content);document.body.append(launch,panel);
   const serial=fn=>{const p=chain.then(fn);chain=p.catch(()=>{});return p;};
+  const serialCopy=(id,fn)=>{const key=String(id),previous=copyJobs.get(key)||Promise.resolve();const p=chain.then(()=>previous.catch(()=>{})).then(fn);copyJobs.set(key,p);p.finally(()=>{if(copyJobs.get(key)===p)copyJobs.delete(key);}).catch(()=>{});return p;};
   const allowed=email=>localEmail===email||session?.email===email;
-  function notifyDocument(c){if(session?.email===c?.email&&c?.kind==='prepared'&&!c.removed)send({type:'CDQ_OFFLINE_DOCUMENT_UPDATED',email:c.email,fileId:c.driveId,blob:c.blob,revision:c.revision,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,editVersion:c.editVersion||0,pending:c.uploadId!==c.syncedUploadId});}
+  function notifyDocument(c){if(session?.email===c?.email&&c?.driveId&&!c.removed)send({type:'CDQ_OFFLINE_DOCUMENT_UPDATED',email:c.email,fileId:c.driveId,blob:c.blob,revision:c.revision,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,pending:c.uploadId!==c.syncedUploadId});}
   function button(parent,label,fn) {
     const b=document.createElement('button');b.type='button';b.textContent=label;
     b.style.cssText='padding:12px 16px;margin:6px 8px 6px 0;border:1px solid #7896a5;border-radius:9px;background:#193545;color:white;font:inherit';
@@ -214,17 +215,17 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   async function saveCopy(id,email,blob,readerRequestId) {
     const stamp=epoch;
     await verifyPdf(blob);
-    return serial(async()=>{
+    return serialCopy(id,async()=>{
       if(stamp!==epoch||!allowed(email)||!profile?.canWrite)throw new Error('Déverrouillez CDQ pour enregistrer.');
       const c=await get('copies',id);if(!c||c.email!==email)throw new Error('Copie locale introuvable.');
       // Repeated reader requests are idempotent. Resolve only after IndexedDB commits.
       if(c.readerRequestId!==readerRequestId){
-        const reportName=c.autoReportName?await nameFromReport(blob,c.name):c.name;
+        const reportName=await nameFromReport(blob,c.name);
         if(stamp!==epoch||!allowed(email)||!profile?.canWrite)throw Error('Le compte a changé.');
-        const updated={...c,blob,name:reportName,readerRequestId,editVersion:(c.editVersion||0)+1,uploadId:'pdf_'+crypto.randomUUID(),status:'pending',error:''};
+        const updated={...c,autoReportName:c.autoReportName||reportName!==c.name,blob,name:reportName,readerRequestId,editVersion:(c.editVersion||0)+1,uploadId:'pdf_'+crypto.randomUUID(),status:'pending',error:''};
         await put('copies',updated);if(stamp===epoch)notifyDocument(updated);
       }
-      await refresh();await sync();return {queued:true};
+      refresh().catch(()=>{});sync().catch(()=>{});return {queued:true};
     });
   }
   async function sync() {
@@ -278,7 +279,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       try{
         if(data.type==='CDQ_OFFLINE_DOCUMENT_LIST'){
           const removed=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&c.removed).map(c=>c.driveId);
-          const documents=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&!c.removed).map(c=>({fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,revision:c.revision,blob:c.blob,editVersion:c.editVersion||0,pending:c.uploadId!==c.syncedUploadId}));
+          const documents=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&!c.removed).map(c=>({fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,revision:c.revision,blob:c.blob,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,pending:c.uploadId!==c.syncedUploadId}));
           if(stamp===epoch)reply({ok:true,removed,documents});return;
         }
         if(!identifier(data.fileId))throw Error('Identifiant PDF invalide.');
@@ -286,17 +287,18 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         if(stamp!==epoch||current!==session)return;
         if(data.type==='CDQ_OFFLINE_DOCUMENT_GET'){
           if(data.legacyPending&&c&&!c.removed)throw Error('Une ancienne sauvegarde attend sa synchronisation. Reconnectez CDQ avant de modifier ce PDF.');
-          reply({ok:true,document:c&&!c.removed?{fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,revision:c.revision,blob:c.blob,editVersion:c.editVersion||0,pending:c.uploadId!==c.syncedUploadId}:null});return;
+          reply({ok:true,document:c&&!c.removed?{fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,revision:c.revision,blob:c.blob,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,pending:c.uploadId!==c.syncedUploadId}:null});return;
         }
         if(data.type==='CDQ_OFFLINE_DOCUMENT_EDIT'){
           if(!current.canWrite||!c||c.removed)throw Error('PDF hors ligne indisponible.');
           if(c.readerRequestId!==data.saveId){
             if(Number(data.editVersion)!==Number(c.editVersion||0))throw Error('Ce PDF a été modifié dans une autre fenêtre. Fermez puis rouvrez le document avant de continuer.');
             await verifyPdf(data.blob);if(stamp!==epoch||current!==session)return;
-            const updated={...c,blob:data.blob,readerRequestId:data.saveId,editVersion:(c.editVersion||0)+1,uploadId:'pdf_'+crypto.randomUUID(),status:'pending',error:''};
+            const reportName=(c.autoReportName||data.autoReportName)?await nameFromReport(data.blob,c.name):c.name;
+            const updated={...c,autoReportName:c.autoReportName||data.autoReportName===true,name:reportName,blob:data.blob,readerRequestId:data.saveId,editVersion:(c.editVersion||0)+1,uploadId:'pdf_'+crypto.randomUUID(),status:'pending',error:''};
             await put('copies',updated);notifyDocument(updated);
           }
-          const latest=await get('copies',id);reply({ok:true,queued:latest.uploadId!==latest.syncedUploadId,editVersion:latest.editVersion});await refresh();await sync();return;
+          const latest=await get('copies',id);reply({ok:true,queued:latest.uploadId!==latest.syncedUploadId,editVersion:latest.editVersion,name:latest.name});refresh().catch(()=>{});sync().catch(()=>{});return;
         }
         if(data.type==='CDQ_OFFLINE_DOCUMENT_COMMIT_LEGACY'){
           if(!c||c.removed){reply({ok:true});return;}
@@ -381,6 +383,6 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   document.addEventListener?.('visibilitychange',()=>{if(!document.hidden)resume();});
   window.addEventListener('offline',()=>serial(refresh).catch(()=>{}));
   refresh().catch(()=>{});
-  return {handle(data){const stamp=epoch;return serial(()=>handleNow(data,stamp)).catch(e=>{status.textContent=e.message||String(e);});},
+  return {handle(data){const stamp=epoch;const id=data.fileId?'prepared:'+String(session?.email||'')+':'+data.fileId:/^CDQ_OFFLINE_(?:CREATE_LOCAL|PREFILL_V2642|COPY_RESULT|SAVE_RESULT)$/.test(data.type)?data.requestId:'';return (id?serialCopy(id,()=>handleNow(data,stamp)):serial(()=>handleNow(data,stamp))).catch(e=>{status.textContent=e.message||String(e);});},
     lock(){epoch++;session=null;localEmail='';for(const job of inflight.values())clearTimeout(job.timer);inflight.clear();requested.clear();readers.clear();panel.hidden=true;},refresh};
 }

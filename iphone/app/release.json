@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.59",
-  "release": "7ce861d68e9aba70cd1c440dd5c65e3f28ca11918b4cb8bdc9f9503f0ba97fbf",
+  "version": "26.60",
+  "release": "70d227b50b99caf50a19b9d0599c9420f2208b2f54b555cd92db8fb1ca68c1e9",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.03-v26.59-receipt-photo-formats",
-  "androidSelectorSha256": "16fc5e1f4671b0a6fc17dcf230beb7d6a857b86007bff4232dec03858dc6461e",
+  "androidSourceBuild": "2026.10.03-v26.60-document-workflow",
+  "androidSelectorSha256": "6688ad88f96cc1cfea2e6a8657ffe309ea656d0eae5f25f2b257dd48472ec6b1",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
   "files": 423
 }

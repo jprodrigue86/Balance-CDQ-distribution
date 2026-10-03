@@ -113,7 +113,7 @@ function syncHome(){
   if(!actions&&files){actions=document.createElement('div');actions.id='cdqClientActionsV2640';actions.className='cdq-workspace-actions';
     actions.innerHTML='<button type="button" data-client-folder>Nouveau dossier</button><button type="button" data-client-list>Liste de balance</button><button type="button" data-client-report>Nouveau rapport</button>';files.before(actions);
     $('[data-client-folder]',actions).onclick=()=>{if(!companyId()||!canWrite())return;try{ouvrirCreationDossier();}catch(e){window.afficherErreur?.(e);}};
-    $('[data-client-report]',actions).onclick=()=>{if(companyId()&&canWrite())navigate('report');};
+    $('[data-client-report]',actions).onclick=()=>{if(companyId()&&canWrite())window.cdqRapportsV2578?.menu();};
     $('[data-client-list]',actions).onclick=()=>{if(companyId()&&canRead())window.cdqBalanceListV2638?.menu?.();};
   }
   if(actions){const hidden=!!active||!companyId()||!canRead();if(actions.hidden!==hidden)actions.hidden=hidden;$('[data-client-folder]',actions).disabled=!canWrite();$('[data-client-report]',actions).disabled=!canWrite();}

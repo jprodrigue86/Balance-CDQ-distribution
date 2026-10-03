@@ -113,7 +113,7 @@ function cdqWsListClientV2646_(folderId){
 function cdqWsListSourcesV2638_(folderId){
   var files=[],seen={},reportFolders=[];
   function read(id,root){var token='';
-    do{var options={q:"'"+cdq23Quote_(id)+"' in parents and trashed=false",pageSize:100,fields:'nextPageToken,files(id,name,mimeType,modifiedTime,parents)',supportsAllDrives:true,includeItemsFromAllDrives:true};if(token)options.pageToken=token;
+    do{var options={q:"'"+cdq23Quote_(id)+"' in parents and trashed=false",pageSize:100,fields:'nextPageToken,files(id,name,mimeType,modifiedTime,version,md5Checksum,sha256Checksum,parents)',supportsAllDrives:true,includeItemsFromAllDrives:true};if(token)options.pageToken=token;
       var result=Drive.Files.list(options);(result.files||[]).forEach(function(f){
         if(f.mimeType==='application/vnd.google-apps.folder'){
           if(root&&/^rapports? (?:d ?)?etalonnages?$/.test(cdq23Norm_(f.name)))reportFolders.push(f.id);
@@ -129,11 +129,11 @@ function cdqWsListSourcesV2638_(folderId){
   read(folderId,true);reportFolders.forEach(function(id){read(id,false);});
   return files.sort(function(a,b){return a.id.localeCompare(b.id);});
 }
-function cdqWsSignatureV2638_(sources){return empreinteCDQ_(JSON.stringify(['v2646-active-equipment',sources.map(function(f){return [f.id,f.name,f.modifiedTime];})]));}
+function cdqWsSignatureV2638_(sources){return empreinteCDQ_(JSON.stringify(['v2660-active-equipment',sources.map(function(f){return [f.id,f.name,f.modifiedTime,String(f.version||''),f.md5Checksum||f.sha256Checksum||''];})]));}
 function cdqWsListKeyV2638_(id){return CDQ_WS_LIST_PREFIX_V2638_+id;}
 // V26.54: only short job-state mutations use the shared lock. Drive scans and
 // PDF parsing never hold it. Existing list IDs remain available while working.
-function cdqWsListResultV2654_(job){return job?{ok:true,status:job.status,fileId:job.fileId||'',folderId:job.folderId,count:job.count||0,checkedAt:job.checkedAt||'',signature:job.signature||'',revision:'v2654',message:job.error||'',warnings:job.warnings||[]}: {ok:true,status:'absent'};}
+function cdqWsListResultV2654_(job){return job?{ok:true,status:job.status,fileId:job.fileId||'',folderId:job.folderId,count:job.count||0,checkedAt:job.checkedAt||'',signature:job.signature||'',revision:'v2660',message:job.error||'',warnings:job.warnings||[]}: {ok:true,status:'absent'};}
 function cdqWsSoonV2654_(){if(!ScriptApp.getProjectTriggers().some(function(t){return t.getHandlerFunction()==='cdqWorkspaceSoonV2638_';}))ScriptApp.newTrigger('cdqWorkspaceSoonV2638_').timeBased().after(1000).create();}
 function cdqDemanderListeBalanceV2638(folderId,force,sourceStamp){
   var u=cdqWsAccessV2638_(true),scope=cdqWsListClientV2646_(folderId),props=PropertiesService.getScriptProperties(),key=cdqWsListKeyV2638_(scope.meta.id),lock=LockService.getScriptLock(),job;
@@ -143,8 +143,9 @@ function cdqDemanderListeBalanceV2638(folderId,force,sourceStamp){
     if(!job)job={folderId:scope.meta.id,status:'pending',signature:'',fileId:'',count:0};
     var hint=sourceStamp?empreinteCDQ_(String(sourceStamp).slice(0,100000)):'',changed=!!hint&&hint!==job.clientStamp,working=job.workToken&&Number(job.leaseUntil||0)>Date.now();
     if(hint)job.clientStamp=hint;
+    if(force)job.forceFresh=true;
     if(working){if(force||changed){job.requestVersion=Utilities.getUuid();job.recheck=true;job.actor=u.email;job.requestedAt=new Date().toISOString();}}
-    else if(force||changed||job.listRevision!=='v2646'||job.status==='error'||job.status==='working'||Date.now()-Date.parse(job.checkedAt||0)>60000){job.status='pending';job.requestVersion=Utilities.getUuid();job.actor=u.email;job.folderName=scope.meta.name;job.requestedAt=new Date().toISOString();}
+    else if(force||changed||job.listRevision!=='v2660'||job.status==='error'||job.status==='working'||Date.now()-Date.parse(job.checkedAt||0)>60000){job.status='pending';job.requestVersion=Utilities.getUuid();job.actor=u.email;job.folderName=scope.meta.name;job.requestedAt=new Date().toISOString();}
     if(!job.actor){job.actor=u.email;job.folderName=scope.meta.name;job.requestVersion=Utilities.getUuid();}
     props.setProperty(key,JSON.stringify(job));
   }finally{lock.releaseLock();}
@@ -166,12 +167,12 @@ function cdqWsRowsV2638_(records){
   return rows.sort(function(a,b){return String(a.identification||a.source).localeCompare(String(b.identification||b.source),'fr',{numeric:true});});
 }
 async function cdqWsListPdfV2638_(rows,folderName,technician,warnings,lib){
-  var doc=await lib.PDFDocument.create(),font=await doc.embedFont(lib.StandardFonts.Helvetica),bold=await doc.embedFont(lib.StandardFonts.HelveticaBold),widths=[143,166,118,112,173],left=40,top=612,pages=0;
+  var doc=await lib.PDFDocument.create(),font=await doc.embedFont(lib.StandardFonts.Helvetica),bold=await doc.embedFont(lib.StandardFonts.HelveticaBold),widths=[110,120,82,75,190,135],left=40,top=612,pages=0;
   function safe(v){return String(v==null?'':v).replace(/[\u2018\u2019]/g,"'").replace(/[\u201c\u201d]/g,'"').replace(/[\u2013\u2014]/g,'-').replace(/[^\x20-\xff\n]/g,'?');}
   function lines(v,width,size){var words=safe(v||'Non renseigné').split(/\s+/),result=[],line='';words.forEach(function(word){while(font.widthOfTextAtSize(word,size)>width&&word.length>1){if(line){result.push(line);line='';}var i=1;while(i<word.length&&font.widthOfTextAtSize(word.slice(0,i+1),size)<=width)i++;result.push(word.slice(0,i));word=word.slice(i);}var test=line?line+' '+word:word;if(font.widthOfTextAtSize(test,size)>width){result.push(line);line=word;}else line=test;});if(line)result.push(line);return result;}
-  var page,y;function newPage(){page=doc.addPage([792,612]);pages++;page.drawRectangle({x:0,y:top-7,width:792,height:7,color:lib.rgb(0,.62,.75)});page.drawText('BALANCE CDQ',{x:left,y:top-43,size:12,font:bold,color:lib.rgb(0,.4,.5)});page.drawText('Liste de balance',{x:left,y:top-69,size:23,font:bold});var nameLines=lines(folderName,600,10);nameLines.slice(0,2).forEach(function(t,i){page.drawText(t,{x:left,y:top-88-i*12,size:10,font});});page.drawText('Actualisée : '+Utilities.formatDate(new Date(),'America/Toronto','yyyy-MM-dd HH:mm')+'  |  '+rows.length+' balance(s)',{x:left,y:top-120,size:9,font});y=top-143;page.drawRectangle({x:left,y:y-25,width:712,height:27,color:lib.rgb(.08,.15,.19)});var x=left;['Fabricant','Modèle','Capacité','Échelon','Identification'].forEach(function(t,i){page.drawText(t,{x:x+8,y:y-16,size:10,font:bold,color:lib.rgb(1,1,1)});x+=widths[i];});y-=25;page.drawText('Technicien : '+safe(technician)+'  |  Page '+pages,{x:left,y:20,size:8,font,color:lib.rgb(.35,.35,.35)});}
+  var page,y;function newPage(){page=doc.addPage([792,612]);pages++;page.drawRectangle({x:0,y:top-7,width:792,height:7,color:lib.rgb(0,.62,.75)});page.drawText('BALANCE CDQ',{x:left,y:top-43,size:12,font:bold,color:lib.rgb(0,.4,.5)});page.drawText('Liste de balance',{x:left,y:top-69,size:23,font:bold});var nameLines=lines(folderName,600,10);nameLines.slice(0,2).forEach(function(t,i){page.drawText(t,{x:left,y:top-88-i*12,size:10,font});});page.drawText('Actualisée : '+Utilities.formatDate(new Date(),'America/Toronto','yyyy-MM-dd HH:mm:ss')+'  |  '+rows.length+' balance(s)',{x:left,y:top-120,size:9,font});y=top-143;page.drawRectangle({x:left,y:y-25,width:712,height:27,color:lib.rgb(.08,.15,.19)});var x=left;['Fabricant','Modèle','Capacité','Échelon','Identification','Cellule de charge'].forEach(function(t,i){page.drawText(t,{x:x+(widths[i]-bold.widthOfTextAtSize(t,10))/2,y:y-16,size:10,font:bold,color:lib.rgb(1,1,1)});x+=widths[i];});y-=25;page.drawText('Technicien : '+safe(technician)+'  |  Page '+pages,{x:left,y:20,size:8,font,color:lib.rgb(.35,.35,.35)});}
   newPage();if(!rows.length)page.drawText('Aucune balance détectée dans ce dossier.',{x:left,y:y-28,size:12,font});
-  rows.forEach(function(r,index){var values=[r.fabricant,r.modele,r.capacite,r.echelon,r.identification],wrapped=values.map(function(v,i){return lines(v,widths[i]-16,10);}),height=Math.max(34,Math.max.apply(null,wrapped.map(function(a){return a.length;}))*13+16);if(y-height<65)newPage();if(index%2===0)page.drawRectangle({x:left,y:y-height,width:712,height:height,color:lib.rgb(.95,.97,.98)});var x=left;wrapped.forEach(function(a,i){a.forEach(function(t,j){page.drawText(t,{x:x+8,y:y-17-j*13,size:10,font});});x+=widths[i];});page.drawLine({start:{x:left,y:y-height},end:{x:left+712,y:y-height},color:lib.rgb(.8,.85,.88),thickness:.5});y-=height;});
+  rows.forEach(function(r,index){var values=[r.fabricant,r.modele,r.capacite,r.echelon,r.identification,''],wrapped=values.map(function(v,i){return i===5?[]:lines(v,widths[i]-16,10);}),height=Math.max(34,Math.max.apply(null,wrapped.map(function(a){return a.length;}))*13+16);if(y-height<65)newPage();if(index%2===0)page.drawRectangle({x:left,y:y-height,width:712,height:height,color:lib.rgb(.95,.97,.98)});var x=left;wrapped.forEach(function(a,i){a.forEach(function(t,j){page.drawText(t,{x:x+(widths[i]-font.widthOfTextAtSize(t,10))/2,y:y-height/2+(a.length-1)*6.5-3.59-j*13,size:10,font});});x+=widths[i];});page.drawLine({start:{x:left,y:y-height},end:{x:left+712,y:y-height},color:lib.rgb(.8,.85,.88),thickness:.5});y-=height;});
   if(warnings.length){if(y<120)newPage();page.drawText(warnings.length+' fichier(s) à vérifier : certaines données n’ont pas pu être lues.',{x:left,y:y-30,size:10,font:bold,color:lib.rgb(.6,.25,.1)});lines(warnings.slice(0,3).join(' | '),700,8).slice(0,3).forEach(function(t,i){page.drawText(t,{x:left,y:y-45-i*11,size:8,font});});}
   doc.setTitle('Liste de balance');doc.setAuthor(safe(technician));doc.setSubject(safe(folderName));return await doc.save({objectsPerTick:Infinity});
 }
@@ -179,10 +180,10 @@ async function cdqWsUpdateListV2638_(job){
   cdqWsActorV2638_(job.actor);var scope=cdqWsListClientV2646_(job.folderId);
   if(scope.meta.id!==job.folderId){job.status='ignored';job.checkedAt=new Date().toISOString();job.error='';return;}
   var sources=cdqWsListSourcesV2638_(job.folderId),signature=cdqWsSignatureV2638_(sources);
-  if(job.signature===signature&&job.fileId){var existing=null;try{existing=Drive.Files.get(job.fileId,{fields:'id,trashed,parents',supportsAllDrives:true});}catch(e){}if(existing&&!existing.trashed&&(existing.parents||[]).indexOf(job.folderId)>=0){job.status='ready';job.listRevision='v2646';job.checkedAt=new Date().toISOString();job.error='';return;}}
+  if(!job.forceFresh&&job.listRevision==='v2660'&&job.signature===signature&&job.fileId){var existing=null;try{existing=Drive.Files.get(job.fileId,{fields:'id,trashed,parents',supportsAllDrives:true});}catch(e){}if(existing&&!existing.trashed&&(existing.parents||[]).indexOf(job.folderId)>=0){job.status='ready';job.listRevision='v2660';job.checkedAt=new Date().toISOString();job.error='';return;}}
   var records=[],warnings=[],lib=cdq25PdfLib_(),cache=CacheService.getScriptCache();
-  for(var i=0;i<sources.length;i++){var f=sources[i],key='CDQ46_META_'+empreinteCDQ_(f.id+':'+f.modifiedTime),r;
-    try{var old=cache.get(key);if(old)r=JSON.parse(old);else if(f.mimeType==='application/pdf')r=await cdqWsPdfValuesV2638_(f,lib);else{var sheet=SpreadsheetApp.openById(f.id).getSheets()[0];r=cdqWsSheetBalanceV2638_(sheet.getRange(1,1,Math.max(1,Math.min(60,sheet.getLastRow())),Math.max(1,Math.min(100,sheet.getLastColumn()))).getDisplayValues(),f);}if(r){records.push(r);try{cache.put(key,JSON.stringify(r),21600);}catch(e){}}}catch(e){warnings.push(f.name+': '+String(e.message||e).slice(0,120));}
+  for(var i=0;i<sources.length;i++){var f=sources[i],key='CDQ60_META_'+empreinteCDQ_(JSON.stringify([f.id,f.name,f.modifiedTime,String(f.version||''),f.md5Checksum||f.sha256Checksum||''])),r;
+    try{var old=job.forceFresh?null:cache.get(key);if(old)r=JSON.parse(old);else if(f.mimeType==='application/pdf')r=await cdqWsPdfValuesV2638_(f,lib);else{var sheet=SpreadsheetApp.openById(f.id).getSheets()[0];r=cdqWsSheetBalanceV2638_(sheet.getRange(1,1,Math.max(1,Math.min(60,sheet.getLastRow())),Math.max(1,Math.min(100,sheet.getLastColumn()))).getDisplayValues(),f);}if(r){records.push(r);try{cache.put(key,JSON.stringify(r),21600);}catch(e){}}}catch(e){warnings.push(f.name+': '+String(e.message||e).slice(0,120));}
   }
   var rows=cdqWsRowsV2638_(records),profile=cdqObtenirProfilTechnicien_(job.actor),bytes=await cdqWsListPdfV2638_(rows,scope.meta.name,profile.nomRapport||job.actor,warnings,lib);
   cdqWsActorV2638_(job.actor);cdqWsFolderV2638_(job.folderId);
@@ -192,7 +193,7 @@ async function cdqWsUpdateListV2638_(job){
   while(files.hasNext()){var candidate=files.next();if(candidate.getMimeType()==='application/pdf'){file=candidate;break;}}
   var blob=Utilities.newBlob(Array.from(bytes,function(b){return b>127?b-256:b;}),'application/pdf','Liste de balance.pdf'),description=JSON.stringify({cdqListeBalanceV2638:true,signature:signature,folderId:job.folderId,count:rows.length,checkedAt:new Date().toISOString()});
   if(file)Drive.Files.update({description:description},file.getId(),blob,{fields:'id',supportsAllDrives:true});else file=DriveApp.getFolderById(job.folderId).createFile(blob).setDescription(description);
-  job.fileId=file.getId();job.signature=signature;job.count=rows.length;job.warnings=warnings.slice(0,8);job.status='ready';job.listRevision='v2646';job.checkedAt=new Date().toISOString();job.error='';
+  job.fileId=file.getId();job.signature=signature;job.count=rows.length;job.warnings=warnings.slice(0,8);job.status='ready';job.listRevision='v2660';job.checkedAt=new Date().toISOString();job.error='';job.forceFresh=false;
   var clientId=scope.path.length>1?scope.path[1].id:job.folderId;invaliderCacheContenuClient_(clientId);invaliderCacheCompagnies_();
 }
 function cdqWsClaimV2654_(key){
@@ -207,7 +208,7 @@ function cdqWsClaimV2654_(key){
 function cdqWsFinishV2654_(key,job,version){
   var lock=LockService.getScriptLock();if(!lock.tryLock(100))return false;
   try{var props=PropertiesService.getScriptProperties(),live=JSON.parse(props.getProperty(key)||'null');if(!live||live.workToken!==job.workToken)return false;
-    if(live.recheck||live.requestVersion!==version){var actor=live.actor,requestedAt=live.requestedAt,requestVersion=live.requestVersion,clientStamp=live.clientStamp;Object.assign(live,job,{actor:actor,requestedAt:requestedAt,requestVersion:requestVersion,clientStamp:clientStamp,status:'pending'});}else live=job;
+    if(live.recheck||live.requestVersion!==version){var actor=live.actor,requestedAt=live.requestedAt,requestVersion=live.requestVersion,clientStamp=live.clientStamp,forceFresh=live.forceFresh;Object.assign(live,job,{actor:actor,requestedAt:requestedAt,requestVersion:requestVersion,clientStamp:clientStamp,forceFresh:forceFresh,status:'pending'});}else live=job;
     delete live.workToken;delete live.leaseUntil;delete live.recheck;props.setProperty(key,JSON.stringify(live));return live.status==='pending';
   }finally{lock.releaseLock();}
 }

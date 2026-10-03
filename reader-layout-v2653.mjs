@@ -16,14 +16,24 @@ export function centerFieldGlyphs(field){
   if(!Number.isFinite(size)||size<=0)return;
   context.font=style.fontWeight+' '+size+'px '+style.fontFamily;
   const value=field.tagName==='BUTTON'?field.querySelector('.cdq-choice-value')?.textContent:field.value;
-  const m=context.measureText(String(value||'200'));
-  if(!Number.isFinite(m.fontBoundingBoxAscent)||!Number.isFinite(m.actualBoundingBoxAscent))return;
-  const shift=(m.actualBoundingBoxAscent-m.actualBoundingBoxDescent-m.fontBoundingBoxAscent+m.fontBoundingBoxDescent)/2;
+  let m=context.measureText(String(value||'200'));
+  if(!Number.isFinite(m.actualBoundingBoxAscent))return;
+  // The line box must contain the complete font, including the bottom of g/y.
+  // In particular, a choice label with line-height:1 and overflow:hidden used
+  // to cut off descenders even when its containing PDF rectangle was tall.
+  const height=field.getBoundingClientRect().height;
+  const fontHeight=m.actualBoundingBoxAscent+m.actualBoundingBoxDescent;
+  const fit=Math.min(1,Math.max(1,height-1)/fontHeight);
+  if(fit<1){field.style.setProperty('font-size',(size*fit)+'px','important');context.font=style.fontWeight+' '+(size*fit)+'px '+style.fontFamily;m=context.measureText(String(value||'200'));}
+  const effectiveSize=size*fit,fontAscent=m.fontBoundingBoxAscent??effectiveSize*.92,fontDescent=m.fontBoundingBoxDescent??effectiveSize*.24;
+  const shift=(m.actualBoundingBoxAscent-m.actualBoundingBoxDescent-fontAscent+fontDescent)/2;
+  field.style.setProperty('text-align','center','important');
   if(field.tagName==='BUTTON'){
     const label=field.querySelector('.cdq-choice-value');
-    if(label)label.style.transform='translateY('+shift+'px)';
+    if(label){label.style.lineHeight=(fontAscent+fontDescent)+'px';label.style.transform='translateY('+shift+'px)';}
   }else{
     field.style.setProperty('box-sizing','border-box','important');
+    field.style.setProperty('line-height',(fontAscent+fontDescent)+'px','important');
     field.style.setProperty('padding-top',Math.max(0,2*shift)+'px','important');
     field.style.setProperty('padding-bottom',Math.max(0,-2*shift)+'px','important');
   }
@@ -54,7 +64,6 @@ export function centerSingleLineAppearances(pdf,L){
     if(!field.getText||field.isMultiline?.()||/^_|statut/i.test(field.getName()))continue;
     for(const widget of field.acroField.getWidgets()){
       let r;try{r=widget.getRectangle();}catch{continue;}
-      if(r.height>25)continue;
       const ap=widget.dict.lookupMaybe(PDFName.of('AP'),PDFDict),stream=ap?.lookup(PDFName.of('N'));
       if(!stream)continue;
       const raw=stream instanceof PDFRawStream?decodePDFRawStream(stream).decode():stream.getUnencodedContents?.();

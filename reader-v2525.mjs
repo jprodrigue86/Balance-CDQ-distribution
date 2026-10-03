@@ -213,26 +213,17 @@ async function output(){
 async function finishDocument(){
   if(saving||!doc)return;
   if(readOnly||!dirty){close();return;}
-  // "Terminer" only waits for local PDF serialization. The actual client-folder
-  // upload/synchronisation is handed to the parent and continues after this
-  // reader closes, so the technician can immediately open the next report.
-  busy(true);$('closeError').textContent='';status('Préparation de l’enregistrement…');
-  try{
-    const blob=await output(),snapshot=version;
-    if(!hosted||!fileId){await downloadPdf(blob,name);busy(false);close();return;}
-    const requestId='save-'+crypto.randomUUID();
-    lastAttempt={id:requestId,version:snapshot,blob};
-    tell({type:'CDQ_READER_SAVE',blob,name,requestId,background:true});
-    savedVersion=snapshot;dirty=false;closeAfterSave=false;
-    close();
-  }catch(e){fail(e);}
+  // Close after the local durable write is acknowledged. Drive uploads continue
+  // independently, and a failed local write keeps the answers in this reader.
+  closeAfterSave=true;
+  await save();
 }
 async function save(external=false){
   if(!doc||saving||readOnly&&!external)return;
   busy(true);$('closeError').textContent='';status(external?'Téléchargement…':'Enregistrement…');
   try{
     let blob=await output();const snapshot=version;if(lastAttempt?.version===snapshot)blob=lastAttempt.blob;
-    if(external||!hosted||!fileId){const receipt=await downloadPdf(blob,name);busy(false);status(receipt);return;}
+    if(external||!hosted||!fileId){const receipt=await downloadPdf(blob,name);busy(false);status(receipt);if(closeAfterSave){closeAfterSave=false;close();}return;}
     const requestId=lastAttempt?.version===snapshot?lastAttempt.id:'save-'+crypto.randomUUID();
     lastAttempt={id:requestId,version:snapshot,blob};
     pending={id:requestId,version:snapshot};
@@ -256,6 +247,7 @@ async function open(data){
   // tracked independently and is never cleared by a delayed render or rotation.
   await viewer.firstPagePromise;
   const fields=fieldDefinitions=await doc.getFieldObjects(),actions=await doc.getJSActions();
+  if(fields?.get?.('identification_balance')||fields?.identification_balance)autoReportName=true;
   for(let p=1;p<=doc.numPages;p++){
     const page=await doc.getPage(p);
     for(const annotation of await page.getAnnotations({intent:'display'})){
