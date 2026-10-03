@@ -1,7 +1,7 @@
 {
   "platform": "iphone-pwa",
   "version": "26.48",
-  "release": "ef8bde6ab82b9fd38f94085d2ab7a2cc442c6e45f51a440feca8f74d0f43816f",
+  "release": "b12a8a6e5f3087c8458c0abb2f8a928ef4be9ec1ec7c9e5b61deb410968d218f",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
   "androidSourceBuild": "2026.10.03-v26.48-reader-client-startup",
   "androidSelectorSha256": "0cb906eed4ab5c49b841486ba30201b55d337956a7d77379913d80141a2409d8",

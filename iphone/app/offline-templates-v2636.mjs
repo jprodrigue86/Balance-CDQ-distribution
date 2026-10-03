@@ -19,13 +19,14 @@ export function validTemplate(t) {
 export function makeCopy(template,destination,email,requestId) {
   if(!validTemplate(template)||!validDestination(destination)||!email||!/^[\w-]{8,100}$/.test(requestId||''))
     throw new Error('Préparez le modèle et choisissez le dossier du client.');
+  const name=MODELS[template.modeleId]+' — '+new Date().toISOString().replace(/[:.]/g,'-')+'.pdf';
   return {id:requestId,email,modeleId:template.modeleId,blob:template.blob,templateId:template.templateId,
-    bundled:!!template.bundled,templateBlob:template.bundled?template.blob:null,sourceId:template.sourceId||'',modifieLe:template.modifieLe,destination:{...destination},name:MODELS[template.modeleId]+' — '+new Date().toISOString().replace(/[:.]/g,'-')+'.pdf',
+    bundled:!!template.bundled,templateBlob:template.bundled?template.blob:null,sourceId:template.sourceId||'',modifieLe:template.modifieLe,destination:{...destination},name,creationName:name,
     autoReportName:true,createdAt:Date.now(),status:'pending',editVersion:0,uploadId:'',syncedUploadId:'',driveId:''};
 }
 export function syncRequest(copy) {
   return {requestId:copy.id,modeleId:copy.modeleId,clientId:copy.destination.clientId,folderId:copy.destination.folderId,
-    templateId:copy.templateId,modifieLe:copy.modifieLe,...(copy.bundled?{bundled:true,blob:copy.templateBlob,name:copy.name}: {})};
+    templateId:copy.templateId,modifieLe:copy.modifieLe,...(copy.bundled?{bundled:true,blob:copy.templateBlob,name:copy.creationName||copy.name}: {})};
 }
 export function nextSync(copy,protocol=0) {
   if(copy.kind==='sheet')return null;
