@@ -1,25 +1,44 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.56" data-cdq-iphone-release="cfa1c1856aacda642ab3d188ef801ba5811862f826e804aace4e848fc055c4d5">
+<html data-cdq-iphone-version="26.57" data-cdq-iphone-release="91ef665b48a3304d3d87818b000d717b3e0defb5aa870149a6772bf9eb71070b">
 <head>
 <script src="./iphone-update.js"></script>
-<script id="cdqFileActionsV2655">(function () {
+<script id="cdqFileActionsV2655">(function(){
+  'use strict';
+  const colors={copy:'#54b8ec',duplicate:'#eb648a',favorite:'#efb937',send:'#449cef',note:'#aebdcc',photo:'#48c3aa',rename:'#e7a349',delete:'#db4656',protect:'#a18ae4',unlock:'#a18ae4',finish:'#b9c4cf'};
+  // Standalone silhouettes: no common chip frame and no scaled inner groups.
+  const glyphs={
+    copy:'<path d="M12 8h25l8 8v34H12z"/><path d="M23 18h24l8 8v31H23z"/><path class="detail" d="M47 18v9h8M29 34h17M29 41h17M29 48h12"/>',
+    duplicate:'<path d="M12 8h25l8 8v34H12z"/><path d="M23 18h24l8 8v31H23z"/><path class="detail" d="M47 18v9h8"/><circle cx="39" cy="43" r="10" class="accent"/><path class="light" d="M39 37v12M33 43h12"/>',
+    favorite:'<path class="accent" d="M32 7 39.5 23 57 25.5 44.5 37.5 47.5 55 32 47 16.5 55 19.5 37.5 7 25.5 24.5 23z"/><path class="light" d="m32 14 5.5 12 13 2-9.5 9"/><path class="detail" d="m32 24-4 12 4 11 12.5-9.5"/>',
+    send:'<path class="accent" d="M7 27 57 7 40 57 29 37z"/><path class="detail" d="M29 37 57 7 21 31M29 37l-3 15 8-9"/><path class="light" d="m11 26 39-14M40 49l12-32"/>',
+    note:'<path d="M16 7h25l11 11v40H16z"/><path class="detail" d="M41 7v12h11M23 29h21M23 37h21M23 45h16"/><path class="light" d="M20 11h17M20 22v29"/>',
+    photo:'<path d="M7 21h12l5-10h16l5 10h12v32H7z"/><circle cx="32" cy="36" r="13" class="detail-fill"/><circle cx="32" cy="36" r="9" class="accent"/><circle cx="32" cy="36" r="5" class="detail-fill"/><path class="light" d="M48 27h4M24 31a9 9 0 0 1 10-4"/>',
+    rename:'<path d="m13 40-4 16 16-4L56 21 43 8z"/><path class="accent" d="m36 15 13 13 7-7L43 8z"/><path class="detail" d="m13 40 12 12M19 44l26-26M9 56l9-2-7-7"/><path class="light" d="m16 38 22-22"/>',
+    delete:'<path d="M18 21h29l-4 36H22z"/><path d="M12 15h40v7H12zM25 8h14v7H25z"/><path class="detail" d="m25 28 2 23M32 28v23M39 28l-2 23M22 35h22M23 44h20"/><path class="light" d="M16 18h31M21 26l2 26"/>',
+    protect:'<path d="m32 6 23 8v17c0 12-10 21-23 28C19 52 9 43 9 31V14z"/><rect x="21" y="29" width="22" height="19" rx="3" class="accent"/><path class="detail" d="M25 29v-7a7 7 0 0 1 14 0v7M32 36v6"/><path class="light" d="m14 18 18-6 18 6"/>',
+    unlock:'<path d="m32 6 23 8v17c0 12-10 21-23 28C19 52 9 43 9 31V14z"/><rect x="21" y="29" width="22" height="19" rx="3" class="accent"/><path class="detail" d="M25 29v-7a7 7 0 0 1 14 0M32 36v6"/><path class="light" d="m14 18 18-6 18 6"/>',
+    finish:'<path d="m14 8 18 18L50 8l6 6-18 18 18 18-6 6-18-18-18 18-6-6 18-18L8 14z"/><path class="light" d="m14 14 18 18 18-18M14 50l13-13"/>'
+  };
+  window.cdqActionArtworkV2657=function(key,id,palette){
+    const color=colors[key]||colors.note,light=palette==='light';
+    const face=id==='minimal'?color:id==='dark-pro'?(light?'#eff3f7':'#75889c'):'url(#face)';
+    const rim=light?'#566674':'#131b24',ink=light?'#34404d':'#14202c';
+    const stops=id==='metal-music'?'#eef3f6;#84929d;#283540;#dce4eb':id==='isometric'?'#e6f6ff;#7dbddf;#365774;#b9deef':'#ffffff;#c0ccd7;#607182;#dfeaf3';
+    const steel=stops.split(';');
+    const defs='<defs><linearGradient id="face" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="'+steel[0]+'"/><stop offset=".34" stop-color="'+steel[1]+'"/><stop offset=".56" stop-color="'+steel[2]+'"/><stop offset="1" stop-color="'+steel[3]+'"/></linearGradient><linearGradient id="accent" x2=".25" y2="1"><stop stop-color="'+color+'"/><stop offset="1" stop-color="'+ink+'"/></linearGradient></defs>';
+    const body=glyphs[key]||glyphs.note;
+    const grain=id==='metal-music'?'<path d="M17 18h6M36 22h7M26 50h7" fill="none" stroke="#ffffff" stroke-opacity=".22" stroke-width=".7"/>':'';
+    const svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'+defs+'<style>path,rect,circle{fill:'+face+';stroke:'+rim+';stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}.detail{fill:none;stroke:'+ink+';stroke-width:2.2}.detail-fill{fill:'+ink+';stroke:#dae8f1}.accent{fill:url(#accent);stroke:'+rim+'}.light{fill:none;stroke:'+(id==='minimal'?ink:'#f4faff')+';stroke-width:1.5;opacity:.85}</style>'+body+grain+'</svg>';
+    // The embedded vector image isolates artwork from delayed legacy SVG styles.
+    return '<svg data-action-icon="'+key+'" data-icon-theme="'+id+'" data-artwork-version="2657" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><image width="64" height="64" href="data:image/svg+xml,'+encodeURIComponent(svg)+'"/></svg>';
+  };
+})();
+
+(function () {
   'use strict';
   const styles = ['current','minimal','dark-pro','metal-music','isometric'];
   const labels = {note:'Note',photo:'Photo',rename:'Renommer',delete:'Supprimer',copy:'Copier',favorite:'Favori',send:'Envoyer',protect:'Protéger',duplicate:'Dupliquer',finish:'Fermer'};
-  const paths = {
-    note:'<path d="M8 4h13l5 5v19H8zM21 4v6h5M12 15h10M12 19h10M12 23h6"/>',
-    photo:'<path d="M4 10h6l3-5h6l3 5h6v17H4z"/><circle cx="16" cy="18" r="6"/><path d="M24 13h1"/>',
-    rename:'<path d="m7 22-2 6 6-2L27 10l-4-4zM20 9l4 4M7 22l4 4M5 29h23"/>',
-    delete:'<path d="M5 9h22M12 9V5h8v4M8 9l2 19h12l2-19M14 13v11M18 13v11"/>',
-    copy:'<path d="M12 12h14v16H12zM21 8V4H5v18h3M16 17h6M16 21h6"/>',
-    duplicate:'<path d="M12 12h14v16H12zM21 8V4H5v18h3M16 20h6M19 17v6"/>',
-    favorite:'<path d="m16 4 4 8 9 1-6.5 6.5L24 28l-8-4-8 4 1.5-8.5L3 13l9-1z"/>',
-    send:'<path d="M3 14 29 4l-9 25-5-10zM15 19 29 4M9 23l-4 4"/>',
-    protect:'<path d="M16 3 27 7v8c0 7-5 11-11 14C10 26 5 22 5 15V7z"/><rect x="11" y="14" width="10" height="8" rx="1"/><path d="M13 14v-3a3 3 0 0 1 6 0v3"/>',
-    unlock:'<path d="M16 3 27 7v8c0 7-5 11-11 14C10 26 5 22 5 15V7z"/><rect x="11" y="14" width="10" height="8" rx="1"/><path d="M13 14v-3a3 3 0 0 1 6 0"/>',
-    finish:'<path d="m8 8 16 16M24 8 8 24"/>'
-  };
   let current = 'current';
   function style() {
     const id = window.cdqIconThemesV2514?.getStyle?.() || current;
@@ -28,14 +47,7 @@
   // Small vector drawings are embedded, so every action is ready offline.
   // Each set changes the drawing, while the selected palette owns its colors.
   function icon(key, id = style()) {
-    const body = paths[key] || paths.note;
-    let drawing;
-    if (id === 'minimal') drawing = '<g stroke-width="1.7">'+body+'</g>';
-    else if (id === 'dark-pro') drawing = '<rect x="1" y="1" width="30" height="30" rx="7" fill="var(--cdq-selected)" stroke="var(--cdq-line)"/><g transform="translate(4 4) scale(.75)" stroke-width="2.3">'+body+'</g>';
-    else if (id === 'isometric') drawing = '<path d="m2 7 6-5 22 5v20l-7 4-21-5z" fill="var(--cdq-selected)" stroke="var(--cdq-accent)"/><path d="m2 7 21 5 7-5M23 12v19" stroke="var(--cdq-line)"/><g transform="matrix(.65,.14,0,.66,3,5)" stroke-width="2.5">'+body+'</g>';
-    else if (id === 'metal-music') drawing = '<path d="m4 7 4-4h16l4 4v18l-4 4H8l-4-4z" fill="var(--cdq-action-metal)" stroke="var(--cdq-accent)"/><path d="M8 3V1m16 2V1M4 11H1m3 10H1m27-10h3m-3 10h3M8 29v2m16-2v2" stroke-width="1.5"/><g transform="translate(5 5) scale(.69)" stroke-width="2.7">'+body+'</g>';
-    else drawing = '<g transform="translate(0 1)" stroke="var(--cdq-line)" stroke-width="3.5">'+body+'</g><g stroke-width="2.1">'+body+'</g><path d="M4 3h5M23 29h5" stroke="var(--cdq-accent)" stroke-width="1.2"/>';
-    return '<svg data-action-icon="'+key+'" data-icon-theme="'+id+'" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+drawing+'</svg>';
+    return window.cdqActionArtworkV2657(key,id,document.documentElement.dataset.cdqPalette||'dark');
   }
   function paint(button, key, caption, id = style()) {
     if (!button || !labels[key]) return button;
@@ -49,7 +61,7 @@
     }
     const text = caption || labels[key];
     const variant = key === 'protect' && /Déprotéger/.test(text) ? 'unlock' : key;
-    const signature = id+'|'+variant+'|'+text;
+    const signature = id+'|'+variant+'|'+text+'|'+document.documentElement.dataset.cdqPalette;
     if (button.dataset.actionDrawing !== signature || !button.querySelector(':scope > .cdq-action-art-v2655')) {
       button.replaceChildren();
       const art = document.createElement('span'); art.className='cdq-action-art-v2655'; art.setAttribute('aria-hidden','true'); art.innerHTML=icon(variant,id);
@@ -630,7 +642,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.03-v26.56-reader-selection-controls">
+<meta name="cdq-package-build" content="2026.10.03-v26.57-downloads-action-artwork">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -909,7 +921,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.03-v26.56-reader-selection-controls'
+    build:'2026.10.03-v26.57-downloads-action-artwork'
   });
 }
 
@@ -922,7 +934,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.03-v26.56-reader-selection-controls'
+        build:'2026.10.03-v26.57-downloads-action-artwork'
       });
     }
   } catch(e) {}
@@ -5891,7 +5903,7 @@ html.cdq-mobile-layout body #selectionBar > #duplicateSelectionButtonV2655[hidde
 </style>
 <style id="cdqSelectionDockCssV2656">/* The original send control stays available while browsing selected files. */
 html.cdq-mobile-layout body > #sendArea{position:fixed!important;left:max(6px,env(safe-area-inset-left,0px))!important;right:max(6px,env(safe-area-inset-right,0px))!important;bottom:var(--cdq-nav-height,70px)!important;margin:0!important;padding:5px 0!important;z-index:1001;background:var(--cdq-surface)!important}
-html.cdq-mobile-layout body > #sendArea #sendButton{width:100%!important;min-height:46px!important;height:auto!important;margin:0!important;padding:10px 8px!important;font:700 clamp(13px,3.6vw,18px)/1.2 Arial,Helvetica,sans-serif!important;border-radius:12px!important;background:var(--cdq-accent)!important;box-shadow:none!important}
+html.cdq-mobile-layout body > #sendArea #sendButton{width:100%!important;min-height:46px!important;height:auto!important;margin:0!important;padding:10px 8px!important;font:700 clamp(13px,3.6vw,18px)/1.2 Arial,Helvetica,sans-serif!important;border-radius:12px!important;background:linear-gradient(180deg,#2695ed,#0c65ce)!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border:1px solid #238add!important;box-shadow:none!important}
 html.cdq-mobile-layout body.selection-active #filesContainer{margin-bottom:calc(var(--cdq-send-dock-height-v2656,56px) + 8px)!important}
 html.cdq-mobile-layout[data-cdq-keyboard="1"] body > #sendArea,html.cdq-mobile-layout.cdq-workspace-reader-open body > #sendArea{visibility:hidden!important;pointer-events:none!important}
 html.cdq-mobile-layout body :is(.cdq-swipe-action,.cdq-action-art-v2655,.cdq-action-art-v2655 svg){transition:none!important;animation:none!important}
@@ -11415,7 +11427,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.03-v26.56-reader-selection-controls";
+  const CDQ_BUILD = "2026.10.03-v26.57-downloads-action-artwork";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13711,7 +13723,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.03-v26.56-reader-selection-controls";
+const CDQ_V19_BUILD = "2026.10.03-v26.57-downloads-action-artwork";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15523,7 +15535,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.03-v26.56-reader-selection-controls";
+const CDQ_V20_BUILD = "2026.10.03-v26.57-downloads-action-artwork";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16370,7 +16382,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.03-v26.56-reader-selection-controls";
+const CDQ_V21_BUILD = "2026.10.03-v26.57-downloads-action-artwork";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16895,7 +16907,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.03-v26.56-reader-selection-controls';
+const BUILD='2026.10.03-v26.57-downloads-action-artwork';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20537,7 +20549,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.03-v26.56-reader-selection-controls';
+  const BUILD='2026.10.03-v26.57-downloads-action-artwork';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22803,7 +22815,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.03-v26.56-reader-selection-controls',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.03-v26.57-downloads-action-artwork',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;

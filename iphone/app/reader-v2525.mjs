@@ -6,6 +6,7 @@ import {installReaderChoices} from './reader-choices-v2572.mjs';
 import {installReaderTheme,applyReaderTheme} from './reader-theme-v2572.mjs';
 import {saveEditableFormAppearance,normalizeEditableFormOnOpen} from './reader-choice-appearance-v2572.mjs';
 import {centerFieldGlyphs} from './reader-layout-v2653.mjs';
+import {downloadPdf} from './pdf-download-v2657.mjs';
 installReaderTheme();
 const assets=new URL('./vendor/pdfjs-6.3.289/',import.meta.url).href;
 const $=id=>document.getElementById(id),hosted=parent!==window;
@@ -218,7 +219,7 @@ async function finishDocument(){
   busy(true);$('closeError').textContent='';status('Préparation de l’enregistrement…');
   try{
     const blob=await output(),snapshot=version;
-    if(!hosted||!fileId){download(blob);busy(false);close();return;}
+    if(!hosted||!fileId){await downloadPdf(blob,name);busy(false);close();return;}
     const requestId='save-'+crypto.randomUUID();
     lastAttempt={id:requestId,version:snapshot,blob};
     tell({type:'CDQ_READER_SAVE',blob,name,requestId,background:true});
@@ -226,13 +227,12 @@ async function finishDocument(){
     close();
   }catch(e){fail(e);}
 }
-function download(blob){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}
 async function save(external=false){
   if(!doc||saving||readOnly&&!external)return;
-  busy(true);$('closeError').textContent='';status('Enregistrement…');
+  busy(true);$('closeError').textContent='';status(external?'Téléchargement…':'Enregistrement…');
   try{
     let blob=await output();const snapshot=version;if(lastAttempt?.version===snapshot)blob=lastAttempt.blob;
-    if(external||!hosted||!fileId){download(blob);busy(false);status('PDF téléchargé.');return;}
+    if(external||!hosted||!fileId){const receipt=await downloadPdf(blob,name);busy(false);status(receipt);return;}
     const requestId=lastAttempt?.version===snapshot?lastAttempt.id:'save-'+crypto.randomUUID();
     lastAttempt={id:requestId,version:snapshot,blob};
     pending={id:requestId,version:snapshot};

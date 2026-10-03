@@ -20,7 +20,7 @@ export function sourceFingerprint(tree){
 function remembered(id){const k=key(id);if(receipts.has(k))return receipts.get(k);try{const r=JSON.parse(localStorage.getItem('cdqBalanceListV2654:'+k)||'null');if(r){receipts.set(k,r);return r;}}catch{}return null;}
 function remember(id,fingerprint){const r={fingerprint,requestedAt:Date.now()};receipts.set(key(id),r);try{localStorage.setItem('cdqBalanceListV2654:'+key(id),JSON.stringify(r));}catch{}}
 function paint(id,text,error=false){if(id!==client())return;const p=document.getElementById('cdqClientActionsV2640');if(!p||p.hidden)return;let el=p.querySelector('[data-balance-list-status]');if(!el){el=document.createElement('p');el.dataset.balanceListStatus='';el.className='cdq-workspace-status';el.setAttribute('role','status');p.append(el);}if(el.textContent!==text)el.textContent=text;el.classList.toggle('cdq-workspace-error',error);}
-function ready(id,r){states.set(key(id),r);paint(id,'Liste à jour · '+(r.count||0)+' balance(s)'+(r.warnings?.length?' · '+r.warnings.length+' fichier(s) à vérifier':''));}
+function ready(id,r,notify=false){states.set(key(id),r);if(notify)paint(id,'Liste à jour · '+(r.count||0)+' balance(s)'+(r.warnings?.length?' · '+r.warnings.length+' fichier(s) à vérifier':''));}
 async function call(name,id,...args){const account=calibrationIdentity().email,version=epoch;if(!canRead())throw Error('Accès Drive requis.');const r=await calibrationRpc(name,id,...args);if(version!==epoch||account!==calibrationIdentity().email||!canRead())throw Error('Le compte a changé.');return r;}
 async function open(){
   const id=client();if(!id||!canRead())return;
@@ -37,26 +37,28 @@ async function refresh(force=false){
   const k=key(id),fingerprint=sourceFingerprint(root(id)),active=jobs.get(k);
   if(active){if(fingerprint&&fingerprint!==active.fingerprint)active.dirty=true;return active.promise;}
   if(!force&&remembered(id)?.fingerprint===fingerprint)return {status:'cached'};
+  // Automatic checks are silent; only an explicit refresh reports progress.
+  const progress=(text,error=false)=>{if(force)paint(id,text,error);};
   const version=epoch,job={fingerprint,dirty:false,promise:null};jobs.set(k,job);
   job.promise=(async()=>{try{
     const r=await call('cdqDemanderListeBalanceV2638',id,force,fingerprint);states.set(k,r);
-    if(r.status==='busy'){paint(id,'Vérification reportée. La liste existante reste accessible.');return r;}
+    if(r.status==='busy'){progress('Vérification reportée. La liste existante reste accessible.');return r;}
     remember(id,fingerprint);
-    if(r.status==='ready'){ready(id,r);return r;}
+    if(r.status==='ready'){ready(id,r,force);return r;}
     if(r.status==='error')throw Error(r.message||'Actualisation impossible.');
-    paint(id,'Actualisation en arrière-plan.');
+    progress('Actualisation de la liste…');
     const deadline=Date.now()+180000;
     while(version===epoch&&canRead()&&Date.now()<deadline){
       await new Promise(resolve=>setTimeout(resolve,15000));
       if(version!==epoch||!canRead())break;
       if(document.hidden)continue;
       const result=await call('cdqEtatListeBalanceV2638',id);states.set(k,result);
-      if(result.status==='ready'){ready(id,result);return result;}
+      if(result.status==='ready'){ready(id,result,force);return result;}
       if(result.status==='error')throw Error(result.message||'Actualisation impossible.');
     }
-    if(version===epoch)paint(id,'Actualisation en cours sur le serveur. La liste existante reste accessible.');
+    if(version===epoch)progress('Actualisation en cours sur le serveur. La liste existante reste accessible.');
     return {status:'pending'};
-  }catch(e){if(version===epoch)paint(id,'Actualisation interrompue. La liste existante reste accessible.',true);return {status:'error',message:e.message};}
+  }catch(e){if(version===epoch)progress('Actualisation interrompue. La liste existante reste accessible.',true);return {status:'error',message:e.message};}
   finally{if(jobs.get(k)===job)jobs.delete(k);if(version===epoch&&job.dirty&&id===client())schedule();}})();
   return job.promise;
 }
