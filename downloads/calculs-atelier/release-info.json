@@ -1,24 +1,25 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.5.8",
-  "versionCode": 15008,
+  "version": "1.5.9",
+  "versionCode": 15009,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-02T22:19:55.807402+00:00",
+  "releasedAt": "2026-10-03T00:09:51.434726+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "2ba16f8a9b97f105326be082bd9a8351089d35b0ea6e0e30c457f7556b80899c",
-  "htmlSha256": "dcb7fc4b154da72c4519f73f7c5559e482260a9af92f88446ac8258fd9c3610b",
-  "packageBytes": 16359181,
-  "htmlBytes": 9201254,
+  "packageSha256": "e3c547956910604e2e5ef9b4d906b48a498797b76114847ba74ef3d78afecba4",
+  "htmlSha256": "8cbe15b54d5628c6526b65a3aa6801015257e694e19ef2de76020d69c836b7f6",
+  "packageBytes": 16360081,
+  "htmlBytes": 9201672,
   "notes": [
-    "Le cadrage affiche la zone réellement analysée et assombrit les parties retirées de la photo.",
-    "Les marges indiquent clairement les pourcentages retirés; un bouton rétablit la photo entière.",
-    "Quand le cadrage masque le tableau ou ses titres, l’analyse recherche le tableau sur la photo entière.",
-    "Modifier le cadrage efface le message et l’aperçu de l’analyse précédente."
+    "Lecture de la photo entière : suppression du cadrage manuel et du choix du format des dates.",
+    "Détection de grille adaptée aux traits atténués; récupération des séparateurs de lignes manquants.",
+    "Lecture des titres et des lignes de production avec le modèle de mots; chiffres vérifiés séparément.",
+    "Une colonne secondaire illisible ne bloque plus les ordres et les dates de fin reconnus. Les dates réellement ambiguës restent signalées.",
+    "Tableau défilant et progression continue conservés."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.5.8.apk",
+  "androidApk": "Calculs-Atelier-Android-1.5.9.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
-    "androidSignature": "APK v2/v3 avec le certificat historique",
+    "androidSignature": "APK v2 avec le certificat historique",
     "physicalDeviceTest": false
   },
   "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée."
