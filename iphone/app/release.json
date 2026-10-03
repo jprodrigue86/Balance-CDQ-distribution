@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
   "version": "26.51",
-  "release": "fa62f40c7a6bc0e5e2a301eeff25c552bd90bdd1d7d20ab526f19baf2fdffa37",
+  "release": "fdefad792e9f199fb530154f64f9a181ac882cad4e667ae929aef8e78bc3b6fc",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
   "androidSourceBuild": "2026.10.03-v26.51-stable-icon-themes",
-  "androidSelectorSha256": "45b77420a3611d0ecbf3c037dcb37d284a1217dd6e4f44a2bb0d8576d3a4975a",
+  "androidSelectorSha256": "054ce9a1f55370aa81c39f4d1f923522afbb95b70db41cf7050fd12746b29586",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
   "files": 406
 }
