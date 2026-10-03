@@ -1,8 +1,82 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.54" data-cdq-iphone-release="784c7ac2bc056356060e36e288b95361b79df98c1ba3ff1820ebf62224cdd6a3">
+<html data-cdq-iphone-version="26.55" data-cdq-iphone-release="b78e6359b1b3c0b3fee2e35bc7e8b606c421b31e0ea34f2ef556a8d1589ad633">
 <head>
 <script src="./iphone-update.js"></script>
+<script id="cdqFileActionsV2655">(function () {
+  'use strict';
+  const styles = ['current','minimal','dark-pro','metal-music','isometric'];
+  const labels = {note:'Note',photo:'Photo',rename:'Renommer',delete:'Supprimer',copy:'Copier',favorite:'Favori',send:'Envoyer',protect:'Protéger',duplicate:'Dupliquer',finish:'Fermer'};
+  const paths = {
+    note:'<path d="M8 4h13l5 5v19H8zM21 4v6h5M12 15h10M12 19h10M12 23h6"/>',
+    photo:'<path d="M4 10h6l3-5h6l3 5h6v17H4z"/><circle cx="16" cy="18" r="6"/><path d="M24 13h1"/>',
+    rename:'<path d="m7 22-2 6 6-2L27 10l-4-4zM20 9l4 4M7 22l4 4M5 29h23"/>',
+    delete:'<path d="M5 9h22M12 9V5h8v4M8 9l2 19h12l2-19M14 13v11M18 13v11"/>',
+    copy:'<path d="M12 12h14v16H12zM21 8V4H5v18h3M16 17h6M16 21h6"/>',
+    duplicate:'<path d="M12 12h14v16H12zM21 8V4H5v18h3M16 20h6M19 17v6"/>',
+    favorite:'<path d="m16 4 4 8 9 1-6.5 6.5L24 28l-8-4-8 4 1.5-8.5L3 13l9-1z"/>',
+    send:'<path d="M3 14 29 4l-9 25-5-10zM15 19 29 4M9 23l-4 4"/>',
+    protect:'<path d="M16 3 27 7v8c0 7-5 11-11 14C10 26 5 22 5 15V7z"/><rect x="11" y="14" width="10" height="8" rx="1"/><path d="M13 14v-3a3 3 0 0 1 6 0v3"/>',
+    unlock:'<path d="M16 3 27 7v8c0 7-5 11-11 14C10 26 5 22 5 15V7z"/><rect x="11" y="14" width="10" height="8" rx="1"/><path d="M13 14v-3a3 3 0 0 1 6 0"/>',
+    finish:'<path d="m8 8 16 16M24 8 8 24"/>'
+  };
+  let current = 'current';
+  function style() {
+    const id = window.cdqIconThemesV2514?.getStyle?.() || current;
+    return styles.includes(id) ? id : 'current';
+  }
+  // Small vector drawings are embedded, so every action is ready offline.
+  // Each set changes the drawing, while the selected palette owns its colors.
+  function icon(key, id = style()) {
+    const body = paths[key] || paths.note;
+    let drawing;
+    if (id === 'minimal') drawing = '<g stroke-width="1.7">'+body+'</g>';
+    else if (id === 'dark-pro') drawing = '<rect x="1" y="1" width="30" height="30" rx="7" fill="var(--cdq-selected)" stroke="var(--cdq-line)"/><g transform="translate(4 4) scale(.75)" stroke-width="2.3">'+body+'</g>';
+    else if (id === 'isometric') drawing = '<path d="m2 7 6-5 22 5v20l-7 4-21-5z" fill="var(--cdq-selected)" stroke="var(--cdq-accent)"/><path d="m2 7 21 5 7-5M23 12v19" stroke="var(--cdq-line)"/><g transform="matrix(.65,.14,0,.66,3,5)" stroke-width="2.5">'+body+'</g>';
+    else if (id === 'metal-music') drawing = '<path d="m4 7 4-4h16l4 4v18l-4 4H8l-4-4z" fill="var(--cdq-action-metal)" stroke="var(--cdq-accent)"/><path d="M8 3V1m16 2V1M4 11H1m3 10H1m27-10h3m-3 10h3M8 29v2m16-2v2" stroke-width="1.5"/><g transform="translate(5 5) scale(.69)" stroke-width="2.7">'+body+'</g>';
+    else drawing = '<g transform="translate(0 1)" stroke="var(--cdq-line)" stroke-width="3.5">'+body+'</g><g stroke-width="2.1">'+body+'</g><path d="M4 3h5M23 29h5" stroke="var(--cdq-accent)" stroke-width="1.2"/>';
+    return '<svg data-action-icon="'+key+'" data-icon-theme="'+id+'" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">'+drawing+'</svg>';
+  }
+  function paint(button, key, caption, id = style()) {
+    if (!button || !labels[key]) return button;
+    const text = caption || labels[key];
+    const variant = key === 'protect' && /Déprotéger/.test(text) ? 'unlock' : key;
+    const signature = id+'|'+variant+'|'+text;
+    if (button.dataset.actionDrawing !== signature || !button.querySelector(':scope > .cdq-action-art-v2655')) {
+      button.replaceChildren();
+      const art = document.createElement('span'); art.className='cdq-action-art-v2655'; art.setAttribute('aria-hidden','true'); art.innerHTML=icon(variant,id);
+      const label=document.createElement('span'); label.className='cdq-action-label-v2655'; label.textContent=text;
+      button.append(art,label); button.dataset.actionDrawing=signature;
+    }
+    button.dataset.fileAction=key; button.dataset.actionStyle=id;
+    if (!button.hasAttribute('aria-label') || button.dataset.actionAria === '1') {button.setAttribute('aria-label',text);button.dataset.actionAria='1';}
+    button.title=text;
+    return button;
+  }
+  function refresh(id) {
+    if(styles.includes(id))current=id;
+    const chosen=styles.includes(id)?id:style();
+    document.querySelectorAll('.cdq-swipe-action:not(.cdq-pc-action), #duplicateSelectionButtonV2655, #deleteButton, #finishSelectionButton').forEach(button=>{
+      const key=button.id==='duplicateSelectionButtonV2655'?'duplicate':button.id==='deleteButton'?'delete':button.id==='finishSelectionButton'?'finish':Object.keys(labels).find(k=>button.classList.contains(k));
+      if(!key)return;
+      const content=button.textContent||'';
+      const caption=key==='favorite'&&/Retirer/.test(content)?'Retirer':key==='protect'&&(/Déprotéger/.test(content)||button.classList.contains('active'))?'Déprotéger':labels[key];
+      paint(button,key,caption,chosen);
+    });
+  }
+  window.cdqFileActionsV2655={icon,paint,refresh};
+  function start() {
+    refresh();
+    const observer=new MutationObserver(records=>{
+      if(records.some(r=>r.type==='characterData'||r.target.closest?.('.cdq-swipe-action,#selectionBar')||[...r.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('.cdq-swipe-action,#selectionBar')||n.querySelector?.('.cdq-swipe-action')))))refresh();
+    });
+    observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+    window.addEventListener('storage',()=>refresh());
+    document.addEventListener('cdq:icons-changed',()=>refresh());
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
 <script id="cdqThemeBootV2651">(function(){let t='dark';try{t=localStorage.getItem('cdqTheme')||(localStorage.getItem('modeRapports')==='light'?'light':'dark')}catch(_){}if(!['dark','light','metal','electric','steel','violet'].includes(t))t='dark';document.documentElement.dataset.cdqPalette=t;window.cdqThemeBootV2651=t;})();</script>
 <script id="cdqHomeIconsV2571">
 /* One live drawing per home action. Theme alternatives are data, not hidden DOM. */
@@ -543,7 +617,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.03-v26.54-nonblocking-balance-list">
+<meta name="cdq-package-build" content="2026.10.03-v26.55-themed-file-actions">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -822,7 +896,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.03-v26.54-nonblocking-balance-list'
+    build:'2026.10.03-v26.55-themed-file-actions'
   });
 }
 
@@ -835,7 +909,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.03-v26.54-nonblocking-balance-list'
+        build:'2026.10.03-v26.55-themed-file-actions'
       });
     }
   } catch(e) {}
@@ -5752,6 +5826,56 @@ html.cdq-mobile-layout body #cdqTopActionsV2204 > button.cdq-top-action > :is(sv
 .cdq-preview-item-v2651 > small{font:600 10px/1.15 Arial,Helvetica,sans-serif!important;color:#eef6fa!important;text-shadow:none!important;white-space:nowrap}
 
 </style>
+<style id="cdqFileActionsCssV2655">/* One palette and one size owner for both directions of the file gestures. */
+.cdq-action-art-v2655{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;flex:0 0 22px;vertical-align:middle;line-height:1}
+.cdq-action-art-v2655 > svg{display:block;width:100%;height:100%;pointer-events:none}
+#duplicateSelectionButtonV2655{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px;border:1px solid var(--cdq-line,#345268);border-radius:9px;background:var(--cdq-raised,#122a3c);color:var(--cdq-ink,#edf4f8);cursor:pointer}
+#duplicateSelectionButtonV2655[hidden]{display:none!important}
+html.cdq-mobile-layout{--cdq-action-metal:var(--cdq-raised);--cdq-action-danger:#ec858e}
+html.cdq-mobile-layout[data-cdq-palette=light]{--cdq-action-danger:#aa2639}
+html.cdq-mobile-layout[data-cdq-palette=metal]{--cdq-action-metal:#242424}
+html.cdq-mobile-layout[data-cdq-palette=steel]{--cdq-action-metal:#58636d}
+html.cdq-mobile-layout body :is(.file-row,.folder-header) > .cdq-swipe-overlay{
+  background:var(--cdq-surface)!important;border-color:var(--cdq-line)!important;
+  align-items:center!important;gap:6px!important;padding:4px 6px!important;
+}
+html.cdq-mobile-layout body .cdq-swipe-overlay > button.cdq-swipe-action,
+html.cdq-mobile-layout body #selectionBar > :is(#duplicateSelectionButtonV2655,#deleteButton,#finishSelectionButton){
+  display:inline-flex;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+  box-sizing:border-box!important;gap:3px!important;min-width:0!important;width:0!important;
+  flex:1 1 0!important;max-width:none!important;padding:4px 3px!important;
+  height:var(--cdq-file-action-height-v2655,44px)!important;min-height:var(--cdq-file-action-height-v2655,44px)!important;
+  border:1px solid var(--cdq-line)!important;border-radius:9px!important;
+  background:var(--cdq-raised)!important;color:var(--cdq-ink)!important;
+  font-weight:700!important;text-shadow:none!important;box-shadow:none!important;filter:none!important;
+  white-space:nowrap!important;overflow:hidden!important;touch-action:manipulation;
+}
+html.cdq-mobile-layout body :is(.cdq-swipe-action,#duplicateSelectionButtonV2655,#deleteButton,#finishSelectionButton) > .cdq-action-art-v2655{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  flex:0 0 auto!important;width:var(--cdq-file-action-icon-v2655,22px)!important;height:var(--cdq-file-action-icon-v2655,22px)!important;
+  color:var(--cdq-accent)!important;line-height:1!important;pointer-events:none;
+}
+html.cdq-mobile-layout body :is(.cdq-swipe-action,#duplicateSelectionButtonV2655,#deleteButton,#finishSelectionButton) .cdq-action-art-v2655 > svg{
+  display:block!important;width:100%!important;height:100%!important;min-width:100%!important;min-height:100%!important;max-width:none!important;max-height:none!important;flex:0 0 100%!important;transform:none!important;pointer-events:none;
+}
+html.cdq-mobile-layout body :is(.cdq-swipe-action,#duplicateSelectionButtonV2655,#deleteButton,#finishSelectionButton) > .cdq-action-label-v2655{
+  font:700 var(--cdq-file-action-text-v2655,11px)/1.1 Arial,Helvetica,sans-serif!important;
+  display:block!important;flex:0 0 auto!important;min-width:0!important;max-width:100%!important;width:auto!important;margin:0!important;padding:0!important;
+  color:var(--cdq-ink)!important;-webkit-text-fill-color:var(--cdq-ink)!important;
+  letter-spacing:normal!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;text-shadow:none!important;pointer-events:none;
+}
+html.cdq-mobile-layout body :is(.cdq-swipe-action.delete,#deleteButton) .cdq-action-art-v2655{color:var(--cdq-action-danger)!important}
+html.cdq-mobile-layout body .cdq-swipe-action.favorite.active{border-color:var(--cdq-accent)!important}
+html.cdq-mobile-layout body .cdq-swipe-action:focus-visible{outline:2px solid var(--cdq-accent);outline-offset:1px}
+html.cdq-mobile-layout body .cdq-swipe-action:active{background:var(--cdq-selected)!important}
+html.cdq-mobile-layout body .cdq-swipe-action:disabled{opacity:.5}
+html.cdq-mobile-layout body #selectionBar{background:var(--cdq-surface)!important;border-color:var(--cdq-line)!important;gap:6px!important}
+html.cdq-mobile-layout body #selectionBar > :is(#duplicateSelectionButtonV2655,#deleteButton,#finishSelectionButton){flex:0 0 var(--cdq-file-action-selection-width-v2655,58px)!important;width:var(--cdq-file-action-selection-width-v2655,58px)!important}
+html.cdq-mobile-layout body #selectionBar > :is(#deleteButton,#finishSelectionButton){flex:0 0 var(--cdq-file-action-height-v2655,44px)!important;width:var(--cdq-file-action-height-v2655,44px)!important}
+html.cdq-mobile-layout body #selectionBar > :is(#deleteButton,#finishSelectionButton) > .cdq-action-label-v2655{display:none!important}
+html.cdq-mobile-layout body #selectionBar > #fileCount{flex:1 1 0;min-width:0;font:700 var(--cdq-file-action-text-v2655,11px)/1.2 Arial,Helvetica,sans-serif!important;white-space:normal!important;overflow-wrap:anywhere;color:var(--cdq-ink)!important}
+html.cdq-mobile-layout body #selectionBar > #duplicateSelectionButtonV2655[hidden],body.cdq-role-lecture #duplicateSelectionButtonV2655{display:none!important}
+</style>
 </head>
 
 
@@ -5989,6 +6113,7 @@ document.addEventListener('DOMContentLoaded',function(){
     <span>Maintiens un fichier ou un dossier 1 seconde pour commencer</span>
   </div>
   <span id="fileCount" class="file-count">0 sélectionné</span>
+  <button id="duplicateSelectionButtonV2655" type="button" hidden aria-label="Dupliquer les fichiers sélectionnés" onclick="actionDossierOuDupliquer()">Dupliquer</button>
   <button id="deleteButton" class="delete-button" type="button" title="Supprimer la sélection" onclick="ouvrirConfirmationSuppression()">🗑</button>
   <button id="finishSelectionButton" class="finish-selection-button" type="button" title="Quitter le mode sélection" aria-label="Quitter le mode sélection" onclick="quitterModeSelection()">✓</button>
 </div>
@@ -10804,18 +10929,9 @@ function mettreAJourInterface(){
     deleteButton.style.display = totalSelection > 0 ? "flex" : "none";
   }
 
-  const folderIcon = document.getElementById("folderActionIcon");
-  const folderLabel = document.getElementById("folderActionLabel");
-  const folderButton = document.getElementById("folderActionButton");
-  if(fichiersSelectionnes > 0 && dossiersChoisis === 0){
-    if(folderIcon) folderIcon.textContent = "⧉";
-    if(folderLabel) folderLabel.textContent = "Dupliquer";
-    if(folderButton){ folderButton.title = "Dupliquer les fichiers sélectionnés"; folderButton.disabled = false; }
-  }else{
-    if(folderIcon) folderIcon.textContent = "📁+";
-    if(folderLabel) folderLabel.textContent = "Dossier";
-    if(folderButton){ folderButton.title = dossiersChoisis > 0 ? "Quitte la sélection pour créer un dossier" : "Ajouter un dossier"; folderButton.disabled = dossiersChoisis > 0; }
-  }
+  // Selection actions belong to the selection bar; Dossier remains navigation.
+  const duplicate=document.getElementById('duplicateSelectionButtonV2655');
+  if(duplicate){duplicate.hidden=!(fichiersSelectionnes>0&&dossiersChoisis===0&&['admin','technicien'].includes(String(utilisateurCourantRole||'')));}
 }
 
 function quitterModeSelection(){
@@ -11275,7 +11391,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.03-v26.54-nonblocking-balance-list";
+  const CDQ_BUILD = "2026.10.03-v26.55-themed-file-actions";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -12009,7 +12125,7 @@ function cdqInstallSwipeGesture(row){
     },true);
   }
 
-  function cdqSwipeButton(text,cls,fn){ const b=document.createElement("button");b.type="button";b.className="cdq-swipe-action "+(cls||"");b.textContent=text;b.onclick=fn;return b; }
+  function cdqSwipeButton(text,cls,fn){ const b=document.createElement("button");b.type="button";b.className="cdq-swipe-action "+(cls||"");b.textContent=text;b.onclick=fn;window.cdqFileActionsV2655.paint(b,String(cls||'').split(' ')[0],String(text).replace(/^[^A-Za-zÀ-ÿ]+/,''));return b; }
   function cdqCloseSwipes(except){ document.querySelectorAll(".file-row.cdq-swiped-left,.file-row.cdq-swiped-right,.folder-header.cdq-swiped-left,.folder-header.cdq-swiped-right,.cdq-desktop-folder-row.cdq-swiped-left,.cdq-desktop-folder-row.cdq-swiped-right").forEach(function(r){if(r!==except)r.classList.remove("cdq-swiped-left","cdq-swiped-right");}); }
   function cdqSelectOnly(row){
     document.querySelectorAll(".file-checkbox").forEach(function(c){c.checked=false;});
@@ -13571,7 +13687,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.03-v26.54-nonblocking-balance-list";
+const CDQ_V19_BUILD = "2026.10.03-v26.55-themed-file-actions";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15383,7 +15499,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.03-v26.54-nonblocking-balance-list";
+const CDQ_V20_BUILD = "2026.10.03-v26.55-themed-file-actions";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16230,7 +16346,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.03-v26.54-nonblocking-balance-list";
+const CDQ_V21_BUILD = "2026.10.03-v26.55-themed-file-actions";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16755,7 +16871,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.03-v26.54-nonblocking-balance-list';
+const BUILD='2026.10.03-v26.55-themed-file-actions';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -18884,13 +19000,6 @@ function cdqOrderBottomV2206(){
 
 window.cdqToggleDossierV2206=function(){
   const btn=cdqButtonByLabelV2206("Dossier");
-  const ids=typeof obtenirFichiersSelectionnes==="function" ? obtenirFichiersSelectionnes() : [];
-
-  // En mode sélection, conserver la fonction "Dupliquer".
-  if(ids && ids.length){
-    if(typeof actionDossierOuDupliquer==="function")actionDossierOuDupliquer();
-    return;
-  }
 
   const modal=document.getElementById("createFolderModalOverlay");
   const open=modal && getComputedStyle(modal).display!=="none";
@@ -20403,7 +20512,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.03-v26.54-nonblocking-balance-list';
+  const BUILD='2026.10.03-v26.55-themed-file-actions';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -21788,12 +21897,10 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     icon('.company-reset-button svg', top);
     each('.app-header', {'height':px(57 * unit),'min-height':'0','padding':'0','margin':px(9 * reference)+' 0 0'});
     each('.header-metal-banner', {'height':'100%','width':'100%','object-fit':'contain'});
-    each('.cdq-swipe-overlay', {'gap':'4px','padding':'2px 6px'});
-    each('.cdq-swipe-action', {'height':px(Math.min(48 * unit, Math.max(36 * unit,action + 12 * unit))),
-      'min-height':px(32 * unit),'min-width':px(36 * unit),'max-width':'100%','padding':'2px 6px','border-radius':'8px',
-      'font-size':px(action),'line-height':'1.15','white-space':'normal','overflow-wrap':'anywhere','flex':'0 1 auto'});
-    each('.cdq-swipe-action.note,.cdq-swipe-action.photo,.cdq-swipe-action.favorite,.cdq-swipe-action.send,.cdq-swipe-action.protect',
-      {'font-size':px(11.5 * unit * textScale),'min-width':px(36 * unit)});
+    root.style.setProperty('--cdq-file-action-height-v2655',px(Math.max(44*unit,22*unit*iconScale+12*unit*textScale+9*unit)));
+    root.style.setProperty('--cdq-file-action-icon-v2655',px(22*unit*iconScale));
+    root.style.setProperty('--cdq-file-action-text-v2655',px(11*unit*textScale));
+    root.style.setProperty('--cdq-file-action-selection-width-v2655',px(Math.max(64,82*unit*textScale)));
     window.cdqFitButtonWordsV2534({unit,topLabel,label});
     applyPalette();
     layoutCompanyMenu(unit, textScale);
@@ -21891,6 +21998,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     const theme = document.body.classList.contains('light') ? 'light'
       : ['metal','electric','steel','violet'].find(t => document.body.classList.contains('cdq-theme-'+t)) || 'dark';
     root.dataset.cdqPalette = theme;
+    window.cdqFileActionsV2655.refresh();
     // Inline colors use variables so delayed legacy styles cannot lock a surface to blue.
     set(document.body, {'background':'var(--cdq-page)','color':'var(--cdq-ink)'});
     each('#filesContainer,.files,.folder-content,#clientInfoBar,.company-menu,.company-list,.modal,.cdq-display-group,.cdq-settings-card-v2294,.cdq-ui-scale-box',
@@ -22245,6 +22353,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
   }
   function paint() {
     const styleId=currentStyle();
+    window.cdqFileActionsV2655.refresh(styleId);
     document.querySelectorAll('.bottom-nav > .bottom-nav-item').forEach(button => {
       const host = button.querySelector(':scope > span');
       if (!host) return;
@@ -22669,7 +22778,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.03-v26.54-nonblocking-balance-list',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.03-v26.55-themed-file-actions',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -22798,7 +22907,7 @@ async function open(item){
  try{context=await rpc('obtenirContexteCopieCDQV2522',[source.id]);if(!valid(token))return;busy=false;await same();status('L’original sera conservé.');}
  catch(e){if(valid(token)){busy=false;status(e.message||String(e),true);render()}}
 }
-function swipeButton(item){const b=button('Copier',e=>{e.stopPropagation();window.cdqCloseSwipes?.();document.querySelectorAll('.cdq-swiped-right,.cdq-swiped-left').forEach(r=>r.classList.remove('cdq-swiped-right','cdq-swiped-left'));open(item)},'cdq-swipe-action copy');const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'),path=document.createElementNS(svg.namespaceURI,'path');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','1.7');path.setAttribute('d','M8 8h13v13H8ZM16 8V3H3v13h5');svg.append(path);b.prepend(svg);b.setAttribute('aria-label','Créer une copie de '+(item.nom||'cet élément'));return b;}
+function swipeButton(item){const b=button('Copier',e=>{e.stopPropagation();window.cdqCloseSwipes?.();document.querySelectorAll('.cdq-swiped-right,.cdq-swiped-left').forEach(r=>r.classList.remove('cdq-swiped-right','cdq-swiped-left'));open(item)},'cdq-swipe-action copy');const svg=document.createElementNS('http://www.w3.org/2000/svg','svg'),path=document.createElementNS(svg.namespaceURI,'path');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','1.7');path.setAttribute('d','M8 8h13v13H8ZM16 8V3H3v13h5');svg.append(path);b.prepend(svg);b.setAttribute('aria-label','Créer une copie de '+(item.nom||'cet élément'));window.cdqFileActionsV2655.paint(b,'copy');return b;}
 window.cdqCopyV2522={open,swipeButton,authorized};
 window.addEventListener('cdq:access-ready',()=>{if(dialog?.open&&owner!==account())dialog.close()});
 })();
