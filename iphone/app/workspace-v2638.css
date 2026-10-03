@@ -124,3 +124,7 @@ html.cdq-mobile-layout #cdqCalibrationDialogV2565 .cdq-cal-body{flex:1 1 auto!im
    present while Drive is checked or denied; the browser already checks canRead.
    The separate create/duplicate actions keep their existing role restrictions. */
 html.cdq-mobile-layout body.cdq-role-lecture .bottom-nav > #folderActionButton{display:flex!important}
+
+/* List controls and status occupy their own full row, without covering files. */
+#cdqClientActionsV2640 [data-balance-list-status]{grid-column:1/-1}
+#cdqClientActionsV2640 [data-balance-list-menu]{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
