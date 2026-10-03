@@ -1,26 +1,26 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.7.2",
-  "versionCode": 17002,
+  "version": "1.7.3",
+  "versionCode": 17003,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-03T04:41:03.302564+00:00",
+  "releasedAt": "2026-10-03T05:20:51.484636+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "6a46de0232049afa778344a25b370bb59ecd8c640aea49f6bbc5d6b71954b432",
-  "htmlSha256": "b3996a489eb20bced397ee9f598605e6b517b255750e6a1fc7d00d0db05bce3a",
-  "packageBytes": 16450017,
-  "htmlBytes": 9252382,
+  "packageSha256": "1a9e4aa6bff66783e3ab3dd7be2d2777124277d6ee3f73b6f84b1f6660c4a3e0",
+  "htmlSha256": "18ed02d8f82701eab1104a7ab65a538db491714462b409af5e2c79649c0f0b61",
+  "packageBytes": 16457769,
+  "htmlBytes": 9256741,
   "notes": [
-    "Retour du téléphone : détail, tableau, dialogue puis menu précédent, sans perdre les chiffres saisis.",
-    "Bouton Retour accessible en bas de l’application.",
-    "Tableau complet : neuf colonnes dans l’ordre de la photo, défilement horizontal et vertical.",
-    "Début d’origine lu, enregistré et exporté; historiques existants conservés."
+    "Production Line défile horizontalement avec toutes les autres colonnes.",
+    "Les rectangles vert, jaune et rouge filtrent le tableau par catégorie sur Android et PC.",
+    "Tous les ordres rétablit la liste complète; le filtre actif est indiqué.",
+    "Retour depuis le détail conserve le filtre; Retour depuis la liste filtrée affiche tous les ordres."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.7.2.apk",
+  "androidApk": "Calculs-Atelier-Android-1.7.3.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
     "androidSignature": "APK v2/v3 avec le certificat historique; SDK Android recompilé",
     "physicalDeviceTest": false
   },
   "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée.",
-  "shellVersion": 17002
+  "shellVersion": 17003
 }
