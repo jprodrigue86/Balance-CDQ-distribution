@@ -1,0 +1,22 @@
+Invoice photo decoders (loaded only when the browser cannot decode the photo)
+
+libheif-js 1.23.2, unmodified libheif-wasm/libheif.js and libheif.wasm
+https://github.com/catdad-experiments/libheif-js
+https://github.com/catdad-experiments/libheif-emscripten/tree/v1.23.2
+The upstream build scripts identify and build libheif and its decoder dependencies.
+https://github.com/strukturag/libheif
+Licenses: libheif-1.23.2/LICENSE and LICENSE-wrapper.
+WASM is stored as reproducible gzip (mtime 0), expanded by the packaging script.
+SHA256 of uncompressed upstream files:
+libheif.js f148d9ff173e5a6d6781e80dccb8336f54bfbb032392ceb2d37e0e92923c4bf3
+libheif.wasm e4aa8333fbe55ec7c6c776f735236f40bed9103188498f8131d4e52b73cdfee8
+
+UTIF 3.1.0, unmodified UTIF.js, MIT, license included.
+https://github.com/photopea/UTIF.js
+SHA256 e3e76115f49571e39624c3316a76b3c4c5b2c5ca518dfec4b66a9f7af8c6d059
+
+pako 1.0.11, unmodified dist/pako_inflate.min.js, MIT/Zlib, license included.
+https://github.com/nodeca/pako/tree/1.0.11
+SHA256 2ca27e9a8dae569cdeac42752ed1aed1afeff7f19282d3cc12c0aaa54a08bc04
+
+Test photos are generated synthetic receipts, with no customer data.
