@@ -228,7 +228,7 @@ async function finishDocument(){
 }
 function download(blob){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);}
 async function save(external=false){
-  if(!doc||saving||readOnly)return;
+  if(!doc||saving||readOnly&&!external)return;
   busy(true);$('closeError').textContent='';status('Enregistrement…');
   try{
     let blob=await output();const snapshot=version;if(lastAttempt?.version===snapshot)blob=lastAttempt.blob;
@@ -277,14 +277,16 @@ async function open(data){
 function menu(hide=false){$('more').hidden=hide?true:!$('more').hidden;$('menu').setAttribute('aria-expanded',String(!$('more').hidden));}
 function zoom(factor,origin){if(viewer&&doc){const target=Math.max(.35,Math.min(4,viewer.currentScale*factor));viewer.updateScale({scaleFactor:target/viewer.currentScale,origin,drawingDelay:250});}}
 $('menu').onclick=()=>menu();$('fit').onclick=()=>{if(viewer){cdqHoldRenderedLayersV2556(2200);viewer.currentScaleValue='page-width';}menu(true);};
-$('rotate').onclick=()=>{if(doc)viewer.pagesRotation=(viewer.pagesRotation+90)%360;menu(true);};
+document.addEventListener('pointerdown',e=>{if(!$('more').hidden&&!e.target.closest('#more,#menu'))menu(true);},true);
+$('cancelMenu').onclick=()=>{menu(true);$('menu').focus({preventScroll:true});};
+$('quitMenu').onclick=()=>{menu(true);requestClose();};
 $('plus').onclick=()=>zoom(1.2);$('minus').onclick=()=>zoom(1/1.2);
 $('container').addEventListener('wheel',e=>{if(!e.ctrlKey&&!e.metaKey)return;e.preventDefault();zoom(Math.exp(-Math.max(-100,Math.min(100,e.deltaY))*.004),[e.clientX,e.clientY]);},{passive:false});
 let drag=null;
 $('container').addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&(e.button===1||e.button===0&&!e.target.closest('input,textarea,select,button,a'))){e.preventDefault();$('container').classList.add('dragging');drag={id:e.pointerId,x:e.clientX,y:e.clientY,left:$('container').scrollLeft,top:$('container').scrollTop};$('container').setPointerCapture(e.pointerId);}});
 $('container').addEventListener('pointermove',e=>{if(drag?.id===e.pointerId){$('container').scrollLeft=drag.left+drag.x-e.clientX;$('container').scrollTop=drag.top+drag.y-e.clientY;}});
 for(const type of ['pointerup','pointercancel'])$('container').addEventListener(type,()=>{drag=null;$('container').classList.remove('dragging')});
-$('save').onclick=()=>save();$('download').onclick=()=>{menu(true);save(true);};$('external').onclick=()=>{menu(true);save(true);};
+$('save').onclick=()=>{menu(true);save();};$('download').onclick=()=>{menu(true);save(true);};
 $('back').onclick=requestClose;$('saveClose').onclick=()=>{$('closeDialog').close();finishDocument();};
 $('dismissKeyboard').addEventListener('pointerdown',e=>e.preventDefault());
 $('dismissKeyboard').onclick=()=>{
@@ -328,7 +330,7 @@ $('viewer').addEventListener('focusin',e=>{if(cdqTextEntryFieldV2550(e.target))c
 $('viewer').addEventListener('focusout',()=>{setTimeout(()=>{const active=document.activeElement;if(!cdqTextEntryFieldV2550(active)){cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;cdqKeyboardFieldV2550(false);}},80);});
 window.visualViewport?.addEventListener('resize',cdqScheduleViewportFieldV2550);
 window.addEventListener('beforeunload',e=>{if(!closed&&(dirty||saving)){e.preventDefault();e.returnValue='';}});
-document.addEventListener('keydown',e=>{if(choices?.isOpen())return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();save();}else if(e.key==='Escape'&&!$('closeDialog').open){e.preventDefault();requestClose();}});
+document.addEventListener('keydown',e=>{if(choices?.isOpen())return;if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();save();}else if(e.key==='Escape'&&!$('more').hidden){e.preventDefault();menu(true);$('menu').focus({preventScroll:true});}else if(e.key==='Escape'&&!$('closeDialog').open){e.preventDefault();requestClose();}});
 $('file').onchange=()=>{if(doc){status('Fermez le PDF actuel avant d’en ouvrir un autre.');return;}const f=$('file').files[0];if(f)open({blob:f,name:f.name}).catch(fail);};
 // Listen before loading the engine; parent identity and source are both checked.
 window.addEventListener('message',async e=>{

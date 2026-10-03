@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.55" data-cdq-iphone-release="b78e6359b1b3c0b3fee2e35bc7e8b606c421b31e0ea34f2ef556a8d1589ad633">
+<html data-cdq-iphone-version="26.56" data-cdq-iphone-release="cfa1c1856aacda642ab3d188ef801ba5811862f826e804aace4e848fc055c4d5">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqFileActionsV2655">(function () {
@@ -39,6 +39,14 @@
   }
   function paint(button, key, caption, id = style()) {
     if (!button || !labels[key]) return button;
+    if(!button.dataset.actionSized){
+      const css=getComputedStyle(document.documentElement);
+      for(const key of ['height','icon','text','selection-width']){
+        const variable='--cdq-file-action-'+key+'-v2655',value=css.getPropertyValue(variable).trim();
+        if(value)button.style.setProperty(variable,value);
+      }
+      button.dataset.actionSized='1';
+    }
     const text = caption || labels[key];
     const variant = key === 'protect' && /Déprotéger/.test(text) ? 'unlock' : key;
     const signature = id+'|'+variant+'|'+text;
@@ -64,13 +72,18 @@
       paint(button,key,caption,chosen);
     });
   }
-  window.cdqFileActionsV2655={icon,paint,refresh};
+  function resize(){document.querySelectorAll('[data-file-action]').forEach(b=>{delete b.dataset.actionSized;paint(b,b.dataset.fileAction,b.querySelector('.cdq-action-label-v2655')?.textContent);});}
+  window.cdqFileActionsV2655={icon,paint,refresh,resize};
   function start() {
     refresh();
     const observer=new MutationObserver(records=>{
       if(records.some(r=>r.type==='characterData'||r.target.closest?.('.cdq-swipe-action,#selectionBar')||[...r.addedNodes].some(n=>n.nodeType===1&&(n.matches?.('.cdq-swipe-action,#selectionBar')||n.querySelector?.('.cdq-swipe-action')))))refresh();
     });
     observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+    document.addEventListener('input',e=>{if(e.target.matches('#cdqGeneralScaleRange,#cdqTextScaleRange,#cdqIconScaleRange'))requestAnimationFrame(resize);});
+    document.addEventListener('click',e=>{if(e.target.closest('.cdq-phone-preset,#cdqUiScaleResetAll,#cdqPersonalSizingActivate,#cdqPersonalSizingRemove'))requestAnimationFrame(resize);});
+    let width=innerWidth;
+    window.addEventListener('resize',()=>{if(Math.abs(innerWidth-width)<2)return;width=innerWidth;requestAnimationFrame(resize);});
     window.addEventListener('storage',()=>refresh());
     document.addEventListener('cdq:icons-changed',()=>refresh());
   }
@@ -617,7 +630,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.03-v26.55-themed-file-actions">
+<meta name="cdq-package-build" content="2026.10.03-v26.56-reader-selection-controls">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -896,7 +909,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.03-v26.55-themed-file-actions'
+    build:'2026.10.03-v26.56-reader-selection-controls'
   });
 }
 
@@ -909,7 +922,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.03-v26.55-themed-file-actions'
+        build:'2026.10.03-v26.56-reader-selection-controls'
       });
     }
   } catch(e) {}
@@ -5875,6 +5888,17 @@ html.cdq-mobile-layout body #selectionBar > :is(#deleteButton,#finishSelectionBu
 html.cdq-mobile-layout body #selectionBar > :is(#deleteButton,#finishSelectionButton) > .cdq-action-label-v2655{display:none!important}
 html.cdq-mobile-layout body #selectionBar > #fileCount{flex:1 1 0;min-width:0;font:700 var(--cdq-file-action-text-v2655,11px)/1.2 Arial,Helvetica,sans-serif!important;white-space:normal!important;overflow-wrap:anywhere;color:var(--cdq-ink)!important}
 html.cdq-mobile-layout body #selectionBar > #duplicateSelectionButtonV2655[hidden],body.cdq-role-lecture #duplicateSelectionButtonV2655{display:none!important}
+</style>
+<style id="cdqSelectionDockCssV2656">/* The original send control stays available while browsing selected files. */
+html.cdq-mobile-layout body > #sendArea{position:fixed!important;left:max(6px,env(safe-area-inset-left,0px))!important;right:max(6px,env(safe-area-inset-right,0px))!important;bottom:var(--cdq-nav-height,70px)!important;margin:0!important;padding:5px 0!important;z-index:1001;background:var(--cdq-surface)!important}
+html.cdq-mobile-layout body > #sendArea #sendButton{width:100%!important;min-height:46px!important;height:auto!important;margin:0!important;padding:10px 8px!important;font:700 clamp(13px,3.6vw,18px)/1.2 Arial,Helvetica,sans-serif!important;border-radius:12px!important;background:var(--cdq-accent)!important;box-shadow:none!important}
+html.cdq-mobile-layout body.selection-active #filesContainer{margin-bottom:calc(var(--cdq-send-dock-height-v2656,56px) + 8px)!important}
+html.cdq-mobile-layout[data-cdq-keyboard="1"] body > #sendArea,html.cdq-mobile-layout.cdq-workspace-reader-open body > #sendArea{visibility:hidden!important;pointer-events:none!important}
+html.cdq-mobile-layout body :is(.cdq-swipe-action,.cdq-action-art-v2655,.cdq-action-art-v2655 svg){transition:none!important;animation:none!important}
+
+html.cdq-mobile-layout.cdq-workspace-open body > #sendArea{visibility:hidden!important;pointer-events:none!important}
+html.cdq-mobile-layout #modalOverlay .modal{overflow:auto;max-height:calc(100dvh - 24px)}
+html.cdq-mobile-layout #modalOverlay .modal-buttons{position:sticky;bottom:0;z-index:2;background:var(--cdq-surface);padding:10px 0;margin-bottom:0}
 </style>
 </head>
 
@@ -11391,7 +11415,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.03-v26.55-themed-file-actions";
+  const CDQ_BUILD = "2026.10.03-v26.56-reader-selection-controls";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13687,7 +13711,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.03-v26.55-themed-file-actions";
+const CDQ_V19_BUILD = "2026.10.03-v26.56-reader-selection-controls";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15499,7 +15523,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.03-v26.55-themed-file-actions";
+const CDQ_V20_BUILD = "2026.10.03-v26.56-reader-selection-controls";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16346,7 +16370,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.03-v26.55-themed-file-actions";
+const CDQ_V21_BUILD = "2026.10.03-v26.56-reader-selection-controls";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16871,7 +16895,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.03-v26.55-themed-file-actions';
+const BUILD='2026.10.03-v26.56-reader-selection-controls';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -19455,6 +19479,7 @@ function styleElV2208(id){
 }
 
 function cdqApplyVisibleIconScaleV2208(value){
+  if(window.cdqMobileLayout){window.cdqMobileLayout.apply();return;}
   value=clampV2208(value);
 
   const bottom=window.cdqPersonalSizing.factor('Icon',value,x=>interpV2208(x,16,29,43));
@@ -20512,7 +20537,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.03-v26.55-themed-file-actions';
+  const BUILD='2026.10.03-v26.56-reader-selection-controls';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22778,7 +22803,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.03-v26.55-themed-file-actions',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.03-v26.56-reader-selection-controls',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -24100,6 +24125,12 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
 
 </script>
 <script type="module" src="./icon-previews-v2651.mjs"></script>
+<script id="cdqSelectionDockV2656">(function(){
+    function start(){const area=document.getElementById('sendArea');if(!area)return;document.body.append(area);
+      function measure(){document.documentElement.style.setProperty('--cdq-send-dock-height-v2656',area.style.display==='none'?'0px':area.getBoundingClientRect().height+'px');}
+      new ResizeObserver(measure).observe(area);new MutationObserver(measure).observe(area,{attributes:true,attributeFilter:['style']});measure();}
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  })();</script>
 </body>
 </html>
 
