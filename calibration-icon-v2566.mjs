@@ -1,5 +1,6 @@
 let serial=0;
 export function calibrationIcon(theme='current',size=32){
+  const special=globalThis.window?.cdqSpecialIconsV2658?.svg('calibration',theme);if(special)return special;
   if(!['current','metal-music','isometric','minimal','dark-pro'].includes(theme))theme='current';
   if(theme==='metal-music')return '<img class="cdq-calibration-indicator" data-theme="metal-music" src="'+new URL('./assets/calibration-metal-v2566.png',import.meta.url).href+'" width="'+Number(size)+'" height="'+Number(size)+'" alt="" aria-hidden="true">';
   const id='cal2566-'+(++serial),metal=theme==='metal-music',iso=theme==='isometric',minimal=theme==='minimal',dark=theme==='dark-pro';

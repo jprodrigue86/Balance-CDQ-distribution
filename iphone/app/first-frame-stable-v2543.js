@@ -51,6 +51,13 @@
     window.cdqMobileLayout?.apply?.();
     await paints();
     if(document.fonts)await document.fonts.ready;
+    while(typeof cdqAccessState!=='undefined'&&cdqAccessState==='pending')await new Promise(r=>setTimeout(r,50));
+    while(typeof cdqAccessState!=='undefined'&&cdqAccessState==='ready'&&window.cdqDriveEntryV2632?.status?.()==='pending')await new Promise(r=>setTimeout(r,50));
+    while(typeof cdqAccessState!=='undefined'&&cdqAccessState==='ready'&&window.cdqDriveEntryV2632?.canRead()){
+      const email=String(utilisateurCourantEmail||'');
+      if(document.documentElement.dataset.cdqClientsOwnerV2658===email||document.documentElement.dataset.cdqClientsErrorV2658==='true')break;
+      await new Promise(r=>setTimeout(r,50));
+    }
     let last='',started=performance.now();
     for(;;){
       await Promise.all(urls().map(decode));

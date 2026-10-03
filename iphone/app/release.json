@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.57",
-  "release": "91ef665b48a3304d3d87818b000d717b3e0defb5aa870149a6772bf9eb71070b",
+  "version": "26.58",
+  "release": "0bde3609a954a3082448f5b6242304c7492e96abd352d3cb442bf6ccf05b15e4",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.03-v26.57-downloads-action-artwork",
-  "androidSelectorSha256": "0c228ca5d40293ee52a7ffac9cbb088f797e61a40065beb2723490d54631f964",
+  "androidSourceBuild": "2026.10.03-v26.58-complete-workspace",
+  "androidSelectorSha256": "e4ad303721acf8090dd9eaebc46f4c87d6a0a4602eb5537dfed1f28260a9f970",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
-  "files": 409
+  "files": 412
 }

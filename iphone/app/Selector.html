@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.57" data-cdq-iphone-release="91ef665b48a3304d3d87818b000d717b3e0defb5aa870149a6772bf9eb71070b">
+<html data-cdq-iphone-version="26.58" data-cdq-iphone-release="0bde3609a954a3082448f5b6242304c7492e96abd352d3cb442bf6ccf05b15e4">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqFileActionsV2655">(function(){
@@ -21,6 +21,7 @@
     finish:'<path d="m14 8 18 18L50 8l6 6-18 18 18 18-6 6-18-18-18 18-6-6 18-18L8 14z"/><path class="light" d="m14 14 18 18 18-18M14 50l13-13"/>'
   };
   window.cdqActionArtworkV2657=function(key,id,palette){
+    const special=window.cdqSpecialIconsV2658?.svg(key,id);if(special)return special;
     const color=colors[key]||colors.note,light=palette==='light';
     const face=id==='minimal'?color:id==='dark-pro'?(light?'#eff3f7':'#75889c'):'url(#face)';
     const rim=light?'#566674':'#131b24',ink=light?'#34404d':'#14202c';
@@ -642,7 +643,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.03-v26.57-downloads-action-artwork">
+<meta name="cdq-package-build" content="2026.10.03-v26.58-complete-workspace">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -921,7 +922,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.03-v26.57-downloads-action-artwork'
+    build:'2026.10.03-v26.58-complete-workspace'
   });
 }
 
@@ -934,7 +935,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.03-v26.57-downloads-action-artwork'
+        build:'2026.10.03-v26.58-complete-workspace'
       });
     }
   } catch(e) {}
@@ -5912,6 +5913,29 @@ html.cdq-mobile-layout.cdq-workspace-open body > #sendArea{visibility:hidden!imp
 html.cdq-mobile-layout #modalOverlay .modal{overflow:auto;max-height:calc(100dvh - 24px)}
 html.cdq-mobile-layout #modalOverlay .modal-buttons{position:sticky;bottom:0;z-index:2;background:var(--cdq-surface);padding:10px 0;margin-bottom:0}
 </style>
+<style id="cdqApplicationV2658">/* Compact selection controls keep the file list visible. */
+html.cdq-mobile-layout body #selectionBar{padding:6px 8px!important;min-height:48px!important;gap:6px!important;border-radius:14px!important}
+html.cdq-mobile-layout body #selectionBar>:is(#duplicateSelectionButtonV2655,#deleteButton,#finishSelectionButton){height:42px!important;min-height:42px!important;width:auto!important;flex:0 0 auto!important;flex-direction:row!important;padding:6px 10px!important}
+html.cdq-mobile-layout body #selectionBar .cdq-action-art-v2655{width:25px!important;height:25px!important}
+html.cdq-mobile-layout body #selectionCount{flex:1;min-width:0;font-size:13px!important}
+html.cdq-mobile-layout body #selectionBar .cdq-action-label-v2655{font-size:12px!important}
+html.cdq-mobile-layout[data-cdq-workspace-reader-open] #filesContainer{visibility:hidden}
+html.cdq-workspace-reader-open #filesContainer,html.cdq-workspace-reader-open #clientInfoBar,html.cdq-workspace-reader-open #quickButtons{visibility:hidden!important}
+html.cdq-workspace-reader-open #appHeader{background:var(--cdq-bg,#000)!important;isolation:isolate}
+#cdqInvoicePageV2590 .cdq-invoice-title{display:flex;align-items:center;text-align:left;padding:14px 8px 16px;border-bottom:1px solid var(--cdq-line,#333);margin-bottom:12px}
+#cdqInvoicePageV2590 .cdq-invoice-title h2{font:700 24px/1.2 Arial,sans-serif;letter-spacing:0;text-shadow:none;text-transform:none}
+#cdqInvoicePageV2590 .cdq-invoice-title p{font:14px/1.4 Arial,sans-serif;color:var(--cdq-muted,#aaa);margin-top:6px}
+#cdqInvoicePageV2590 .cdq-invoice-title i{display:none}
+#cdqInvoicePageV2590 .cdq-invoice-close{top:12px;width:44px;height:44px;font-size:24px;background:var(--cdq-raised,#222);border-color:var(--cdq-line,#444)}
+#cdqSettingsModalV2294 .modal{border-radius:24px!important;border:1px solid var(--cdq-line,#444)!important;background:var(--cdq-surface,#111)!important}
+#cdqSettingsModalV2294 .cdq-settings-tabs{display:flex!important;overflow-x:auto;scroll-snap-type:x proximity;gap:7px!important;padding-bottom:9px;flex:none!important}
+#cdqSettingsModalV2294 .cdq-settings-tabs>button{flex:0 0 auto!important;width:auto!important;padding:10px 15px!important;min-height:44px!important;border-radius:13px!important;background:var(--cdq-raised,#222)!important;border:1px solid var(--cdq-line,#444)!important;font-size:14px!important;scroll-snap-align:start}
+#cdqSettingsModalV2294 .cdq-settings-tabs>button[aria-selected=true]{border-color:var(--cdq-accent,#39b7e9)!important;box-shadow:inset 0 -3px var(--cdq-accent,#39b7e9)!important}
+#cdqSettingsModalV2294 .cdq-settings-panel>section,#cdqSettingsModalV2294 .cdq-icon-choice-v2514{border-radius:16px!important;padding:14px!important;background:var(--cdq-raised,#222)!important}
+.cdq24-checklist details{border-bottom:1px solid var(--cdq-line,#444);padding:8px}
+.cdq24-checklist summary{padding:8px;cursor:pointer;font-weight:700;min-height:28px}
+.cdq24-checklist details>div{padding-left:12px}
+</style>
 </head>
 
 
@@ -7799,24 +7823,29 @@ function appliquerDroitsRoleInterface(){
 function chargerClients(forceRefresh, initialCompanies){
   const force=!!forceRefresh, email=String(utilisateurCourantEmail||'');
   const sequence=chargerClients.sequence=(chargerClients.sequence||0)+1;
-  let shown=false;
+  let shown=false,settle;
+  const ready=new Promise(resolve=>{settle=resolve;});
+  window.cdqClientsReadyV2658=ready;
   const current=()=>sequence===chargerClients.sequence&&cdqAccessState==='ready'&&window.cdqDriveEntryV2632.canRead()&&email===String(utilisateurCourantEmail||'');
   function apply(companies){
     if(!current())return;
     toutesLesCompagnies=(companies||[]).slice().sort((a,b)=>String(a.nom||'').localeCompare(String(b.nom||''),'fr',{sensitivity:'base'}));
     remplirListeCompagnies();shown=true;
+    document.documentElement.dataset.cdqClientsOwnerV2658=email;
+    document.documentElement.removeAttribute('data-cdq-clients-error-v2658');
+    settle({ok:true,email,count:toutesLesCompagnies.length});
   }
   function server(forceServer=force){
     if(!current())return;
     cdqApiRun().withSuccessHandler(companies=>{
       if(!current())return;
       apply(companies);sauvegarderCachePersistantCompagnies(toutesLesCompagnies);
-    }).withFailureHandler(error=>{if(current()&&!shown)afficherErreur(error);}).obtenirDossiersClients(forceServer);
+    }).withFailureHandler(error=>{if(current()&&!shown){afficherErreur(error);document.documentElement.dataset.cdqClientsErrorV2658='true';settle({ok:false,email});}}).obtenirDossiersClients(forceServer);
   }
   // Show cached clients first, then check Drive without holding up the first screen.
   function refreshLater(){setTimeout(()=>{if(typeof navigator==='undefined'||navigator.onLine!==false)server(true);},3000);}
-  if(!force&&Array.isArray(initialCompanies)){
-    apply(initialCompanies);sauvegarderCachePersistantCompagnies(toutesLesCompagnies);refreshLater();return;
+  if(!force&&Array.isArray(initialCompanies)&&initialCompanies.length){
+    apply(initialCompanies);sauvegarderCachePersistantCompagnies(toutesLesCompagnies);refreshLater();return ready;
   }
   lireCachePersistantCompagnies().then(record=>{
     if(!current())return;
@@ -7825,6 +7854,7 @@ function chargerClients(forceRefresh, initialCompanies){
       if(Date.now()-Number(record.verifiedAt||0)>120000)refreshLater();
     }else server();
   }).catch(()=>server());
+  return ready;
 }
 
 
@@ -8063,6 +8093,7 @@ function choisirCompagnie(
   compagnie
 ){
   if(!compagnie || !compagnie.id)return;
+  if(String(compagnie.id)!==String(compagnieSelectionnee||''))quitterModeSelection();
 
   cdqDossierOuvertId = null;
   cdqDossierOuvertNom = "";
@@ -10680,7 +10711,7 @@ function cdqPrepareSendOptionsV2553(files,clientId){
     if(message)modal.insertBefore(host,message);else modal.querySelector('.modal-buttons')?.before(host);
   }
   const hasPdf=(files||[]).some(id=>cdqPdfMetaV2553(id,null)),flatten=document.getElementById('cdqSendFlattenV2553'),saveRecipient=document.getElementById('cdqSendSaveRecipientV2553');
-  if(flatten){flatten.checked=hasPdf;flatten.disabled=!hasPdf;flatten.closest('label').style.display=hasPdf?'flex':'none';}
+  if(flatten){flatten.checked=true;flatten.disabled=false;flatten.closest('label').style.display='flex';}
   if(saveRecipient)saveRecipient.onclick=async()=>{
     const input=document.getElementById('emailDestinataire'),status=document.getElementById('cdqSendRecipientStatusV2553'),value=String(input?.value||'').trim();
     if(!value){if(status)status.textContent='Entrez d’abord une adresse courriel.';return}
@@ -11391,7 +11422,10 @@ function actualiserIconesMode(){
 
 
 function ouvrirCorbeilleDrive(){
-  window.open("https://drive.google.com/drive/trash", "_blank");
+  const native=window.BalanceCDQNative||window.parent.BalanceCDQNative;
+  if(native?.openDriveTrash){native.openDriveTrash(String(window.cdqDefaultGoogleAccountV2294||''));return;}
+  const tab=window.open('https://drive.google.com/drive/trash','_blank','noopener');
+  if(!tab)window.location.assign('https://drive.google.com/drive/trash');
 }
 
 
@@ -11427,7 +11461,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.03-v26.57-downloads-action-artwork";
+  const CDQ_BUILD = "2026.10.03-v26.58-complete-workspace";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13723,7 +13757,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.03-v26.57-downloads-action-artwork";
+const CDQ_V19_BUILD = "2026.10.03-v26.58-complete-workspace";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15020,7 +15054,9 @@ const cdqOffline24 = (() => {
     // Reconcile removals performed in the offline-startup screen.
     try{const mirror=await bridge('CDQ_OFFLINE_DOCUMENT_LIST');valid(email);for(const id of mirror?.removed||[])await removeLocal(id);if(mirror?.removed?.length)await refresh();}catch(e){if(ticket===view)choose.append(el('p',e.message));}
     let manifest=null,error='';
-    if(comp){try{manifest=navigator.onLine?await cdqV19Gs('obtenirManifestHorsLigneClient',[comp.id]):(await cdqV19GetRecord('documents-manifest',comp.id))?.manifest;valid(email);
+    if(comp){try{const cached=await cdqV19GetRecord('offline-folder-v2658',comp.id);valid(email);
+      manifest=cached?.content;
+      if(navigator.onLine&&(!manifest||Date.now()-Number(cached.savedAt)>300000)){manifest=await cdqV19Gs('obtenirContenuClientOptimise',[comp.id,false]);valid(email);await cdqV19PutRecord('offline-folder-v2658',comp.id,{content:manifest,savedAt:Date.now()});}
       if(manifest)await cdqV19PutRecord('documents-manifest',comp.id,{manifest});
     }catch(e){error=e.message;}}
     if(ticket!==view)return;valid(email);choose.replaceChildren();
@@ -15030,12 +15066,26 @@ const cdqOffline24 = (() => {
     if(error)choose.append(el('p',error));
     const inputs=[],ids=new Set(Array.from(document.querySelectorAll('.file-checkbox:checked')).map(n=>n.dataset.fileId));
     const tools=el('div','', 'cdq24-actions');choose.append(tools);
-    button(tools,'Tout sélectionner',()=>{inputs.forEach(i=>i.checked=true);});button(tools,'Tout désélectionner',()=>{inputs.forEach(i=>i.checked=false);});
+    button(tools,'Sélectionner les fichiers affichés',()=>{inputs.forEach(i=>i.checked=true);});button(tools,'Tout désélectionner',()=>{inputs.forEach(i=>i.checked=false);});
     const list=el('div','', 'cdq24-checklist');choose.append(list);
-    for(const file of catalog.files){
-      if(!['PDF','GOOGLE_SHEETS'].includes(file.type))continue;
-      const label=el('label'),input=el('input');input.type='checkbox';input.value=file.id;input.checked=ids.has(String(file.id));inputs.push(input);label.append(input,el('span',(file.nom||file.id)+(file.type==='GOOGLE_SHEETS'?' — Google Sheets':'')));list.append(label);
+    catalog.files=[];
+    function renderFolder(data,host,ancestors){
+      for(const file of data?.fichiers||[]){if(!['PDF','GOOGLE_SHEETS'].includes(file.type))continue;
+        if(catalog.files.some(f=>String(f.id)===String(file.id)))continue;catalog.files.push(file);
+        const label=el('label'),input=el('input');input.type='checkbox';input.value=file.id;input.checked=ids.has(String(file.id));inputs.push(input);label.append(input,el('span',(file.nom||file.id)+(file.type==='GOOGLE_SHEETS'?' — Sheets':'')));host.append(label);
+      }
+      for(const folder of data?.dossiers||[]){if(ancestors.has(String(folder.id)))continue;
+        const details=el('details'),summary=el('summary',folder.nom||'Dossier'),children=el('div');details.append(summary,children);host.append(details);
+        details.addEventListener('toggle',async()=>{if(!details.open||details.dataset.loaded||details.dataset.loading)return;
+          details.dataset.loading='true';children.textContent='Chargement…';try{const cached=await cdqV19GetRecord('offline-folder-v2658',folder.id);valid(email);let content=cached?.content;
+            if(navigator.onLine&&(!content||Date.now()-Number(cached.savedAt)>300000)){content=await cdqV19Gs('obtenirContenuDossierParesseux',[String(folder.id),comp.id]);valid(email);await cdqV19PutRecord('offline-folder-v2658',folder.id,{content,savedAt:Date.now()});}
+            if(ticket!==view)return;children.replaceChildren();if(!content){children.textContent='Ouvrez ce dossier avec Internet pour charger sa liste.';return;}
+            details.dataset.loaded='true';renderFolder(content?.contenu||content,children,new Set([...ancestors,String(folder.id)]));start.disabled=!inputs.length||navigator.onLine===false;
+          }catch(e){if(ticket===view)children.textContent=e.message||String(e);}finally{delete details.dataset.loading;}
+        });
+      }
     }
+    renderFolder(manifest?.contenu||manifest,list,new Set([comp.id]));
     if(!inputs.length)choose.append(el('p','Aucun PDF ou Google Sheets dans cette compagnie.'));
     const start=button(choose,'Préparer les fichiers cochés',()=>run(catalog.files.filter(f=>inputs.some(i=>i.checked&&i.value===String(f.id))),comp));start.disabled=!inputs.length||navigator.onLine===false;
     if(catalog.files.some(f=>f.type==='GOOGLE_SHEETS'))choose.append(el('p','Les PDF sont téléchargés dans CDQ. Les Google Sheets cochés sont ajoutés à cette liste; ouvrez-les ensuite pour activer ⋮ → Disponible hors connexion dans Google Sheets.','cdq24-help'));
@@ -15535,7 +15585,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.03-v26.57-downloads-action-artwork";
+const CDQ_V20_BUILD = "2026.10.03-v26.58-complete-workspace";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16382,7 +16432,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.03-v26.57-downloads-action-artwork";
+const CDQ_V21_BUILD = "2026.10.03-v26.58-complete-workspace";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -16907,7 +16957,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.03-v26.57-downloads-action-artwork';
+const BUILD='2026.10.03-v26.58-complete-workspace';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20549,7 +20599,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.03-v26.57-downloads-action-artwork';
+  const BUILD='2026.10.03-v26.58-complete-workspace';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22314,7 +22364,12 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     {id:'minimal', title:'4 · Minimaliste', crop:116, y:260},
     {id:'dark-pro', title:'5 · Dark Pro', crop:152, y:400},
     {id:'metal-music', title:'6 · Metal Music', crop:164, y:559},
-    {id:'isometric', title:'7 · 3D isométrique', crop:164, y:720}
+    {id:'isometric', title:'7 · 3D isométrique', crop:164, y:720},
+    {id:'aurora',title:'8 · Aurora',crop:164,y:720},
+    {id:'obsidian',title:'9 · Obsidienne',crop:164,y:720},
+    {id:'titanium',title:'10 · Titane',crop:164,y:720},
+    {id:'solar',title:'11 · Solstice',crop:164,y:720},
+    {id:'cyberwave',title:'12 · Cyberwave',crop:164,y:720}
   ];
   const names = ['Accueil','Favoris','Dossier','Inventaire','Factures','Corbeille'];
   const centers = [230,454,681,909,1136,1360];
@@ -22359,6 +22414,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     catch (error) { syncState = 'Le choix sera conservé après sa synchronisation avec ton compte.'; }
   }
   function sprite(element, styleId, index) {
+    if(window.cdqSpecialIconsV2658?.paint(element,styleId,['home','favorite','folder','inventory','invoices','trash'][index]))return;
     const style = styles.find(s => s.id === styleId) || styles[0];
     const x = (styleId === 'current' ? originalCenters : centers)[index] - style.crop / 2;
     element.dataset.artSource = styleId === 'current' ? 'original' : 'transparent';
@@ -22815,7 +22871,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.03-v26.57-downloads-action-artwork',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.03-v26.58-complete-workspace',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23059,7 +23115,7 @@ async function open(){
  }
  if(!dialog.open)dialog.showModal();await poll();
 }
-function mount(){for(const target of document.querySelectorAll('#pc18Users,#cdqAdminSettingsButton')){const parent=target.parentElement;let b=parent.querySelector('[data-migration25]');if(owner()&&!b){b=button('Convertir les Sheets de plancher',open);b.dataset.migration25='';b.className=target.className;parent.append(b);}if(b)b.hidden=!owner();}if(!owner()&&dialog?.open)dialog.close();}
+function mount(){}
 let scheduled=false;new MutationObserver(()=>{if(!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;mount();});}}).observe(document.body,{childList:true,subtree:true});window.addEventListener('cdq:access-ready',mount);window.cdqFloorMigration25={open};mount();
 })();
 
@@ -24015,7 +24071,7 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
     if (force || !canRead()) return check(!!force);
     return originalClients?.call(this, false, ...args);
   };
-  window.cdqDriveEntryV2632 = Object.freeze({ version: '26.33', canRead, refresh: () => check(true), approvedEmail: () => canRead() ? allowed : '' });
+  window.cdqDriveEntryV2632 = Object.freeze({ version: '26.58', canRead, status: () => accessStatus, refresh: () => check(true), approvedEmail: () => canRead() ? allowed : '' });
   // Preserve the historical login call site, while replacing the blocking gate.
   window.cdqDriveAccessGateV2620 = Object.freeze({
     version: '26.33', afterLogin: (_companies, state) => {
@@ -24131,7 +24187,7 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
   document.head.append(style);
   window.cdqStartupFrameV2652.wait().then(()=>{
     if(localStorage.getItem('cdq_auth_device_token_v2')!==token||typeof cdqAccessState==='undefined'||cdqAccessState!=='pending')return;
-    parent.postMessage({type:'CDQ_INTERFACE_READY_V2648'},location.origin);
+    // Approved data and the complete frame are revealed together.
   }).catch(()=>{});
 })();
 
@@ -24143,6 +24199,44 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
       new ResizeObserver(measure).observe(area);new MutationObserver(measure).observe(area,{attributes:true,attributeFilter:['style']});measure();}
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
   })();</script>
+<script>(()=>{
+ const themes={aurora:{a:'#5ff4c5',b:'#7165ff',ink:'#bdfced',fill:'#113948',style:'rounded'},obsidian:{a:'#e3d9ff',b:'#a885d1',ink:'#ece4fa',fill:'#29212e',style:'faceted'},titanium:{a:'#deedfa',b:'#617c98',ink:'#d4e6f1',fill:'#314251',style:'metal'},solar:{a:'#ffe4a1',b:'#ff7654',ink:'#ffe9c0',fill:'#54341d',style:'rounded'},cyberwave:{a:'#49e9ff',b:'#ff53d5',ink:'#bdfeff',fill:'#192848',style:'wire'}};
+ const paths={home:'<path d="M7 30 32 8 57 30M14 27v29h14V39h9v17h13V27"/>',folder:'<path d="M7 18V12h18l7 8h25v35H7zM7 27h50"/>',favorite:'<path d="m32 7 8 16 18 3-13 12 3 19-16-9-16 9 3-19L6 26l18-3z"/>',inventory:'<path d="m7 19 25-12 25 12v28L32 59 7 47zM7 19l25 12 25-12M32 31v28M20 13l25 12"/>',invoices:'<path d="M16 6h32v52l-8-5-8 5-8-5-8 5zM23 18h18M23 27h18M23 36h12"/>',trash:'<path d="M13 19h38M24 10h16v9M19 19l3 38h20l3-38M28 27v21M36 27v21"/>',calibration:'<rect x="7" y="12" width="50" height="32" rx="5"/><path d="M16 51h32M22 44v7M42 44v7M14 21h27v13H14zM47 22h3M47 31h3"/>',calcul:'<rect x="14" y="5" width="36" height="54" rx="5"/><path d="M21 13h22v12H21zM22 34h4M38 34h4M22 44h4M38 44h4M22 53h4M38 53h4"/>',opportunities:'<path d="M9 53h46M15 46V32h9v14M30 46V23h9v23M45 46V14h9v32M12 19l16-8 8 5 15-9M43 7h8v8"/>',copy:'<path d="M10 8h31v39H10zM23 19h31v39H23zM30 31h16M30 40h16M30 49h10"/>',duplicate:'<path d="M10 8h31v39H10zM23 19h31v39H23zM30 40h16M38 32v16"/>',send:'<path d="M7 29 57 7 39 58l-11-21zM28 37 57 7M28 37l-3 14 8-8"/>',note:'<path d="M16 6h25l11 12v40H16zM41 6v13h11M23 29h22M23 39h22M23 49h15"/>',photo:'<path d="M7 20h13l5-9h14l5 9h13v34H7z"/><circle cx="32" cy="36" r="12"/>',delete:'<path d="M13 19h38M24 10h16v9M19 19l3 38h20l3-38M28 27v21M36 27v21"/>',finish:'<path d="m14 14 36 36M50 14 14 50"/>',rename:'<path d="m12 41-5 16 16-5 33-33L43 6zM12 41l11 11M36 13l13 13"/>',protect:'<path d="m32 7 22 8v18c0 12-12 21-22 27C22 54 10 45 10 33V15zM23 31v-7a9 9 0 0 1 18 0v7M20 31h24v17H20z"/>',unlock:'<path d="m32 7 22 8v18c0 12-12 21-22 27C22 54 10 45 10 33V15zM23 31v-7a9 9 0 0 1 18 0M20 31h24v17H20z"/>'};
+ const cache=new Map();
+ function svg(key,style){const t=themes[style];if(!t)return '';const id=style+':'+key;if(cache.has(id))return cache.get(id);
+  const shape=paths[key]||paths.note,facets=t.style==='faceted'?'<path d="M3 3h11M3 3v11M61 61H50M61 61V50" stroke="'+t.b+'" stroke-width="1.2" opacity=".65" fill="none"/>':'';
+  const art='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="face" x2="1" y2="1"><stop stop-color="'+t.a+'"/><stop offset="1" stop-color="'+t.b+'"/></linearGradient></defs><g fill="'+(t.style==='wire'?'none':t.fill)+'" stroke="url(#face)" stroke-width="'+(t.style==='metal'?3.2:2.8)+'" stroke-linejoin="'+(t.style==='faceted'?'miter':'round')+'" stroke-linecap="round">'+shape+'</g>'+facets+'</svg>';
+  const image='<svg data-action-icon="'+key+'" data-icon-theme="'+style+'" data-artwork-version="2658" viewBox="0 0 64 64" aria-hidden="true"><image width="64" height="64" href="data:image/svg+xml,'+encodeURIComponent(art)+'"/></svg>';cache.set(id,image);return image;
+ }
+ function paint(el,style,key){const art=svg(key,style);if(!art)return false;el.dataset.artSource='vector-v2658';el.style.setProperty('background-image','none','important');el.style.setProperty('clip-path','none','important');if(el.dataset.cdqSpecialKey!==style+':'+key){el.innerHTML=art;el.dataset.cdqSpecialKey=style+':'+key;}return true;}
+ window.cdqSpecialIconsV2658={svg,paint,themes};
+})();
+
+(()=>{
+ 'use strict';
+ const owner=()=>{try{return String(utilisateurCourantEmail||'').toLowerCase();}catch{return '';}};
+ const key=()=>owner()?'cdq-workspace-position-v2658:'+owner():'';
+ let restoring=false;
+ function remember(){
+  if(restoring||!key()||cdqAccessState!=='ready'||!window.cdqDriveEntryV2632?.canRead())return;
+  try{localStorage.setItem(key(),JSON.stringify({clientId:String(compagnieSelectionnee||''),folderId:String(cdqDossierOuvertId||''),folderName:String(cdqDossierOuvertNom||''),route:document.documentElement.dataset.cdqWorkspace||'',scrollY:scrollY,savedAt:Date.now()}));}catch{}
+ }
+ async function restore(){
+  if(!key()||!window.cdqDriveEntryV2632?.canRead()||document.documentElement.dataset.cdqRestoredV2658===owner())return;
+  document.documentElement.dataset.cdqRestoredV2658=owner();
+  let saved;try{saved=JSON.parse(localStorage.getItem(key())||'null');}catch{}
+  if(!saved?.clientId)return;
+  const client=toutesLesCompagnies.find(c=>String(c.id)===saved.clientId);if(!client)return;
+  restoring=true;try{choisirCompagnie(client);if(saved.folderId){cdqDossierOuvertId=saved.folderId;cdqDossierOuvertNom=saved.folderName;chargerFichiers();}if(saved.route&&window.cdqWorkspaceV2638?.navigate)window.cdqWorkspaceV2638.navigate(saved.route);requestAnimationFrame(()=>scrollTo(0,saved.scrollY||0));}finally{restoring=false;}
+ }
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)remember();});
+ addEventListener('pagehide',remember);addEventListener('scroll',()=>{clearTimeout(remember.timer);remember.timer=setTimeout(remember,250);},{passive:true});
+ document.addEventListener('click',()=>setTimeout(remember,100),true);
+ const observer=new MutationObserver(()=>{if(document.documentElement.dataset.cdqClientsOwnerV2658===owner())restore();});
+ observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-cdq-clients-owner-v2658']});
+ window.cdqWorkspaceResumeV2658={remember,restore};
+})();
+</script>
 </body>
 </html>
 

@@ -1,6 +1,7 @@
 import {calibrationIcon} from './calibration-icon-v2566.mjs';
 import {calibrationIdentity,calibrationRpc,revisionOf,queueFeedback,flushFeedback,pendingFeedback} from './calibration-feedback-v2566.mjs';
-import {devices,forFile,categories,manufacturers,findCalibration} from './calibration-db-v2565.mjs';
+import {devices,forFile,categories,manufacturers,findCalibration,addClientDevices,resetClientDevices} from './calibration-db-v2565.mjs';
+import {calibrationNotes,calibrationNotesSource} from './calibration-notes-v2658.mjs';
 
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
@@ -70,12 +71,42 @@ function goBack(){
   if(state.view==='manufacturer')return showCategory(state.category);if(state.view==='category')return showRoot();showRoot();
 }
 function setView(r){if(r.view==='alerts')return showAlerts();if(r.view==='manufacturer')return showManufacturer(r.category,r.manufacturer);if(r.view==='category')return showCategory(r.category);return showRoot();}
-function rootCards(){return categories().map(c=>'<button class="cdq-cal-card" data-cat="'+esc(c.id)+'"><strong>'+esc(c.label)+'</strong><small>'+c.count+' modèle'+(c.count>1?'s':'')+' inventorié'+(c.count>1?'s':'')+'</small></button>').join('');}
+function rootCards(){return categories().map(c=>'<button class="cdq-cal-card" data-cat="'+esc(c.id)+'"><strong>'+esc(c.label)+'</strong><small>'+c.count+' modèle'+(c.count>1?'s':'')+' inventorié'+(c.count>1?'s':'')+'</small></button>').join('')+'<button type="button" class="cdq-cal-card" data-cal-passwords><strong>Mots de passe et notes CDQ</strong><small>'+calibrationNotes.length+' fiches du classeur de calibration</small></button>';}
 function showRoot(){
   state={view:'root',category:'',manufacturer:'',device:null,returnView:null};shell('Calibration','<input class="cdq-cal-search" type="search" placeholder="Rechercher un fabricant ou un modèle…" aria-label="Rechercher une calibration"><div class="cdq-cal-grid" data-cal-results>'+rootCards()+'</div>',false);
   bindRoot();addAdminButton();$('.cdq-cal-search',dialog).oninput=e=>renderSearch(e.target.value);
+  const scan=document.createElement('button');scan.type='button';scan.className='cdq-cal-card';scan.dataset.calScan='';scan.innerHTML='<strong>Actualiser les appareils des clients</strong><small>Lire les indicateurs et balances des feuilles clients</small>';scan.onclick=()=>scanClients(scan);$('.cdq-cal-body',dialog).append(scan);
 }
-function bindRoot(){$$('[data-cat]',dialog).forEach(b=>b.onclick=()=>showCategory(b.dataset.cat));}
+let scanning=false;
+let detectedOwner='',detectedItems=[];
+function syncDetectedOwner(){const email=calibrationIdentity().email;if(email===detectedOwner)return;detectedOwner=email;resetClientDevices();detectedItems=[];if(!email)return;try{detectedItems=JSON.parse(localStorage.getItem('cdqCalibrationDetectedV2658:'+email)||'[]');if(!Array.isArray(detectedItems))detectedItems=[];addClientDevices(detectedItems);}catch{detectedItems=[];}}
+function retainDetected(items){syncDetectedOwner();const index=new Map(detectedItems.map(i=>[i.fileId+'|'+i.category,i]));for(const item of items||[])index.set(item.fileId+'|'+item.category,item);detectedItems=[...index.values()];addClientDevices(items);try{localStorage.setItem('cdqCalibrationDetectedV2658:'+detectedOwner,JSON.stringify(detectedItems));}catch{}}
+async function scanClients(button){
+ if(scanning)return;const owner=calibrationIdentity().email;
+ if(!owner||!window.cdqDriveEntryV2632?.canRead())return;
+ const clients=Array.isArray(window.toutesLesCompagnies)?window.toutesLesCompagnies:typeof toutesLesCompagnies!=='undefined'?toutesLesCompagnies:[];
+ scanning=true;button.disabled=true;let checked=0,total=0,failed=0;
+ try{for(const client of clients){let offset=0;do{
+   if(owner!==calibrationIdentity().email||!window.cdqDriveEntryV2632?.canRead())throw Error('Le compte a changé.');
+   const result=await calibrationRpc('cdqScannerCalibrationV2658',String(client.id),offset);
+   if(owner!==calibrationIdentity().email)throw Error('Le compte a changé.');
+   if(result?.ok!==true)throw Error('La lecture des appareils est indisponible.');
+   retainDetected(result.items);checked+=result.checked-offset;failed+=(result.warnings||[]).length;offset=result.next;decorateRows();
+   button.textContent=checked+' feuilles vérifiées · '+devices.length+' modèles · '+total+' / '+clients.length+' clients';
+ }while(offset!==null);total++;}
+ button.textContent='Lecture terminée : '+checked+' feuilles · '+devices.length+' modèles'+(failed?' · '+failed+' fichiers à vérifier':'');
+ }catch(e){button.textContent='Lecture interrompue : '+checked+' feuilles vérifiées. '+e.message;}
+ finally{scanning=false;button.disabled=false;}
+}
+const noteNorm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+function notesFor(device){return calibrationNotes.filter(n=>{
+ const brand=noteNorm(n.manufacturer),wanted=noteNorm(device.manufacturer),models=[device.model,...(device.aliases||[])].map(noteNorm);
+ const sameBrand=brand===wanted||(brand==='weightronix'&&wanted==='averyweightronix');
+ return sameBrand&&models.includes(noteNorm(n.model));
+});}
+function noteCards(notes){return notes.map(n=>'<article class="cdq-cal-section"><h3>'+esc(n.manufacturer)+' · '+esc(n.model)+'</h3><p style="white-space:pre-line">'+esc(n.text)+'</p><small>Notes CDQ · ligne '+n.row+' du classeur</small></article>').join('');}
+function showNotes(){state={view:'notes'};shell('Mots de passe et notes CDQ','<p>Notes du classeur CDQ. Les procédures vérifiées dans les manuels restent dans les fiches des appareils.</p><input class="cdq-cal-search" type="search" placeholder="Fabricant, modèle ou mot de passe…" aria-label="Rechercher les notes CDQ"><main data-cal-notes>'+noteCards(calibrationNotes)+'</main><a class="cdq-cal-source" href="'+esc(calibrationNotesSource)+'" target="_blank" rel="noopener">Ouvrir le classeur source</a>',true);$('.cdq-cal-search',dialog).oninput=e=>{$('[data-cal-notes]',dialog).innerHTML=noteCards(calibrationNotes.filter(n=>noteNorm(n.manufacturer+' '+n.model+' '+n.text).includes(noteNorm(e.target.value))));};}
+function bindRoot(){$$('[data-cat]',dialog).forEach(b=>b.onclick=()=>showCategory(b.dataset.cat));const notes=$('[data-cal-passwords]',dialog);if(notes)notes.onclick=showNotes;}
 function renderSearch(value){
   const q=String(value||'').trim().toLocaleLowerCase('fr'),box=$('[data-cal-results]',dialog);
   if(!q){box.innerHTML=rootCards();bindRoot();return;}
@@ -106,6 +137,7 @@ function openDevice(device,returnView=null){
     if(m.source)body+='<section class="cdq-cal-section"><h3>Source technique</h3><a class="cdq-cal-source" href="'+esc(m.source.url)+'" target="_blank" rel="noopener">'+esc(m.source.label)+'</a></section>';
   }else body+='<section class="cdq-cal-section"><h3>Méthode de calibration</h3><div class="cdq-cal-warning">Ce modèle a été détecté dans les dossiers clients, mais sa procédure détaillée n’est pas encore validée dans la bibliothèque. Consulte le point à préciser ci-dessous avant de choisir une procédure.</div></section>';
   if(device.review)body+='<section class="cdq-cal-section"><h3>'+esc(device.review.label)+'</h3><p>'+esc(device.review.reason)+'</p>'+(device.review.url?'<a class="cdq-cal-source" target="_blank" rel="noopener" href="'+esc(device.review.url)+'">Documentation du fabricant</a>':'')+'</section>';
+  const notes=notesFor(device);if(notes.length)body+='<section class="cdq-cal-section"><h3>Mots de passe et notes CDQ</h3>'+noteCards(notes)+'</section>';
   body+='<section class="cdq-cal-section cdq-cal-feedback" data-cal-feedback></section>';
   shell(device.manufacturer+' '+device.model,body,true);bindFeedback(device);
 }
@@ -177,7 +209,7 @@ async function syncFeedback(){
     $('[data-view]',box).onclick=()=>{box.remove();showAlerts();};$('[data-dismiss]',box).onclick=()=>box.remove();
   }catch(_){}finally{polling=false;}
 }
-function sync(){installStyles();ensureNav();decorateRows();syncIdentity();}
+function sync(){syncDetectedOwner();installStyles();ensureNav();decorateRows();syncIdentity();}
 function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;sync();});}
 function openLibrary(options={}){if(options.device)return openDevice(options.device,{view:'root'});if(options.manufacturer&&options.category)return showManufacturer(options.category,options.manufacturer);if(options.category)return showCategory(options.category);showRoot();}
 function openFor(manufacturer,model){const d=findCalibration(manufacturer,model);if(d)openDevice(d,{view:'root'});else openLibrary();return d;}

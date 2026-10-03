@@ -352,14 +352,17 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         await put('destinations',{id:current.email+':'+d.folderId,email:current.email,...d,savedAt:Date.now()});
         await refresh();
         if(stamp!==epoch||session!==current)return;
-        send({type:'CDQ_OFFLINE_CREATE_LOCAL_RESULT',requestId:id,ok:true,modeleId:c.modeleId,name:c.name});
-        // The PDF is durable before the reader opens. Never wait for a network copy.
-        if(data.open===true)Promise.resolve().then(()=>{
-          if(stamp!==epoch||session!==current)return;
-          const handle=Promise.resolve(openPdf({blob:c.blob,name:c.name,fileId:c.id,modeleId:c.modeleId,autoReportName:c.autoReportName===true,readOnly:false,
-            onClose:()=>readers.delete(c.id),onSave:(blob,requestId)=>saveCopy(c.id,current.email,blob,requestId)}));
-          readers.set(c.id,{epoch:stamp,handle});return handle;
-        }).catch(e=>{status.textContent='Copie conservée dans Mes copies locales. '+(e.message||String(e));});
+        // Confirm the visible reader as well as the durable copy. A hidden old
+        // reader must never swallow a new-report request.
+        if(data.open===true){
+          Promise.resolve().then(()=>new Promise((resolve,reject)=>{
+            if(stamp!==epoch||session!==current)return reject(Error('Le compte a changé.'));
+            const handle=Promise.resolve(openPdf({blob:c.blob,name:c.name,fileId:c.id,modeleId:c.modeleId,autoReportName:c.autoReportName===true,readOnly:false,
+              onOpened:resolve,onError:reject,onClose:()=>readers.delete(c.id),onSave:(blob,requestId)=>saveCopy(c.id,current.email,blob,requestId)}));
+            readers.set(c.id,{epoch:stamp,handle});handle.catch(reject);
+          })).then(()=>{if(stamp===epoch&&session===current)send({type:'CDQ_OFFLINE_CREATE_LOCAL_RESULT',requestId:id,ok:true,modeleId:c.modeleId,name:c.name});})
+          .catch(e=>{if(stamp===epoch&&session===current)send({type:'CDQ_OFFLINE_CREATE_LOCAL_RESULT',requestId:id,ok:false,message:'Copie conservée dans Mes copies locales. '+(e.message||String(e))});});
+        }else send({type:'CDQ_OFFLINE_CREATE_LOCAL_RESULT',requestId:id,ok:true,modeleId:c.modeleId,name:c.name});
         await sync();
       }catch(e){send({type:'CDQ_OFFLINE_CREATE_LOCAL_RESULT',requestId:id,ok:false,message:e.message||String(e)});}
       return;

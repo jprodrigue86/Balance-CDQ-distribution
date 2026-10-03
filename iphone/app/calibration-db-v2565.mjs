@@ -120,7 +120,16 @@ function findCalibration(manufacturer,model){
   return matches.length===1?matches[0]:null;
 }
 function byKey(key){return devices.find(d=>d.key===key)||null;}
-function forFile(fileId){return byKey(fileIndex[String(fileId||'')]||'');}
+const liveFileIndex=new Map();
+const baseDeviceCount=devices.length;
+function resetClientDevices(){devices.splice(baseDeviceCount);liveFileIndex.clear();}
+function forFile(fileId){return byKey(liveFileIndex.get(String(fileId||''))||fileIndex[String(fileId||'')]||'');}
+function addClientDevices(items){for(const item of items||[]){
+  if(!item.manufacturer||!item.model)continue;
+  let device=findCalibration(item.manufacturer,item.model);
+  if(!device){device=detected(item.category==='bench'?'bench':'indicator',String(item.manufacturer).slice(0,120),String(item.model).slice(0,120));devices.push(device);applyCalibrationMethods([device]);}
+  if(item.fileId)liveFileIndex.set(String(item.fileId),device.key);
+}}
 function categories(){return [
   {id:'indicator',label:'Indicateur',count:devices.filter(d=>d.category==='indicator').length},
   {id:'bench',label:'Balance de table',count:devices.filter(d=>d.category==='bench').length}
@@ -128,4 +137,4 @@ function categories(){return [
 function manufacturers(category){
   return [...new Set(devices.filter(d=>d.category===category).map(d=>d.manufacturer))].sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'}));
 }
-export {devices,fileIndex,norm,slug,findCalibration,byKey,forFile,categories,manufacturers};
+export {devices,fileIndex,norm,slug,findCalibration,byKey,forFile,categories,manufacturers,addClientDevices,resetClientDevices};
