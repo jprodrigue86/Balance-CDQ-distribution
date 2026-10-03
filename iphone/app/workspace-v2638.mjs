@@ -47,7 +47,7 @@ function syncNav(){
     if($('[data-workspace-route="'+key+'"]',nav))continue;
     const b=document.createElement('button');b.type='button';b.className='bottom-nav-item';b.dataset.workspaceRoute=key;b.setAttribute('aria-label',label);b.innerHTML='<span class="cdq-workspace-icon">'+workspaceIcon(key)+'</span><small>'+label+'</small>';nav.append(b);
   }
-  for(const b of $$('.bottom-nav-item',nav))if(['drive','favorites'].includes(b.dataset.workspaceRoute)||['Drive général','Mon Drive','Favoris'].includes($('small',b)?.textContent.trim()))b.remove();
+  for(const b of $$('.bottom-nav-item',nav))if(['drive','favorites','report'].includes(b.dataset.workspaceRoute)||['Drive général','Mon Drive','Favoris','Rapport'].includes($('small',b)?.textContent.trim()))b.remove();
   syncHome();
   const theme=iconTheme();
   for(const b of $$('.bottom-nav-item',nav)){
@@ -104,11 +104,12 @@ function syncHome(){
   const create=$('#cdqCreateClientV2640');if(create){const hidden=!!companyId();if(create.hidden!==hidden)create.hidden=hidden;create.disabled=!canWrite();}
   let actions=$('#cdqClientActionsV2640');const files=$('#filesContainer');
   if(!actions&&files){actions=document.createElement('div');actions.id='cdqClientActionsV2640';actions.className='cdq-workspace-actions';
-    actions.innerHTML='<button type="button" data-client-folder>Nouveau dossier</button><button type="button" data-client-list>Liste de balance</button>';files.before(actions);
+    actions.innerHTML='<button type="button" data-client-folder>Nouveau dossier</button><button type="button" data-client-list>Liste de balance</button><button type="button" data-client-report>Nouveau rapport</button>';files.before(actions);
     $('[data-client-folder]',actions).onclick=()=>{if(!companyId()||!canWrite())return;try{ouvrirCreationDossier();}catch(e){window.afficherErreur?.(e);}};
+    $('[data-client-report]',actions).onclick=()=>{if(companyId()&&canWrite())navigate('report');};
     $('[data-client-list]',actions).onclick=()=>{if(companyId()&&canRead())window.cdqBalanceListV2638?.refresh?.(true).catch(e=>window.afficherErreur?.(e));};
   }
-  if(actions){const hidden=!!active||!companyId()||!canRead();if(actions.hidden!==hidden)actions.hidden=hidden;$('[data-client-folder]',actions).disabled=!canWrite();}
+  if(actions){const hidden=!!active||!companyId()||!canRead();if(actions.hidden!==hidden)actions.hidden=hidden;$('[data-client-folder]',actions).disabled=!canWrite();$('[data-client-report]',actions).disabled=!canWrite();}
 }
 function drivePage(){return page(pageByRoute.dossier,driveState.mode==='favorites'?'Favoris':'Dossiers','Dossiers partagés CDQ');}
 function driveCacheKey(mode,id){return ownerKey()+'|'+mode+'|'+id;}

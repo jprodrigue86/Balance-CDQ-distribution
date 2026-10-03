@@ -15,7 +15,7 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
 
   const nameOf=entry=>entry.select?.name||entry.input?.name||entry.button?.name||'';
   const multipleOf=entry=>(entry.kind==='kit-text'||entry.kind==='kit-native')||!!entry.select?.multiple;
-  const disabledOf=entry=>!!(entry.select?.disabled||entry.input?.disabled);
+  const disabledOf=entry=>entry.kind==='kit-native'||entry.kind==='kit-text'?false:!!(entry.select?.disabled||entry.input?.disabled);
   const sourceOf=entry=>entry.select||entry.input;
 
   function selected(entry){
@@ -126,7 +126,7 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     if(kind==='kit-text')button.dataset.cdqKitText='true';
     const label=document.createElement('span');label.className='cdq-choice-value';
     const arrow=document.createElement('span');arrow.className='cdq-choice-arrow';arrow.setAttribute('aria-hidden','true');
-    button.append(label,arrow);
+    button.append(label);
     if(mount)mount.append(button);else source.after(button);
     source.dataset.cdqChoiceSource='true';source.tabIndex=-1;source.setAttribute('aria-hidden','true');
     button.addEventListener('click',()=>open(button));
@@ -173,6 +173,12 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     }
     paint(entry);
   }
+  surface.addEventListener('click',e=>{
+    let button=e.target.closest?.('[data-cdq-choice]');
+    if(!button&&e.target.name?.startsWith('_cdq_affichage_'))button=entries.get(e.target.name.slice('_cdq_affichage_'.length))?.button;
+    if(!button||!entryFor(button))return;
+    e.preventDefault();e.stopImmediatePropagation();open(button);
+  },{capture:true});
   function refresh(){
     refreshNativeSelects();
     refreshKitText();

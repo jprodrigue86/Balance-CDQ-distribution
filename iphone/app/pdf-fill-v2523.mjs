@@ -31,7 +31,7 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false}={}){
       if(field instanceof globalThis.PDFLib.PDFTextField){if(!onlyEmpty||!String(field.getText()||'').trim())field.setText(String(value));}
       else if(field instanceof globalThis.PDFLib.PDFDropdown)field.select(String(value));
     }
-    const font=await lib.embedFont(globalThis.PDFLib.StandardFonts.Helvetica);
+    const font=await lib.embedFont(globalThis.PDFLib.StandardFonts.HelveticaBold);
     for(const [name] of entries){
       const field=form.getFieldMaybe(name);if(!field)continue;
       // Some approved PDFs contain a non-widget kid without a rectangle.

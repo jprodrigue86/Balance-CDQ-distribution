@@ -39,7 +39,7 @@ export function openReader(data){
     if(m.type==='CDQ_READER_READY'){
       ready=true;clearTimeout(timer);
       if(!guard){history.pushState({cdqReader:marker},'',location.href);guard=true;window.addEventListener('popstate',pop);}
-      tell({type:'CDQ_READER_OPEN',blob:data.blob,name:data.name,theme:data.theme,fileId:data.onSave?String(data.fileId||'local-copy'):'',readOnly:!!data.readOnly});
+      tell({type:'CDQ_READER_OPEN',blob:data.blob,name:data.name,theme:data.theme,fileId:data.onSave?String(data.fileId||'local-copy'):'',readOnly:!!data.readOnly,autoReportName:data.autoReportName===true});
     }
     if(m.type==='CDQ_READER_OPENED'){opened=true;data.onOpened?.();if(prefillValues)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});}
     if(m.type==='CDQ_READER_CLOSE')close();
@@ -50,7 +50,7 @@ export function openReader(data){
     }
     if(m.type==='CDQ_READER_SAVE'&&data.onSave&&!data.readOnly){
       if(!/^save-[\w-]{8,80}$/.test(String(m.requestId||''))||!(m.blob instanceof Blob)||m.blob.type!=='application/pdf'||m.blob.size<8||m.blob.size>32*1024*1024)return;
-      if(!saves.has(m.requestId))saves.set(m.requestId,Promise.resolve().then(()=>data.onSave(m.blob,m.requestId)));
+      if(!saves.has(m.requestId))saves.set(m.requestId,Promise.resolve().then(()=>data.onSave(m.blob,m.requestId,m.name)));
       try{const result=await saves.get(m.requestId);tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:true,queued:!!result?.queued});}
       catch(e){saves.delete(m.requestId);tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:false,error:e.message||String(e)});}
     }

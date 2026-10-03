@@ -1,3 +1,5 @@
+import {paintReaderResults} from './reader-results-v2648.mjs';
+import {identificationReportName} from './report-name-v2648.mjs';
 import {installTouchNavigation,installFormNavigation,installNativeTextInput} from './reader-interactions-v2525.mjs';
 import {installReaderCalibration} from './reader-calibration-v2565.mjs';
 import {installReaderChoices} from './reader-choices-v2572.mjs';
@@ -6,7 +8,17 @@ import {saveEditableFormAppearance} from './reader-choice-appearance-v2572.mjs';
 installReaderTheme();
 const assets=new URL('./vendor/pdfjs-6.3.289/',import.meta.url).href;
 const $=id=>document.getElementById(id),hosted=parent!==window;
-let parentOrigin='';
+let parentOrigin='',autoReportName=false;
+const formattedFields=new Map(),fieldTypography=new Map();
+function applyFieldTypography(){
+  for(const field of $('viewer').querySelectorAll('input,textarea,select')){
+    if(!fieldTypography.has(field.name)||field.name.startsWith('_')||/statut/i.test(field.name))continue;
+    const size=fieldTypography.get(field.name);
+    field.style.setProperty('font-size','calc('+size+'px * var(--total-scale-factor))','important');
+  }
+}
+function refreshResults(){if(!doc)return;paintReaderResults($('viewer'));}
+
 try{const o=new URL(document.referrer).origin;if(o===location.origin||/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(o))parentOrigin=o;}catch(_){}
 const tell=data=>{if(hosted&&parentOrigin)parent.postMessage(data,parentOrigin)};
 let api,viewer,scripting,doc,touch,form,readOnly=false,dirty=false,version=0,savedVersion=0,saving=false;
@@ -48,17 +60,18 @@ function cdqFieldDefinitionsV2581(name){
 }
 function cdqStoredFieldStateV2581(name){
   const definitions=cdqFieldDefinitionsV2581(name);
-  let value='',hasValue=false,pdfReadOnly=definitions.length>0;
+  let value='',formattedValue,hasValue=false,pdfReadOnly=definitions.length>0;
   for(const definition of definitions){
     let stored=definition;
     try{if(definition?.id)stored=doc?.annotationStorage?.getValue(definition.id,definition)||definition;}catch(_){}
     const candidate=stored?.value??definition?.value??definition?.defaultValue;
+    if(formattedValue===undefined)formattedValue=stored?.formattedValue??formattedFields.get(definition.id);
     if(!hasValue&&candidate!==undefined&&candidate!==null){value=candidate;hasValue=true;}
     const flags=Number(stored?.fieldFlags??definition?.fieldFlags??stored?.flags??definition?.flags??0);
-    const locked=Boolean(stored?.readOnly??definition?.readOnly) || !!(flags&1);
+    const locked=definition?.editable===false||Boolean(stored?.readOnly??definition?.readOnly) || !!(flags&1);
     if(!locked)pdfReadOnly=false;
   }
-  return {value:hasValue?value:'',readOnly:pdfReadOnly};
+  return {value:hasValue?value:'',formattedValue,readOnly:pdfReadOnly};
 }
 function cdqApplyConstraintDefaultsV2583(){
   if(!doc||!fieldDefinitions)return;
@@ -90,7 +103,8 @@ function cdqRestoreInteractiveFieldsV2581(){
         const wanted=new Set(Array.isArray(state.value)?state.value.map(String):[String(state.value??'')]);
         for(const option of field.options)option.selected=wanted.has(String(option.value));
       }else{
-        const wanted=Array.isArray(state.value)?state.value.join(' + '):String(state.value??'');
+        const raw=Array.isArray(state.value)?state.value.join(' + '):String(state.value??'');
+        const wanted=state.formattedValue??raw;
         if(field.value!==wanted)field.value=wanted;
       }
     }
@@ -173,7 +187,7 @@ function cdqScheduleViewportFieldV2550(){
 }
 let name='Rapport.pdf',fileId='',pending=null,opening=false,closeAfterSave=false,closed=false;
 const status=value=>{const el=$('status');el.textContent=value;el.dataset.active=String(!!value);};
-function busy(value){saving=value;$('viewer').inert=value;$('savingMask').hidden=!value;for(const id of ['save','saveClose','doneFields','discard','file'])$(id).disabled=value||!doc||readOnly;}
+function busy(value){saving=value;$('viewer').inert=value;$('savingMask').hidden=!value;for(const id of ['save','saveClose','doneFields','dismissKeyboard','discard','file'])$(id).disabled=value||!doc||readOnly;}
 function fail(error){busy(false);status(error.message||String(error));$('closeError').textContent=error.message||String(error);closeAfterSave=false;}
 function modified(){if(!readOnly&&!opening){dirty=true;version++;status('');}}
 function close(){if(closed)return;closed=true;dirty=false;try{$('closeDialog').close()}catch(_){};tell({type:'CDQ_READER_CLOSE'});if(!hosted)history.back();}
@@ -227,7 +241,7 @@ async function open(data){
   const blob=data.blob;
   if(!(blob instanceof Blob)||blob.size>32*1024*1024||(await blob.slice(0,5).text())!=='%PDF-')throw Error('PDF invalide (32 Mo maximum).');
   if(doc)return; // A repeated READY/OPEN exchange must never erase current answers.
-  opening=true;$('viewer').inert=true;name=String(data.name||name);fileId=String(data.fileId||'');readOnly=!!data.readOnly;
+  opening=true;autoReportName=data.autoReportName===true;$('viewer').inert=true;name=String(data.name||name);fileId=String(data.fileId||'');readOnly=!!data.readOnly;
   $('name').textContent=name;$('empty').style.display='none';status('Ouverture du PDF…');
   const sourceBytes=new Uint8Array(await blob.arrayBuffer());
   const task=api.getDocument({data:sourceBytes,standardFontDataUrl:assets+'standard_fonts/',cMapUrl:assets+'cmaps/',cMapPacked:true,wasmUrl:assets+'wasm/',isEvalSupported:false,enableXfa:false,enableHWA:true});
@@ -238,11 +252,21 @@ async function open(data){
   // tracked independently and is never cleared by a delayed render or rotation.
   await viewer.firstPagePromise;
   const fields=fieldDefinitions=await doc.getFieldObjects(),actions=await doc.getJSActions();
+  for(let p=1;p<=doc.numPages;p++){
+    const page=await doc.getPage(p);
+    for(const annotation of await page.getAnnotations({intent:'display'})){
+      if(!annotation.fieldName||!annotation.defaultAppearanceData||!['Tx','Ch'].includes(annotation.fieldType))continue;
+      let size=Number(annotation.defaultAppearanceData.fontSize)||11.25;
+      if(/(?:^charge_point_\d+_tolerance$|^tolerance_excentricite$)/.test(annotation.fieldName))size=Math.min(size,9.5);
+      fieldTypography.set(annotation.fieldName,size);
+    }
+  }
+  applyFieldTypography();
   cdqApplyConstraintDefaultsV2583();
   readerCalibration=installReaderCalibration({surface:$('viewer'),doc,fields,tell});
   nativeInput.configure(fields);$('viewer').classList.toggle('cdq-form',!!(fields?.get?.('client_nom')||fields?.client_nom)&&!!(fields?.get?.('charge_point_1_charge_utilisee')||fields?.charge_point_1_charge_utilisee));
   if(fields?.size||fields&&Object.keys(fields).length||actions){const deadline=Date.now()+12000;while(!scripting.ready){if(Date.now()>deadline)throw Error('Les calculs du PDF n’ont pas pu démarrer. Fermez le document puis réessayez.');await new Promise(r=>setTimeout(r,25));}}
-  cdqRestoreInteractiveFieldsV2581();choices.refresh();form.refresh();
+  cdqRestoreInteractiveFieldsV2581();applyFieldTypography();choices.refresh();form.refresh();refreshResults();
   opening=false;busy(false);$('viewer').dataset.ready='true';status(readOnly?'Consultation seulement':'');
   applyLateIdentity();
   tell({type:'CDQ_READER_OPENED'});
@@ -259,6 +283,15 @@ $('container').addEventListener('pointermove',e=>{if(drag?.id===e.pointerId){$('
 for(const type of ['pointerup','pointercancel'])$('container').addEventListener(type,()=>{drag=null;$('container').classList.remove('dragging')});
 $('save').onclick=()=>save();$('download').onclick=()=>{menu(true);save(true);};$('external').onclick=()=>{menu(true);save(true);};
 $('back').onclick=requestClose;$('saveClose').onclick=()=>{$('closeDialog').close();finishDocument();};
+$('dismissKeyboard').addEventListener('pointerdown',e=>e.preventDefault());
+$('dismissKeyboard').onclick=()=>{
+  if(saving||!doc)return;
+  commitActive();
+  cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;
+  cdqKeyboardFieldV2550(false);
+  $('dismissKeyboard').focus({preventScroll:true});
+  setTimeout(refreshResults,0);
+};
 $('doneFields').addEventListener('click',()=>{requestClose();});
 $('keepEditing').onclick=()=>{$('closeDialog').close();closeAfterSave=false;tell({type:'CDQ_READER_CLOSE_CANCELLED_V2640'});};
 $('discard').onclick=()=>{
@@ -269,6 +302,7 @@ $('discard').onclick=()=>{
   tell({type:'CDQ_READER_DISCARD',requestId});
 };
 $('closeDialog').addEventListener('cancel',e=>{if(saving)e.preventDefault();else tell({type:'CDQ_READER_CLOSE_CANCELLED_V2640'});closeAfterSave=false;});
+for(const type of ['input','change'])$('viewer').addEventListener(type,e=>{if(autoReportName&&e.target.name==='identification_balance'){const next=identificationReportName(e.target.value);if(next){name=next;$('name').textContent=name;}}});
 $('viewer').addEventListener('input',modified);$('viewer').addEventListener('change',modified);
 for(const type of ['input','change'])$('viewer').addEventListener(type,e=>{if(e.isTrusted&&e.target.name)touchedIdentity.add(e.target.name);});
 $('viewer').addEventListener('input',()=>readerCalibration?.refresh());$('viewer').addEventListener('change',()=>readerCalibration?.refresh());
@@ -338,7 +372,27 @@ try{
   eventBus.on('pagesinit',()=>{viewer.currentScaleValue='page-width';});
   eventBus.on('scalechanging',e=>{$('zoom').textContent=Math.round(e.scale*100)+' %';});
   eventBus.on('pagerendered',e=>{if(!e.error&&e.source?.div)e.source.div.dataset.cdqPaintedV2556='true';if(e.error)fail(e.error);});
-  eventBus.on('annotationlayerrendered',e=>{cdqWrapStableAnnotationLayerV2556(e.source);cdqRestoreInteractiveFieldsV2581();if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();});
+  eventBus.on('annotationlayerrendered',e=>{cdqWrapStableAnnotationLayerV2556(e.source);cdqRestoreInteractiveFieldsV2581();applyFieldTypography();if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();refreshResults();});
+  eventBus.on('updatefromsandbox',event=>{
+    const detail=event.detail||{};
+    if(detail.id&&Object.hasOwn(detail,'formattedValue'))formattedFields.set(detail.id,detail.formattedValue??'');
+    setTimeout(refreshResults,0);
+  });
+  // A technician can stop at the last reading without moving to another field.
+  // Commit only complete numeric inputs, so partial decimals stay editable.
+  let liveCalculationTimer=0;
+  $('viewer').addEventListener('input',e=>{
+    const field=e.target,value=String(field.value??'');
+    if(readOnly||opening||saving||!field.name||!(/^(echelon|capacite_maximale|charge_excentricite|charge_point_\d+_(charge_utilisee|charge_contrainte|avant_correction|apres_correction)|excentricite_(avant|apres)_)/.test(field.name)))return;
+    clearTimeout(liveCalculationTimer);
+    if(value!==''&&!/^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(value.replace(/[\s\u00a0\u202f]/g,'')))return;
+    liveCalculationTimer=setTimeout(()=>{
+      if(readOnly||opening||saving||document.activeElement!==field)return;
+      const definition=cdqFieldDefinitionsV2581(field.name)[0];if(!definition?.id)return;
+      eventBus.dispatch('dispatcheventinsandbox',{source:viewer,detail:{id:definition.id,name:'Keystroke',value,willCommit:true,commitKey:1,selStart:0,selEnd:value.length}});
+    },100);
+  });
+  $('viewer').addEventListener('focusout',()=>clearTimeout(liveCalculationTimer));
   eventBus.on('textlayerrendered',()=>form.refresh());
   document.addEventListener('visibilitychange',()=>{if(document.hidden)touch.reset();});
   if(hosted){$('empty').style.display='none';status('Ouverture…');}else status('Choisissez un PDF.');

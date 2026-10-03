@@ -1,3 +1,4 @@
+import {nameFromReport} from './report-name-v2648.mjs';
 import {openSheet} from './sheet-launcher-v2526.mjs';
 import {REPORT_NAMES,bundledTemplate} from './report-templates-v2636.mjs';
 import {fillInFrame} from './pdf-fill-client-v2523.mjs';
@@ -20,7 +21,7 @@ export function makeCopy(template,destination,email,requestId) {
     throw new Error('Préparez le modèle et choisissez le dossier du client.');
   return {id:requestId,email,modeleId:template.modeleId,blob:template.blob,templateId:template.templateId,
     bundled:!!template.bundled,templateBlob:template.bundled?template.blob:null,sourceId:template.sourceId||'',modifieLe:template.modifieLe,destination:{...destination},name:MODELS[template.modeleId]+' — '+new Date().toISOString().replace(/[:.]/g,'-')+'.pdf',
-    createdAt:Date.now(),status:'pending',editVersion:0,uploadId:'',syncedUploadId:'',driveId:''};
+    autoReportName:true,createdAt:Date.now(),status:'pending',editVersion:0,uploadId:'',syncedUploadId:'',driveId:''};
 }
 export function syncRequest(copy) {
   return {requestId:copy.id,modeleId:copy.modeleId,clientId:copy.destination.clientId,folderId:copy.destination.folderId,
@@ -35,7 +36,7 @@ export function nextSync(copy,protocol=0) {
   // Filled-PDF uploads require the explicit protocol-38 acknowledgement.
   if(!copy.driveId)return {type:'CDQ_OFFLINE_COPY',...syncRequest(copy)};
   if(copy.uploadId && copy.uploadId!==copy.syncedUploadId && protocol>=38)
-    return {type:'CDQ_OFFLINE_SAVE',requestId:copy.id,driveId:copy.filledDriveId||copy.driveId,revision:copy.revision||'',uploadId:copy.uploadId,blob:copy.blob};
+    return {type:'CDQ_OFFLINE_SAVE',requestId:copy.id,driveId:copy.filledDriveId||copy.driveId,revision:copy.revision||'',uploadId:copy.uploadId,blob:copy.blob,...(copy.autoReportName?{reportName:copy.name,clientId:copy.destination.clientId}:{})};
   return null;
 }
 export function applyResult(copy,data) {
@@ -49,6 +50,7 @@ export function applyResult(copy,data) {
   } else if(data.type==='CDQ_OFFLINE_SAVE_RESULT') {
     if(!data.ok){c.error=data.message||'Le PDF rempli reste sur cet appareil.';return c;}
     if(!identifier(data.id))return copy;
+    if(c.uploadId===data.uploadId&&data.reportName)c.name=data.reportName;
     c.syncedUploadId=data.uploadId;c.filledDriveId=data.id;c.revision=data.revision||'';c.status=c.uploadId===data.uploadId?'synced':'pending';c.error='';
   }
   return c;
@@ -203,7 +205,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       const row=document.createElement('div');row.style.cssText='border-top:1px solid #385360;padding-top:10px;margin-top:18px';content.append(row);
       text(row,c.name);text(row,c.destination.name+' — '+(c.status==='synced'?'Ajouté au dossier client':c.uploadId?'PDF rempli conservé ici — envoi en attente':'Copie conservée ici — envoi en attente'));
       if(c.error)text(row,c.error);
-      button(row,'Ouvrir la copie',()=>openPdf({blob:c.blob,name:c.name,fileId:c.id,modeleId:c.modeleId,readOnly:!p.canWrite,
+      button(row,'Ouvrir la copie',()=>openPdf({blob:c.blob,name:c.name,fileId:c.id,modeleId:c.modeleId,autoReportName:c.autoReportName===true,readOnly:!p.canWrite,
         onSave:p.canWrite?(blob,requestId)=>saveCopy(c.id,email,blob,requestId):null}));
       button(row,'Télécharger la copie',()=>download(c.blob,c.name));
     }
@@ -216,7 +218,9 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       const c=await get('copies',id);if(!c||c.email!==email)throw new Error('Copie locale introuvable.');
       // Repeated reader requests are idempotent. Resolve only after IndexedDB commits.
       if(c.readerRequestId!==readerRequestId){
-        const updated={...c,blob,readerRequestId,editVersion:(c.editVersion||0)+1,uploadId:'pdf_'+crypto.randomUUID(),status:'pending',error:''};
+        const reportName=c.autoReportName?await nameFromReport(blob,c.name):c.name;
+        if(stamp!==epoch||!allowed(email)||!profile?.canWrite)throw Error('Le compte a changé.');
+        const updated={...c,blob,name:reportName,readerRequestId,editVersion:(c.editVersion||0)+1,uploadId:'pdf_'+crypto.randomUUID(),status:'pending',error:''};
         await put('copies',updated);if(stamp===epoch)notifyDocument(updated);
       }
       await refresh();await sync();return {queued:true};
@@ -351,7 +355,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         // The PDF is durable before the reader opens. Never wait for a network copy.
         if(data.open===true)Promise.resolve().then(()=>{
           if(stamp!==epoch||session!==current)return;
-          const handle=Promise.resolve(openPdf({blob:c.blob,name:c.name,fileId:c.id,modeleId:c.modeleId,readOnly:false,
+          const handle=Promise.resolve(openPdf({blob:c.blob,name:c.name,fileId:c.id,modeleId:c.modeleId,autoReportName:c.autoReportName===true,readOnly:false,
             onClose:()=>readers.delete(c.id),onSave:(blob,requestId)=>saveCopy(c.id,current.email,blob,requestId)}));
           readers.set(c.id,{epoch:stamp,handle});return handle;
         }).catch(e=>{status.textContent='Copie conservée dans Mes copies locales. '+(e.message||String(e));});
