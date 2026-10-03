@@ -1,26 +1,27 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.6.0",
-  "versionCode": 16000,
+  "version": "1.6.1",
+  "versionCode": 16001,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-03T00:44:44.492342+00:00",
+  "releasedAt": "2026-10-03T01:24:22.954500+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "1bb3527bdd1ca54fe6964d023a2db4539f72c3c8a9aca89f4f03fc4ad24b1a83",
-  "htmlSha256": "cca193bb79daba34b513110fde6487682dccedb7f9482dd9be3550d16ec8797c",
-  "packageBytes": 16440761,
-  "htmlBytes": 9246947,
+  "packageSha256": "bb6e06cb7dfdf6051d8b2c0a30f6e3899e36d5b8ee10f44dcf08ea476b983b4d",
+  "htmlSha256": "fe73e614fd13f1cdb1a15f4b9ac0be75e57cca8c2a754da4661451d70f8fa020",
+  "packageBytes": 16444653,
+  "htmlBytes": 9249134,
   "notes": [
-    "Nouveau tableau Augmentation 5 % / 10 % : article, quantité planifiée et quantité ajoutée saisis; P.Line, ME % et TRP/h repris du fichier source SAP.",
-    "Quantités à +5 % et +10 % calculées; temps ajouté = quantité ajoutée ÷ TRP/h, sans appliquer ME une seconde fois.",
-    "Lectures des titres conservées et combinées entre les passages OCR; vérification de la rangée complète quand une lettre est coupée par une cellule.",
-    "Recherche alternative du titre clair depuis la photo originale quand la première préparation ne reconnaît pas les colonnes.",
-    "Photo entière, reconnaissance automatique des dates et tableau défilant conservés."
+    "Photo reçue 1000045888.jpg vérifiée : 16 ordres, toutes les dates, tous les écarts et 8 verts / 4 jaunes / 4 rouges.",
+    "Lecture des chiffres sur fond vert foncé améliorée : conservation des centièmes imprimés, y compris −2,94 et −14,84 h.",
+    "Android : l’APK 1.6.1 ouvre le mode normal de l’appareil photo du téléphone, puis permet de choisir la photo originale au retour. Cette modification native nécessite l’installation de l’APK; la mise à jour automatique suffit pour la lecture photo.",
+    "Photo entière, dates automatiques et tableau défilant conservés.",
+    "Tableau Augmentation 5 % / 10 % et données du maître conservés."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.6.0.apk",
+  "androidApk": "Calculs-Atelier-Android-1.6.1.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
-    "androidSignature": "APK v2 avec le certificat historique",
+    "androidSignature": "APK v2/v3 avec le certificat historique; SDK Android recompilé",
     "physicalDeviceTest": false
   },
-  "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée."
+  "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée.",
+  "shellVersion": 16001
 }
