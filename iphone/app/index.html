@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="26.51" data-cdq-iphone-release="fdefad792e9f199fb530154f64f9a181ac882cad4e667ae929aef8e78bc3b6fc">
+<html lang="fr" data-cdq-iphone-version="26.52" data-cdq-iphone-release="6281e0f8caaf8b81651d155e82ac66a20946351ad8e349d606ac3793c4a6b6e9">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./iphone-update.js"></script>
@@ -464,7 +464,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.03-v26.51-stable-icon-themes';
+const CDQ_PWA_BUILD = '2026.10.03-v26.52-complete-startup';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -585,8 +585,8 @@ function cdqFreshAppUrl(reason='boot'){
   return new URL('./Selector.html',location.href).href;
 }
 const MIN_LOADING_MS = 0;
-let cdqFirstFrameStableV2543=!window.BalanceCDQNative;
-let cdqFirstFrameStableSourceV2543=window.BalanceCDQNative?'':'non-native';
+let cdqFirstFrameStableV2543=false;
+let cdqFirstFrameStableSourceV2543='';
 let cdqFirstFrameFallbackV2543=null;
 let loadingShownAt = performance.now();
 let cdqInterfaceReadyV2648=false;
@@ -933,16 +933,13 @@ if(authMask)authMask.classList.toggle('cdq-auth-ready-v2507',state==='ready');
 const wasPending = selectorAwaitingAccess;
 selectorAwaitingAccess = state === 'pending';
 if (selectorAwaitingAccess) {
-if(window.BalanceCDQNative){
-  cdqFirstFrameStableV2543=false;
-  cdqFirstFrameStableSourceV2543='';
-  clearTimeout(cdqFirstFrameFallbackV2543);
-}
+// Authorization can change within the same already prepared local frame.
+clearTimeout(cdqFirstFrameFallbackV2543);
 clearTimeout(hideLoadingTimer);
 loading.style.display = cdqInterfaceReadyV2648?'none':'grid';
 if(cdqInterfaceReadyV2648)app.style.visibility='visible';
 const pcOneWall=window.matchMedia && matchMedia('(min-width:900px) and (min-aspect-ratio:4/3)').matches;
-if(pcOneWall){app.style.visibility='visible';loading.classList.add('pc-frame-ready');}
+if(pcOneWall && cdqFirstFrameStableV2543){app.style.visibility='visible';loading.classList.add('pc-frame-ready');}
 // Dernier secours si le Selector cesse complètement de répondre.
 if (!wasPending) accessWaitTimer = setTimeout(() => {
 if (!selectorAwaitingAccess) return;
@@ -972,14 +969,12 @@ loading.style.display = 'grid';
 
 function masquerMurApresDelaiMinimum() {
 const elapsed = performance.now() - loadingShownAt;
-if(window.BalanceCDQNative && !cdqFirstFrameStableV2543){
+if(!cdqFirstFrameStableV2543){
   const generation=loadGeneration;
   clearTimeout(cdqFirstFrameFallbackV2543);
   cdqFirstFrameFallbackV2543=setTimeout(()=>{
     if(generation!==loadGeneration || cdqFirstFrameStableV2543)return;
-    cdqFirstFrameStableV2543=true;
-    cdqFirstFrameStableSourceV2543='fallback';
-    masquerMurApresDelaiMinimum();
+    replyToSelector(app.contentWindow,{type:'CDQ_FIRST_FRAME_ARM_V2543',generation});
   },2500);
   return;
 }
@@ -1000,7 +995,7 @@ app.addEventListener('load', () => {
 if(!app.src || app.src === 'about:blank')return;
 iframeLoaded = true;
 const pcOneWall=window.matchMedia && matchMedia('(min-width:900px) and (min-aspect-ratio:4/3)').matches;
-if(pcOneWall){
+if(pcOneWall && cdqFirstFrameStableV2543){
   app.style.visibility='visible';
   loading.classList.add('pc-frame-ready');
 }
@@ -1008,7 +1003,7 @@ if(pcOneWall){
 // Sur certains Android/PWA, le Selector est chargé mais CDQ_SELECTOR_READY peut se perdre.
 // Après un très court délai, montrer l'iframe chargée au lieu de bloquer l'utilisateur.
 setTimeout(()=>{
-  if(window.BalanceCDQNative)return;
+  if(!cdqFirstFrameStableV2543)return;
   if(!iframeLoaded || selectorReady)return;
   clearTimeout(loadingTimer);
   clearTimeout(slowLoadingTimer);
@@ -1028,8 +1023,8 @@ cdqInterfaceReadyV2648=false;
 selectorReady = false;
 iframeLoaded = false;
 selectorAwaitingAccess = false;
-cdqFirstFrameStableV2543=!window.BalanceCDQNative;
-cdqFirstFrameStableSourceV2543=window.BalanceCDQNative?'':'non-native';
+cdqFirstFrameStableV2543=false;
+cdqFirstFrameStableSourceV2543='';
 clearTimeout(cdqFirstFrameFallbackV2543);
 clearTimeout(accessWaitTimer);
 
@@ -1448,10 +1443,12 @@ if(data.type==='CDQ_PREWARM_READER_V2554'){
   return;
 }
 
+if(data.type==='CDQ_INTERFACE_FAILED_V2652'){loadHelp.style.display='flex';document.getElementById('load-title').textContent='Préparation de l’interface';document.getElementById('load-message').textContent='Une image ou un module n’a pas pu être chargé. Réessayez le chargement.';return;}
 if(data.type==='CDQ_INTERFACE_READY_V2648'){
   cdqInterfaceReadyV2648=true;app.style.visibility='visible';loading.style.display='none';
   return;
 }
+if(data.type==='CDQ_SELECTOR_READY' || (data.type==='CDQ_ACCESS_STATE' && data.state!=='pending'))replyToSelector(event.source,{type:'CDQ_FIRST_FRAME_ARM_V2543',generation:loadGeneration});
 if(data.type==='CDQ_FIRST_FRAME_STABLE_V2543'){
   if(Number(data.generation)!==loadGeneration)return;
   cdqFirstFrameStableV2543=true;
@@ -1496,7 +1493,7 @@ if(String(data.type||'').startsWith('CDQ_OFFLINE_'))cdqOffline.then(controller=>
 if(data.type==='CDQ_ACCESS_STATE' && data.state!=='ready')cdqOffline.then(controller=>controller.lock());
 if((data.type==='CDQ_ACCESS_STATE' && data.state==='ready') || (data.type==='CDQ_SELECTOR_READY' && data.accessState==='ready')){
   replyToSelector(event.source,{type:'CDQ_OFFLINE_PREPARE'});
-  if(window.BalanceCDQNative)replyToSelector(event.source,{type:'CDQ_FIRST_FRAME_ARM_V2543',generation:loadGeneration});
+  replyToSelector(event.source,{type:'CDQ_FIRST_FRAME_ARM_V2543',generation:loadGeneration});
 }
 if (data.type === 'CDQ_OPEN_PDF') cdqAfficherPdf(data);
 if (data.type === 'CDQ_ACCESS_STATE') recevoirEtatAcces(data.state);

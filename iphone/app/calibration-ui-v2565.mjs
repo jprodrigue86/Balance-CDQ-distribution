@@ -188,5 +188,5 @@ function start(){
   window.addEventListener('resize',schedule,{passive:true});window.addEventListener('cdq:access-ready',schedule);document.addEventListener('click',()=>setTimeout(schedule,0),true);
   window.addEventListener('message',event=>{if(event.origin!==location.origin||!event.data||event.data.type!=='CDQ_CALIBRATION_OPEN_V2565')return;openFor(event.data.manufacturer,event.data.model);});
 }
-window.cdqCalibrationV2565={open:openLibrary,openFor,find:findCalibration,refresh:schedule,indicatorSvg};
+window.cdqCalibrationV2565={prepareNavigation:()=>{installStyles();ensureNav();},open:openLibrary,openFor,find:findCalibration,refresh:schedule,indicatorSvg};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
