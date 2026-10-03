@@ -9,6 +9,7 @@
   const currentClient = () => String(typeof compagnieSelectionnee === 'undefined' ? '' : compagnieSelectionnee || '');
   const currentEmail = () => String(typeof utilisateurCourantEmail === 'undefined' ? '' : utilisateurCourantEmail || '').trim().toLowerCase();
   const ready = () => typeof cdqAccessState === 'undefined' || cdqAccessState === 'ready';
+  const session = () => window.cdqAppSessionV2661?.id || '';
   function openFolders() {
     try { return Array.from(window.cdqFolderStateV2602?.current?.() || []).map(String).filter(Boolean); }
     catch (_) { return Array.from(document.querySelectorAll('#filesContainer .folder.open[data-folder-id]')).map(el => el.dataset.folderId); }
@@ -17,6 +18,7 @@
     try {
       const state = JSON.parse(localStorage.getItem(KEY) || 'null');
       if (!state?.clientId || Date.now() - Number(state.savedAt || 0) > MAX_AGE) return null;
+      if (!session() || state.sessionId !== session()) return null;
       if (currentEmail() && state.email && state.email.toLowerCase() !== currentEmail()) return null;
       state.open = Array.isArray(state.open) ? state.open.map(String).filter(Boolean) : [];
       return state;
@@ -28,7 +30,7 @@
     const clientId = currentClient();
     if (!clientId || !currentEmail()) return null;
     const state = {
-      clientId, email: currentEmail(), open: openFolders(),
+      sessionId: session(), clientId, email: currentEmail(), open: openFolders(),
       activeFolderId: String(typeof cdqDossierOuvertId === 'undefined' ? '' : cdqDossierOuvertId || ''),
       activeFolderName: String(typeof cdqDossierOuvertNom === 'undefined' ? '' : cdqDossierOuvertNom || ''),
       scrollY: Math.max(0, window.scrollY || 0),

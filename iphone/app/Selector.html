@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.60" data-cdq-iphone-release="70d227b50b99caf50a19b9d0599c9420f2208b2f54b555cd92db8fb1ca68c1e9">
+<html data-cdq-iphone-version="26.61" data-cdq-iphone-release="b3ed8bff31cc2143eb9cba6feffff42ca3b3ef53b049fce6b31c001f0d12caa0">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqFileActionsV2655">(function(){
@@ -642,10 +642,11 @@
   window.addEventListener('cdq:access-state-v2527',event=>{if(event.detail!=='ready')receipts.clear();});
 })();</script>
 <meta charset="utf-8">
+<script src="./app-session-v2661.js"></script>
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.03-v26.60-document-workflow">
+<meta name="cdq-package-build" content="2026.10.03-v26.61-app-session-keyboard">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -924,7 +925,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.03-v26.60-document-workflow'
+    build:'2026.10.03-v26.61-app-session-keyboard'
   });
 }
 
@@ -937,7 +938,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.03-v26.60-document-workflow'
+        build:'2026.10.03-v26.61-app-session-keyboard'
       });
     }
   } catch(e) {}
@@ -7991,17 +7992,14 @@ function toggleCompanyMenu(){
   ajusterMenuAndroid();
 
 
-  setTimeout(
-    function(){
-
-      ajusterMenuAndroid();
-
-      if(menu.style.display !== "block")return;
-      recherche.focus({preventScroll:true});
-
-    },
-    150
-  );
+  recherche.focus({preventScroll:true});
+  try {
+    const native=window.BalanceCDQNative||window.parent.BalanceCDQNative;
+    native?.showCompanyKeyboard?.();
+  } catch (_) {}
+  setTimeout(function(){
+    if(menu.style.display === "block")ajusterMenuAndroid();
+  },150);
 
 }
 
@@ -11493,7 +11491,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.03-v26.60-document-workflow";
+  const CDQ_BUILD = "2026.10.03-v26.61-app-session-keyboard";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13789,7 +13787,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.03-v26.60-document-workflow";
+const CDQ_V19_BUILD = "2026.10.03-v26.61-app-session-keyboard";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15632,7 +15630,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.03-v26.60-document-workflow";
+const CDQ_V20_BUILD = "2026.10.03-v26.61-app-session-keyboard";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16479,7 +16477,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.03-v26.60-document-workflow";
+const CDQ_V21_BUILD = "2026.10.03-v26.61-app-session-keyboard";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -17004,7 +17002,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.03-v26.60-document-workflow';
+const BUILD='2026.10.03-v26.61-app-session-keyboard';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20646,7 +20644,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.03-v26.60-document-workflow';
+  const BUILD='2026.10.03-v26.61-app-session-keyboard';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22918,7 +22916,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.03-v26.60-document-workflow',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.03-v26.61-app-session-keyboard',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -24278,18 +24276,20 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
  'use strict';
  const owner=()=>{try{return String(utilisateurCourantEmail||'').toLowerCase();}catch{return '';}};
  const key=()=>owner()?'cdq-workspace-position-v2658:'+owner():'';
+ const session=()=>window.cdqAppSessionV2661?.id||'';
  let restoring=false;
  function remember(){
   if(restoring||!key()||cdqAccessState!=='ready'||!window.cdqDriveEntryV2632?.canRead())return;
-  try{localStorage.setItem(key(),JSON.stringify({clientId:String(compagnieSelectionnee||''),folderId:String(cdqDossierOuvertId||''),folderName:String(cdqDossierOuvertNom||''),route:document.documentElement.dataset.cdqWorkspace||'',scrollY:scrollY,savedAt:Date.now()}));}catch{}
+  const route=document.documentElement.dataset.cdqWorkspace||'';
+  try{localStorage.setItem(key(),JSON.stringify({sessionId:session(),clientId:String(compagnieSelectionnee||''),folderId:String(cdqDossierOuvertId||''),folderName:String(cdqDossierOuvertNom||''),route:route==='trash'?'':route,scrollY:scrollY,savedAt:Date.now()}));}catch{}
  }
  async function restore(){
   if(!key()||!window.cdqDriveEntryV2632?.canRead()||document.documentElement.dataset.cdqRestoredV2658===owner())return;
   document.documentElement.dataset.cdqRestoredV2658=owner();
   let saved;try{saved=JSON.parse(localStorage.getItem(key())||'null');}catch{}
-  if(!saved?.clientId)return;
+  if(!saved?.clientId||!session()||saved.sessionId!==session())return;
   const client=toutesLesCompagnies.find(c=>String(c.id)===saved.clientId);if(!client)return;
-  restoring=true;try{choisirCompagnie(client);if(saved.folderId){cdqDossierOuvertId=saved.folderId;cdqDossierOuvertNom=saved.folderName;chargerFichiers();}if(saved.route&&window.cdqWorkspaceV2638?.navigate)window.cdqWorkspaceV2638.navigate(saved.route);requestAnimationFrame(()=>scrollTo(0,saved.scrollY||0));}finally{restoring=false;}
+  restoring=true;try{choisirCompagnie(client);if(saved.folderId){cdqDossierOuvertId=saved.folderId;cdqDossierOuvertNom=saved.folderName;chargerFichiers();}if(saved.route&&saved.route!=='trash'&&window.cdqWorkspaceV2638?.navigate)window.cdqWorkspaceV2638.navigate(saved.route);requestAnimationFrame(()=>scrollTo(0,saved.scrollY||0));}finally{restoring=false;}
  }
  document.addEventListener('visibilitychange',()=>{if(document.hidden)remember();});
  addEventListener('pagehide',remember);addEventListener('scroll',()=>{clearTimeout(remember.timer);remember.timer=setTimeout(remember,250);},{passive:true});
