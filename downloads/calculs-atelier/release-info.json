@@ -1,27 +1,25 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.7.0",
-  "versionCode": 17000,
+  "version": "1.7.1",
+  "versionCode": 17001,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-03T04:04:12.367319+00:00",
+  "releasedAt": "2026-10-03T04:19:10.342257+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "6284f7f9e9041cb65abd2b7b9fec1e601a4eaf1d697966a64dd8e63ecb6d6c42",
-  "htmlSha256": "e0b311e665c199c58c24072c04b73e162b46636f306b146174eb096427c6e0b1",
-  "packageBytes": 16437373,
-  "htmlBytes": 9245114,
+  "packageSha256": "c0bcecb923a25fdc27dce766398e2ed626dfbe8b82335e975ec99c7233677f7f",
+  "htmlSha256": "62387c71186d93315080baa2e5057723b3b8234b5b2ddcbe35c345318def51f3",
+  "packageBytes": 16439437,
+  "htmlBytes": 9246484,
   "notes": [
-    "Nouveau lecteur photo : les titres Original End / Current End ne bloquent plus la lecture des ordres.",
-    "Les dates et les écarts visibles identifient les colonnes à partir de plusieurs lignes concordantes.",
-    "Photo entière, dates automatiques et lecture hors connexion. Nouveau traitement des reflets de trame et des tableaux inclinés.",
-    "Moins de passages de reconnaissance; seuls les champs incertains sont relus.",
-    "Prendre une photo, OK, analyse et enregistrement automatique des résultats vérifiés. Tableau défilant et historiques conservés."
+    "Historique : corbeille au bas de chaque conversion pour supprimer uniquement celle choisie.",
+    "Le rectangle Vieille matière affiche Ancien stock restant, avec l’unité de la conversion.",
+    "Suppression conservée après relance; autres conversions et saisies conservées."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.7.0.apk",
+  "androidApk": "Calculs-Atelier-Android-1.7.1.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
     "androidSignature": "APK v2/v3 avec le certificat historique; SDK Android recompilé",
     "physicalDeviceTest": false
   },
   "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée.",
-  "shellVersion": 17000
+  "shellVersion": 17001
 }
