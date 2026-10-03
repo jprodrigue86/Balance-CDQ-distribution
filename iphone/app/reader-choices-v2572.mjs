@@ -43,6 +43,8 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     entry.button.disabled=disabledOf(entry)||isReadOnly();
     const css=getComputedStyle(sourceOf(entry));
     entry.button.style.fontSize=css.fontSize;
+    entry.button.style.fontFamily=css.fontFamily;
+    entry.button.style.fontWeight=css.fontWeight;
   }
   function commit(entry){
     if((entry.kind==='kit-text'||entry.kind==='kit-native')){
@@ -143,6 +145,9 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
         select.addEventListener('change',()=>paint(entry));
       }
       paint(entry);
+      // The dialog button paints the value once. PDF mirror text must not
+      // remain underneath it now that the interaction layer is transparent.
+      for(const mirror of surface.querySelectorAll('[name="_cdq_affichage_'+select.name+'"]'))mirror.closest('section')?.classList.add('cdq-choice-mirror');
     }
   }
   function refreshKitText(){

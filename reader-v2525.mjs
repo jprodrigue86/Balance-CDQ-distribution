@@ -11,7 +11,7 @@ const $=id=>document.getElementById(id),hosted=parent!==window;
 let parentOrigin='',autoReportName=false;
 const formattedFields=new Map(),fieldTypography=new Map();
 function applyFieldTypography(){
-  for(const field of $('viewer').querySelectorAll('input,textarea,select')){
+  for(const field of $('viewer').querySelectorAll('input,textarea,select,button.cdq-choice-field')){
     if(!fieldTypography.has(field.name)||field.name.startsWith('_')||/statut/i.test(field.name))continue;
     const size=fieldTypography.get(field.name);
     field.style.setProperty('font-size','calc('+size+'px * var(--total-scale-factor))','important');
@@ -266,7 +266,7 @@ async function open(data){
   readerCalibration=installReaderCalibration({surface:$('viewer'),doc,fields,tell});
   nativeInput.configure(fields);$('viewer').classList.toggle('cdq-form',!!(fields?.get?.('client_nom')||fields?.client_nom)&&!!(fields?.get?.('charge_point_1_charge_utilisee')||fields?.charge_point_1_charge_utilisee));
   if(fields?.size||fields&&Object.keys(fields).length||actions){const deadline=Date.now()+12000;while(!scripting.ready){if(Date.now()>deadline)throw Error('Les calculs du PDF n’ont pas pu démarrer. Fermez le document puis réessayez.');await new Promise(r=>setTimeout(r,25));}}
-  cdqRestoreInteractiveFieldsV2581();applyFieldTypography();choices.refresh();form.refresh();refreshResults();
+  cdqRestoreInteractiveFieldsV2581();applyFieldTypography();choices.refresh();applyFieldTypography();form.refresh();refreshResults();
   opening=false;busy(false);$('viewer').dataset.ready='true';status(readOnly?'Consultation seulement':'');
   applyLateIdentity();
   tell({type:'CDQ_READER_OPENED'});
@@ -372,7 +372,7 @@ try{
   eventBus.on('pagesinit',()=>{viewer.currentScaleValue='page-width';});
   eventBus.on('scalechanging',e=>{$('zoom').textContent=Math.round(e.scale*100)+' %';});
   eventBus.on('pagerendered',e=>{if(!e.error&&e.source?.div)e.source.div.dataset.cdqPaintedV2556='true';if(e.error)fail(e.error);});
-  eventBus.on('annotationlayerrendered',e=>{cdqWrapStableAnnotationLayerV2556(e.source);cdqRestoreInteractiveFieldsV2581();applyFieldTypography();if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();refreshResults();});
+  eventBus.on('annotationlayerrendered',e=>{cdqWrapStableAnnotationLayerV2556(e.source);cdqRestoreInteractiveFieldsV2581();applyFieldTypography();if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();applyFieldTypography();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();refreshResults();});
   eventBus.on('updatefromsandbox',event=>{
     const detail=event.detail||{};
     if(detail.id&&Object.hasOwn(detail,'formattedValue'))formattedFields.set(detail.id,detail.formattedValue??'');

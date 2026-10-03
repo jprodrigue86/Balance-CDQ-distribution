@@ -30,7 +30,7 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
 }
 
 export async function saveEditableFormAppearance(bytes,providedLibrary){
-  const {PDFDocument,PDFName,StandardFonts}=providedLibrary||await pdfLibrary();
+  const {PDFDocument,PDFName,PDFArray,StandardFonts}=providedLibrary||await pdfLibrary();
   const pdf=await PDFDocument.load(bytes,{updateMetadata:false});
   const form=pdf.getForm();
 
@@ -39,13 +39,26 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
   // control. Keep the actual field values and their saved AP streams authoritative.
   form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
 
-  const field=form.getFieldMaybe('etalon_utilise');
-  if(field?.getSelected&&field.acroField.hasFlag(1<<21)){
-    const selected=field.getSelected(),font=await pdf.embedFont(StandardFonts.HelveticaBold);
+  // Older editable reports can still contain these display-only duplicate
+  // widgets. Remove only the mirrors/tints; retain every actual data field.
+  for(const field of [...form.getFields()])if(/^_cdq_(affichage_|v5_teinte)/.test(field.getName())){
+    const order=form.acroForm.dict.lookupMaybe(PDFName.of('CO'),PDFArray);
+    if(order)for(let i=order.size()-1;i>=0;i--)if(order.get(i).toString()===field.ref.toString())order.remove(i);
+    form.removeField(field);
+  }
+
+  // A dropdown owns one text appearance. Earlier masters also contained
+  // display-only mirror widgets, which produced two displaced copies on save.
+  const dropdowns=form.getFields().filter(field=>typeof field.getSelected==='function');
+  const font=dropdowns.length?await pdf.embedFont(StandardFonts.HelveticaBold):null;
+  for(const field of dropdowns){
+    const options=field.acroField.getOptions();
+    const text=field.getSelected().map(value=>{const option=options.find(o=>o.value.decodeText()===value);return option?.display?.decodeText()||value;}).join(' + ');
     for(const widget of field.acroField.getWidgets()){
-      const {width:w,height:h}=widget.getRectangle();
-      const text=selected.join(' + '),available=w-14;
-      let size=11.25,lines=[];
+      let rect;try{rect=widget.getRectangle();}catch{continue;}
+      const {width:w,height:h}=rect,available=w-2;
+      const appearance=widget.dict.lookup(PDFName.of('DA'))||field.acroField.dict.lookup(PDFName.of('DA'));
+      let size=Number(/\/\S+\s+([\d.]+)\s+Tf/.exec(appearance?.decodeText?.()||'')?.[1])||11.25,lines=[];
       function wrap(s){
         const result=[];let line='';
         for(const word of text.split(' ')){
@@ -56,24 +69,20 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
         if(line)result.push(line);
         return result;
       }
-      for(;size>3.5;size-=.25){lines=wrap(size);if(lines.length*size*1.15<=h-2)break;}
+      for(;size>3.5;size-=.25){lines=wrap(size);if(lines.length*size*1.15<=h-1&&lines.every(line=>font.widthOfTextAtSize(line,size)<=available))break;}
       lines=wrap(size);
-      const commands=[
-        `q .6 .992156863 .992156863 rg 0 0 ${w} ${h} re f .02 .85 .94 RG .6 w .3 .3 ${w-.6} ${h-.6} re S`,
-        `0 0 0 rg ${w-9} ${h/2+1.5} m ${w-3} ${h/2+1.5} l ${w-6} ${h/2-1.5} l h f`,
-        `1 1 ${w-12} ${h-2} re W n BT /CDQKit ${size} Tf 0 g`
-      ];
-      const lineHeight=size*1.15,top=(h+lines.length*lineHeight)/2-size;
+      const commands=[`q 0 0 ${w} ${h} re W n BT /CDQChoice ${size} Tf 0 g`];
+      const lineHeight=size*1.15,capHeight=font.heightAtSize(size,{descender:false});
+      const top=(h-capHeight-(lines.length-1)*lineHeight)/2+(lines.length-1)*lineHeight;
       lines.forEach((line,i)=>{
-        const x=2+(available-font.widthOfTextAtSize(line,size))/2;
-        commands.push(`1 0 0 1 ${Math.max(2,x)} ${top-i*lineHeight} Tm ${font.encodeText(line)} Tj`);
+        const x=(w-font.widthOfTextAtSize(line,size))/2;
+        commands.push(`1 0 0 1 ${Math.max(1,x)} ${top-i*lineHeight} Tm ${font.encodeText(line)} Tj`);
       });
       commands.push('ET Q');
       const stream=pdf.context.flateStream(commands.join('\n'),{
-        Type:'XObject',Subtype:'Form',BBox:[0,0,w,h],Resources:{Font:{CDQKit:font.ref}}
+        Type:'XObject',Subtype:'Form',BBox:[0,0,w,h],Resources:{Font:{CDQChoice:font.ref}}
       });
-      const ap=pdf.context.obj({N:pdf.context.register(stream)});
-      widget.dict.set(PDFName.of('AP'),ap);
+      widget.dict.set(PDFName.of('AP'),pdf.context.obj({N:pdf.context.register(stream)}));
     }
   }
 

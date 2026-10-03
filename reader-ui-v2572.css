@@ -28,13 +28,13 @@ header#readerTop #save,#closeDialog .primary{background:var(--reader-accent)!imp
 #viewer [name^="_cdq_kits_"]:not([name="_cdq_kits_ouvrir"]){visibility:hidden!important;pointer-events:none!important}
 #viewer [name="_cdq_kits_ouvrir"]{visibility:visible!important;pointer-events:auto!important;background:transparent!important;border:0!important;box-shadow:none!important;opacity:1!important;cursor:pointer!important}
 #viewer [name="_cdq_kits_ouvrir"] [data-canvas-name]{filter:grayscale(1) brightness(0)!important;opacity:1!important}
-#viewer button.cdq-choice-field{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-height:0;min-width:0;margin:0;padding:0 9% 0 3%;border:.6px solid #05d9ef;border-radius:0;background:#99fdfd!important;background-image:none!important;color:#000!important;font-family:Arial,Helvetica,sans-serif;font-weight:700;line-height:1;cursor:pointer;opacity:1!important;touch-action:manipulation;box-shadow:none!important;-webkit-tap-highlight-color:transparent}
+#viewer button.cdq-choice-field{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;width:100%;height:100%;min-height:0;min-width:0;margin:0;padding:0 9% 0 3%;border:0;border-radius:0;background:transparent!important;background-image:none!important;color:#000!important;font-family:Arial,Helvetica,sans-serif;font-weight:700;line-height:1;cursor:pointer;opacity:1!important;touch-action:manipulation;box-shadow:none!important;-webkit-tap-highlight-color:transparent}
 .cdq-choice-value{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;width:100%;pointer-events:none}
 .cdq-choice-arrow{position:absolute;right:3%;top:50%;width:0;height:0;border-left:.28em solid transparent;border-right:.28em solid transparent;border-top:.3em solid #000;transform:translateY(-50%);pointer-events:none}
 
 /* CDQ reader fields use their actual PDF rectangles, without browser borders. */
 #viewer .annotationLayer :is(.textWidgetAnnotation,.choiceWidgetAnnotation) :is(input,textarea,select),
-#viewer button.cdq-choice-field{background:#99fdfd!important;background-image:none!important;border:0!important;outline:none!important;box-shadow:none!important;border-radius:0!important;padding:0!important;margin:0!important}
+#viewer button.cdq-choice-field{background:transparent!important;background-image:none!important;border:0!important;outline:none!important;box-shadow:none!important;border-radius:0!important;padding:0!important;margin:0!important}
 #viewer .annotationLayer :is(input,textarea,select):focus-visible{outline:none!important}
 #viewer button.cdq-choice-field{pointer-events:auto!important;z-index:4;touch-action:pan-x pan-y!important}
 #viewer .cdq-choice-arrow{display:none!important}
@@ -58,3 +58,9 @@ header#readerTop #save,#closeDialog .primary{background:var(--reader-accent)!imp
 #viewer .annotationLayer{--annotation-unfocused-field-filter:none;--annotation-unfocused-field-background:none}
 /* These PDF-only tint widgets are decorative duplicates, not editable fields. */
 #viewer .annotationLayer section:has([name^="_cdq_v5_teinte"]){display:none!important;pointer-events:none!important}
+
+/* The page owns the single cyan fill and border, including during focus. */
+#viewer .annotationLayer :is(.textWidgetAnnotation,.choiceWidgetAnnotation) :is(input,textarea,select):is(:focus,:hover,:active){background:transparent!important;border:0!important}
+#viewer .annotationLayer section.cdq-choice-mirror{visibility:hidden!important;pointer-events:none!important}
+/* Optical alignment of capital letters within the original blue header. */
+.cdq-result-indicator:not(.row-result) span{transform:translateY(.08em)}
