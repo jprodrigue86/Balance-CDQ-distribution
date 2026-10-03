@@ -257,7 +257,6 @@ async function open(data){
     for(const annotation of await page.getAnnotations({intent:'display'})){
       if(!annotation.fieldName||!annotation.defaultAppearanceData||!['Tx','Ch'].includes(annotation.fieldType))continue;
       let size=Number(annotation.defaultAppearanceData.fontSize)||11.25;
-      if(/(?:^charge_point_\d+_tolerance$|^tolerance_excentricite$)/.test(annotation.fieldName))size=Math.min(size,9.5);
       fieldTypography.set(annotation.fieldName,size);
     }
   }
@@ -370,6 +369,7 @@ try{
     cdqRevealFieldV2552(field,true);
   }});
   eventBus.on('pagesinit',()=>{viewer.currentScaleValue='page-width';});
+  eventBus.on('pagerendered',()=>refreshResults());
   eventBus.on('scalechanging',e=>{$('zoom').textContent=Math.round(e.scale*100)+' %';});
   eventBus.on('pagerendered',e=>{if(!e.error&&e.source?.div)e.source.div.dataset.cdqPaintedV2556='true';if(e.error)fail(e.error);});
   eventBus.on('annotationlayerrendered',e=>{cdqWrapStableAnnotationLayerV2556(e.source);cdqRestoreInteractiveFieldsV2581();applyFieldTypography();if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();applyFieldTypography();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();refreshResults();});
