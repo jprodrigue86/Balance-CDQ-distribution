@@ -1,27 +1,28 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.6.1",
-  "versionCode": 16001,
+  "version": "1.6.2",
+  "versionCode": 16002,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-03T01:24:22.954500+00:00",
+  "releasedAt": "2026-10-03T01:55:24.183752+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "bb6e06cb7dfdf6051d8b2c0a30f6e3899e36d5b8ee10f44dcf08ea476b983b4d",
-  "htmlSha256": "fe73e614fd13f1cdb1a15f4b9ac0be75e57cca8c2a754da4661451d70f8fa020",
-  "packageBytes": 16444653,
-  "htmlBytes": 9249134,
+  "packageSha256": "70e0bb58017937b073fa32d1898ac2605da1e0f44630993c2a178b397a0b4a85",
+  "htmlSha256": "32258ce59a76c8aea8b848b6c83cea8eb162866c3e08950dc231db7c16d7e445",
+  "packageBytes": 16446925,
+  "htmlBytes": 9250156,
   "notes": [
-    "Photo reçue 1000045888.jpg vérifiée : 16 ordres, toutes les dates, tous les écarts et 8 verts / 4 jaunes / 4 rouges.",
-    "Lecture des chiffres sur fond vert foncé améliorée : conservation des centièmes imprimés, y compris −2,94 et −14,84 h.",
-    "Android : l’APK 1.6.1 ouvre le mode normal de l’appareil photo du téléphone, puis permet de choisir la photo originale au retour. Cette modification native nécessite l’installation de l’APK; la mise à jour automatique suffit pour la lecture photo.",
-    "Photo entière, dates automatiques et tableau défilant conservés.",
-    "Tableau Augmentation 5 % / 10 % et données du maître conservés."
+    "Prise de photo directe rétablie : Prendre une photo → OK → import et analyse automatiques, sans retour ni sélection dans la galerie.",
+    "Le fichier plein format fourni par la caméra est conservé sans réduction; aucune miniature n’est utilisée pour la lecture.",
+    "Les analyses complètes prises par le bouton caméra sont enregistrées automatiquement sur cet appareil.",
+    "Le parcours natif direct nécessite l’APK Android 1.6.2 si l’APK 1.6.1 a été installé. Les moteurs antérieurs utilisant déjà la capture directe restent compatibles avec la mise à jour de contenu.",
+    "Correction des photos à haute résolution : la trame de l’écran et les chiffres alignés ne découpent plus les colonnes Original End / Current End; redressement à la résolution photographique avant lecture.",
+    "Vérification sur la photo fournie et une version agrandie à 4032 × 3024 : 16 ordres, numéros, dates et écarts exacts. Le tableau défilant et Augmentation 5 % / 10 % sont conservés."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.6.1.apk",
+  "androidApk": "Calculs-Atelier-Android-1.6.2.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
     "androidSignature": "APK v2/v3 avec le certificat historique; SDK Android recompilé",
     "physicalDeviceTest": false
   },
   "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée.",
-  "shellVersion": 16001
+  "shellVersion": 16002
 }
