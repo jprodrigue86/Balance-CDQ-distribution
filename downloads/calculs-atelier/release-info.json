@@ -1,25 +1,26 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.7.1",
-  "versionCode": 17001,
+  "version": "1.7.2",
+  "versionCode": 17002,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-03T04:19:10.342257+00:00",
+  "releasedAt": "2026-10-03T04:41:03.302564+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "c0bcecb923a25fdc27dce766398e2ed626dfbe8b82335e975ec99c7233677f7f",
-  "htmlSha256": "62387c71186d93315080baa2e5057723b3b8234b5b2ddcbe35c345318def51f3",
-  "packageBytes": 16439437,
-  "htmlBytes": 9246484,
+  "packageSha256": "6a46de0232049afa778344a25b370bb59ecd8c640aea49f6bbc5d6b71954b432",
+  "htmlSha256": "b3996a489eb20bced397ee9f598605e6b517b255750e6a1fc7d00d0db05bce3a",
+  "packageBytes": 16450017,
+  "htmlBytes": 9252382,
   "notes": [
-    "Historique : corbeille au bas de chaque conversion pour supprimer uniquement celle choisie.",
-    "Le rectangle Vieille matière affiche Ancien stock restant, avec l’unité de la conversion.",
-    "Suppression conservée après relance; autres conversions et saisies conservées."
+    "Retour du téléphone : détail, tableau, dialogue puis menu précédent, sans perdre les chiffres saisis.",
+    "Bouton Retour accessible en bas de l’application.",
+    "Tableau complet : neuf colonnes dans l’ordre de la photo, défilement horizontal et vertical.",
+    "Début d’origine lu, enregistré et exporté; historiques existants conservés."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.7.1.apk",
+  "androidApk": "Calculs-Atelier-Android-1.7.2.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
     "androidSignature": "APK v2/v3 avec le certificat historique; SDK Android recompilé",
     "physicalDeviceTest": false
   },
   "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée.",
-  "shellVersion": 17001
+  "shellVersion": 17002
 }
