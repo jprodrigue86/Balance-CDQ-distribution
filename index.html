@@ -34,7 +34,11 @@ const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='M
 const releaseManifest='https://jprodrigue86.github.io/Balance-CDQ-distribution/android-release-update.json';
 fetch(releaseManifest+'?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(m=>{
   const v=String(m.versionName||'').replace(/^V/i,'');
-  if(v){document.getElementById('android-version-badge').textContent='Android · V'+v;document.getElementById('iphone-version-badge').textContent='iPhone / iPad · base V'+v;}
+  if(v)document.getElementById('android-version-badge').textContent='Android · V'+v;
+}).catch(()=>{});
+fetch('https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/release.json?ts='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():Promise.reject()).then(m=>{
+  const v=String(m.version||'').replace(/^V/i,'');
+  if(v)document.getElementById('iphone-version-badge').textContent='iPhone / iPad · V'+v;
 }).catch(()=>{});
 const selected=new URLSearchParams(location.search).get('platform');
 if(ios){document.getElementById('android-download').hidden=true;document.getElementById('android-zip').hidden=true;document.getElementById('android-on-iphone').hidden=false;}
