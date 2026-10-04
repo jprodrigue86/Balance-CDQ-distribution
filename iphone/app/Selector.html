@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.64" data-cdq-iphone-release="97be3639d4a0d63790bb65f53b9467a06b012c3579413b6d49321424338cbcc6">
+<html data-cdq-iphone-version="26.65" data-cdq-iphone-release="3c1f93634359032a21b67f02f827913ffd61953cda1f7646e05af0ab92c897ba">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqFileActionsV2655">(function(){
@@ -646,7 +646,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.04-v26.64-pdf-session-storage">
+<meta name="cdq-package-build" content="2026.10.04-v26.65-client-workflow">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -925,7 +925,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.04-v26.64-pdf-session-storage'
+    build:'2026.10.04-v26.65-client-workflow'
   });
 }
 
@@ -938,7 +938,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.04-v26.64-pdf-session-storage'
+        build:'2026.10.04-v26.65-client-workflow'
       });
     }
   } catch(e) {}
@@ -5969,6 +5969,7 @@ html.cdq-workspace-reader-open #appHeader{background:var(--cdq-bg,#000)!importan
 #cdqDocumentPrepare .cdq26-offline-count{grid-column:1/-1;margin:0}
 #cdqDocumentPrepare .modal-buttons{margin:0!important;flex-shrink:0}
 </style>
+<style>.cdq-company-rename-v2665{min-width:44px;min-height:44px;flex:0 0 44px;border:1px solid #52606a;border-radius:9px;background:#26343d;color:inherit;font-size:24px;cursor:pointer}.cdq-company-name{flex:1;min-width:0}</style>
 </head>
 
 
@@ -7862,7 +7863,7 @@ function chargerClients(forceRefresh, initialCompanies){
   const current=()=>sequence===chargerClients.sequence&&cdqAccessState==='ready'&&window.cdqDriveEntryV2632.canRead()&&email===String(utilisateurCourantEmail||'');
   function apply(companies){
     if(!current())return;
-    toutesLesCompagnies=(companies||[]).slice().sort((a,b)=>String(a.nom||'').localeCompare(String(b.nom||''),'fr',{sensitivity:'base'}));
+    toutesLesCompagnies=(companies||[]).map(comp=>window.cdqClientRenameV2665?.overlay(comp)||comp).sort((a,b)=>String(a.nom||'').localeCompare(String(b.nom||''),'fr',{sensitivity:'base'}));
     remplirListeCompagnies();shown=true;
     document.documentElement.dataset.cdqClientsOwnerV2658=email;
     document.documentElement.removeAttribute('data-cdq-clients-error-v2658');
@@ -11495,7 +11496,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.04-v26.64-pdf-session-storage";
+  const CDQ_BUILD = "2026.10.04-v26.65-client-workflow";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -11909,13 +11910,19 @@ function cdqNavigateDesktop(id){
       return String(a.nom||"").localeCompare(String(b.nom||""),"fr",{sensitivity:"base"});
     });
     sorted.forEach(function(comp){
+      comp=window.cdqClientRenameV2665?.overlay(comp)||comp;
       const row=document.createElement("div"); row.className="company-item cdq-company-row"; row.dataset.companyId=String(comp.id||"");
       const name=document.createElement("span"); name.className="cdq-company-name"; name.textContent=comp.nom||"Compagnie"; name.onclick=function(){choisirCompagnie(comp);};
       name.appendChild(cdqCreerBadgePhoto('client',comp.id,comp.nom||'Compagnie',!!comp.photoPresente));
       row.appendChild(name);
       const star=document.createElement("button"); star.type="button"; star.className="cdq-company-star"+(comp.favori?" active":""); star.textContent="★"; star.title="Favori";
       star.onclick=function(e){e.stopPropagation(); const next=!comp.favori; star.disabled=true; cdqApiRun().withSuccessHandler(function(){comp.favori=next;star.disabled=false;remplirListeCompagnies();cdqRefreshFavoriteModalIfOpen();}).withFailureHandler(function(err){star.disabled=false;afficherErreur(err);}).definirFavoriCompagnie(comp.id,next);};
-      row.appendChild(star); list.appendChild(row);
+      row.appendChild(star);
+      if(['admin','technicien'].includes(String(utilisateurCourantRole||''))){
+       const rename=document.createElement('button');rename.type='button';rename.className='cdq-company-rename-v2665';rename.textContent='✎';rename.title='Renommer le client';rename.setAttribute('aria-label','Renommer le client '+(comp.nom||''));
+       rename.onclick=e=>{e.stopPropagation();window.cdqClientRenameV2665.open(comp);};row.append(rename);
+      }
+      list.appendChild(row);
     });
     if(typeof ajusterMenuAndroid==="function") ajusterMenuAndroid();
   }
@@ -13190,7 +13197,7 @@ function cdqCollectPreferencesV72(){
     uiUpdatedAt:Number(localStorage.getItem("cdqUiUpdatedAtV2215")||0)||0,
     longPressMs:localStorage.getItem("cdqLongPressMs")||"1000",
     swipeSensitivity:localStorage.getItem("cdqSwipeSensitivity")||"normal",
-    pdfReader:localStorage.getItem("cdqPdfReaderPreferenceV1")||"ask"
+    pdfReader:"cdq"
   };
 }
 function cdqTouchDisplayRevisionV2215(){
@@ -13324,7 +13331,7 @@ function cdqApplySharedPreferencesV72(p){
     }
     if(p.longPressMs)localStorage.setItem("cdqLongPressMs",String(p.longPressMs));
     if(p.swipeSensitivity)localStorage.setItem("cdqSwipeSensitivity",String(p.swipeSensitivity));
-    if(p.pdfReader)localStorage.setItem("cdqPdfReaderPreferenceV1",String(p.pdfReader));
+    localStorage.setItem("cdqPdfReaderPreferenceV1","cdq");
   }catch(e){}
 }
 function cdqLoadSharedPreferencesV72(showMessage){
@@ -13396,10 +13403,7 @@ function cdqOpenDisplaySettings(){
           '<div class="cdq-setting-row"><span>Appui long</span><div class="cdq-setting-buttons"><button data-long="700">0,7 s</button><button data-long="1000">1,0 s</button><button data-long="1300">1,3 s</button></div></div>'+
           '<div class="cdq-setting-row"><span>Glissement</span><div class="cdq-setting-buttons"><button data-swipe="souple">Souple</button><button data-swipe="normal">Normal</button><button data-swipe="ferme">Ferme</button></div></div>'+
         '</div>'+
-        '<div class="cdq-display-group"><div class="cdq-display-label">Lecteur PDF par défaut</div>'+
-          '<div class="cdq-setting-buttons"><button data-pdf-reader="ask">Demander</button><button data-pdf-reader="cdq">Lecteur CDQ</button><button data-pdf-reader="ilovepdf">iLovePDF</button><button data-pdf-reader="acrobat">Acrobat</button></div>'+
-          '<div class="cdq-v20-note">Le choix est enregistré seulement sur cet appareil. Android affichera uniquement les applications PDF compatibles installées.</div>'+
-        '</div>'+
+        '<div class="cdq-display-group"><div class="cdq-display-label">Lecteur PDF</div><p>Les PDF s’ouvrent dans le lecteur CDQ.</p></div>'+ 
         '<div class="cdq-display-group"><div class="cdq-display-label">Mise à jour</div>'+
           '<div class="cdq-update-center">'+
             '<div class="cdq-update-line"><strong>Version installée</strong><span id="cdqUpdateInstalled">'+cdqVersionLabelV87(CDQ_BUILD)+'</span></div>'+
@@ -13791,7 +13795,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.04-v26.64-pdf-session-storage";
+const CDQ_V19_BUILD = "2026.10.04-v26.65-client-workflow";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -14806,27 +14810,12 @@ async function cdqOpenPdfInternal(id,preparedRecord){
     else{frame=document.createElement('iframe');frame.id='cdqReaderFrame';frame.title=rec.nom;frame.referrerPolicy='origin';frame.src=CDQ_PWA_ORIGIN+'/Balance-CDQ-distribution/reader-v2525.html';frame.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000';document.body.append(frame);}
   }catch(e){close();afficherErreur(e);}
 }
-const CDQ_PDF_READER_KEY='cdqPdfReaderPreferenceV1';
-function cdqPdfReaderPreference(){const v=localStorage.getItem(CDQ_PDF_READER_KEY)||'ask';return ['ask','cdq','ilovepdf','acrobat'].includes(v)?v:'ask';}
-function cdqSetPdfReaderPreference(value){localStorage.setItem(CDQ_PDF_READER_KEY,value);return value;}
-async function cdqExternalPdfV2520(id,preferred){
-  if(/BalanceCDQAndroid\//.test(navigator.userAgent)&&window.cdqDocumentOpen){window.cdqDocumentOpen.open(id,'pdf',preferred);return;}
-  const rec=await cdqLoadPdfRecord(id);cdqDownloadPdf(rec);afficherMessage('Ouvrez le PDF téléchargé dans '+(preferred==='ilovepdf'?'iLovePDF':'Acrobat')+'.',true);
-}
-function cdqShowPdfReaderChoice(id,meta={}){
-  const o=cdqV19CreateModal('cdqPdfReaderChoice','Ouvrir — '+(meta.nom||meta.name||'Rapport PDF'),'cdq-pdf-reader-choice'),body=o.querySelector('.cdq-v19-body');body.innerHTML='';
-  const label=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.checked=true;label.append(check,document.createTextNode(' Utiliser ce lecteur par défaut'));body.append(label);
-  for(const [value,title] of [['cdq','Lecteur CDQ — remplir et enregistrer'],['ilovepdf','iLovePDF'],['acrobat','Adobe Acrobat']]){
-    const b=cdqDocumentButton(body,title,()=>{if(check.checked){cdqSetPdfReaderPreference(value);try{cdqScheduleSavePreferencesV72()}catch(_){}}o.style.display='none';Promise.resolve(value==='cdq'?cdqOpenPdfInternal(id,meta?.forceRefresh?meta:null):cdqExternalPdfV2520(id,value)).catch(afficherErreur);});if(value==='cdq')b.classList.add('primary-button');
-  }
-  o.style.display='flex';
-}
+// Every PDF opens in the integrated CDQ reader, including old preferences.
+function cdqPdfReaderPreference(){return 'cdq';}
+function cdqSetPdfReaderPreference(){localStorage.setItem('cdqPdfReaderPreferenceV1','cdq');return 'cdq';}
 async function cdqOpenPdf(id,meta){
-  if(!/^[A-Za-z0-9_-]{10,200}$/.test(String(id)))throw new Error('Identifiant PDF invalide.');
-  const preferred=cdqPdfReaderPreference();
-  if(preferred==='ask'){cdqShowPdfReaderChoice(id,meta);return true;}
-  if(preferred==='cdq')await cdqOpenPdfInternal(id,meta?.forceRefresh?meta:null);else await cdqExternalPdfV2520(id,preferred);
-  return true;
+ if(!/^[A-Za-z0-9_-]{10,200}$/.test(String(id)))throw new Error('Identifiant PDF invalide.');
+ await cdqOpenPdfInternal(id,meta?.forceRefresh?meta:null);return true;
 }
 window.cdqOpenPdfV2520=cdqOpenPdf;
 
@@ -15776,7 +15765,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.04-v26.64-pdf-session-storage";
+const CDQ_V20_BUILD = "2026.10.04-v26.65-client-workflow";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16623,7 +16612,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.04-v26.64-pdf-session-storage";
+const CDQ_V21_BUILD = "2026.10.04-v26.65-client-workflow";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -17109,7 +17098,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
   function settings(m){
     let account='';try{account=window.cdqGoogleDefaultAccountV2294?.()||''}catch(_){}
     const reader=localStorage.getItem('cdqPdfReaderPreferenceV1')||'ask';
-    m.innerHTML=header('Réglages','Ton affichage, tes fichiers et ton compte, au même endroit.')+`<div class="pc17-scroll pc17-settings"><section><h2>Thème</h2><div class="pc17-theme-choices">${themes.map(([id,name])=>`<button type="button" data-pc-theme="${id}" aria-pressed="${preferences.theme===id}"><i class="pc17-swatch ${id}"></i>${name}</button>`).join('')}</div></section><section><h2>Lisibilité sur ce PC</h2>${[['text','Taille des noms de fichiers et clients'],['icons','Taille des icônes de fichiers'],['density','Espacement des lignes']].map(([key,label])=>`<label class="pc17-range">${label}<output id="pc17Value-${key}">${preferences[key]} / 100</output><input type="range" min="0" max="100" value="${preferences[key]}" data-pc-range="${key}" aria-label="${label}"></label>`).join('')}<p>La sélection multiple s’active en maintenant le clic de la souris pendant 0,7 seconde.</p></section><section class="cdq-display-group"><div class="cdq-display-label">Thème</div></section><section><h2>Compte Google pour les documents</h2><p>Choisis le compte proposé à Google pour ouvrir les fichiers sur ce PC.</p><label class="pc18-account-label">Adresse Google<input id="pc18GoogleEmail" type="email" autocomplete="email" placeholder="nom@gmail.com" value="${esc(account)}"></label><div class="pc17-setting-buttons">${button('pc18SaveAccount','Enregistrer')}${button('pc18CurrentAccount','Utiliser mon compte CDQ')}${button('pc18ResetAccount','Demander le compte à chaque ouverture')}</div><p id="pc18AccountStatus" role="status">${account?'Compte enregistré : '+esc(account):'Aucun compte par défaut'}</p></section><section><h2>Lecteur PDF</h2><div class="pc17-setting-buttons">${[['ask','Demander'],['cdq','Lecteur CDQ'],['ilovepdf','iLovePDF'],['acrobat','Acrobat']].map(([id,label])=>`<button type="button" class="pc17-button" data-pc-reader="${id}" aria-pressed="${reader===id}">${label}</button>`).join('')}</div><p>Lecteur CDQ : remplissage dans l’application et enregistrement dans le dossier client. Les lecteurs externes doivent être installés.</p></section><section><h2>Application et mises à jour</h2><p>Version installée : <strong>V25.23</strong></p><div class="pc17-setting-buttons">${button('pc18CheckUpdate','Vérifier les mises à jour','refresh')}${button('pc18Manager','Ouvrir Script Manager')}${button('pc17Sync','Synchroniser les préférences','refresh')}</div><p id="pc18UpdateStatus" role="status"></p></section>${typeof utilisateurCourantRole!=='undefined'&&utilisateurCourantRole==='admin'?`<section><h2>Administration</h2><div class="pc17-setting-buttons">${button('pc18Users','Gestion des utilisateurs')}${button('pc18Diagnostic','Diagnostic de l’application')}</div></section>`:''}</div>`;
+    m.innerHTML=header('Réglages','Ton affichage, tes fichiers et ton compte, au même endroit.')+`<div class="pc17-scroll pc17-settings"><section><h2>Thème</h2><div class="pc17-theme-choices">${themes.map(([id,name])=>`<button type="button" data-pc-theme="${id}" aria-pressed="${preferences.theme===id}"><i class="pc17-swatch ${id}"></i>${name}</button>`).join('')}</div></section><section><h2>Lisibilité sur ce PC</h2>${[['text','Taille des noms de fichiers et clients'],['icons','Taille des icônes de fichiers'],['density','Espacement des lignes']].map(([key,label])=>`<label class="pc17-range">${label}<output id="pc17Value-${key}">${preferences[key]} / 100</output><input type="range" min="0" max="100" value="${preferences[key]}" data-pc-range="${key}" aria-label="${label}"></label>`).join('')}<p>La sélection multiple s’active en maintenant le clic de la souris pendant 0,7 seconde.</p></section><section class="cdq-display-group"><div class="cdq-display-label">Thème</div></section><section><h2>Compte Google pour les documents</h2><p>Choisis le compte proposé à Google pour ouvrir les fichiers sur ce PC.</p><label class="pc18-account-label">Adresse Google<input id="pc18GoogleEmail" type="email" autocomplete="email" placeholder="nom@gmail.com" value="${esc(account)}"></label><div class="pc17-setting-buttons">${button('pc18SaveAccount','Enregistrer')}${button('pc18CurrentAccount','Utiliser mon compte CDQ')}${button('pc18ResetAccount','Demander le compte à chaque ouverture')}</div><p id="pc18AccountStatus" role="status">${account?'Compte enregistré : '+esc(account):'Aucun compte par défaut'}</p></section><section><h2>Lecteur PDF</h2><p>Les PDF s’ouvrent dans le lecteur CDQ.</p></section><section><h2>Application et mises à jour</h2><p>Version installée : <strong>V25.23</strong></p><div class="pc17-setting-buttons">${button('pc18CheckUpdate','Vérifier les mises à jour','refresh')}${button('pc18Manager','Ouvrir Script Manager')}${button('pc17Sync','Synchroniser les préférences','refresh')}</div><p id="pc18UpdateStatus" role="status"></p></section>${typeof utilisateurCourantRole!=='undefined'&&utilisateurCourantRole==='admin'?`<section><h2>Administration</h2><div class="pc17-setting-buttons">${button('pc18Users','Gestion des utilisateurs')}${button('pc18Diagnostic','Diagnostic de l’application')}</div></section>`:''}</div>`;
     window.cdqIconThemesV2514?.mount(m);
     const advanced=document.createElement('section');const heading=document.createElement('h2');heading.textContent='Avancé';advanced.append(heading);m.querySelector('.pc17-settings').append(advanced);window.cdqAccountV2647?.mount(advanced);
     const note=$('.cdq-icon-picker-v2514 > p',m);if(note)note.textContent='Le même jeu d’icônes personnel sur PC et Android.';
@@ -17148,7 +17137,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.04-v26.64-pdf-session-storage';
+const BUILD='2026.10.04-v26.65-client-workflow';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20790,7 +20779,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.04-v26.64-pdf-session-storage';
+  const BUILD='2026.10.04-v26.65-client-workflow';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -21862,9 +21851,7 @@ html.android #cdqTopDisplayButtonV2204>span:last-child,html.mobile-device #cdqTo
     catch (_) { return ''; }
   }
   function reader() {
-    let value = 'ask';
-    try { value = localStorage.getItem('cdqPdfReaderPreferenceV1') || 'ask'; } catch (_) {}
-    return ['ask', 'cdq', 'ilovepdf', 'acrobat'].includes(value) ? value : 'ask';
+    return 'cdq';
   }
   function meta(id) {
     const box = document.querySelector('.file-checkbox[data-file-id="' + id + '"]');
@@ -21892,8 +21879,8 @@ html.android #cdqTopDisplayButtonV2204>span:last-child,html.mobile-device #cdqTo
     if (!type || !native()) return false;
     if(type==='sheet')return window.cdqOpenSheetV2526(id);
     // Keep an explicitly selected CDQ reader on its established internal route.
-    const selectedReader=readerOverride||reader();
-    if(type==='pdf'&&(selectedReader==='cdq'||selectedReader==='ask')){
+    const selectedReader='cdq';
+    if(type==='pdf'){
       window.cdqOpenPdfV2520(id,m).catch(afficherErreur);return true;
     }
     if (lastOpen.id === id && Date.now() - lastOpen.at < 800) return true;
@@ -23062,7 +23049,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.04-v26.64-pdf-session-storage',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.04-v26.65-client-workflow',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -24445,6 +24432,7 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
  window.cdqWorkspaceResumeV2658={remember,restore};
 })();
 </script>
+<script src="./client-rename-v2665.js"></script>
 </body>
 </html>
 

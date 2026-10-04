@@ -1,0 +1,55 @@
+// Repair only the backgrounds of known precision forms. Values, calculation
+// actions, widget geometry and the three plateau illustrations are untouched.
+export function normalizePrecisionAppearanceV2665(pdf,L){
+ const {PDFName,PDFDict,PDFArray,PDFRawStream,decodePDFRawStream}=L,N=PDFName.of;
+ const form=pdf.getForm();
+ if(!form.getFieldMaybe('type_plateau')||!form.getFieldMaybe('resolution')||!form.getFieldMaybe('charge_point_7_charge_utilisee'))return false;
+ const tint=[.6,.992157,.992157],rects=[];let changed=false;
+ for(const field of [...form.getFields()])if(/^_cdq_(affichage_|v5_teinte)/.test(field.getName())){
+  const order=form.acroForm.dict.lookupMaybe(N('CO'),PDFArray);
+  if(order)for(let i=order.size()-1;i>=0;i--)if(String(order.get(i))===String(field.ref))order.remove(i);
+  form.removeField(field);changed=true;
+ }
+ const matches=r=>rects.some(q=>Math.abs(q.x-r[0])<2&&Math.abs(q.y-r[1])<2&&Math.abs(q.width-r[2])<3&&Math.abs(q.height-r[3])<3);
+ for(const field of form.getFields()){
+  if(!('getText' in field)&&!('getSelected' in field)||/^Statut_|^Bouton_|^_/.test(field.getName()))continue;
+  for(const widget of field.acroField.getWidgets()){
+   const r=widget.getRectangle();if(r.width<3||r.height<3)continue;rects.push(r);
+   let mk=widget.dict.lookupMaybe(N('MK'),PDFDict);const bg=mk?.lookupMaybe(N('BG'),PDFArray);
+   if(!bg||bg.size()!==3||tint.some((v,i)=>Math.abs(Number(bg.get(i)?.numberValue)-v)>.00001)){
+    mk??=pdf.context.obj({});mk.set(N('BG'),pdf.context.obj(tint));widget.dict.set(N('MK'),mk);changed=true;
+   }
+   // Preserve the saved text AP exactly; add its background inside that AP.
+   const ap=widget.dict.lookupMaybe(N('AP'),PDFDict),ref=ap?.get(N('N')),stream=ref&&pdf.context.lookup(ref);
+   if(!(stream instanceof PDFRawStream))continue;
+   const source=Array.from(decodePDFRawStream(stream).decode(),b=>String.fromCharCode(b)).join('');
+   const prefix='q 0.6 0.992157 0.992157 rg 0 0 '+r.width+' '+r.height+' re f Q\n';
+   if(source.startsWith(prefix))continue;
+   const clean=source.replace(/(?:1(?:\.0+)?\s+1(?:\.0+)?\s+1(?:\.0+)?|0\.6\s+0\.992157\s+0\.992157)\s+rg(?=\s+[^B]*?\bre\s+[Bf])/g,'0.6 0.992157 0.992157 rg');
+   const raw=Uint8Array.from(prefix+clean,c=>c.charCodeAt(0)),replacement=pdf.context.flateStream(raw);
+   for(const [name,value]of stream.dict.entries())if(!['/Length','/Filter','/DecodeParms'].includes(String(name)))replacement.dict.set(name,value);
+   const replacementRef=pdf.context.register(replacement);ap.set(N('N'),replacementRef);changed=true;
+  }
+ }
+ // Some old forms paint white cells in the page before drawing the widgets.
+ const pageStreams=new Map();
+ for(const page of pdf.getPages()){
+  const contents=page.node.Contents(),refs=contents instanceof PDFArray?contents.asArray():[contents];
+  for(const ref of refs.filter(Boolean))pageStreams.set(String(ref),[ref,pdf.context.lookup(ref)]);
+ }
+ for(const [ref,stream]of pdf.context.enumerateIndirectObjects())if(stream instanceof PDFRawStream&&stream.dict.get(N('Subtype'))===N('Form'))pageStreams.set(String(ref),[ref,stream]);
+ for(const [ref,stream]of pageStreams.values()){
+  if(!(stream instanceof PDFRawStream))continue;
+  const raw=decodePDFRawStream(stream).decode(),source=Array.from(raw,b=>String.fromCharCode(b)).join('');
+  const clean=source.replace(/q\s+1(?:\.0+)?\s+1(?:\.0+)?\s+1(?:\.0+)?\s+rg([\s\S]*?)\bQ/g,(block,body)=>{
+   if(/\bBT\b/.test(body))return block;
+   const m=body.match(/(-?[\d.]+)\s+(-?[\d.]+)\s+([\d.]+)\s+([\d.]+)\s+re\s+[Bf]/);
+   return m&&matches(m.slice(1).map(Number))?block.replace(/1(?:\.0+)?\s+1(?:\.0+)?\s+1(?:\.0+)?\s+rg/,'0.6 0.992157 0.992157 rg'):block;
+  });
+  if(clean===source)continue;
+  const replacement=pdf.context.flateStream(Uint8Array.from(clean,c=>c.charCodeAt(0)));
+  for(const [name,value]of stream.dict.entries())if(!['/Length','/Filter','/DecodeParms'].includes(String(name)))replacement.dict.set(name,value);
+  pdf.context.assign(ref,replacement);changed=true;
+ }
+ return changed;
+}

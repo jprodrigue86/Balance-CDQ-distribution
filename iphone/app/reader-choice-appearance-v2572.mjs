@@ -1,4 +1,5 @@
 import {alignStatusAppearances} from './reader-status-v2656.mjs';
+import {normalizePrecisionAppearanceV2665} from './reader-precision-appearance-v2665.mjs';
 // Preserve an editable AcroForm when CDQ saves a client master PDF.
 // The client-facing copy may be flattened separately by the send workflow.
 import {compactToleranceActions,centerSingleLineAppearances,textInkMetrics} from './reader-layout-v2653.mjs';
@@ -27,7 +28,7 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const {PDFDocument,PDFName}=L;
   const pdf=await PDFDocument.load(data,{updateMetadata:false});
   const form=pdf.getForm();
-  const changed=compactToleranceActions(pdf,L)|centerSingleLineAppearances(pdf,L)|await alignStatusAppearances(pdf,L);
+  const changed=normalizePrecisionAppearanceV2665(pdf,L)|compactToleranceActions(pdf,L)|centerSingleLineAppearances(pdf,L)|await alignStatusAppearances(pdf,L);
   if(!changed&&!rawNeedsAppearanceRepair(data))return data;
   form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
   return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
@@ -39,6 +40,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
   const pdf=await PDFDocument.load(bytes,{updateMetadata:false});
   const form=pdf.getForm();
   compactToleranceActions(pdf,L);
+  normalizePrecisionAppearanceV2665(pdf,L);
   await alignStatusAppearances(pdf,L);
 
   // Older CDQ saves could leave NeedAppearances=true. Some viewers then paint
