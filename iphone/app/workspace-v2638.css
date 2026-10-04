@@ -104,6 +104,21 @@ html.cdq-mobile-layout #cdqCreateClientV2640[hidden],html.cdq-mobile-layout .cdq
 
 #cdqClientActionsV2640 [data-balance-list-status]{flex:1 0 100%;margin:0;font-size:13px;color:var(--cdq-muted)}
 
+/* V26.71: use the approved Inventaire heading on every workspace page. */
+body [data-cdq-heading-v2671]{display:flex!important;align-items:center!important;gap:10px!important;position:sticky!important;top:0!important;padding:9px 12px 8px!important;margin-top:0!important;margin-bottom:0!important;border-bottom:1px solid var(--cdq-line,#0f5374)!important;background:var(--cdq-surface,#101820)!important;font-family:Arial,Helvetica,sans-serif!important}
+body [data-cdq-heading-v2671] .cdq-im-head{width:100%}
+body [data-cdq-heading-v2671]>img{width:44px!important;height:44px!important;object-fit:contain}
+body [data-cdq-heading-title-v2671]{display:block!important;flex:1;min-width:0;margin:0!important;font:950 25px/normal Arial,Helvetica,sans-serif!important;letter-spacing:.01em!important;text-shadow:none!important;text-transform:none!important;color:var(--cdq-ink,#eef8ff)!important}
+body [data-cdq-heading-subtitle-v2671]{display:block!important;margin:1px 0 0!important;padding:0!important;font:400 13px/normal Arial,Helvetica,sans-serif!important;letter-spacing:normal!important;color:var(--cdq-muted,#2fe9ff)!important}
+body [data-cdq-heading-v2671]>:is(div,h2){flex:1;min-width:0}
+body :is([data-cdq-heading-close-v2671],[data-cdq-heading-back-v2671]){flex:0 0 44px!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;max-width:44px!important;padding:0!important;margin:0!important;display:flex!important;align-items:center!important;justify-content:center!important;border:1px solid var(--cdq-line,#2f6c88)!important;border-radius:12px!important;background:var(--cdq-raised,#0a1821)!important;color:var(--cdq-ink,#fff)!important;line-height:0!important;transform:none!important;align-self:center!important}
+body :is([data-cdq-heading-close-v2671],[data-cdq-heading-back-v2671])>svg{display:block!important;flex:0 0 24px!important;width:24px!important;height:24px!important;margin:0!important;padding:0!important;fill:none;stroke:currentColor;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+body [data-cdq-heading-back-v2671][hidden]{display:none!important}
+body :is([data-cdq-heading-close-v2671],[data-cdq-heading-back-v2671]):focus-visible{outline:2px solid var(--cdq-accent,#49d5ef);outline-offset:2px}
+html.cdq-mobile-layout #cdqReportOverlayV2578 .cdq-report-sheet-v2578{padding-top:0!important}
+#cdqReportOverlayV2578 [data-cdq-heading-v2671]{margin-left:-12px;margin-right:-12px}
+@media(max-width:460px){body [data-cdq-heading-v2671]{padding-left:9px!important;padding-right:9px!important}body [data-cdq-heading-title-v2671]{font-size:22px!important}}
+
 /* The dialog must stay inside the viewport; the method body owns scrolling. */
 html.cdq-mobile-layout #cdqCalibrationDialogV2565{position:fixed!important;box-sizing:border-box!important;height:calc(100dvh - var(--cdq-workspace-top) - var(--cdq-workspace-bottom))!important;min-height:0!important;overflow:hidden!important}
 html.cdq-mobile-layout #cdqCalibrationDialogV2565 .cdq-cal-shell{height:100%!important;min-height:0!important;overflow:hidden!important}

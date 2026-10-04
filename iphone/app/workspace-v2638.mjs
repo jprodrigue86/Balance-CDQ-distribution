@@ -47,7 +47,30 @@ function measure(){
   const signature=JSON.stringify(payload);if(measure.last!==signature){measure.last=signature;window.parent.postMessage(payload,location.origin);}
 }
 function iconTheme(){if(window.cdqIconThemesV2514?.getStyle)return window.cdqIconThemesV2514.getStyle();try{return JSON.parse(localStorage.getItem('cdqIconThemeV2514:'+calibrationIdentity().email)||'null')?.style||'current';}catch{return 'current';}}
+function syncHeadings(){
+  const icon=path=>'<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="'+path+'"/></svg>';
+  for(const [head,title,subtitle] of [
+    ['.cdq-im-top','.cdq-im-title strong','.cdq-im-title small'],
+    ['.cdq-workspace-head','h2','h2 small'],
+    ['.cdq-invoice-title','h2','p'],
+    ['#cdqReportOverlayV2578 header','h2','[data-report-context]'],
+    ['.cdq-cal-head','h2','h2 small']
+  ])for(const h of $$(head)){
+    h.setAttribute('data-cdq-heading-v2671','');
+    $(title,h)?.setAttribute('data-cdq-heading-title-v2671','');
+    $(subtitle,h)?.setAttribute('data-cdq-heading-subtitle-v2671','');
+    for(const b of $$('[data-workspace-close],[data-inv-close],[data-report-close],[data-cal-close],#cdqImClose',h)){
+      if(b.hasAttribute('data-cdq-heading-close-v2671'))continue;
+      b.setAttribute('data-cdq-heading-close-v2671','');b.innerHTML=icon('M6 6l12 12 M18 6L6 18');
+    }
+    for(const b of $$('[data-report-back],[data-cal-back],#cdqImBack',h)){
+      if(b.hasAttribute('data-cdq-heading-back-v2671'))continue;
+      b.setAttribute('data-cdq-heading-back-v2671','');b.innerHTML=icon('M19 12H5 M11 6l-6 6 6 6');
+    }
+  }
+}
 function syncNav(){
+  syncHeadings();
   const nav=$('.bottom-nav');if(!nav)return;
   document.documentElement.dataset.cdqWorkspaceUnlocked=calibrationIdentity().email?'true':'false';
   for(const [label,key] of [['Calcul','calcul'],['Opportunités','opportunities']]){
@@ -141,7 +164,7 @@ async function loadDrive(append=false,id=driveState.id){
   }catch(e){if(epoch===driveEpoch&&account===ownerKey()){driveState.loading=false;renderDrive();status(p,e.message,true);}}
 }
 function renderDrive(){
-  const p=drivePage(),body=$('.cdq-workspace-body',p),mode=driveState.mode;$('.cdq-workspace-head h2',p).innerHTML=(mode==='favorites'?'Favoris':'Dossiers')+'<small>'+esc(mode==='favorites'?'Vos raccourcis personnels':driveState.crumbs.at(-1)?.nom||'Dossiers partagés CDQ')+'</small>';
+  const p=drivePage(),body=$('.cdq-workspace-body',p),mode=driveState.mode;$('.cdq-workspace-head h2',p).innerHTML=(mode==='favorites'?'Favoris':'Dossiers')+'<small data-cdq-heading-subtitle-v2671>'+esc(mode==='favorites'?'Vos raccourcis personnels':driveState.crumbs.at(-1)?.nom||'Dossiers partagés CDQ')+'</small>';
   body.innerHTML='<input class="cdq-workspace-search" data-drive-search type="search" aria-label="Rechercher dans cette liste" placeholder="Rechercher dans cette liste" value="'+esc(driveState.query)+'"><div class="cdq-workspace-actions cdq-drive-toolbar"><button type="button" data-drive-back>← Retour</button><button type="button" data-drive-root>Racine</button><button type="button" data-drive-favorites aria-pressed="'+(mode==='favorites')+'">★ Favoris</button><button type="button" data-drive-refresh>Actualiser</button></div><nav class="cdq-workspace-crumbs" aria-label="Chemin du dossier"></nav><div class="cdq-workspace-list" data-drive-list></div><div class="cdq-workspace-actions"><button data-drive-more>Charger la suite</button></div><p data-workspace-status role="status" class="cdq-workspace-status"></p>';
   $('[data-drive-search]',p).oninput=e=>{driveState.query=e.target.value;renderDriveRows(p);};
   $('[data-drive-back]',p).disabled=mode!=='favorites'&&driveState.crumbs.length<2;$('[data-drive-back]',p).onclick=()=>mode==='favorites'?openDrive('drive'):loadDrive(false,driveState.crumbs.at(-2).id);
