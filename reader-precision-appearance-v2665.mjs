@@ -5,6 +5,19 @@ export function normalizePrecisionAppearanceV2665(pdf,L){
  const form=pdf.getForm();
  if(!form.getFieldMaybe('type_plateau')||!form.getFieldMaybe('resolution')||!form.getFieldMaybe('charge_point_7_charge_utilisee'))return false;
  const tint=[.6,.992157,.992157],rects=[];let changed=false;
+ // Promote old inline drawing streams to valid PDF references. Print viewers
+ // tolerated these masters; PDF.js skipped their equipment/header drawings.
+ const seen=new Set();
+ const drawings=resources=>{
+  if(!resources||seen.has(resources))return;seen.add(resources);
+  const objects=resources.lookupMaybe(N('XObject'),PDFDict);if(!objects)return;
+  for(const [name,value]of objects.entries()){
+   const stream=pdf.context.lookup(value);if(!(stream instanceof PDFRawStream))continue;
+   if(value instanceof PDFRawStream){objects.set(name,pdf.context.register(stream));changed=true;}
+   if(stream.dict.get(N('Subtype'))===N('Form'))drawings(stream.dict.lookupMaybe(N('Resources'),PDFDict));
+  }
+ };
+ for(const page of pdf.getPages()){page.node.normalize();drawings(page.node.Resources());}
  for(const field of [...form.getFields()])if(/^_cdq_(affichage_|v5_teinte)/.test(field.getName())){
   const order=form.acroForm.dict.lookupMaybe(N('CO'),PDFArray);
   if(order)for(let i=order.size()-1;i>=0;i--)if(String(order.get(i))===String(field.ref))order.remove(i);
