@@ -7,7 +7,37 @@ const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').repl
 const excluded=v=>/^(?:liste (?:de|des) balances?|archives?|rs(?: pdf)?|irs(?: pdf)?)(?:\b|[._ -])/.test(norm(v));
 let epoch=0,owner='',visibleClient='',timer=0;
 const jobs=new Map(),receipts=new Map(),states=new Map();
+// Saves belong to their client, independently of the visible page or selection.
+const saveWaits=new Map(),changes=new Map(),satisfied=new Map(),clientTimers=new Map();
 const key=id=>calibrationIdentity().email+'|'+id;
+const waiting=id=>(saveWaits.get(key(id))?.size||0)>0;
+function paintRows(){
+  const id=client(),k=key(id),running=jobs.has(k)||waiting(id)||(changes.get(k)||0)>(satisfied.get(k)||0);
+  for(const row of document.querySelectorAll('.file-row')){
+    const checkbox=row.querySelector('.file-checkbox[data-file-id]'),known=states.get(k)?.fileId||listFile(id)?.id;
+    const isList=!!known&&checkbox?.dataset.fileId===String(known);
+    let indicator=row.querySelector('[data-balance-list-working]');
+    if(!isList||!running||!canRead()){indicator?.remove();row.removeAttribute('data-balance-list-busy');continue;}
+    if(!indicator){indicator=document.createElement('span');indicator.dataset.balanceListWorking='';indicator.className='cdq-balance-list-working';indicator.setAttribute('role','status');const badge=row.querySelector('.file-today-done-badge');row.insertBefore(indicator,badge||null);}
+    const text=navigator.onLine===false?'Liste de balances : actualisation en attente de connexion':waiting(id)?'Liste de balances : synchronisation du rapport en cours':'Liste de balances : actualisation en cours';
+    if(indicator.getAttribute('aria-label')!==text){indicator.setAttribute('aria-label',text);indicator.title=text;}
+    indicator.classList.toggle('cdq-balance-list-paused',navigator.onLine===false);row.dataset.balanceListBusy='true';
+  }
+}
+function scheduleClient(id){
+  const k=key(id);if(clientTimers.has(k))return;
+  const version=epoch;clientTimers.set(k,setTimeout(()=>{clientTimers.delete(k);if(version===epoch&&!waiting(id))refresh(false,true,id).catch(()=>{});},150));
+}
+function saved(event,local=false){
+  if(owner!==calibrationIdentity().email)reset();
+  const d=event.detail||{},id=String(d.clientId||'');if(!id){schedule();return;}
+  if(!canWrite()||excluded(d.name||d.nom))return;
+  const k=key(id),file=String(d.id||d.fileId||''),token=String(d.saveId||'');
+  if(local&&d.pending!==false){let pending=saveWaits.get(k);if(!pending)saveWaits.set(k,pending=new Map());pending.set(file,token);paintRows();return;}
+  const pending=saveWaits.get(k);if(pending?.has(file)&&(!token||pending.get(file)===token))pending.delete(file);
+  changes.set(k,(changes.get(k)||0)+1);const job=jobs.get(k);if(job)job.dirty=true;
+  paintRows();scheduleClient(id);
+}
 function root(id){try{return cacheContenuCompagnies[id]||null;}catch{return null;}}
 function listFile(id){return (root(id)?.fichiers||[]).find(f=>norm(f.nom||f.name)==='liste de balance.pdf');}
 export function sourceFingerprint(tree){
@@ -32,34 +62,32 @@ async function open(){
   if(r.fileId)return window.cdqOpenPdfV2520?.(r.fileId,{nom:'Liste de balance.pdf',forceRefresh:r.status==='ready'});
   paint(id,r.status==='pending'||r.status==='working'?'Première liste en préparation. Les autres fichiers restent accessibles.':'Aucune liste disponible. Choisissez « Actualiser la liste ».');
 }
-async function refresh(force=false,verify=false){
-  const id=client();if(!id||!canWrite()||navigator.onLine===false)return {status:'unavailable'};
+async function refresh(force=false,verify=false,id=client()){
+  if(!id||!canWrite()||navigator.onLine===false)return {status:'unavailable'};
   const k=key(id),fingerprint=sourceFingerprint(root(id)),active=jobs.get(k);
   if(active){if(fingerprint&&fingerprint!==active.fingerprint)active.dirty=true;if(force)active.forceNext=true;return active.promise;}
-  if(!force&&!verify&&remembered(id)?.fingerprint===fingerprint)return {status:'cached'};
+  if(waiting(id)&&!force){paintRows();return {status:'waiting-save'};}
+  if(!force&&!verify&&remembered(id)?.fingerprint===fingerprint&&(changes.get(k)||0)===(satisfied.get(k)||0))return {status:'cached'};
   // Automatic checks are silent; only an explicit refresh reports progress.
   const progress=(text,error=false)=>{if(force)paint(id,text,error);};
-  const version=epoch,job={fingerprint,dirty:false,promise:null};jobs.set(k,job);
+  const version=epoch,change=changes.get(k)||0,stamp=fingerprint+'|saved:'+change,job={fingerprint,dirty:false,promise:null};jobs.set(k,job);paintRows();
   job.promise=(async()=>{try{
-    const r=await call('cdqActualiserListeBalanceV2665',id,force,fingerprint);states.set(k,r);
-    if(r.status==='busy'){progress('Vérification reportée. La liste existante reste accessible.');return r;}
-    if(r.status==='ready'){remember(id,fingerprint);ready(id,r,force);return r;}
-    if(r.status==='error')throw Error(r.message||'Actualisation impossible.');
+    let result=await call('cdqActualiserListeBalanceV2665',id,force,stamp);states.set(k,result);
     progress('Actualisation de la liste…');
     const deadline=Date.now()+180000;
     while(version===epoch&&canRead()&&Date.now()<deadline){
+      if(result.status==='ready'){if(!waiting(id)&&change===(changes.get(k)||0)){remember(id,fingerprint);satisfied.set(k,change);}ready(id,result,force);return result;}
+      if(result.status==='error')throw Error(result.message||'Actualisation impossible.');
+      if(!['busy','pending','working'].includes(result.status))throw Error('Réponse d’actualisation non confirmée.');
       await new Promise(resolve=>setTimeout(resolve,1000));
       if(version!==epoch||!canRead())break;
-      if(document.hidden)continue;
-      let result=await call('cdqEtatListeBalanceV2638',id);
-      if(result.status==='pending')result=await call('cdqActualiserListeBalanceV2665',id,false,sourceFingerprint(root(id)));states.set(k,result);
-      if(result.status==='ready'){remember(id,fingerprint);ready(id,result,force);return result;}
-      if(result.status==='error')throw Error(result.message||'Actualisation impossible.');
+      result=result.status==='busy'?await call('cdqActualiserListeBalanceV2665',id,false,stamp):await call('cdqEtatListeBalanceV2638',id);
+      if(result.status==='pending')result=await call('cdqActualiserListeBalanceV2665',id,false,stamp);states.set(k,result);
     }
     if(version===epoch)progress('Actualisation en cours sur le serveur. La liste existante reste accessible.');
     return {status:'pending'};
-  }catch(e){if(version===epoch)progress('Actualisation interrompue. La liste existante reste accessible.',true);return {status:'error',message:e.message};}
-  finally{if(jobs.get(k)===job)jobs.delete(k);if(version===epoch&&id===client()){if(job.forceNext)queueMicrotask(()=>refresh(true));else if(job.dirty)schedule();}}})();
+  }catch(e){if(version===epoch){satisfied.set(k,changes.get(k)||0);progress('Actualisation interrompue. La liste existante reste accessible.',true);}return {status:'error',message:e.message};}
+  finally{if(jobs.get(k)===job)jobs.delete(k);if(version===epoch){if(job.forceNext)queueMicrotask(()=>refresh(true,false,id));else if(job.dirty&&!waiting(id))scheduleClient(id);paintRows();}}})();
   return job.promise;
 }
 function closeMenu(){document.querySelector('[data-balance-list-menu]')?.remove();document.querySelector('[data-client-list]')?.setAttribute('aria-expanded','false');}
@@ -71,11 +99,11 @@ function menu(){
   for(const [label,action,write] of [['Ouvrir la liste',open,false],['Actualiser la liste',()=>refresh(true),true]]){const b=document.createElement('button');b.type='button';b.textContent=label;b.disabled=write&&!canWrite();b.onclick=()=>{closeMenu();if(id===client())Promise.resolve(action()).catch(e=>paint(id,e.message,true));};p.append(b);}
   actions.append(p);actions.querySelector('[data-client-list]')?.setAttribute('aria-expanded','true');
 }
-function reset(){epoch++;owner=calibrationIdentity().email;visibleClient='';receipts.clear();states.clear();jobs.clear();clearTimeout(timer);timer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();}
+function reset(){epoch++;owner=calibrationIdentity().email;visibleClient='';receipts.clear();states.clear();jobs.clear();saveWaits.clear();changes.clear();satisfied.clear();for(const t of clientTimers.values())clearTimeout(t);clientTimers.clear();clearTimeout(timer);timer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();paintRows();}
 function inspect(){
   if(owner!==calibrationIdentity().email)reset();
   const id=client();if(id!==visibleClient){visibleClient=id;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();}
-  if(!canWrite()||document.hidden||window.cdqWorkspaceV2638?.active()!=='')return;
+  paintRows();if(!canWrite()||document.hidden)return;
   const tree=root(id);if(!id||!tree)return;
   const fingerprint=sourceFingerprint(tree),job=jobs.get(key(id));
   if(job){if(fingerprint!==job.fingerprint)job.dirty=true;return;}
@@ -86,7 +114,9 @@ function schedule(){if(timer)return;timer=setTimeout(()=>{timer=0;inspect();},15
 window.cdqBalanceListV2638={refresh,open,menu,inspect};
 window.addEventListener('cdq:access-ready',()=>{if(owner!==calibrationIdentity().email)reset();schedule();});
 window.addEventListener('cdq:drive-cleared-v2632',reset);window.addEventListener('cdq:drive-ready-v2632',schedule);
-for(const event of ['cdq:copied','cdq:pdf-saved','cdq:pdf-local-saved','cdq:client-renamed'])window.addEventListener(event,schedule);
+for(const event of ['cdq:copied','cdq:pdf-saved'])window.addEventListener(event,e=>saved(e));
+window.addEventListener('cdq:pdf-local-saved',e=>saved(e,true));window.addEventListener('cdq:client-renamed',e=>saved(e));
+window.addEventListener('online',()=>{for(const k of changes.keys())if(k.startsWith(owner+'|')&&(changes.get(k)||0)>(satisfied.get(k)||0))scheduleClient(k.slice(owner.length+1));paintRows();schedule();});window.addEventListener('offline',paintRows);
 document.addEventListener('click',e=>{if(e.target.closest?.('.folder-header,.bottom-nav-item,.company-item')){closeMenu();schedule();}},true);
 const files=document.getElementById('filesContainer');if(files)new MutationObserver(schedule).observe(files,{childList:true,subtree:true});
 setInterval(()=>{if(!document.hidden)inspect();},30000);reset();schedule();
