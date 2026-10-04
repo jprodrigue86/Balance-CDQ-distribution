@@ -1,0 +1,8 @@
+Mode : retouche avec l’outil image_gen intégré.
+Source : assets/music-wall-android-v2663.webp.
+Sortie : assets/music-wall-android-v2667.webp (793 × 1983, WebP qualité 92).
+
+Demande : interchanger les emplacements d’Insomnium et de Septicflesh.
+Résultat : Septicflesh à gauche dans l’ancien espace d’Insomnium, Insomnium à droite dans l’ancien espace de Septicflesh.
+
+Consigne : échanger uniquement ces deux logos en conservant leurs noms, style, taille et lisibilité. Préserver tous les autres groupes, leur position, la composition, le fond, les chaînes et les accents rouges. Aucun élément d’interface, bordure ou filigrane.

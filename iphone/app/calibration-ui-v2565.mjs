@@ -1,3 +1,4 @@
+import {createCalibrationScan,scanCalibrationPdf} from './calibration-scan-v2668.mjs';
 import {calibrationIcon} from './calibration-icon-v2566.mjs';
 import {calibrationIdentity,calibrationRpc,revisionOf,queueFeedback,flushFeedback,pendingFeedback} from './calibration-feedback-v2566.mjs';
 import {devices,forFile,categories,manufacturers,findCalibration,addClientDevices,resetClientDevices} from './calibration-db-v2565.mjs';
@@ -26,6 +27,7 @@ function installStyles(){
   '.cdq-cal-feedback button,.cdq-cal-admin button{padding:11px;border:1px solid #467488;border-radius:10px;background:#173c4a;color:white;font-weight:700;margin:6px 6px 6px 0}.cdq-cal-feedback textarea,.cdq-cal-admin textarea{box-sizing:border-box;display:block;width:100%;min-height:85px;background:#0a1923;border:1px solid #4a7183;border-radius:8px;color:white;padding:10px;font:inherit}.cdq-cal-feedback button:disabled{opacity:.5}.cdq-cal-status{line-height:1.45;color:#bddee9}.cdq-cal-alert-count{background:#a83537;color:#fff;border-radius:12px;padding:2px 6px}.cdq-cal-notice{position:fixed;bottom:110px;left:12px;right:12px;z-index:2147483000;padding:16px;background:#442629;color:white;border:1px solid #ff9292;border-radius:14px;box-shadow:0 4px 30px #000b}.cdq-cal-notice button{padding:8px;margin:7px;border-radius:8px}.cdq-cal-admin article{border-top:1px solid #416372;padding:12px 0}',
   '#cdqCalibrationDialogV2565{inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;border:0;padding:0;background:#08131d;color:#eef7fc;font-family:Arial,Helvetica,sans-serif}#cdqCalibrationDialogV2565::backdrop{background:#000b}',
   '.cdq-cal-shell{min-height:100%;display:flex;flex-direction:column;background:linear-gradient(180deg,#07131d,#0c2232)}.cdq-cal-head{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:#0b1d2aee;border-bottom:1px solid #28485d}.cdq-cal-head h2{margin:0;font-size:20px;flex:1}.cdq-cal-head button{border:1px solid #47687b;background:#173347;color:#fff;border-radius:10px;padding:9px 12px;font-weight:700}',
+  '.cdq-cal-head h2{font-size:21px;line-height:1.2}.cdq-cal-head h2 small{display:block;margin-top:5px;font-size:12px;font-weight:500;line-height:1.4;color:var(--cdq-muted,#aaa)}.cdq-cal-head button[data-cal-close]{width:40px;height:40px;padding:0;font-size:24px;display:grid;place-items:center}.cdq-cal-scan-v2668{margin-top:14px}.cdq-cal-scan-v2668 [data-cal-scan-status]{font-size:14px;line-height:1.5;overflow-wrap:anywhere}.cdq-cal-scan-actions{display:flex;flex-wrap:wrap;gap:10px}.cdq-cal-scan-actions button{padding:12px;border:1px solid var(--cdq-line,#444);border-radius:12px;background:var(--cdq-raised,#222);color:inherit;font-weight:700}.cdq-cal-scan-actions button[hidden]{display:none!important}',
   '.cdq-cal-body{width:min(900px,100%);margin:0 auto;padding:14px 14px calc(30px + env(safe-area-inset-bottom));box-sizing:border-box}.cdq-cal-search{width:100%;box-sizing:border-box;border:1px solid #496b7d;border-radius:12px;background:#102736;color:#fff;padding:12px 14px;font-size:16px;margin-bottom:14px}.cdq-cal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:11px}',
   '.cdq-cal-card,.cdq-cal-model{width:100%;text-align:left;border:1px solid #315b74;border-radius:14px;background:#102b3d;color:#fff;padding:14px;min-height:78px}.cdq-cal-card strong,.cdq-cal-model strong{display:block;font-size:17px}.cdq-cal-card small,.cdq-cal-model small{display:block;color:#afd0e2;margin-top:5px}.cdq-cal-model .verified{color:#8ef0b8}.cdq-cal-model .pending{color:#ffd18d}',
   '.cdq-cal-section{margin-top:16px;border:1px solid #284a60;border-radius:15px;background:#0d2332;padding:14px}.cdq-cal-section h3{margin:0 0 10px;font-size:18px}.cdq-cal-intro{line-height:1.45;color:#d9eaf3}.cdq-cal-steps{display:grid;gap:11px}.cdq-cal-step{display:grid;grid-template-columns:38px 1fr;gap:10px;border-top:1px solid #284a60;padding-top:12px}.cdq-cal-step:first-child{border-top:0;padding-top:0}.cdq-cal-num{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#0b7ca9;color:#fff;font-weight:800}.cdq-cal-step h4{margin:0 0 4px;font-size:16px}.cdq-cal-step p{margin:0;line-height:1.45;color:#d8e7ee}',
@@ -64,7 +66,7 @@ function ensureNav(){
 
 }
 function ensureDialog(){if(dialog?.isConnected)return dialog;dialog=document.createElement('dialog');dialog.id='cdqCalibrationDialogV2565';document.body.append(dialog);dialog.addEventListener('cancel',e=>{e.preventDefault();dialog.close();});return dialog;}
-function header(title,back){return '<header class="cdq-cal-head">'+(back?'<button type="button" data-cal-back aria-label="Retour">←</button>':'')+indicatorSvg(31)+'<h2>'+esc(title)+'</h2><button type="button" data-cal-close aria-label="Fermer">✕</button></header>';}
+function header(title,back){return '<header class="cdq-cal-head">'+(back?'<button type="button" data-cal-back aria-label="Retour">←</button>':'')+indicatorSvg(31)+'<h2>'+esc(title)+'<small>Méthode de calibration</small></h2><button type="button" data-cal-close aria-label="Fermer">✕</button></header>';}
 function shell(title,body,back){const d=ensureDialog();d.innerHTML='<div class="cdq-cal-shell">'+header(title,back)+'<main class="cdq-cal-body">'+body+'</main></div>'; $('[data-cal-close]',d).onclick=()=>d.close();const b=$('[data-cal-back]',d);if(b)b.onclick=goBack;if(!d.open)d.show();window.cdqWorkspaceV2638?.navigate('calibration',{adopt:true});}
 function goBack(){
   if(state.view==='device'){if(state.returnView){const r=state.returnView;state.returnView=null;return setView(r);}if(state.manufacturer)return showManufacturer(state.category,state.manufacturer);if(state.category)return showCategory(state.category);return showRoot();}
@@ -75,28 +77,20 @@ function rootCards(){return categories().map(c=>'<button class="cdq-cal-card" da
 function showRoot(){
   state={view:'root',category:'',manufacturer:'',device:null,returnView:null};shell('Calibration','<input class="cdq-cal-search" type="search" placeholder="Rechercher un fabricant ou un modèle…" aria-label="Rechercher une calibration"><div class="cdq-cal-grid" data-cal-results>'+rootCards()+'</div>',false);
   bindRoot();addAdminButton();$('.cdq-cal-search',dialog).oninput=e=>renderSearch(e.target.value);
-  const scan=document.createElement('button');scan.type='button';scan.className='cdq-cal-card';scan.dataset.calScan='';scan.innerHTML='<strong>Actualiser les appareils des clients</strong><small>Lire les indicateurs et balances des feuilles clients</small>';scan.onclick=()=>scanClients(scan);$('.cdq-cal-body',dialog).append(scan);
+  const scan=document.createElement('section');scan.className='cdq-cal-scan-v2668';scan.innerHTML='<button type="button" class="cdq-cal-card" data-cal-scan><strong>Actualiser les appareils des clients</strong><small>Lire les indicateurs et balances des feuilles et rapports PDF</small></button><p role="status" aria-live="polite" data-cal-scan-status></p><div class="cdq-cal-scan-actions"><button type="button" data-cal-resume>Reprendre le scan</button><button type="button" data-cal-restart>Recommencer à zéro</button></div>';
+  $('.cdq-cal-body',dialog).append(scan);$('[data-cal-scan]',scan).onclick=()=>scanClients(false);$('[data-cal-resume]',scan).onclick=()=>scanClients(false);$('[data-cal-restart]',scan).onclick=()=>scanClients(true);renderScan();
 }
-let scanning=false;
 let detectedOwner='',detectedItems=[];
 function syncDetectedOwner(){const email=calibrationIdentity().email;if(email===detectedOwner)return;detectedOwner=email;resetClientDevices();detectedItems=[];if(!email)return;try{detectedItems=JSON.parse(localStorage.getItem('cdqCalibrationDetectedV2658:'+email)||'[]');if(!Array.isArray(detectedItems))detectedItems=[];addClientDevices(detectedItems);}catch{detectedItems=[];}}
-function retainDetected(items){syncDetectedOwner();const index=new Map(detectedItems.map(i=>[i.fileId+'|'+i.category,i]));for(const item of items||[])index.set(item.fileId+'|'+item.category,item);detectedItems=[...index.values()];addClientDevices(items);try{localStorage.setItem('cdqCalibrationDetectedV2658:'+detectedOwner,JSON.stringify(detectedItems));}catch{}}
-async function scanClients(button){
- if(scanning)return;const owner=calibrationIdentity().email;
- if(!owner||!window.cdqDriveEntryV2632?.canRead())return;
- const clients=Array.isArray(window.toutesLesCompagnies)?window.toutesLesCompagnies:typeof toutesLesCompagnies!=='undefined'?toutesLesCompagnies:[];
- scanning=true;button.disabled=true;let checked=0,total=0,failed=0;
- try{for(const client of clients){let offset=0;do{
-   if(owner!==calibrationIdentity().email||!window.cdqDriveEntryV2632?.canRead())throw Error('Le compte a changé.');
-   const result=await calibrationRpc('cdqScannerCalibrationV2658',String(client.id),offset);
-   if(owner!==calibrationIdentity().email)throw Error('Le compte a changé.');
-   if(result?.ok!==true)throw Error('La lecture des appareils est indisponible.');
-   retainDetected(result.items);checked+=result.checked-offset;failed+=(result.warnings||[]).length;offset=result.next;decorateRows();
-   button.textContent=checked+' feuilles vérifiées · '+devices.length+' modèles · '+total+' / '+clients.length+' clients';
- }while(offset!==null);total++;}
- button.textContent='Lecture terminée : '+checked+' feuilles · '+devices.length+' modèles'+(failed?' · '+failed+' fichiers à vérifier':'');
- }catch(e){button.textContent='Lecture interrompue : '+checked+' feuilles vérifiées. '+e.message;}
- finally{scanning=false;button.disabled=false;}
+function retainDetected(items){syncDetectedOwner();const key=i=>i.fileId+'|'+i.category+'|'+i.manufacturer+'|'+i.model,index=new Map(detectedItems.map(i=>[key(i),i]));for(const item of items||[])index.set(key(item),item);detectedItems=[...index.values()];addClientDevices(items);try{localStorage.setItem('cdqCalibrationDetectedV2658:'+detectedOwner,JSON.stringify(detectedItems));}catch{}decorateRows();if(state.view==='root'&&dialog?.open){const search=$('.cdq-cal-search',dialog);renderSearch(search?.value||'');}}
+const clientScan=createCalibrationScan({storage:localStorage,owner:()=>calibrationIdentity().email,canRead:()=>!!window.cdqDriveEntryV2632?.canRead(),rpc:calibrationRpc,readPdf:scanCalibrationPdf,retain:retainDetected,notify:renderScan});
+function renderScan(){
+ const box=$('.cdq-cal-scan-v2668',dialog||document);if(!box)return;const {running,checkpoint:c}=clientScan.snapshot(),status=$('[data-cal-scan-status]',box),resume=$('[data-cal-resume]',box),restart=$('[data-cal-restart]',box);
+ $('[data-cal-scan]',box).disabled=running;resume.hidden=!c||c.done||running;restart.hidden=!c||running;resume.disabled=running;restart.disabled=running;
+ status.hidden=!c;status.textContent=c?(c.done?'Lecture terminée':c.error?'Lecture interrompue':'Lecture en cours')+' : '+c.checked+' fichiers vérifiés · '+c.index+' / '+c.clients.length+' clients · '+devices.length+' modèles'+(c.warnings.length?' · '+c.warnings.length+' fichiers à vérifier':'')+(c.error?' — '+c.error:''):'';
+}
+async function scanClients(restart){
+ try{const ready=await window.cdqClientsReadyV2658;if(ready?.ok===false)throw Error('Impossible de charger les clients. Réessayez avec une connexion.');const clients=Array.isArray(window.toutesLesCompagnies)?window.toutesLesCompagnies:typeof toutesLesCompagnies!=='undefined'?toutesLesCompagnies:[];await clientScan.run(clients,{restart});}catch(e){const status=$('[data-cal-scan-status]',dialog);if(status){status.hidden=false;if(!clientScan.snapshot().checkpoint){status.textContent=e.message;return;}}}renderScan();
 }
 const noteNorm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 function notesFor(device){return calibrationNotes.filter(n=>{

@@ -1,9 +1,23 @@
 import {applyCalibrationMethods} from './calibration-methods-v2566.mjs';
+import {applyCalibrationModelsV2668} from './calibration-models-v2668.mjs';
 const norm=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const slug=(manufacturer,model)=>norm(manufacturer).replace(/\s+/g,'-')+'::'+norm(model).replace(/\s+/g,'-');
 const detected=(category,manufacturer,model,aliases=[])=>({key:slug(manufacturer,model),category,manufacturer,model,aliases,verified:false,status:'detected',method:null});
 
 const devices=[
+  detected('indicator','Rice Lake','480'),
+  detected('indicator','Rice Lake','480 Plus'),
+  detected('indicator','Rice Lake','480i'),
+  detected('indicator','Rice Lake','1280',['1280-3A']),
+  detected('indicator','Rice Lake','120i'),
+  detected('indicator','Mettler Toledo','IND130'),
+  detected('indicator','Mettler Toledo','IND131'),
+  detected('indicator','Mettler Toledo','E1005'),
+  detected('indicator','Systec','IT4000E-AC'),
+  detected('indicator','Transcell','TI-1520'),
+  detected('indicator','Waterproof Indicateur','ATLAS-SSI'),
+  detected('bench','Ohaus','AX1502/E'),
+  detected('bench','Ohaus','NVT6201'),
   detected('indicator','Western Scale','M1'),
   detected('indicator','Rice Lake','680',['680-2A','680 2A']),
   detected('indicator','Rice Lake','720i',['720i-2A','720I-2A']),
@@ -48,7 +62,7 @@ const devices=[
   detected('bench','Rice Lake','IQ-710-2A')
 ];
 
-applyCalibrationMethods(devices);
+applyCalibrationMethods(devices);applyCalibrationModelsV2668(devices);
 
 const fileIndex=Object.freeze({
   '13gj7Gm6CH3Rz7cOpH03IkF5LCvyEk-wQMTtSX_4lVmM':slug('Adam Equipment','CPW Plus-35'),
@@ -108,6 +122,8 @@ function sameManufacturer(a,b){
   if((x.includes('mettler')&&x.includes('toledo'))&&(y.includes('mettler')&&y.includes('toledo')))return true;
   if((x==='a d'||x==='and')&&(y==='a d'||y==='and'))return true;
   if((x.includes('weigh tronix')||x.includes('avery'))&&(y.includes('weigh tronix')||y.includes('avery')))return true;
+  if(x.startsWith('ohaus')&&y.startsWith('ohaus'))return true;
+  if(x.startsWith('adam')&&y.startsWith('adam'))return true;
   return x===y;
 }
 function sameModel(device,value){
@@ -127,7 +143,7 @@ function forFile(fileId){return byKey(liveFileIndex.get(String(fileId||''))||fil
 function addClientDevices(items){for(const item of items||[]){
   if(!item.manufacturer||!item.model)continue;
   let device=findCalibration(item.manufacturer,item.model);
-  if(!device){device=detected(item.category==='bench'?'bench':'indicator',String(item.manufacturer).slice(0,120),String(item.model).slice(0,120));devices.push(device);applyCalibrationMethods([device]);}
+  if(!device){device=detected(item.category==='bench'?'bench':'indicator',String(item.manufacturer).slice(0,120),String(item.model).slice(0,120));devices.push(device);applyCalibrationMethods([device]);applyCalibrationModelsV2668([device]);}
   if(item.fileId)liveFileIndex.set(String(item.fileId),device.key);
 }}
 function categories(){return [

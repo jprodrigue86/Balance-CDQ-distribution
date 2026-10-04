@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.66" data-cdq-iphone-release="9ef15345841b87e8e096867c81ff2bdc073b1f72b5b654c07e7b8e73303e31cd">
+<html data-cdq-iphone-version="26.68" data-cdq-iphone-release="6b0e7cff7f2bf1bb567bc4688d514038486d84c8b6f629913c29ff295f18f79e">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqFileActionsV2655">(function(){
@@ -646,7 +646,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.04-v26.66-precision-drawings">
+<meta name="cdq-package-build" content="2026.10.04-v26.68-interface-calibration">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -925,7 +925,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.04-v26.66-precision-drawings'
+    build:'2026.10.04-v26.68-interface-calibration'
   });
 }
 
@@ -938,7 +938,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.04-v26.66-precision-drawings'
+        build:'2026.10.04-v26.68-interface-calibration'
       });
     }
   } catch(e) {}
@@ -5938,6 +5938,13 @@ html.cdq-workspace-reader-open #appHeader{background:var(--cdq-bg,#000)!importan
 .cdq24-checklist details{border-bottom:1px solid var(--cdq-line,#444);padding:8px}
 .cdq24-checklist summary{padding:8px;cursor:pointer;font-weight:700;min-height:28px}
 .cdq24-checklist details>div{padding-left:12px}
+
+/* Same compact heading rhythm as Calcul / Outils de pesage. */
+#cdqInvoicePageV2590 .cdq-invoice-shell{padding-top:0}
+#cdqInvoicePageV2590 .cdq-invoice-title{position:sticky;top:0;z-index:5;gap:10px;padding:12px;margin:0 -10px 14px;background:var(--cdq-surface,#111);justify-content:space-between}
+#cdqInvoicePageV2590 .cdq-invoice-title h2{font:700 21px/1.2 Arial,sans-serif;margin:0}
+#cdqInvoicePageV2590 .cdq-invoice-title p{font:500 12px/1.4 Arial,sans-serif;margin:5px 0 0}
+#cdqInvoicePageV2590 .cdq-invoice-close{position:static;flex:0 0 40px;display:grid;place-items:center;width:40px;height:40px;padding:0;font-size:24px;border-radius:10px;transform:none}
 </style>
 <style id="cdqWorkflowV2660">#cdqClientActionsV2640 [data-new-report-menu]{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 #cdqClientActionsV2640 [data-new-report-menu] button{min-height:62px;padding:10px 6px;white-space:normal;font-size:14px;line-height:1.3}
@@ -5969,7 +5976,7 @@ html.cdq-workspace-reader-open #appHeader{background:var(--cdq-bg,#000)!importan
 #cdqDocumentPrepare .cdq26-offline-count{grid-column:1/-1;margin:0}
 #cdqDocumentPrepare .modal-buttons{margin:0!important;flex-shrink:0}
 </style>
-<style>.cdq-company-rename-v2665{min-width:44px;min-height:44px;flex:0 0 44px;border:1px solid #52606a;border-radius:9px;background:#26343d;color:inherit;font-size:24px;cursor:pointer}.cdq-company-name{flex:1;min-width:0}</style>
+<style>.cdq-company-name{flex:1;min-width:0}</style>
 </head>
 
 
@@ -11496,7 +11503,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.04-v26.66-precision-drawings";
+  const CDQ_BUILD = "2026.10.04-v26.68-interface-calibration";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -11917,12 +11924,7 @@ function cdqNavigateDesktop(id){
       row.appendChild(name);
       const star=document.createElement("button"); star.type="button"; star.className="cdq-company-star"+(comp.favori?" active":""); star.textContent="★"; star.title="Favori";
       star.onclick=function(e){e.stopPropagation(); const next=!comp.favori; star.disabled=true; cdqApiRun().withSuccessHandler(function(){comp.favori=next;star.disabled=false;remplirListeCompagnies();cdqRefreshFavoriteModalIfOpen();}).withFailureHandler(function(err){star.disabled=false;afficherErreur(err);}).definirFavoriCompagnie(comp.id,next);};
-      row.appendChild(star);
-      if(['admin','technicien'].includes(String(utilisateurCourantRole||''))){
-       const rename=document.createElement('button');rename.type='button';rename.className='cdq-company-rename-v2665';rename.textContent='✎';rename.title='Renommer le client';rename.setAttribute('aria-label','Renommer le client '+(comp.nom||''));
-       rename.onclick=e=>{e.stopPropagation();window.cdqClientRenameV2665.open(comp);};row.append(rename);
-      }
-      list.appendChild(row);
+      row.appendChild(star); list.appendChild(row);
     });
     if(typeof ajusterMenuAndroid==="function") ajusterMenuAndroid();
   }
@@ -13795,7 +13797,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.04-v26.66-precision-drawings";
+const CDQ_V19_BUILD = "2026.10.04-v26.68-interface-calibration";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -14818,6 +14820,7 @@ async function cdqOpenPdf(id,meta){
  await cdqOpenPdfInternal(id,meta?.forceRefresh?meta:null);return true;
 }
 window.cdqOpenPdfV2520=cdqOpenPdf;
+window.cdqLoadPdfForCalibrationV2668=id=>cdqLoadPdfRecord(String(id));
 
 (function cdqInstallPdfClientPrewarmV2554(){
   if(window.cdqPdfClientPrewarmV2554)return;
@@ -15765,7 +15768,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.04-v26.66-precision-drawings";
+const CDQ_V20_BUILD = "2026.10.04-v26.68-interface-calibration";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16612,7 +16615,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.04-v26.66-precision-drawings";
+const CDQ_V21_BUILD = "2026.10.04-v26.68-interface-calibration";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -17137,7 +17140,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.04-v26.66-precision-drawings';
+const BUILD='2026.10.04-v26.68-interface-calibration';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20779,7 +20782,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.04-v26.66-precision-drawings';
+  const BUILD='2026.10.04-v26.68-interface-calibration';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -23049,7 +23052,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.04-v26.66-precision-drawings',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.04-v26.68-interface-calibration',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
