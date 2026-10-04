@@ -22,8 +22,8 @@ export function makeCopy(template,destination,email,requestId) {
     throw new Error('Préparez le modèle et choisissez le dossier du client.');
   const name=MODELS[template.modeleId]+' — '+new Date().toISOString().replace(/[:.]/g,'-')+'.pdf';
   return {id:requestId,email,modeleId:template.modeleId,blob:template.blob,templateId:template.templateId,
-    bundled:!!template.bundled,templateBlob:template.bundled?template.blob:null,sourceId:template.sourceId||'',modifieLe:template.modifieLe,destination:{...destination},name,creationName:name,
-    autoReportName:true,createdAt:Date.now(),status:'pending',editVersion:0,uploadId:'',syncedUploadId:'',driveId:''};
+    bundled:!!template.bundled,templateBlob:template.bundled?(template.creationBlob||template.blob):null,sourceId:template.sourceId||'',modifieLe:template.modifieLe,destination:{...destination},name,creationName:name,
+    autoReportName:true,createdAt:Date.now(),status:'pending',editVersion:0,uploadId:template.creationBlob?requestId+'_appearance':'',syncedUploadId:'',driveId:''};
 }
 export function syncRequest(copy) {
   return {requestId:copy.id,modeleId:copy.modeleId,clientId:copy.destination.clientId,folderId:copy.destination.folderId,
