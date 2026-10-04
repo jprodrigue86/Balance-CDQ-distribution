@@ -239,7 +239,7 @@ async function open(data){
   opening=true;autoReportName=data.autoReportName===true;$('viewer').inert=true;name=String(data.name||name);fileId=String(data.fileId||'');readOnly=!!data.readOnly;
   $('name').textContent=name;$('empty').style.display='none';status('Ouverture du PDF…');
   const sourceBytes=await normalizeEditableFormOnOpen(new Uint8Array(await blob.arrayBuffer()));
-  const task=api.getDocument({data:sourceBytes,standardFontDataUrl:assets+'standard_fonts/',cMapUrl:assets+'cmaps/',cMapPacked:true,wasmUrl:assets+'wasm/',isEvalSupported:false,enableXfa:false,enableHWA:true});
+  const task=api.getDocument({data:sourceBytes,standardFontDataUrl:assets+'standard_fonts/',cMapUrl:assets+'cmaps/',cMapPacked:true,wasmUrl:assets+'wasm/',isEvalSupported:false,enableXfa:false,enableHWA:false});
   doc=await task.promise;viewer.setDocument(doc);viewer.linkService.setDocument(doc);
   doc.annotationStorage.onSetModified=()=>{if(!readOnly&&!opening){dirty=true;status('');}};
   $('save').hidden=readOnly;$('saveClose').hidden=readOnly;

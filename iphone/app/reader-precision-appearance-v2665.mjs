@@ -5,6 +5,8 @@ export function normalizePrecisionAppearanceV2665(pdf,L){
  const form=pdf.getForm();
  if(!form.getFieldMaybe('type_plateau')||!form.getFieldMaybe('resolution')||!form.getFieldMaybe('charge_point_7_charge_utilisee'))return false;
  const tint=[.6,.992157,.992157],rects=[];let changed=false;
+ const pages=pdf.getPages(),backings=new Map(pages.map(page=>[page,[]]));
+ const widgetPage=widget=>pages.find(page=>page.node.Annots()?.asArray().some(ref=>pdf.context.lookup(ref)===widget.dict));
  // Promote old inline drawing streams to valid PDF references. Print viewers
  // tolerated these masters; PDF.js skipped their equipment/header drawings.
  const seen=new Set();
@@ -28,6 +30,7 @@ export function normalizePrecisionAppearanceV2665(pdf,L){
   if(!('getText' in field)&&!('getSelected' in field)||/^Statut_|^Bouton_|^_/.test(field.getName()))continue;
   for(const widget of field.acroField.getWidgets()){
    const r=widget.getRectangle();if(r.width<3||r.height<3)continue;rects.push(r);
+   const page=widgetPage(widget);if(page&&!/(?:^|_)statut_/i.test(field.getName()))backings.get(page).push(r);
    let mk=widget.dict.lookupMaybe(N('MK'),PDFDict);const bg=mk?.lookupMaybe(N('BG'),PDFArray);
    if(!bg||bg.size()!==3||tint.some((v,i)=>Math.abs(Number(bg.get(i)?.numberValue)-v)>.00001)){
     mk??=pdf.context.obj({});mk.set(N('BG'),pdf.context.obj(tint));widget.dict.set(N('MK'),mk);changed=true;
@@ -43,6 +46,24 @@ export function normalizePrecisionAppearanceV2665(pdf,L){
    for(const [name,value]of stream.dict.entries())if(!['/Length','/Filter','/DecodeParms'].includes(String(name)))replacement.dict.set(name,value);
    const replacementRef=pdf.context.register(replacement);ap.set(N('N'),replacementRef);changed=true;
   }
+ }
+ // Editable widgets are not always painted on the PDF.js page canvas. Their
+ // transparent focus/choice controls exposed the white page below, even with
+ // correct MK/BG and AP colours. Give the PDF itself a cyan backing inside
+ // each existing data rectangle. Keep its border, text, widgets and scripts.
+ // The seven result cells have no editable text widget; their checked green
+ // and red appearances still paint above this neutral cyan background.
+ for(const field of form.getFields())if(/^charge_point_\d+_conforme_vert$/.test(field.getName()))for(const widget of field.acroField.getWidgets()){
+  const page=widgetPage(widget),r=widget.getRectangle();if(page&&r.width>3&&r.height>3)backings.get(page).push(r);
+ }
+ for(const [page,boxes]of backings){
+  const unique=[...new Map(boxes.map(r=>[[r.x,r.y,r.width,r.height].join(','),r])).values()];
+  const source='% CDQ precision cyan backing V2670\nq 0.6 0.992157 0.992157 rg\n'+unique.map(r=>[r.x+.65,r.y+.65,r.width-1.3,r.height-1.3].join(' ')+' re f').join('\n')+'\nQ\n';
+  const marker=N('CDQPrecisionBackgroundV2670'),ref=page.node.get(marker),old=ref&&pdf.context.lookup(ref);
+  if(old instanceof PDFRawStream&&Array.from(decodePDFRawStream(old).decode(),b=>String.fromCharCode(b)).join('')===source)continue;
+  const stream=pdf.context.flateStream(Uint8Array.from(source,c=>c.charCodeAt(0)));
+  if(ref)pdf.context.assign(ref,stream);else{const added=pdf.context.register(stream);page.node.addContentStream(added);page.node.set(marker,added);}
+  changed=true;
  }
  // Some old forms paint white cells in the page before drawing the widgets.
  const pageStreams=new Map();
