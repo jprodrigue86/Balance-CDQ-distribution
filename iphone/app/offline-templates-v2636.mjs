@@ -2,7 +2,8 @@ import {nameFromReport} from './report-name-v2648.mjs';
 import {openSheet} from './sheet-launcher-v2526.mjs';
 import {REPORT_NAMES,bundledTemplate} from './report-templates-v2636.mjs';
 import {fillInFrame} from './pdf-fill-client-v2523.mjs';
-// Private PDFs are account-scoped in IndexedDB, never published in the shell cache.
+import {sessionCopyStorageV2664} from './pdf-session-storage-v2664.mjs';
+// Only chosen offline PDFs and unconfirmed work persist; confirmed work stays in RAM.
 const DB_NAME = 'cdq-offline-templates-v1';
 export const MODELS = REPORT_NAMES;
 const known = key => Object.prototype.hasOwnProperty.call(MODELS,key);
@@ -79,16 +80,17 @@ async function storeAction(name,mode,fn) {
     tx.onerror=tx.onabort=()=>{db.close();reject(tx.error||new Error('Espace local indisponible. Le PDF n’a pas été enregistré.'));};
   });
 }
-const nativeStorage={get:(s,id)=>storeAction(s,'readonly',o=>o.get(id)),put:(s,v)=>storeAction(s,'readwrite',o=>o.put(v)),all:s=>storeAction(s,'readonly',o=>o.getAll())};
+const nativeStorage={get:(s,id)=>storeAction(s,'readonly',o=>o.get(id)),put:(s,v)=>storeAction(s,'readwrite',o=>o.put(v)),all:s=>storeAction(s,'readonly',o=>o.getAll()),remove:(s,id)=>storeAction(s,'readwrite',o=>o.delete(id))};
 function download(blob,name) {
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();
   setTimeout(()=>URL.revokeObjectURL(url),30000);
 }
 export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFile=openSheet,storage=nativeStorage}) {
-  const {get,put,all}=storage;
   let session=null,localEmail='',profile=null,chain=Promise.resolve(),epoch=0,documentReaderWarmed=false;
   const inflight=new Map(),requested=new Set(),copyJobs=new Map();
   const readers=new Map();
+  const sessionStorage=sessionCopyStorageV2664(storage,id=>readers.has(id));
+  const {get,put,all}=sessionStorage;
   // Le moteur hors ligne reste actif, mais aucun bouton séparé n'est montré.
   // Les modèles locaux sont utilisés depuis les boutons principaux du Selector.
   const launch=document.createElement('button');launch.type='button';launch.id='cdq-offline-launch';launch.textContent='Modèles hors ligne';launch.hidden=true;
@@ -102,7 +104,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   const serial=fn=>{const p=chain.then(fn);chain=p.catch(()=>{});return p;};
   const serialCopy=(id,fn)=>{const key=String(id),previous=copyJobs.get(key)||Promise.resolve();const p=chain.then(()=>previous.catch(()=>{})).then(fn);copyJobs.set(key,p);p.finally(()=>{if(copyJobs.get(key)===p)copyJobs.delete(key);}).catch(()=>{});return p;};
   const allowed=email=>localEmail===email||session?.email===email;
-  function notifyDocument(c){if(session?.email===c?.email&&c?.driveId&&!c.removed)send({type:'CDQ_OFFLINE_DOCUMENT_UPDATED',email:c.email,fileId:c.driveId,blob:c.blob,revision:c.revision,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,pending:c.uploadId!==c.syncedUploadId});}
+  function notifyDocument(c){if(session?.email===c?.email&&c?.driveId&&!c.removed)send({type:'CDQ_OFFLINE_DOCUMENT_UPDATED',email:c.email,fileId:c.driveId,blob:c.blob,revision:c.revision,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId});}
   function button(parent,label,fn) {
     const b=document.createElement('button');b.type='button';b.textContent=label;
     b.style.cssText='padding:12px 16px;margin:6px 8px 6px 0;border:1px solid #7896a5;border-radius:9px;background:#193545;color:white;font:inherit';
@@ -246,7 +248,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
     if(data.type==='CDQ_OFFLINE_SESSION'){
       if(typeof data.email!=='string'||!data.email||data.email.length>320)return;
       if(session?.email!==data.email)for(const job of inflight.values())clearTimeout(job.timer);
-      if(session?.email!==data.email)inflight.clear();
+      if(session?.email!==data.email){inflight.clear();sessionStorage.clear();}
       session={email:data.email,canWrite:!!data.canWrite,protocol:Number(data.protocol)||0};localEmail=data.email;
       await put('state',{id:'profile',...session});navigator.storage?.persist?.().catch(()=>{});
       if(session.protocol<38)requestModel('camion');
@@ -279,15 +281,15 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       try{
         if(data.type==='CDQ_OFFLINE_DOCUMENT_LIST'){
           const removed=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&c.removed).map(c=>c.driveId);
-          const documents=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&!c.removed).map(c=>({fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,revision:c.revision,blob:c.blob,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,pending:c.uploadId!==c.syncedUploadId}));
-          if(stamp===epoch)reply({ok:true,removed,documents});return;
+          const documents=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&!c.removed).map(c=>({fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,revision:c.revision,blob:c.blob,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId}));
+          if(stamp===epoch)reply({ok:true,offlineSelectionVersion:2664,removed,documents});return;
         }
         if(!identifier(data.fileId))throw Error('Identifiant PDF invalide.');
         const id='prepared:'+current.email+':'+data.fileId,c=await get('copies',id);
         if(stamp!==epoch||current!==session)return;
         if(data.type==='CDQ_OFFLINE_DOCUMENT_GET'){
           if(data.legacyPending&&c&&!c.removed)throw Error('Une ancienne sauvegarde attend sa synchronisation. Reconnectez CDQ avant de modifier ce PDF.');
-          reply({ok:true,document:c&&!c.removed?{fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,revision:c.revision,blob:c.blob,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,pending:c.uploadId!==c.syncedUploadId}:null});return;
+          reply({ok:true,document:c&&!c.removed?{fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,revision:c.revision,blob:c.blob,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId}:null});return;
         }
         if(data.type==='CDQ_OFFLINE_DOCUMENT_EDIT'){
           if(!current.canWrite||!c||c.removed)throw Error('PDF hors ligne indisponible.');
@@ -384,5 +386,5 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   window.addEventListener('offline',()=>serial(refresh).catch(()=>{}));
   refresh().catch(()=>{});
   return {handle(data){const stamp=epoch;const id=data.fileId?'prepared:'+String(session?.email||'')+':'+data.fileId:/^CDQ_OFFLINE_(?:CREATE_LOCAL|PREFILL_V2642|COPY_RESULT|SAVE_RESULT)$/.test(data.type)?data.requestId:'';return (id?serialCopy(id,()=>handleNow(data,stamp)):serial(()=>handleNow(data,stamp))).catch(e=>{status.textContent=e.message||String(e);});},
-    lock(){epoch++;session=null;localEmail='';for(const job of inflight.values())clearTimeout(job.timer);inflight.clear();requested.clear();readers.clear();panel.hidden=true;},refresh};
+    lock(){epoch++;session=null;localEmail='';for(const job of inflight.values())clearTimeout(job.timer);inflight.clear();requested.clear();readers.clear();sessionStorage.clear();panel.hidden=true;},refresh};
 }

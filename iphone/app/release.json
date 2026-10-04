@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.63",
-  "release": "57be347f6c3f0515f4e4ae8908c35b8e20088797cc44589acf8d592241aafa43",
+  "version": "26.64",
+  "release": "97be3639d4a0d63790bb65f53b9467a06b012c3579413b6d49321424338cbcc6",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.04-v26.63-native-trash-music-wall",
-  "androidSelectorSha256": "658de636539b50a0329858ae09088c91044721068ee0b3754c86c665ef0d3f71",
+  "androidSourceBuild": "2026.10.04-v26.64-pdf-session-storage",
+  "androidSelectorSha256": "da6525e1d2416f857315628e07d2c0df6d9aebf613b89060f723b9f9e6fefe3b",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
-  "files": 428
+  "files": 429
 }

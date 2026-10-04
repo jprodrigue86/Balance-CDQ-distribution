@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.63" data-cdq-iphone-release="57be347f6c3f0515f4e4ae8908c35b8e20088797cc44589acf8d592241aafa43">
+<html data-cdq-iphone-version="26.64" data-cdq-iphone-release="97be3639d4a0d63790bb65f53b9467a06b012c3579413b6d49321424338cbcc6">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqFileActionsV2655">(function(){
@@ -646,7 +646,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.04-v26.63-native-trash-music-wall">
+<meta name="cdq-package-build" content="2026.10.04-v26.64-pdf-session-storage">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -925,7 +925,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.04-v26.63-native-trash-music-wall'
+    build:'2026.10.04-v26.64-pdf-session-storage'
   });
 }
 
@@ -938,7 +938,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.04-v26.63-native-trash-music-wall'
+        build:'2026.10.04-v26.64-pdf-session-storage'
       });
     }
   } catch(e) {}
@@ -11495,7 +11495,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.04-v26.63-native-trash-music-wall";
+  const CDQ_BUILD = "2026.10.04-v26.64-pdf-session-storage";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13791,7 +13791,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.04-v26.63-native-trash-music-wall";
+const CDQ_V19_BUILD = "2026.10.04-v26.64-pdf-session-storage";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -13824,15 +13824,149 @@ function cdqV19Gs(name,args){
 // Pont explicite entre le bouton global et le module privé.
 window.cdqAppelServeur=cdqV19Gs;
 
+
+// Private document bytes stay in RAM unless explicitly selected offline or awaiting Drive.
+function completedWorkCopyV2664(c) {
+  return !!c && c.kind !== 'prepared' && c.kind !== 'sheet' && !!c.driveId &&
+    c.status === 'synced' && !c.error && (c.uploadId || '') === (c.syncedUploadId || '');
+}
+
+function decodePdfRecordV2664(raw){
+  if(!raw)return raw;const r={...raw};
+  if(raw.pdfBytesV2664 instanceof ArrayBuffer)r.blob=new Blob([raw.pdfBytesV2664],{type:raw.pdfTypeV2664||'application/pdf'});
+  if(raw.templateBytesV2664 instanceof ArrayBuffer)r.templateBlob=new Blob([raw.templateBytesV2664],{type:'application/pdf'});
+  if(raw.templateSameV2664)r.templateBlob=r.blob;
+  delete r.pdfBytesV2664;delete r.pdfTypeV2664;delete r.templateBytesV2664;delete r.templateSameV2664;return r;
+}
+
+async function encodePdfRecordV2664(value){
+  const r={...value};
+  if(value.blob instanceof Blob){r.pdfBytesV2664=await value.blob.arrayBuffer();r.pdfTypeV2664=value.blob.type;r.blob=null;}
+  if(value.templateBlob instanceof Blob){
+    if(value.templateBlob===value.blob)r.templateSameV2664=true;
+    else r.templateBytesV2664=await value.templateBlob.arrayBuffer();
+    r.templateBlob=null;
+  }
+  return r;
+}
+
+function createPdfSessionStoreV2664({read,write,remove,list,keyOf,sessionOnly,keep=()=>false,limit=96*1024*1024}) {
+  const memory=new Map(),jobs=new Map();let bytes=0,generation=0;
+  const size=r=>(r?.blob?.size||0)+(r?.templateBlob!==r?.blob?(r?.templateBlob?.size||0):0);
+  async function independent(value){
+    if(!(value?.blob instanceof Blob)&&!(value?.templateBlob instanceof Blob))return value;
+    const r={...value};
+    if(value.blob instanceof Blob)r.blob=new Blob([await value.blob.arrayBuffer()],{type:value.blob.type});
+    if(value.templateBlob instanceof Blob)r.templateBlob=value.templateBlob===value.blob?r.blob:new Blob([await value.templateBlob.arrayBuffer()],{type:value.templateBlob.type});
+    return r;
+  }
+  function forget(key){const old=memory.get(key);if(old){bytes-=size(old);memory.delete(key);}}
+  function remember(key,value){
+    forget(key);memory.set(key,value);bytes+=size(value);
+    for(const [id] of memory){if(bytes<=limit)break;if(id!==key&&!keep(id))forget(id);}
+  }
+  function serial(key,fn){
+    const p=(jobs.get(key)||Promise.resolve()).catch(()=>{}).then(fn);jobs.set(key,p);
+    p.finally(()=>{if(jobs.get(key)===p)jobs.delete(key);}).catch(()=>{});return p;
+  }
+  async function readCurrent(key){
+    if(memory.has(key)){const r=memory.get(key);remember(key,r);return r;}
+    const stamp=generation,raw=await read(key);
+    if(!raw||raw.cdqSessionOnlyV2664)return null;
+    // Detach bytes from IndexedDB before deleting the persistent Blob resource.
+    const r=await independent(decodePdfRecordV2664(raw));
+    if(sessionOnly(r)){if(stamp===generation)remember(key,r);await remove(key,r);}
+    return r;
+  }
+  async function commit(key,value){
+    const stamp=generation,record=await independent(value);
+    if(sessionOnly(value)){
+      // Confirmed bytes can leave disk only after the full record is available in RAM.
+      if(stamp===generation)remember(key,record);await remove(key,record);
+    }else{
+      // ArrayBuffer storage also works in WebKit environments rejecting IDB Blobs.
+      await write(key,await encodePdfRecordV2664(record));if(stamp===generation)forget(key);
+    }
+    return record;
+  }
+  return {
+    get:key=>serial(key,()=>readCurrent(key)),
+    put:(key,value)=>serial(key,()=>commit(key,value)),
+    update:(key,fn)=>serial(key,async()=>{const r=await fn(await readCurrent(key));return r?commit(key,r):null;}),
+    remove:key=>serial(key,async()=>{await remove(key);forget(key);}),
+    all:async()=>{
+      const raw=await list(),keys=new Set([...raw.map(keyOf),...memory.keys()]);
+      return (await Promise.all([...keys].map(key=>serial(key,()=>readCurrent(key))))).filter(Boolean);
+    },
+    clear:()=>{generation++;memory.clear();bytes=0;},
+    stats:()=>({entries:memory.size,bytes})
+  };
+}
+
+function sessionCopyStorageV2664(storage,keep) {
+  const cache=createPdfSessionStoreV2664({
+    read:id=>storage.get('copies',id),write:(_,r)=>storage.put('copies',r),
+    remove:(id,r)=>storage.remove?storage.remove('copies',id):storage.put('copies',{id,email:r?.email,cdqSessionOnlyV2664:true}),
+    list:()=>storage.all('copies'),keyOf:r=>r.id,sessionOnly:completedWorkCopyV2664,keep
+  });
+  return {
+    get:(s,id)=>s==='copies'?cache.get(id):storage.get(s,id),
+    put:(s,r)=>s==='copies'?cache.put(r.id,r):storage.put(s,r),
+    all:s=>s==='copies'?cache.all():storage.all(s),
+    clear:cache.clear
+  };
+}
+
+async function cdqPdfDiskRecordsV2664(){
+ const email=cdqReaderOwnerV2520(),prefix=cdqV19Key('document-pdf',''),db=await ouvrirBaseCache();cdqReaderGuardV2520(email);
+ return new Promise((resolve,reject)=>{
+  const found=[],tx=db.transaction(CACHE_STORE_NAME,'readonly'),req=tx.objectStore(CACHE_STORE_NAME).openCursor(IDBKeyRange.bound(prefix,prefix+'\uffff'));
+  req.onsuccess=()=>{const c=req.result;if(c){found.push(c.value);c.continue();}};
+  tx.oncomplete=()=>{db.close();try{cdqReaderGuardV2520(email);resolve(found);}catch(e){reject(e);}};
+  tx.onerror=tx.onabort=()=>{db.close();reject(tx.error||Error('Stockage local inaccessible.'));};
+ });
+}
+const cdqPdfSessionV2664=createPdfSessionStoreV2664({
+ read:key=>lireCacheLocal(key),write:(key,r)=>ecrireCacheLocal({...r,key}),remove:key=>supprimerCacheLocal(key),
+ list:cdqPdfDiskRecordsV2664,keyOf:r=>r.key,
+ sessionOnly:r=>r.storagePolicyV2664===true&&!r.offlineSelected&&!r.pendingSaveId
+});
+let cdqPdfStorageGenerationV2664=0;
+async function cdqPdfPutV2664(id,data){
+ const key=cdqV19Key('document-pdf',id);
+ const result=await cdqPdfSessionV2664.update(key,prior=>({...data,key,storagePolicyV2664:true,
+  offlineSelected:data.offlineSelected===true||prior?.offlineSelected===true,
+  offlinePrepared:data.offlineSelected===true||prior?.offlineSelected===true}));
+ cdqPdfStorageGenerationV2664++;return result;
+}
+async function cdqPdfMigrateV2664(mirror,queue){
+ if(mirror?.offlineSelectionVersion!==2664)return;
+ const email=cdqReaderOwnerV2520(),prefix=cdqV19Key('document-pdf','');
+ const selected=new Set((mirror.documents||[]).map(d=>String(d.fileId)));
+ const pending=new Map(queue.filter(a=>/pdf/.test(a.kind)).map(a=>[String(a.targetId),a.id]));
+ for(const r of await cdqPdfSessionV2664.all()){
+  cdqReaderGuardV2520(email);if(!String(r.key).startsWith(prefix))continue;
+  const id=String(r.id||r.key.slice(prefix.length));
+  await cdqPdfSessionV2664.update(r.key,latest=>latest&&({...latest,storagePolicyV2664:true,
+   offlineSelected:selected.has(id),offlinePrepared:selected.has(id),pendingSaveId:pending.get(id)||latest.pendingSaveId||''}));
+  cdqPdfStorageGenerationV2664++;
+ }
+ cdqReaderGuardV2520(email);
+}
+window.addEventListener('cdq:drive-cleared-v2632',()=>{cdqPdfSessionV2664.clear();cdqPdfStorageGenerationV2664++;});
+
 async function cdqV19GetRecord(type,id){
+  if(type==='document-pdf')return cdqPdfSessionV2664.get(cdqV19Key(type,id));
   try{return await lireCacheLocal(cdqV19Key(type,id));}catch(e){return null;}
 }
 
 async function cdqV19PutRecord(type,id,data){
+  if(type==='document-pdf')return cdqPdfPutV2664(id,data);
   return ecrireCacheLocal(Object.assign({key:cdqV19Key(type,id)},data||{}));
 }
 
 async function cdqV19DeleteRecord(type,id){
+  if(type==='document-pdf'){await cdqPdfSessionV2664.remove(cdqV19Key(type,id));cdqPdfStorageGenerationV2664++;return true;}
   try{
     const db=await ouvrirBaseCache();
     await new Promise(function(resolve){
@@ -14559,7 +14693,7 @@ async function cdqLoadPdfRecordImplV2522(id){
   cdqReaderGuardV2520(email);
   let old=await cdqV19GetRecord('document-pdf',id);cdqReaderGuardV2520(email);
   if(pending)return {...old,id,nom:pending.fileName,revision:pending.expectedRevision,pendingSaveId:pending.id,blob:new Blob([cdqV2112Base64ToBytes(pending.data)],{type:'application/pdf'})};
-  if(navigator.onLine===false){if(old?.blob)return old;throw new Error('Ouvrez ce PDF une fois avec Internet pour le conserver hors ligne.');}
+  if(navigator.onLine===false){if(old?.blob)return old;throw new Error('Choisissez ce PDF dans Hors ligne avec Internet pour le conserver sur cet appareil.');}
   const meta=await cdqV19Gs('obtenirPdfLecteurCDQV2520',[id,old?.revision||'']);cdqReaderGuardV2520(email);
   if(meta.unchanged&&old?.blob&&old.blob.size===meta.taille)return {...old,...meta};
   const parts=[];
@@ -14575,7 +14709,7 @@ async function cdqLoadPdfRecordImplV2522(id){
   const blob=new Blob(parts,{type:'application/pdf'});
   if(blob.size!==meta.taille||(await blob.slice(0,5).text())!=='%PDF-')throw new Error('PDF reçu incomplet.');
   const rec={...meta,blob};delete rec.base64;cdqReaderGuardV2520(email);
-  const prior=await cdqV19GetRecord('document-pdf',id);if(prior?.autoReportName)rec.autoReportName=true;if(prior?.offlinePrepared)rec.offlinePrepared=true;
+  const prior=await cdqV19GetRecord('document-pdf',id);if(prior?.autoReportName)rec.autoReportName=true;if(prior?.offlineSelected){rec.offlineSelected=true;rec.offlinePrepared=true;}
   await cdqV19PutRecord('document-pdf',id,rec);cdqReaderGuardV2520(email);return rec;
 }
 async function cdqRenameReportV2648(result,requested,email,clientId){
@@ -14911,7 +15045,7 @@ const cdqOffline24 = (() => {
         if(q.some(a=>String(a.targetId)===String(d.fileId)&&/pdf/.test(a.kind)))return;
         const prior=await cdqV19GetRecord('document-pdf',d.fileId);valid(email);
         if(Number(prior?.localEditVersionV2660||0)>Number(d.editVersion||0))return;
-        await cdqV19PutRecord('document-pdf',d.fileId,{id:d.fileId,nom:d.name,autoReportName:d.autoReportName===true,clientId:d.clientId,clientName:d.clientName,revision:d.revision,taille:d.blob.size,blob:d.blob,offlinePrepared:true,pendingSaveId:d.pending?d.uploadId:'',localEditVersionV2660:d.editVersion});valid(email);
+        await cdqV19PutRecord('document-pdf',d.fileId,{id:d.fileId,nom:d.name,autoReportName:d.autoReportName===true,clientId:d.clientId,clientName:d.clientName,revision:d.revision,taille:d.blob.size,blob:d.blob,offlineSelected:d.offlineSelected===true,offlinePrepared:d.offlineSelected===true,pendingSaveId:d.pending?d.uploadId:'',localEditVersionV2660:d.editVersion});valid(email);
         window.cdqInstantFiles2530.confirm({id:d.fileId,nom:d.name,type:'PDF',_cdqPendingSaveV2660:d.pending?d.uploadId:'',_cdqCommittedUploadV2660:d.pending?'':d.uploadId},d.clientId,d.folderId||d.clientId);
         window.dispatchEvent(new CustomEvent('cdq:pdf-local-saved',{detail:{id:d.fileId,clientId:d.clientId,name:d.name}}));await refresh();
       })().catch(afficherErreur);
@@ -14921,7 +15055,7 @@ const cdqOffline24 = (() => {
     const email=account(),prefix=cdqV19Key('document-pdf',''),db=await ouvrirBaseCache();valid(email);
     return new Promise((resolve,reject)=>{
       const found=[],tx=db.transaction(CACHE_STORE_NAME,'readonly'),req=tx.objectStore(CACHE_STORE_NAME).openCursor(IDBKeyRange.bound(prefix,prefix+'\uffff'));
-      req.onsuccess=()=>{const c=req.result;if(!c)return;const r=c.value;if(r.blob?.size&&r.offlinePrepared)found.push({...r,id:r.id||String(c.key).slice(prefix.length)});c.continue();};
+      req.onsuccess=()=>{const c=req.result;if(!c)return;const r=decodePdfRecordV2664(c.value);if(r.blob?.size&&r.offlineSelected===true)found.push({...r,id:r.id||String(c.key).slice(prefix.length)});c.continue();};
       tx.oncomplete=()=>{db.close();try{valid(email);resolve(found);}catch(e){reject(e);}};
       tx.onerror=tx.onabort=()=>{db.close();reject(tx.error||Error('Stockage local inaccessible.'));};
     });
@@ -14933,8 +15067,9 @@ const cdqOffline24 = (() => {
     const queue=await cdqV19QueueGet();valid(email);
     for(const d of mirror?.documents||[]){
       if(queue.some(a=>a.targetId===d.fileId&&/pdf/.test(a.kind)))continue;
-      await cdqV19PutRecord('document-pdf',d.fileId,{id:d.fileId,nom:d.name,clientId:d.clientId,clientName:d.clientName,revision:d.revision,blob:d.blob,taille:d.blob.size,offlinePrepared:true});valid(email);
+      await cdqV19PutRecord('document-pdf',d.fileId,{id:d.fileId,nom:d.name,clientId:d.clientId,clientName:d.clientName,revision:d.revision,blob:d.blob,taille:d.blob.size,offlineSelected:true,offlinePrepared:true,pendingSaveId:d.pending?d.uploadId:'',localEditVersionV2660:d.editVersion});valid(email);
     }
+    await cdqPdfMigrateV2664(mirror,queue);valid(email);
     await refresh();
   }
   async function legacySaved(a,r){return bridge('CDQ_OFFLINE_DOCUMENT_COMMIT_LEGACY',{fileId:a.targetId,expectedRevision:a.expectedRevision,revision:r.revision,blob:new Blob([cdqV2112Base64ToBytes(a.data)],{type:'application/pdf'})});}
@@ -14942,7 +15077,7 @@ const cdqOffline24 = (() => {
     if(!cdqPwaAvailable())return null;
     const email=account(),q=await cdqV19QueueGet();valid(email);
     const r=await bridge('CDQ_OFFLINE_DOCUMENT_GET',{fileId:id,legacyPending:q.some(a=>a.targetId===id&&/pdf/.test(a.kind))});valid(email);
-    const d=r?.document;return d?{id:d.fileId,nom:d.name,clientId:d.clientId,clientName:d.clientName,revision:d.revision,blob:d.blob,taille:d.blob.size,offlinePrepared:true,offlineVersion:d.editVersion,autoReportName:d.autoReportName===true}:null;
+    const d=r?.document;return d?{id:d.fileId,nom:d.name,clientId:d.clientId,clientName:d.clientName,revision:d.revision,blob:d.blob,taille:d.blob.size,offlineSelected:true,offlinePrepared:true,offlineVersion:d.editVersion,autoReportName:d.autoReportName===true}:null;
   }
   async function save(rec,blob,saveId,name){
     const r=await bridge('CDQ_OFFLINE_DOCUMENT_EDIT',{fileId:rec.id,editVersion:rec.offlineVersion,blob,saveId,name,autoReportName:rec.autoReportName===true});
@@ -14959,7 +15094,14 @@ const cdqOffline24 = (() => {
   }
   async function refresh(){
     if(refreshing)return refreshing;
-    refreshing=(async()=>{owner=account();records=await scan();await refreshSheets();paintDots();status();renderStored();})();
+    refreshing=(async()=>{
+      owner=account();const email=owner;
+      for(;;){
+        const generation=cdqPdfStorageGenerationV2664,scanned=await scan();await refreshSheets();valid(email);
+        if(generation!==cdqPdfStorageGenerationV2664)continue;
+        records=scanned;paintDots();status();renderStored();return;
+      }
+    })();
     try{await refreshing;}finally{refreshing=null;}
   }
   function status(){
@@ -15001,7 +15143,7 @@ const cdqOffline24 = (() => {
   async function removeLocal(id){
     const email=account(),q=await cdqV19QueueGet();valid(email);
     if(q.some(a=>String(a.targetId)===String(id)&&/pdf/.test(a.kind)))throw Error('Ce PDF contient des modifications en attente. Synchronisez-les avant de le retirer.');
-    await supprimerCacheLocal(cdqV19Key('document-pdf',id));valid(email);
+    await cdqPdfSessionV2664.remove(cdqV19Key('document-pdf',id));cdqPdfStorageGenerationV2664++;valid(email);
   }
   async function remove(id){
     if(job?.running)throw Error('Annulez ou terminez la préparation avant de retirer un fichier.');
@@ -15056,7 +15198,7 @@ const cdqOffline24 = (() => {
     }
     if(!blob||blob.size!==meta.taille||(await blob.slice(0,5).text())!=='%PDF-')throw Error('PDF reçu incomplet.');
     checkJob(j);
-    const rec={...meta,id:String(file.id),nom:file.nom||meta.nom,clientId:j.company.id,clientName:j.company.nom,blob,offlinePrepared:true};delete rec.base64;
+    const rec={...meta,id:String(file.id),nom:file.nom||meta.nom,clientId:j.company.id,clientName:j.company.nom,blob,offlineSelected:true,offlinePrepared:true};delete rec.base64;
     // Mirror in the installed shell, which remains reachable after an offline restart.
     await bridge('CDQ_OFFLINE_DOCUMENT_STORE',{fileId:rec.id,name:rec.nom,clientId:rec.clientId,clientName:rec.clientName,revision:rec.revision,blob});valid(j.email);
     await cdqV19PutRecord('document-pdf',rec.id,rec);valid(j.email);
@@ -15143,7 +15285,7 @@ const cdqOffline24 = (() => {
   new MutationObserver(changes=>{if(changes.some(c=>Array.from(c.addedNodes).some(n=>n.nodeType===1&&!n.classList.contains('cdq24-offline-dot')))&&!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;if(cdqAccessState==='ready')paintDots();});}}).observe(document.body,{childList:true,subtree:true});
   function lock(){
     if(job?.running)job.cancelled=true;
-    job=null;records=[];sheets=[];view++;
+    job=null;records=[];sheets=[];view++;cdqPdfSessionV2664.clear();cdqPdfStorageGenerationV2664++;
     const modal=document.getElementById('cdqDocumentPrepare');if(modal)modal.style.display='none';
     for(const p of pending.values()){clearTimeout(p.timer);p.reject(Error('Déverrouillez de nouveau votre compte.'));}pending.clear();
     paintDots();
@@ -15634,7 +15776,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.04-v26.63-native-trash-music-wall";
+const CDQ_V20_BUILD = "2026.10.04-v26.64-pdf-session-storage";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16481,7 +16623,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.04-v26.63-native-trash-music-wall";
+const CDQ_V21_BUILD = "2026.10.04-v26.64-pdf-session-storage";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -17006,7 +17148,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.04-v26.63-native-trash-music-wall';
+const BUILD='2026.10.04-v26.64-pdf-session-storage';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20648,7 +20790,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.04-v26.63-native-trash-music-wall';
+  const BUILD='2026.10.04-v26.64-pdf-session-storage';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -22920,7 +23062,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.04-v26.63-native-trash-music-wall',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.04-v26.64-pdf-session-storage',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
