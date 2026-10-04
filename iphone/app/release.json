@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.62",
-  "release": "f2cb283a6cf47b5d5ec69e45c22bef8d5a79787a81ae5c30f4d8d6197ef7e14c",
+  "version": "26.63",
+  "release": "57be347f6c3f0515f4e4ae8908c35b8e20088797cc44589acf8d592241aafa43",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.04-v26.62-trash-music-wall",
-  "androidSelectorSha256": "b8a5881c9926cc994dd5abe267fa8b5a914944d079fd15b8a55e1d60c53be766",
+  "androidSourceBuild": "2026.10.04-v26.63-native-trash-music-wall",
+  "androidSelectorSha256": "658de636539b50a0329858ae09088c91044721068ee0b3754c86c665ef0d3f71",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
-  "files": 426
+  "files": 428
 }

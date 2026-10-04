@@ -1,0 +1,9 @@
+Mode : retouche de l’image existante avec imagegen.
+Source publiée : assets/music-wall-android-v2662.webp.
+Sortie : assets/music-wall-android-v2663.webp (793 x 1983, WebP qualité 92).
+L’export WebP effectue uniquement la compression, sans déplacer ni repeindre les éléments.
+
+Prompt final de la retouche :
+Move the INSOMNIUM text on the left substantially UP into the obvious empty black gap immediately under FIT FOR A KING and SHADOW OF INTENT. Move INSOMNIUM and its cross ornament up by 100 pixels from their current position, retaining exactly the same horizontal position, size, wording and font. This means the INSOMNIUM lettering is clearly above the top of SEPTICFLESH's lettering on the right, not level with it. There should be a much bigger dark gap BELOW Insomnium before Death than the small gap ABOVE Insomnium after Fit for a King. Keep SEPTICFLESH absolutely unmoved. Keep every other band logo, background, chains, red accents and composition exactly as in the reference. Fill the original Insomnium location with matching background. Return the complete portrait wall, same 793:1983 aspect ratio. Do not add any interface or loading graphics.
+
+Le rendu retenu remonte le mot Insomnium d’environ 45 pixels par rapport à l’image publiée V26.62.
