@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.83" data-cdq-iphone-release="fdeab05c2343b94ff8b0926f54c7324fa27764a8edf57be5151ac936116876fb">
+<html data-cdq-iphone-version="26.84" data-cdq-iphone-release="dc5eae44e2a3c618ddbe24639a0ba41abe6fd0d7c129bcfad4cbf4fa0d60aca9">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqNavigationPreloadV2681">(function(){
@@ -787,7 +787,7 @@ for(const name of ["workspace-v2638.mjs","corner-signals-v2677.mjs","weighing-ca
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.05-v26.83-vector-reports">
+<meta name="cdq-package-build" content="2026.10.05-v26.84-startup-icons-install">
 
 
 <script id="cdqBridgeV23">
@@ -841,7 +841,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.05-v26.83-vector-reports'
+    build:'2026.10.05-v26.84-startup-icons-install'
   });
 }
 
@@ -854,7 +854,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.05-v26.83-vector-reports'
+        build:'2026.10.05-v26.84-startup-icons-install'
       });
     }
   } catch(e) {}
@@ -5629,7 +5629,25 @@ body.light .file-today-done-badge{
 }
 </style>
 
-  <script defer src="https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/vendor/pdf-lib-1.17.1.min.js"></script>
+  <script id="cdqPdfToolsV2684">(function(){
+let pending;
+window.cdqPreparePdfLibV2684=function(){
+  if(window.PDFLib?.PDFDocument)return Promise.resolve(window.PDFLib);
+  if(pending)return pending;
+  pending=new Promise((resolve,reject)=>{
+    const script=document.createElement('script');script.src="https://jprodrigue86.github.io/Balance-CDQ-distribution/iphone/app/vendor/pdf-lib-1.17.1.min.js";script.async=true;
+    script.onload=()=>window.PDFLib?.PDFDocument?resolve(window.PDFLib):reject(Error('Le module PDF est indisponible.'));
+    script.onerror=()=>reject(Error('Le module PDF ne peut pas être chargé.'));document.head.appendChild(script);
+  }).catch(error=>{pending=null;throw error;});return pending;
+};
+document.addEventListener('DOMContentLoaded',()=>{
+  const ready=window.cdqStartupFrameV2652?.wait();
+  Promise.resolve(ready).then(()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const warm=()=>window.cdqPreparePdfLibV2684().catch(()=>{});
+    if(window.requestIdleCallback)requestIdleCallback(warm,{timeout:1500});else setTimeout(warm,200);
+  }))).catch(()=>{});
+},{once:true});
+})();</script>
 
 <link rel="stylesheet" href="./invoice-ui-v2590.css">
 <link rel="stylesheet" href="./inventory-modern-v2592.css">
@@ -7978,11 +7996,8 @@ function choisirCompagnie(
 
   try{
     chargerFichiers();
-    if(typeof cdqScheduleAutoFitV2216==="function"){
-      cdqScheduleAutoFitV2216(150);
-      setTimeout(function(){cdqScheduleAutoFitV2216(80);},700);
-      setTimeout(function(){cdqScheduleAutoFitV2216(80);},1800);
-    }
+    if(window.cdqMobileLayout)window.cdqMobileLayout.schedule();
+    else if(typeof cdqScheduleAutoFitV2216==="function")cdqScheduleAutoFitV2216(150);
   }catch(err){
     console.error("Ouverture compagnie :",err);
     if(typeof afficherErreur==="function")afficherErreur(err);
@@ -10522,6 +10537,7 @@ async function cdqFlattenPdfV2553(id){
   if(navigator.onLine!==false&&typeof cdqSynchroniserEnAttente==='function')await cdqSynchroniserEnAttente();
   const rec=await cdqLoadPdfRecord(String(id));
   if(!(rec?.blob instanceof Blob))throw new Error('PDF introuvable pour l’envoi.');
+  await window.cdqPreparePdfLibV2684();
   const PDFDocument=globalThis.PDFLib&&globalThis.PDFLib.PDFDocument;
   if(!PDFDocument)throw new Error('Le module PDF non modifiable n’est pas disponible.');
   const pdf=await PDFDocument.load(await rec.blob.arrayBuffer());
@@ -11315,7 +11331,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.05-v26.83-vector-reports";
+  const CDQ_BUILD = "2026.10.05-v26.84-startup-icons-install";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -12903,7 +12919,7 @@ function cdqEnsureDisplayRescueV96(){
   return b;
 }
 function cdqDetachBottomNavV96(){
-  if(window.cdqMobileLayout){window.cdqMobileLayout.schedule();return;}
+  if(window.cdqMobileLayout){window.cdqMobileLayout.keyboard();return;}
   if(typeof window.cdqGeneralDensityFactorV2221!=="function")return;
   if(!cdqIsMobileV96())return;
   const nav=document.querySelector(".bottom-nav");
@@ -13606,7 +13622,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.05-v26.83-vector-reports";
+const CDQ_V19_BUILD = "2026.10.05-v26.84-startup-icons-install";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15695,7 +15711,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.05-v26.83-vector-reports";
+const CDQ_V20_BUILD = "2026.10.05-v26.84-startup-icons-install";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16542,7 +16558,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.05-v26.83-vector-reports";
+const CDQ_V21_BUILD = "2026.10.05-v26.84-startup-icons-install";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -20490,7 +20506,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     queued = true;
     requestAnimationFrame(() => { queued = false; apply(); });
   }
-  window.cdqMobileLayout = {apply, schedule};
+  window.cdqMobileLayout = {apply, schedule, keyboard(){layoutCompanyMenu(lastMenuMetrics.unit,lastMenuMetrics.textScale);measureNavigation();}};
   function viewportChangedV2627() {
     const width = Math.max(240, Math.round(window.innerWidth || root.clientWidth || 384));
     if (!window.__cdqViewportStateV2606 || Math.abs(width - window.__cdqViewportStateV2606.width) >= 2) schedule();
@@ -21192,7 +21208,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.05-v26.83-vector-reports',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.05-v26.84-startup-icons-install',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;

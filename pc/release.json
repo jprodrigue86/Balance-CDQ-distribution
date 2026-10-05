@@ -1,10 +1,10 @@
 {
   "platform": "pc-pwa",
-  "version": "26.83",
-  "release": "b13b3738e70550aa229379162eeef6adbaa0f4221c3a2901b7ceecdf8d6e7302",
+  "version": "26.84",
+  "release": "fdccbfeb86c5346d8edb2710c839438ff2c94d270c0e9d0f9b0d18733a7b2b0f",
   "desktopModel": 2,
-  "androidSourceBuild": "2026.10.05-v26.83-vector-reports",
-  "androidSelectorSha256": "7d799c2b488dc61df0f9dd75b08075186c64e3296cf2e2d2506802cd4a9c97bf",
+  "androidSourceBuild": "2026.10.05-v26.84-startup-icons-install",
+  "androidSelectorSha256": "20c6ce01acfd929d040f72cc5ea2ffe3072adf23986b0ce3b8505d58a64b0192",
   "generatedFrom": "scripts/build-pc-v2676.mjs",
   "files": 461
 }

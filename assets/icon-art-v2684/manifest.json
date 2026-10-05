@@ -1,0 +1,249 @@
+[
+  {
+    "source": "assets/calibration-metal-v2566.png",
+    "sourceSha256": "ab6e1ac45c4ac35a3486b632ac766e75506fbd2a8e5f8d67efd46d11d81cf08d",
+    "before": 2078595,
+    "dimensions": [
+      1254,
+      1254
+    ],
+    "pixelsSha256": "8b1ee18761dfd7b402c4fdcbe180e85dde81737d8dd2b0ff507bc522d8c0095d",
+    "pixelDifference": 0,
+    "asset": "assets/icon-art-v2684/assets__calibration-metal-v2566.png",
+    "after": 2006629,
+    "sha256": "7c64c0fa0c9012500db29779a043f9b356e707038a21a4c1bfb74a3111f6114f"
+  },
+  {
+    "source": "assets/navigation-v2639/calcul.webp",
+    "sourceSha256": "ddbd4e8c1e87b2367e3494bd757ad4aa3425c8bb46ab93e53ae6b8dadcf6d0f2",
+    "before": 21594,
+    "dimensions": [
+      256,
+      256
+    ],
+    "pixelsSha256": "93a40a71cd16942a137e4afc784d5c8948f5636d49286559f5bc1536b2d40715",
+    "pixelDifference": 0,
+    "after": 21594
+  },
+  {
+    "source": "assets/navigation-v2639/drive.webp",
+    "sourceSha256": "0ec1ff395703d0f30edcc103b51de2b4c62c58b50cb34ed3887f8f7788694b43",
+    "before": 15654,
+    "dimensions": [
+      256,
+      256
+    ],
+    "pixelsSha256": "12a043c044734866588c956d127928d3265d11592d6c3dd29ab5faf67af2d308",
+    "pixelDifference": 0,
+    "after": 15654
+  },
+  {
+    "source": "assets/navigation-v2639/opportunities.webp",
+    "sourceSha256": "adfcf867afb4aaac55ebc82a0af0371573832bcbacc8df3467cdb347c5ff77b6",
+    "before": 14638,
+    "dimensions": [
+      256,
+      256
+    ],
+    "pixelsSha256": "138358543bf73be10f40c60106ba840196511279bb5c7882cf1e4af2bcc010e1",
+    "pixelDifference": 0,
+    "after": 14638
+  },
+  {
+    "source": "bundles/balance-cdq/v25.14/icons-reference.png",
+    "sourceSha256": "61ab2fbff8729ada833bb16c17123d4f71abc9a80da1c8081d8c41fd392cabba",
+    "before": 302979,
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "pixelsSha256": "baf6b03b51b3d268090a398443b5e8a60fbd2acd347daa5f9388b3fea0e2befa",
+    "pixelDifference": 0,
+    "after": 302979
+  },
+  {
+    "source": "bundles/balance-cdq/v25.15/icons-transparent.webp",
+    "sourceSha256": "e47994f32f27cf6fb6ebbfd30da7f63dd685fda80801b6ec17d7b1acb8ff20db",
+    "before": 542590,
+    "dimensions": [
+      1536,
+      1024
+    ],
+    "pixelsSha256": "0d04c6af7e343501cbc1a0b878dc206fbe9567e8b649af275925cd69a92d1b16",
+    "pixelDifference": 0,
+    "asset": "assets/icon-art-v2684/bundles__balance-cdq__v25.15__icons-transparent.webp",
+    "after": 541040,
+    "sha256": "6a44926b50489e4cd36589be2f5ab7cc0bce9896eb7c819b992b9cb19efc3996"
+  },
+  {
+    "source": "bundles/balance-cdq/v25.17/banner-original.webp",
+    "sourceSha256": "dca9f376e3895ea4ed0b3efc596d565a35eaeb15c1b87f82dc14d26b2e479bf5",
+    "before": 36542,
+    "dimensions": [
+      1536,
+      132
+    ],
+    "pixelsSha256": "51e6bde9f6db549edc57877a3bdbe52238600a7dd0543b748f01d17f92765bd6",
+    "pixelDifference": 0,
+    "after": 36542
+  },
+  {
+    "source": "icons/icon-1024.png",
+    "sourceSha256": "88c0f9e12507b1ccee4f00709d0c353d13fca800ef0aab048bccca4005ba3b7f",
+    "before": 1007199,
+    "dimensions": [
+      1024,
+      1024
+    ],
+    "pixelsSha256": "879fecca0e97fbbbbcd02e9c7f6abceeb57928ae3f748f3aa63776074b459488",
+    "pixelDifference": 0,
+    "after": 1007199
+  },
+  {
+    "source": "icons/icon-192.png",
+    "sourceSha256": "095ef6660114a35892228dd7e9e9af90d39b6bcd0868635a924bf70752b298d1",
+    "before": 7888,
+    "dimensions": [
+      192,
+      192
+    ],
+    "pixelsSha256": "076c3bdf44fc47201115dfec5d8e6a701645922c51f2d373da30d1e12dfafca3",
+    "pixelDifference": 0,
+    "asset": "assets/icon-art-v2684/icons__icon-192.png",
+    "after": 7786,
+    "sha256": "3291d6e1d2d9a9e09f06788a4fbee8e25ec67821f6a49f724503e643a55ae479"
+  },
+  {
+    "source": "icons/icon-512.png",
+    "sourceSha256": "798e753a735d946fae941d2ab776f3f9c884a17fa946f3e527042b56fcc0c9e1",
+    "before": 34506,
+    "dimensions": [
+      512,
+      512
+    ],
+    "pixelsSha256": "518286a8cc28314f985a2f929d58a5ea0e3717fbf5fc7304372034d6c3ada4c2",
+    "pixelDifference": 0,
+    "asset": "assets/icon-art-v2684/icons__icon-512.png",
+    "after": 33688,
+    "sha256": "5ea1b023f034ddc4a6d4a09f7c94a610b14a47eba5448b3edda6e8dc25fab196"
+  },
+  {
+    "source": "icons/icon-heavy-192.png",
+    "sourceSha256": "6d5fbf48e71de1f47c833ab4f4bc6041f36d95c1a6f0a9ff679de65ca978e0e6",
+    "before": 8874,
+    "dimensions": [
+      192,
+      192
+    ],
+    "pixelsSha256": "b22c9c3cc7e9643d7e1968b96493c249993d6d19d6e67ec242b3a054ea046fd7",
+    "pixelDifference": 0,
+    "asset": "assets/icon-art-v2684/icons__icon-heavy-192.png",
+    "after": 8785,
+    "sha256": "6c13c1e2f9555ffd7b3e1dfc8ce2838716e7870f9b545c374c0bc911d38a4601"
+  },
+  {
+    "source": "icons/icon-heavy-512.png",
+    "sourceSha256": "9e736b27f90450d488e57a971a112f3e7d2f998412232cf7223d6b0dd713864a",
+    "before": 47969,
+    "dimensions": [
+      512,
+      512
+    ],
+    "pixelsSha256": "dfbac32c488aae2d83052b65d534bd4d78ee3a7bac06cf60be9e332edfa84bce",
+    "pixelDifference": 0,
+    "asset": "assets/icon-art-v2684/icons__icon-heavy-512.png",
+    "after": 47380,
+    "sha256": "d099cdd507e5ffa804a6e140aec5c0044b3c9fceb69f937e25dba4270a1d8ee6"
+  },
+  {
+    "source": "icons/icon-heavy-v2-192.png",
+    "sourceSha256": "9de0118adddedd882fd32ffeae0f97e4fc598bfbd83cf224d055c4dca69492bf",
+    "before": 12394,
+    "dimensions": [
+      192,
+      192
+    ],
+    "pixelsSha256": "a41421aa500c1aa9f307c3f52aa9aa89e5f1402eacc099fb5bcd08d595c43b9f",
+    "pixelDifference": 0,
+    "asset": "assets/icon-art-v2684/icons__icon-heavy-v2-192.png",
+    "after": 12293,
+    "sha256": "3bfac7d2dfb0f0c10a53a6cae7fd96faf5dc7d312276bf540aff1c1807ba3220"
+  },
+  {
+    "source": "icons/icon-heavy-v2-512.png",
+    "sourceSha256": "4b1c35676ade4abf8beee53761ce568eb927c3ecc4715f522c8d14472c00d5e6",
+    "before": 68818,
+    "dimensions": [
+      512,
+      512
+    ],
+    "pixelsSha256": "a8918ca18b60f8b5b44fdf1cdbd1ada26e54461b96d63e90d99ad1e01f8c1b9e",
+    "pixelDifference": 0,
+    "asset": "assets/icon-art-v2684/icons__icon-heavy-v2-512.png",
+    "after": 67992,
+    "sha256": "ffe2e41d8e3bf3ce9f1de02b48ecff6d04adaa3614246ab8286ec8d2ab07058b"
+  },
+  {
+    "source": "icons/icon-heavy-v3-192.png",
+    "sourceSha256": "32cac8fae242125f76cf2cba32abda9c7c6f793ec50eb96655dc92e22cda6dee",
+    "before": 68892,
+    "dimensions": [
+      192,
+      192
+    ],
+    "pixelsSha256": "88782a9a758ed0ffdb03ee071dee57e14860cdc7d1976c7802faf5e838cd975b",
+    "pixelDifference": 0,
+    "asset": "assets/icon-art-v2684/icons__icon-heavy-v3-192.png",
+    "after": 68653,
+    "sha256": "e6836c0955adfd7c1bc81a0dcf0c18f6baf259f730c6671d18ae11c6fceae0b4"
+  },
+  {
+    "source": "icons/icon-heavy-v3-512.png",
+    "sourceSha256": "d989bf97d5203926a7f233de3032e27c499d9c797894a0a12214f8a3e668440c",
+    "before": 419386,
+    "dimensions": [
+      512,
+      512
+    ],
+    "pixelsSha256": "301da38e4aa160842436b9fb3477b6cffa1194b61574a5188acf07ba965b5e9c",
+    "pixelDifference": 0,
+    "asset": "assets/icon-art-v2684/icons__icon-heavy-v3-512.png",
+    "after": 416396,
+    "sha256": "ac6bafd94488868416ecc3939dab20cee33cbf909ad88f78e6dfc23db1f6ee80"
+  },
+  {
+    "source": "icons/logo-heavy-app-v2.png",
+    "sourceSha256": "88774bd3344e3e4d41f7e2daaf3c344340606b57e7dd316d45fa5b75d8413da4",
+    "before": 107389,
+    "dimensions": [
+      512,
+      512
+    ],
+    "pixelsSha256": "5e0a446cd61984264f3b942da29cad01f90a4a3fe443f056f4c715d3b8af8eff",
+    "pixelDifference": 0,
+    "asset": "assets/icon-art-v2684/icons__logo-heavy-app-v2.png",
+    "after": 106513,
+    "sha256": "e52472bbbf3663dbc11b374e113d1aaabdaa70fa0fa8678ec83ed67e57900e9a"
+  },
+  {
+    "source": "icons/logo-heavy-app-v3.png",
+    "sourceSha256": "09768dbe3f8890c6adc424e85f24226a6a499aa32b76c0d68a3443e374912602",
+    "before": 786446,
+    "after": 786446,
+    "status": "original-kept-decoder-unavailable"
+  },
+  {
+    "source": "icons/logo-heavy-app.png",
+    "sourceSha256": "7188440b677a594cfbfe25600e74e704513fe42fd5a141d5ab9a8283d9f4e5ac",
+    "before": 107389,
+    "dimensions": [
+      512,
+      512
+    ],
+    "pixelsSha256": "5e0a446cd61984264f3b942da29cad01f90a4a3fe443f056f4c715d3b8af8eff",
+    "pixelDifference": 0,
+    "asset": "assets/icon-art-v2684/icons__logo-heavy-app.png",
+    "after": 106513,
+    "sha256": "e52472bbbf3663dbc11b374e113d1aaabdaa70fa0fa8678ec83ed67e57900e9a"
+  }
+]
