@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="26.79" data-cdq-pc-release="bc929bf4bf24f05def201e2f0757ac42e3e7d88e3a65a5e872e13bb2972e2137">
+<html data-cdq-pc-version="26.80" data-cdq-pc-release="d803f19a1a1edcf141d6d43f4f9719a9791b54e2680c98050d24516cd992f8b0">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -784,7 +784,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.05-v26.79-pdf-session-tremie">
+<meta name="cdq-package-build" content="2026.10.05-v26.80-sync-recovery">
 
 
 <script id="cdqBridgeV23">
@@ -838,7 +838,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.05-v26.79-pdf-session-tremie'
+    build:'2026.10.05-v26.80-sync-recovery'
   });
 }
 
@@ -851,7 +851,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.05-v26.79-pdf-session-tremie'
+        build:'2026.10.05-v26.80-sync-recovery'
       });
     }
   } catch(e) {}
@@ -11304,7 +11304,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.05-v26.79-pdf-session-tremie";
+  const CDQ_BUILD = "2026.10.05-v26.80-sync-recovery";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13595,7 +13595,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.05-v26.79-pdf-session-tremie";
+const CDQ_V19_BUILD = "2026.10.05-v26.80-sync-recovery";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -13832,50 +13832,118 @@ async function cdqV19QueueAdd(action){
   return action;
 }
 
-// Injected into cdqV19Features: never reads another account's local outbox.
-let cdqSyncDetailsGenerationV2679=0;
+// Injected into the account-scoped outbox. Never infer a client from the selected company.
+let cdqSyncDetailsGenerationV2679=0,cdqSyncDialogGenerationV2680=0;
 const cdqSyncKindsV2679={'pdf-save-v2520':'Sauvegarde PDF','pdf-import':'Importation PDF',photo:'Photo',note:'Note','template-copy':'Copie de rapport','inventory-transfer':'Transfert d’inventaire'};
+const cdqCompanyNameV2680=id=>typeof toutesLesCompagnies!=='undefined'?String(toutesLesCompagnies.find(c=>String(c.id)===String(id))?.nom||''):'';
 async function cdqPendingDetailsV2679(queue){
  if(!utilisateurCourantEmail||cdqAccessState!=='ready')return [];
  const owner=String(utilisateurCourantEmail),items=queue||await cdqV19QueueGet(),result=[];
  for(const a of items){
-  let name=String(a.fileName||a.nom||'');
-  if(!name&&a.targetId){const record=await cdqV19GetRecord('document-pdf',String(a.targetId));name=String(record?.nom||'');}
+  const record=a.targetId?await cdqV19GetRecord('document-pdf',String(a.targetId)):null;
   if(owner!==String(utilisateurCourantEmail)||cdqAccessState!=='ready')return [];
-  result.push({id:a.id,kind:cdqSyncKindsV2679[a.kind]||'Élément Drive',name:name||String(a.targetId||a.articleId||a.idCompagnie||'Élément sans nom'),error:String(a.lastError||'En attente du prochain envoi.'),tries:Number(a.tries||0)});
+  const location=a.targetId?await cdqV19GetRecord('sync-location-v2680',String(a.targetId)):null;
+  if(owner!==String(utilisateurCourantEmail)||cdqAccessState!=='ready')return [];
+  const clientId=String(a.clientId||a.idCompagnie||record?.clientId||location?.clientId||'');
+  result.push({id:a.id,kind:cdqSyncKindsV2679[a.kind]||'Élément Drive',name:String(a.fileName||a.nom||record?.nom||a.targetId||a.articleId||'Élément sans nom'),clientId,
+   clientName:cdqCompanyNameV2680(clientId)||String(a.clientName||record?.clientName||(location?.clientId===clientId?location?.clientName:'')||''),folderName:String(a.folderName||location?.folderName||''),
+   error:String(a.lastError||'En attente du prochain envoi.'),tries:Number(a.tries||0),conflict:!!a.recoverConflictV2680||typeof isPdfRevisionConflictV2680==='function'&&isPdfRevisionConflictV2680(a.lastError)});
  }
  return result;
 }
-async function cdqRefreshSyncDetailsV2679(queue){
- const generation=++cdqSyncDetailsGenerationV2679,items=await cdqPendingDetailsV2679(queue);
- if(generation!==cdqSyncDetailsGenerationV2679)return;
- let bar=document.getElementById('cdqPendingSyncV2679');
- if(!items.length){bar?.remove();return;}
- if(!bar){bar=document.createElement('button');bar.id='cdqPendingSyncV2679';bar.type='button';bar.className='cdq-sync-details-v2679';
-  bar.style.cssText='display:block;width:100%;padding:12px 14px;margin:10px 0;border:1px solid #43c7d7;border-radius:12px;background:#18232b;color:#fff;text-align:left;font:inherit;cursor:pointer';
-  bar.onclick=cdqOpenSyncDetailsV2679;
-  const host=document.getElementById('filesContainer');if(host)host.before(bar);else document.body.append(bar);
- }
- const first=items[0];bar.textContent=items.length+' en attente — '+first.kind+' : '+first.name+' · Voir le détail';
- bar.title=first.error;bar.setAttribute('aria-label',bar.textContent);
- const pill=document.getElementById('cdqV19SyncPill');if(pill)pill.onclick=cdqOpenSyncDetailsV2679;
+async function cdqResolveSyncLocationV2680(a){
+ if(!a.targetId||navigator.onLine===false)return;
+ const email=cdqReaderOwnerV2520(),c=await cdqV19Gs('obtenirContexteCopieCDQV2522',[a.targetId]);cdqReaderGuardV2520(email);
+ if(c.id!==a.targetId||!c.clientId||!c.parentId)return;
+ let name=cdqCompanyNameV2680(c.clientId);
+ if(!name){const clients=await cdqV19Gs('obtenirDossiersClients',[]);cdqReaderGuardV2520(email);name=String(clients?.find?.(x=>String(x.id)===String(c.clientId))?.nom||'');}
+ await cdqV19PutRecord('sync-location-v2680',a.targetId,{clientId:c.clientId,clientName:name,folderId:c.parentId,folderName:c.parentName||''});cdqReaderGuardV2520(email);
 }
-async function cdqOpenSyncDetailsV2679(){
- const items=await cdqPendingDetailsV2679();if(!items.length)return;
+async function cdqRefreshSyncDetailsV2679(queue){
+ const generation=++cdqSyncDetailsGenerationV2679,items=await cdqPendingDetailsV2679(queue);if(generation!==cdqSyncDetailsGenerationV2679)return;
+ let bar=document.getElementById('cdqPendingSyncV2679');if(!items.length){bar?.remove();return;}
+ if(!bar){bar=document.createElement('button');bar.id='cdqPendingSyncV2679';bar.type='button';bar.style.cssText='display:block;width:100%;padding:12px 14px;margin:10px 0;border:1px solid #43c7d7;border-radius:12px;background:#18232b;color:#fff;text-align:left;font:inherit;cursor:pointer';bar.onclick=()=>cdqOpenSyncDetailsV2679();const host=document.getElementById('filesContainer');if(host)host.before(bar);else document.body.append(bar);}
+ const first=items[0];bar.textContent=items.length+' en attente — '+first.kind+' : '+first.name+' · '+(first.clientName||first.clientId||'Compagnie à identifier')+' · Voir le détail';bar.title=first.error;bar.setAttribute('aria-label',bar.textContent);
+ const pill=document.getElementById('cdqV19SyncPill');if(pill)pill.onclick=()=>cdqOpenSyncDetailsV2679();
+}
+async function cdqOpenSyncDetailsV2679(resolveLocation=true){
+ const items=await cdqPendingDetailsV2679();if(!items.length)return;const owner=String(utilisateurCourantEmail),generation=++cdqSyncDialogGenerationV2680;
  let dialog=document.getElementById('cdqSyncDialogV2679');if(!dialog){dialog=document.createElement('dialog');dialog.id='cdqSyncDialogV2679';dialog.style.cssText='width:min(90vw,620px);max-height:80dvh;overflow:auto;padding:22px;border:1px solid #43c7d7;border-radius:16px;background:#18232b;color:white;font:inherit';document.body.append(dialog);}
  dialog.replaceChildren();const title=document.createElement('h2');title.textContent='Synchronisation en attente';dialog.append(title);
- for(const item of items){const row=document.createElement('section');row.style.cssText='margin:16px 0;padding:12px;border:1px solid #526675;border-radius:10px';
-  const name=document.createElement('strong'),reason=document.createElement('p');name.textContent=item.kind+' — '+item.name;reason.textContent=item.error;row.append(name,reason);dialog.append(row);
+ const style=b=>{b.type='button';b.style.cssText='padding:12px 18px;margin:6px;border-radius:10px;border:1px solid #91a4b0;background:#24313c;color:white;font:inherit';return b;};
+ for(const item of items){const row=document.createElement('section');row.style.cssText='margin:16px 0;padding:12px;border:1px solid #526675;border-radius:10px';const name=document.createElement('strong'),place=document.createElement('p'),reason=document.createElement('p');name.textContent=item.kind+' — '+item.name;place.textContent='Compagnie : '+(item.clientName||item.clientId||'À identifier')+' · Dossier : '+(item.folderName||'À identifier');reason.textContent=item.error;row.append(name,place,reason);
+  if(item.conflict){const help=document.createElement('p');help.textContent='Réessayer enregistrera vos réponses dans une copie du même dossier. La version actuelle sur Drive sera conservée.';row.append(help);}
+  if(item.clientId){const open=style(document.createElement('button'));open.textContent='Ouvrir la compagnie';open.onclick=()=>{const c=typeof toutesLesCompagnies!=='undefined'?toutesLesCompagnies.find(x=>String(x.id)===item.clientId):null;if(c&&owner===String(utilisateurCourantEmail)&&cdqAccessState==='ready'){dialog.close();choisirCompagnie(c);}};row.append(open);}
+  dialog.append(row);
  }
- const retry=document.createElement('button'),close=document.createElement('button');retry.type=close.type='button';retry.textContent='Réessayer';close.textContent='Fermer';
- for(const b of [retry,close])b.style.cssText='padding:12px 18px;margin:6px;border-radius:10px;border:1px solid #91a4b0;background:#24313c;color:white;font:inherit';
- retry.disabled=navigator.onLine===false||cdqV19SyncRunning;retry.onclick=async()=>{retry.disabled=true;try{await window.cdqSynchroniserEnAttente();if(utilisateurCourantEmail&&cdqAccessState==='ready'){const rest=await cdqPendingDetailsV2679();if(rest.length)await cdqOpenSyncDetailsV2679();else dialog.close();}}finally{retry.disabled=false;}};
- close.onclick=()=>dialog.close();dialog.append(retry,close);if(!dialog.open)dialog.showModal();
+ const retry=style(document.createElement('button')),close=style(document.createElement('button'));retry.textContent='Réessayer';close.textContent='Fermer';retry.disabled=navigator.onLine===false||cdqV19SyncRunning;
+ retry.onclick=async()=>{retry.disabled=true;cdqSyncDialogGenerationV2680++;try{await (window.cdqRetrySyncV2680||window.cdqSynchroniserEnAttente)();if(owner===String(utilisateurCourantEmail)&&cdqAccessState==='ready'){const rest=await cdqPendingDetailsV2679();if(rest.length)await cdqOpenSyncDetailsV2679();else dialog.close();}}finally{retry.disabled=false;}};
+ close.onclick=()=>{cdqSyncDialogGenerationV2680++;dialog.close();};dialog.append(retry,close);if(!dialog.open)dialog.showModal();
+ if(resolveLocation){void(async()=>{const queue=await cdqV19QueueGet();for(const a of queue){if(owner!==String(utilisateurCourantEmail)||cdqAccessState!=='ready')return;try{await cdqResolveSyncLocationV2680(a);}catch{}}if(dialog.open&&generation===cdqSyncDialogGenerationV2680&&owner===String(utilisateurCourantEmail)&&cdqAccessState==='ready'){await cdqRefreshSyncDetailsV2679();await cdqOpenSyncDetailsV2679(false);}})();}
 }
 window.cdqSyncDetailsV2679={pending:cdqPendingDetailsV2679,open:cdqOpenSyncDetailsV2679,refresh:cdqRefreshSyncDetailsV2679};
-window.addEventListener('cdq:access-state-v2527',e=>{if(e.detail!=='ready'){cdqSyncDetailsGenerationV2679++;document.getElementById('cdqPendingSyncV2679')?.remove();const d=document.getElementById('cdqSyncDialogV2679');d?.close();d?.remove();}});
+window.addEventListener('cdq:access-state-v2527',e=>{if(e.detail!=='ready'){cdqSyncDetailsGenerationV2679++;cdqSyncDialogGenerationV2680++;document.getElementById('cdqPendingSyncV2679')?.remove();const d=document.getElementById('cdqSyncDialogV2679');d?.close();d?.remove();}});
 
-function cdqV19SyncPill(){
+function isPdfRevisionConflictV2680(error){
+ return /ce pdf a ete modifie depuis son ouverture/.test(String(error?.message||error||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase());
+}
+// Recovery uses the existing guarded, idempotent copy endpoint. The original
+// file's revision is never replaced with a freshly fetched revision to force a write.
+function createPdfSaveRecoveryV2680({get,put,rpc,guard,owner,original,clearSource}){
+ return async function process(a){
+  const email=owner();if(a.owner!==email)throw Error('Le compte a changé. Rouvrez le PDF.');
+  const prior=a.predecessor?await get('pdf-save-receipt',a.predecessor):null;guard(email);
+  const redirected=prior?.targetId&&prior.targetId!==a.targetId;
+  const record=await get('document-pdf',a.targetId);guard(email);
+  const source={...a,clientId:a.clientId||record?.clientId||''};
+  const work=redirected?{...source,targetId:prior.targetId,expectedRevision:prior.revision,predecessor:'',fileName:prior.fileName||a.fileName,autoReportName:false}:source;
+  let result,plan=await get('pdf-save-recovery-v2680',a.id);guard(email);
+  async function recover(){
+   if(!plan){
+    const context=await rpc('obtenirContexteCopieCDQV2522',[work.targetId]);guard(email);
+    if(context.id!==work.targetId||!context.parentId||!context.clientId)throw Error('Le dossier client de la sauvegarde doit être confirmé.');
+    if(work.clientId&&work.clientId!==context.clientId)throw Error('Le PDF a changé de compagnie. Les réponses restent conservées sur cet appareil.');
+    plan={sourceId:work.targetId,folderId:context.parentId,folderName:context.parentName||'',clientId:context.clientId,requestId:'copy-'+crypto.randomUUID(),owner:email};
+    await put('pdf-save-recovery-v2680',a.id,plan);guard(email);
+   }
+   if(plan.owner!==email||plan.sourceId!==work.targetId)throw Error('La destination de récupération a changé.');
+   if(!plan.targetId){
+    const copied=await rpc('copierElementCDQV2522',[plan.sourceId,plan.folderId,plan.requestId]);guard(email);
+    if(!copied?.ok||!copied.id||copied.id===plan.sourceId||copied.destinationId!==plan.folderId||copied.clientId!==plan.clientId)throw Error('La copie de récupération n’a pas été confirmée.');
+    plan={...plan,targetId:copied.id,fileName:copied.nom};await put('pdf-save-recovery-v2680',a.id,plan);guard(email);
+   }
+   if(!plan.revision){
+    const meta=await rpc('obtenirMetaDocumentPdfCDQ',[plan.targetId]);guard(email);
+    if(meta.id!==plan.targetId||meta.clientId!==plan.clientId||!meta.revision)throw Error('La révision de la copie n’a pas été confirmée.');
+    plan={...plan,revision:meta.revision,fileName:meta.nom||plan.fileName};await put('pdf-save-recovery-v2680',a.id,plan);guard(email);
+   }
+   return original({...work,targetId:plan.targetId,folderId:plan.folderId,expectedRevision:plan.revision,predecessor:'',fileName:plan.fileName,autoReportName:false});
+  }
+  if(plan)result=await recover();
+  else try{result=await original(work);}catch(error){
+   guard(email);if(!a.recoverConflictV2680||!isPdfRevisionConflictV2680(error))throw error;
+   result=await recover();
+  }
+  guard(email);
+  if(!result?.ok||!result.id||!result.revision)throw Error('La sauvegarde n’a pas été confirmée. Les réponses restent sur cet appareil.');
+  await put('pdf-save-receipt',a.id,{revision:result.revision,targetId:result.id,fileName:result.nom,clientId:result.clientId});guard(email);
+  if(result.id!==a.targetId)await clearSource(a.targetId,a.id);guard(email);
+  return {...result,recovered:result.id!==a.targetId};
+ };
+}
+
+ const cdqReaderProcessSaveV2520=createPdfSaveRecoveryV2680({get:cdqV19GetRecord,put:cdqV19PutRecord,rpc:(name,args)=>cdqV19Gs(name,args),guard:cdqReaderGuardV2520,owner:cdqReaderOwnerV2520,original:a=>cdqReaderProcessSaveBaseV2680(a),
+  clearSource:async(id,saveId)=>{
+   let client='';await cdqPdfSessionV2664.update(cdqV19Key('document-pdf',id),r=>{if(r?.pendingSaveId!==saveId)return r;client=r.clientId||'';return {...r,pendingSaveId:''};});cdqPdfStorageGenerationV2664++;
+   if(client){window.cdqInstantFiles2530?.forget(client,[id]);const tree=cacheContenuCompagnies[client],row=tree?trouverFichierDansArbre(tree,id):null;if(row?.fichier?._cdqPendingSaveV2660===saveId)delete row.fichier._cdqPendingSaveV2660;}
+  }
+ });
+ async function cdqRetrySyncV2680(){
+  await cdqV19MutateQueue(q=>q.map(a=>a.kind==='pdf-save-v2520'&&isPdfRevisionConflictV2680(a.lastError)?{...a,recoverConflictV2680:true}:a));
+  return window.cdqSynchroniserEnAttente();
+ }
+ window.cdqRetrySyncV2680=cdqRetrySyncV2680;
+ function cdqV19SyncPill(){
   return document.getElementById("cdqV19SyncPill");
 }
 async function cdqV19RefreshSyncPill(){
@@ -14581,18 +14649,19 @@ async function cdqRenameReportV2648(result,requested,email,clientId){
   if(confirmed.nom!==name||confirmed.clientId!==meta.clientId)throw Error('Le nom du rapport n’a pas été confirmé.');
   return {...result,...confirmed,ok:true};
 }
-async function cdqReaderProcessSaveV2520(a){
+async function cdqReaderProcessSaveBaseV2680(a){
   const email=cdqReaderOwnerV2520();if(a.owner!==email)throw new Error('Le compte a changé. Rouvrez le PDF.');
   if(!['admin','technicien'].includes(utilisateurCourantRole))throw new Error('Accès en lecture seule.');
   let revision=a.expectedRevision;
   if(a.predecessor){const receipt=await cdqV19GetRecord('pdf-save-receipt',a.predecessor);cdqReaderGuardV2520(email);if(!receipt?.revision)throw new Error('La sauvegarde précédente doit être synchronisée en premier.');revision=receipt.revision;}
   let r=await cdqV19Gs('enregistrerPdfLecteurCDQV2520',[a.targetId,a.data,a.id,revision]);cdqReaderGuardV2520(email);
+  if(a.folderId)r={...r,destinationId:a.folderId};
   if(a.autoReportName)r=await cdqRenameReportV2648(r,a.fileName,email);
   if(!r?.ok||r.id!==a.targetId||!r.revision)throw new Error('Enregistrement non confirmé.');
   await cdqV19PutRecord('pdf-save-receipt',a.id,{revision:r.revision});cdqReaderGuardV2520(email);
   const current=await cdqV19GetRecord('document-pdf',a.targetId);cdqReaderGuardV2520(email);
   if(!current?.pendingSaveId||current.pendingSaveId===a.id)await cdqV19PutRecord('document-pdf',a.targetId,{id:r.id,nom:r.nom,autoReportName:a.autoReportName===true,taille:cdqV2112Base64ToBytes(a.data).length,revision:r.revision,clientId:r.clientId,type:'PDF',blob:new Blob([cdqV2112Base64ToBytes(a.data)],{type:'application/pdf'})});
-  if(r.clientId)window.cdqInstantFiles2530.confirm({...r,_cdqCommittedUploadV2660:a.id},r.clientId,'',{type:'PDF'});
+  if(r.clientId)window.cdqInstantFiles2530.confirm({...r,_cdqCommittedUploadV2660:a.id},r.clientId,r.destinationId||'',{type:'PDF'});
   await cdqOffline24.legacySaved({...a,expectedRevision:revision},r).catch(afficherErreur);
   window.dispatchEvent(new CustomEvent('cdq:pdf-saved',{detail:{...r,saveId:a.id}}));return r;
 }
@@ -14615,7 +14684,7 @@ async function cdqOpenPdfInternal(id,preparedRecord){
     const previous=q.filter(a=>a.kind==='pdf-save-v2520'&&a.targetId===id).at(-1);
     let revision=rec.revision;
     if(!previous&&lastSaveId){const receipt=await cdqV19GetRecord('pdf-save-receipt',lastSaveId);valid();if(receipt?.revision)revision=receipt.revision;}
-    if(!q.some(a=>a.id===d.requestId))await cdqV19QueueAdd({id:d.requestId,kind:'pdf-save-v2520',owner:email,targetId:id,data:btoa(bin),fileName:rec.autoReportName?String(d.name||rec.nom):rec.nom,autoReportName:rec.autoReportName===true,expectedRevision:revision,predecessor:previous?.id||''});
+    if(!q.some(a=>a.id===d.requestId))await cdqV19QueueAdd({id:d.requestId,kind:'pdf-save-v2520',owner:email,targetId:id,data:btoa(bin),fileName:rec.autoReportName?String(d.name||rec.nom):rec.nom,autoReportName:rec.autoReportName===true,expectedRevision:revision,predecessor:previous?.id||lastSaveId||'',clientId:rec.clientId||'',clientName:rec.clientName||(typeof toutesLesCompagnies!=='undefined'?toutesLesCompagnies.find(c=>String(c.id)===String(rec.clientId))?.nom:'')||'',folderId:rec.folderId||rec.destinationId||''});
     lastSaveId=d.requestId;unconfirmed.add(d.requestId);
     valid();
     rec={...rec,blob:d.blob,nom:rec.autoReportName?String(d.name||rec.nom):rec.nom,pendingSaveId:d.requestId};
@@ -15615,7 +15684,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.05-v26.79-pdf-session-tremie";
+const CDQ_V20_BUILD = "2026.10.05-v26.80-sync-recovery";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16462,7 +16531,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.05-v26.79-pdf-session-tremie";
+const CDQ_V21_BUILD = "2026.10.05-v26.80-sync-recovery";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21113,7 +21182,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.05-v26.79-pdf-session-tremie',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.05-v26.80-sync-recovery',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
