@@ -59,6 +59,24 @@ function syncHeadings(){
     h.setAttribute('data-cdq-heading-v2671','');
     $(title,h)?.setAttribute('data-cdq-heading-title-v2671','');
     $(subtitle,h)?.setAttribute('data-cdq-heading-subtitle-v2671','');
+    const layout=$('.cdq-im-head',h)||h;
+    layout.setAttribute('data-cdq-heading-layout-v2675','');
+    const key=h.closest('#cdqCalibrationDialogV2565')?'calibration':h.closest('#cdqInventoryModernV2592')?'inventory':h.closest('#cdqInvoicePageV2590')?'invoices':h.closest('#cdqReportOverlayV2578')?'report':h.closest('#cdqCalculPageV2638')?'calcul':h.closest('#cdqOpportunitiesPageV2638')?'opportunities':'dossier';
+    let visual=$(':scope > [data-cdq-heading-icon-v2675]',layout);
+    if(!visual){visual=document.createElement('span');visual.dataset.cdqHeadingIconV2675='';visual.setAttribute('aria-hidden','true');layout.prepend(visual);}
+    const theme=iconTheme();const source=$('.bottom-nav-item[data-workspace-route="'+key+'"] > :is(span,svg,img,div,i)'),art=source?.outerHTML||workspaceIcon(key,theme);if(visual.dataset.theme!==theme||visual.dataset.art!==art){visual.innerHTML=art;visual.dataset.theme=theme;visual.dataset.art=art;}
+    // Sprite artwork is painted by a navigation-only pseudo-element. Carry its
+    // actual image and tile coordinates into the heading's independent square.
+    if(source?.classList.contains('cdq-icon-host-v2514')){
+      const sprite=visual.firstElementChild,paint=getComputedStyle(source,'::after');
+      const styles={'background-image':paint.backgroundImage,'background-size':paint.backgroundSize,'background-position':paint.backgroundPosition,'background-repeat':'no-repeat','clip-path':paint.clipPath,'visibility':'visible',width:'44px',height:'44px','min-width':'44px','max-width':'44px','min-height':'44px','max-height':'44px'};
+      for(const [property,value]of Object.entries(styles))if(sprite.style.getPropertyValue(property)!==value)sprite.style.setProperty(property,value,'important');
+    }
+    const original=$(':scope > .cdq-calibration-indicator',layout);if(original)original.hidden=true;
+    if(h.matches('.cdq-invoice-title')){
+      let center=$('[data-cdq-heading-center-v2675]',h);if(!center){center=$('h2',h)?.parentElement;center?.setAttribute('data-cdq-heading-center-v2675','');}
+    }else{const title=$('h2',layout),center=$('.cdq-im-title',layout)||(title?.parentElement!==layout?title?.parentElement:title);center?.setAttribute('data-cdq-heading-center-v2675','');}
+
     for(const b of $$('[data-workspace-close],[data-inv-close],[data-report-close],[data-cal-close],#cdqImClose',h)){
       if(b.hasAttribute('data-cdq-heading-close-v2671'))continue;
       b.setAttribute('data-cdq-heading-close-v2671','');b.innerHTML=icon('M6 6l12 12 M18 6L6 18');
@@ -107,6 +125,9 @@ export function navigate(route,{toggle=false,adopt=false}={}){
   const favorites=route==='favorites';
   if(route==='drive'||favorites)route='dossier';if(route==='home')route='';if(toggle&&active===route)route='';
   if(!calibrationIdentity().email)return;
+  // Trash is a native/external destination, not a page in this workspace.
+  // Keep the current client, folder, form and navigation active on return.
+  if(route==='trash'){try{ouvrirCorbeilleDrive();}catch(e){window.afficherErreur?.(e);}return;}
   const target=$('#'+pageByRoute[route]);
   if(!adopt)hidePages();else if(active&&active!==route){for(const [key,id] of Object.entries(pageByRoute)){const p=$('#'+id);if(p&&p!==target){if(p instanceof HTMLDialogElement&&p.open)p.close();else if(!(p instanceof HTMLDialogElement))p.hidden=true;}}}
   active=route;document.documentElement.classList.toggle('cdq-workspace-open',!!route);document.documentElement.dataset.cdqWorkspace=route;

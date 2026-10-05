@@ -1,10 +1,11 @@
+import {normalizePrecisionLayoutV2675} from './reader-precision-layout-v2675.mjs';
 // Precision uses the same single page-owned fill/border as the floor report.
 // Keep every answer, calculation, widget rectangle and plateau illustration.
 export function normalizePrecisionAppearanceV2665(pdf,L){
  const {PDFName,PDFDict,PDFArray,PDFRawStream,PDFHexString,decodePDFRawStream}=L,N=PDFName.of;
  const form=pdf.getForm();
  if(!form.getFieldMaybe('type_plateau')||!form.getFieldMaybe('resolution')||!form.getFieldMaybe('charge_point_7_charge_utilisee')||form.getFieldMaybe('charge_point_8_charge_utilisee'))return false;
- let changed=false;
+ let changed=normalizePrecisionLayoutV2675(pdf,L);
  const pages=pdf.getPages(),boxes=new Map(pages.map(page=>[page,[]])),corners=[];
  const sourceOf=stream=>Array.from(stream instanceof PDFRawStream?decodePDFRawStream(stream).decode():stream.getUnencodedContents(),b=>String.fromCharCode(b)).join('');
  const replace=(ref,old,source)=>{

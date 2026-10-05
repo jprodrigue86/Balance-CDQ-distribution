@@ -150,3 +150,14 @@ html.cdq-mobile-layout body.cdq-role-lecture .bottom-nav > #folderActionButton{d
 .cdq-calcul-tabs-v2668 button[aria-selected=true]{border-color:var(--cdq-accent,#ffb64d);box-shadow:inset 0 -3px var(--cdq-accent,#ffb64d)}
 #cdqCalculPageV2638 [role=tabpanel][hidden]{display:none!important}
 @media(min-width:760px){.cdq-calcul-tabs-v2668{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* V26.75: symmetric columns center the title on the page, with one close action. */
+body [data-cdq-heading-layout-v2675]{display:grid!important;grid-template-columns:44px minmax(0,1fr) 44px!important;align-items:center!important;column-gap:10px!important}
+body [data-cdq-heading-center-v2675]{grid-column:2!important;grid-row:1!important;text-align:center!important;min-width:0!important}
+body [data-cdq-heading-center-v2675] :is([data-cdq-heading-title-v2671],[data-cdq-heading-subtitle-v2671]){text-align:center!important}
+body [data-cdq-heading-icon-v2675]{grid-column:1!important;grid-row:1!important;display:flex!important;align-items:center;justify-content:center;width:44px!important;height:44px!important}
+body [data-cdq-heading-icon-v2675] :is(img,svg){width:44px!important;height:44px!important;object-fit:contain!important;max-width:44px!important;max-height:44px!important}
+body [data-cdq-heading-layout-v2675] [data-cdq-heading-close-v2671]{grid-column:3!important;grid-row:1!important;position:static!important}
+body [data-cdq-heading-back-v2671],body [data-cdq-heading-layout-v2675]>.cdq-calibration-indicator,body .cdq-invoice-title>i,body [data-cdq-heading-layout-v2675]>img{display:none!important}
+body #cdqInventoryModernV2592 #cdqImBack,body #cdqReportOverlayV2578 [data-cdq-heading-layout-v2675] [data-report-back],body #cdqCalibrationDialogV2565 [data-cdq-heading-layout-v2675] [data-cal-back]{display:none!important}
+body #cdqInvoicePageV2590 .cdq-invoice-tech{margin-top:12px!important}
