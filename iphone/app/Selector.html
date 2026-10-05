@@ -1,8 +1,144 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.73" data-cdq-iphone-release="6e4d897a78b8c6e091b1f2b224dce75dc4de8245e1818c7eda62b34dcee686e6">
+<html data-cdq-iphone-version="26.74" data-cdq-iphone-release="5dede026a46c9c7e8032387569c817c3520819b66eeb47bce8bda1e8ccd3619f">
 <head>
 <script src="./iphone-update.js"></script>
+<script>/* One synchronous layout for the company chooser; background refreshes never
+ * replace a row while the technician is choosing it. */
+(function () {
+  'use strict';
+  window.cdqInstallCompanyChooserV2674 = function (menu) {
+    const root = document.documentElement, search = document.getElementById('companySearch');
+    const list = document.getElementById('companyList'), button = document.getElementById('companyButton');
+    let opened = false, anchor = null, metrics = {unit:1,textScale:1};
+    let gesture = null, swallowUntil = 0, rendering = false;
+    const inert = new Map();
+    const visible = () => menu.style.display === 'block';
+    function set(el, props) {
+      if (!el) return;
+      for (const [key,value] of Object.entries(props))
+        if (el.style.getPropertyValue(key) !== value || el.style.getPropertyPriority(key) !== 'important')
+          el.style.setProperty(key,value,'important');
+    }
+    const px = n => Math.round(n*100)/100+'px';
+    const backdrop = document.createElement('div');
+    backdrop.id = 'cdqCompanyBackdrop'; backdrop.hidden = true;
+    document.body.append(menu,backdrop);
+    menu.setAttribute('role','dialog'); menu.setAttribute('aria-modal','true');
+    menu.setAttribute('aria-label','Choisir une compagnie');
+    search.setAttribute('aria-label','Rechercher une compagnie');
+    const drive = document.createElement('button');
+    drive.type='button'; drive.className='cdq-company-drive'; drive.setAttribute('aria-label','Ouvrir le Drive général');
+    drive.title='Ouvrir le Drive général';
+    drive.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#efb52d" d="M2 5a2 2 0 0 1 2-2h5l3 3h8a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z"/><path fill="#ffd35a" d="M2 9h20v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z"/></svg>';
+    drive.onclick=()=>{close();window.cdqDriveV2521.open();};
+    const exit = document.createElement('button');
+    exit.type='button'; exit.className='cdq-company-close'; exit.textContent='×';
+    exit.setAttribute('aria-label','Fermer la recherche de compagnie'); exit.onclick=()=>close(true);
+    menu.append(drive,exit); backdrop.onclick=()=>close(true);
+    function lockBackground() {
+      for (const node of document.body.children) {
+        if (node===menu || node===backdrop || /^(SCRIPT|STYLE|LINK)$/.test(node.tagName)) continue;
+        if (!inert.has(node)) inert.set(node,node.inert);
+        node.inert=true;
+      }
+    }
+    function sync() {
+      const next=visible();
+      if(next===opened)return;
+      opened=next; backdrop.hidden=!next; button?.setAttribute('aria-expanded',String(next));
+      if(next)lockBackground();
+      else {
+        for(const [node,value] of inert)node.inert=value;
+        inert.clear(); anchor=null;
+        // Consume the synthetic click belonging to the just-closed chooser.
+        swallowUntil=Date.now()+500;
+      }
+    }
+    function close(focus=false) {
+      menu.style.display='none'; sync(); search.blur();
+      if(focus)button?.focus({preventScroll:true});
+    }
+    function layout(unit=metrics.unit,textScale=metrics.textScale,prepare=false) {
+      if (!opened) metrics={unit,textScale};
+      if(!visible()&&!prepare){sync();return;}
+      // Keyboard animation can shorten the bottom of the sheet. Its top,
+      // width, search bar and row typography stay fixed throughout this opening.
+      const width=Math.max(240,window.innerWidth||root.clientWidth||384);
+      if(!anchor || Math.abs(anchor.width-width)>=2)anchor={width,
+        top:Math.max(8,parseFloat(getComputedStyle(document.body).paddingTop)||0),
+        unit:metrics.unit,textScale:metrics.textScale};
+      const view=window.visualViewport;
+      const bottom=(view?.offsetTop||0)+(view?.height||innerHeight);
+      const height=Math.max(0,bottom-anchor.top-8);
+      const bar=Math.max(44,Math.min(56,44*anchor.unit));
+      set(menu,{'position':'fixed','top':px(anchor.top),'left':'0px','right':'auto','width':px(width),
+        'max-width':'100%','height':px(height),'max-height':px(height),'margin':'0','padding':'0',
+        'zoom':'1','transform':'none','z-index':'100101','border-radius':'12px','overflow':'hidden',
+        '--cdq-company-text':px(Math.max(14,Math.min(18,15*anchor.unit*anchor.textScale)))});
+      set(search,{'height':px(bar),'min-height':'0','width':'100%','box-sizing':'border-box',
+        'padding':'8px 96px 8px 12px','font-size':px(Math.max(16,Math.min(20,16*anchor.unit*anchor.textScale))),
+        'line-height':'1.2','margin':'0'});
+      set(exit,{'height':px(bar),'width':'44px'}); set(drive,{'height':px(bar),'width':'44px'});
+      set(list,{'height':px(Math.max(0,height-bar)),'max-height':px(Math.max(0,height-bar)),
+        'min-height':'0','overflow-y':'auto','overflow-x':'hidden','overscroll-behavior':'contain','touch-action':'pan-y'});
+      window.cdqFitFullNamesV2536?.(list);
+      sync();
+    }
+    function toggle() {
+      if(visible()){close(true);return;}
+      anchor=null; search.value='';
+      rendering=true;
+      try { window.remplirListeCompagnies(); } finally { rendering=false; }
+      list.scrollTop=0;
+      layout(metrics.unit,metrics.textScale,true);
+      menu.style.display='block'; sync();
+      // Keep focus in this very user gesture so Android and iPhone can show the keyboard.
+      search.focus({preventScroll:true});
+      try { (window.BalanceCDQNative||window.parent.BalanceCDQNative)?.showCompanyKeyboard?.(); } catch (_) {}
+    }
+    function stop(e) { e.preventDefault();e.stopImmediatePropagation(); }
+    function action(target) {return target.closest?.('.cdq-company-name,.cdq-company-star,.company-reset-item,.cdq-company-close,.cdq-company-drive');}
+    window.addEventListener('pointerdown',e=>{
+      sync(); swallowUntil=0;
+      if(!opened)return;
+      gesture={id:e.pointerId,target:action(e.target),inside:menu.contains(e.target),x:e.clientX,y:e.clientY,moved:false};
+      if(!gesture.inside){stop(e);close(true);swallowUntil=Date.now()+500;}
+    },true);
+    window.addEventListener('pointermove',e=>{
+      if(gesture?.id===e.pointerId && Math.hypot(e.clientX-gesture.x,e.clientY-gesture.y)>12)gesture.moved=true;
+    },true);
+    window.addEventListener('pointerup',e=>{
+      if(gesture?.id!==e.pointerId)return;
+      if(!gesture.inside || gesture.moved || (gesture.target && (!gesture.target.isConnected || action(e.target)!==gesture.target))){
+        stop(e);swallowUntil=Date.now()+500;
+      }
+      gesture=null;
+    },true);
+    window.addEventListener('pointercancel',()=>{gesture=null;swallowUntil=Date.now()+500;},true);
+    window.addEventListener('click',e=>{
+      sync();
+      if(Date.now()<swallowUntil && !menu.contains(e.target)){stop(e);return;}
+      if(Date.now()<swallowUntil && opened){stop(e);return;}
+      if(opened&&!menu.contains(e.target)){stop(e);close(true);}
+    },true);
+    menu.addEventListener('click',e=>e.stopPropagation());
+    menu.addEventListener('keydown',e=>{
+      if(e.key==='Escape'){e.preventDefault();close(true);return;}
+      if(e.key!=='Tab')return;
+      const controls=[...menu.querySelectorAll('input,button,[tabindex]')].filter(n=>!n.disabled&&n.tabIndex>=0&&n.getClientRects().length);
+      const first=controls[0],last=controls.at(-1);
+      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}
+      else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}
+    });
+    new MutationObserver(sync).observe(menu,{attributes:true,attributeFilter:['style']});
+    new MutationObserver(()=>{if(opened)lockBackground();}).observe(document.body,{childList:true});
+    window.toggleCompanyMenu=toggle;
+    window.ajusterMenuAndroid=()=>layout();
+    return {layout,close,defer:()=>visible()&&!rendering};
+  };
+})();
+</script>
 <script id="cdqFileActionsV2655">(function(){
   'use strict';
   const colors={copy:'#54b8ec',duplicate:'#eb648a',favorite:'#efb937',send:'#449cef',note:'#aebdcc',photo:'#48c3aa',rename:'#e7a349',delete:'#db4656',protect:'#a18ae4',unlock:'#a18ae4',finish:'#b9c4cf'};
@@ -646,7 +782,7 @@
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.04-v26.73-precision-cyan-triangle">
+<meta name="cdq-package-build" content="2026.10.05-v26.74-cdq-reader-stable-companies">
 <script id="cdqPcEarlyBootV2166">
 (function(){
   try{
@@ -925,7 +1061,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.04-v26.73-precision-cyan-triangle'
+    build:'2026.10.05-v26.74-cdq-reader-stable-companies'
   });
 }
 
@@ -938,7 +1074,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.04-v26.73-precision-cyan-triangle'
+        build:'2026.10.05-v26.74-cdq-reader-stable-companies'
       });
     }
   } catch(e) {}
@@ -5981,6 +6117,14 @@ html.cdq-workspace-reader-open #appHeader{background:var(--cdq-bg,#000)!importan
 #cdqDocumentPrepare .modal-buttons{margin:0!important;flex-shrink:0}
 </style>
 <style>.cdq-company-name{flex:1;min-width:0}</style>
+<style id="cdqCompanyChooserCssV2674">
+#companyMenu,#companyMenu *{box-sizing:border-box}
+#companyMenu .company-item{min-height:44px!important;height:auto!important;padding:2px 12px!important;font-size:var(--cdq-company-text,15px)!important;line-height:1.25!important;align-items:center!important}
+#companyMenu .cdq-company-name{min-width:0!important;flex:1 1 0!important;white-space:normal!important;overflow-wrap:anywhere!important;text-overflow:clip!important;overflow:visible!important}
+#companyMenu .cdq-company-star{width:40px!important;height:40px!important;min-width:40px!important;font-size:22px!important;padding:0!important;flex:0 0 40px!important}
+#cdqCompanyBackdrop{position:fixed!important;inset:0!important;z-index:100100!important;background:rgba(0,0,0,.35);touch-action:none}
+#cdqCompanyBackdrop[hidden]{display:none!important}
+</style>
 </head>
 
 
@@ -11507,7 +11651,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.04-v26.73-precision-cyan-triangle";
+  const CDQ_BUILD = "2026.10.05-v26.74-cdq-reader-stable-companies";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -11912,7 +12056,8 @@ function cdqNavigateDesktop(id){
     }).withFailureHandler(function(e){button.disabled=false;afficherErreur(e);}).definirFavoriDossier(folder.id,next,compagnieSelectionnee||"");
   }
 
-  function cdqRenderCompanyRows(companies){
+  function cdqRenderCompanyRows(companies,allowVisible=false){
+    if(!allowVisible && window.cdqCompanyChooserV2674?.defer())return;
     const list=document.getElementById("companyList"); if(!list) return;
     list.innerHTML="";
     const reset=document.createElement("div"); reset.className="company-item company-reset-item"; reset.textContent="↩️ Aucune compagnie sélectionnée"; reset.onclick=deselectionnerCompagnie; list.appendChild(reset);
@@ -11923,11 +12068,11 @@ function cdqNavigateDesktop(id){
     sorted.forEach(function(comp){
       comp=window.cdqClientRenameV2665?.overlay(comp)||comp;
       const row=document.createElement("div"); row.className="company-item cdq-company-row"; row.dataset.companyId=String(comp.id||"");
-      const name=document.createElement("span"); name.className="cdq-company-name"; name.textContent=comp.nom||"Compagnie"; name.onclick=function(){choisirCompagnie(comp);};
+      const name=document.createElement("span"); name.className="cdq-company-name"; name.textContent=comp.nom||"Compagnie"; row.onclick=function(e){if(!e.target.closest("button"))choisirCompagnie(comp);};
       name.appendChild(cdqCreerBadgePhoto('client',comp.id,comp.nom||'Compagnie',!!comp.photoPresente));
       row.appendChild(name);
       const star=document.createElement("button"); star.type="button"; star.className="cdq-company-star"+(comp.favori?" active":""); star.textContent="★"; star.title="Favori";
-      star.onclick=function(e){e.stopPropagation(); const next=!comp.favori; star.disabled=true; cdqApiRun().withSuccessHandler(function(){comp.favori=next;star.disabled=false;remplirListeCompagnies();cdqRefreshFavoriteModalIfOpen();}).withFailureHandler(function(err){star.disabled=false;afficherErreur(err);}).definirFavoriCompagnie(comp.id,next);};
+      star.onclick=function(e){e.stopPropagation(); const next=!comp.favori; star.disabled=true; cdqApiRun().withSuccessHandler(function(){comp.favori=next;star.disabled=false;star.classList.toggle("active",next);remplirListeCompagnies();cdqRefreshFavoriteModalIfOpen();}).withFailureHandler(function(err){star.disabled=false;afficherErreur(err);}).definirFavoriCompagnie(comp.id,next);};
       row.appendChild(star); list.appendChild(row);
     });
     if(typeof ajusterMenuAndroid==="function") ajusterMenuAndroid();
@@ -11937,7 +12082,7 @@ function cdqNavigateDesktop(id){
   window.remplirListeCompagnies=function(){ cdqRenderCompanyRows(toutesLesCompagnies||[]); };
   window.filtrerCompagnies=function(){
     const q=((document.getElementById("companySearch")||{}).value||"").toLowerCase().trim();
-    cdqRenderCompanyRows((toutesLesCompagnies||[]).filter(function(c){return String(c.nom||"").toLowerCase().includes(q);}));
+    cdqRenderCompanyRows((toutesLesCompagnies||[]).filter(function(c){return String(c.nom||"").toLowerCase().includes(q);}),true);
   };
 
   const originalChoisirCompagnie=window.choisirCompagnie;
@@ -13364,7 +13509,6 @@ function cdqOpenDisplaySettings(){
     const currentTheme=localStorage.getItem("cdqTheme") || (document.body.classList.contains("light")?"light":"dark");
     const currentLong=String(localStorage.getItem("cdqLongPressMs")||"1000");
     const currentSwipe=localStorage.getItem("cdqSwipeSensitivity")||"normal";
-    const currentPdfReader=localStorage.getItem("cdqPdfReaderPreferenceV1")||"ask";
 
     const adminSection=utilisateurCourantRole==="admin"
       ? '<div class="cdq-display-group"><div class="cdq-display-label">Administration</div>'+
@@ -13409,7 +13553,7 @@ function cdqOpenDisplaySettings(){
           '<div class="cdq-setting-row"><span>Appui long</span><div class="cdq-setting-buttons"><button data-long="700">0,7 s</button><button data-long="1000">1,0 s</button><button data-long="1300">1,3 s</button></div></div>'+
           '<div class="cdq-setting-row"><span>Glissement</span><div class="cdq-setting-buttons"><button data-swipe="souple">Souple</button><button data-swipe="normal">Normal</button><button data-swipe="ferme">Ferme</button></div></div>'+
         '</div>'+
-        '<div class="cdq-display-group"><div class="cdq-display-label">Lecteur PDF</div><p>Les PDF s’ouvrent dans le lecteur CDQ.</p></div>'+ 
+
         '<div class="cdq-display-group"><div class="cdq-display-label">Mise à jour</div>'+
           '<div class="cdq-update-center">'+
             '<div class="cdq-update-line"><strong>Version installée</strong><span id="cdqUpdateInstalled">'+cdqVersionLabelV87(CDQ_BUILD)+'</span></div>'+
@@ -13577,10 +13721,6 @@ function cdqOpenDisplaySettings(){
     controls().querySelectorAll("[data-swipe]").forEach(function(b){
       b.classList.toggle("active",b.dataset.swipe===currentSwipe);
       b.onclick=function(){cdqSetSwipeSensitivity(b.dataset.swipe);controls().querySelectorAll("[data-swipe]").forEach(function(x){x.classList.toggle("active",x===b);});};
-    });
-    controls().querySelectorAll("[data-pdf-reader]").forEach(function(b){
-      b.classList.toggle("active",b.dataset.pdfReader===currentPdfReader);
-      b.onclick=function(){localStorage.setItem("cdqPdfReaderPreferenceV1",b.dataset.pdfReader);cdqScheduleSavePreferencesV72();controls().querySelectorAll("[data-pdf-reader]").forEach(function(x){x.classList.toggle("active",x===b);});afficherMessage("Lecteur PDF par défaut enregistré et synchronisé.",true);};
     });
 
     const adminSettingsButton=controls().querySelector("#cdqAdminSettingsButton");
@@ -13801,7 +13941,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.04-v26.73-precision-cyan-triangle";
+const CDQ_V19_BUILD = "2026.10.05-v26.74-cdq-reader-stable-companies";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15772,7 +15912,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.04-v26.73-precision-cyan-triangle";
+const CDQ_V20_BUILD = "2026.10.05-v26.74-cdq-reader-stable-companies";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16619,7 +16759,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.04-v26.73-precision-cyan-triangle";
+const CDQ_V21_BUILD = "2026.10.05-v26.74-cdq-reader-stable-companies";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -17104,8 +17244,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
   }
   function settings(m){
     let account='';try{account=window.cdqGoogleDefaultAccountV2294?.()||''}catch(_){}
-    const reader=localStorage.getItem('cdqPdfReaderPreferenceV1')||'ask';
-    m.innerHTML=header('Réglages','Ton affichage, tes fichiers et ton compte, au même endroit.')+`<div class="pc17-scroll pc17-settings"><section><h2>Thème</h2><div class="pc17-theme-choices">${themes.map(([id,name])=>`<button type="button" data-pc-theme="${id}" aria-pressed="${preferences.theme===id}"><i class="pc17-swatch ${id}"></i>${name}</button>`).join('')}</div></section><section><h2>Lisibilité sur ce PC</h2>${[['text','Taille des noms de fichiers et clients'],['icons','Taille des icônes de fichiers'],['density','Espacement des lignes']].map(([key,label])=>`<label class="pc17-range">${label}<output id="pc17Value-${key}">${preferences[key]} / 100</output><input type="range" min="0" max="100" value="${preferences[key]}" data-pc-range="${key}" aria-label="${label}"></label>`).join('')}<p>La sélection multiple s’active en maintenant le clic de la souris pendant 0,7 seconde.</p></section><section class="cdq-display-group"><div class="cdq-display-label">Thème</div></section><section><h2>Compte Google pour les documents</h2><p>Choisis le compte proposé à Google pour ouvrir les fichiers sur ce PC.</p><label class="pc18-account-label">Adresse Google<input id="pc18GoogleEmail" type="email" autocomplete="email" placeholder="nom@gmail.com" value="${esc(account)}"></label><div class="pc17-setting-buttons">${button('pc18SaveAccount','Enregistrer')}${button('pc18CurrentAccount','Utiliser mon compte CDQ')}${button('pc18ResetAccount','Demander le compte à chaque ouverture')}</div><p id="pc18AccountStatus" role="status">${account?'Compte enregistré : '+esc(account):'Aucun compte par défaut'}</p></section><section><h2>Lecteur PDF</h2><p>Les PDF s’ouvrent dans le lecteur CDQ.</p></section><section><h2>Application et mises à jour</h2><p>Version installée : <strong>V25.23</strong></p><div class="pc17-setting-buttons">${button('pc18CheckUpdate','Vérifier les mises à jour','refresh')}${button('pc18Manager','Ouvrir Script Manager')}${button('pc17Sync','Synchroniser les préférences','refresh')}</div><p id="pc18UpdateStatus" role="status"></p></section>${typeof utilisateurCourantRole!=='undefined'&&utilisateurCourantRole==='admin'?`<section><h2>Administration</h2><div class="pc17-setting-buttons">${button('pc18Users','Gestion des utilisateurs')}${button('pc18Diagnostic','Diagnostic de l’application')}</div></section>`:''}</div>`;
+    m.innerHTML=header('Réglages','Ton affichage, tes fichiers et ton compte, au même endroit.')+`<div class="pc17-scroll pc17-settings"><section><h2>Thème</h2><div class="pc17-theme-choices">${themes.map(([id,name])=>`<button type="button" data-pc-theme="${id}" aria-pressed="${preferences.theme===id}"><i class="pc17-swatch ${id}"></i>${name}</button>`).join('')}</div></section><section><h2>Lisibilité sur ce PC</h2>${[['text','Taille des noms de fichiers et clients'],['icons','Taille des icônes de fichiers'],['density','Espacement des lignes']].map(([key,label])=>`<label class="pc17-range">${label}<output id="pc17Value-${key}">${preferences[key]} / 100</output><input type="range" min="0" max="100" value="${preferences[key]}" data-pc-range="${key}" aria-label="${label}"></label>`).join('')}<p>La sélection multiple s’active en maintenant le clic de la souris pendant 0,7 seconde.</p></section><section class="cdq-display-group"><div class="cdq-display-label">Thème</div></section><section><h2>Compte Google pour les documents</h2><p>Choisis le compte proposé à Google pour ouvrir les fichiers sur ce PC.</p><label class="pc18-account-label">Adresse Google<input id="pc18GoogleEmail" type="email" autocomplete="email" placeholder="nom@gmail.com" value="${esc(account)}"></label><div class="pc17-setting-buttons">${button('pc18SaveAccount','Enregistrer')}${button('pc18CurrentAccount','Utiliser mon compte CDQ')}${button('pc18ResetAccount','Demander le compte à chaque ouverture')}</div><p id="pc18AccountStatus" role="status">${account?'Compte enregistré : '+esc(account):'Aucun compte par défaut'}</p></section><section><h2>Application et mises à jour</h2><p>Version installée : <strong>V25.23</strong></p><div class="pc17-setting-buttons">${button('pc18CheckUpdate','Vérifier les mises à jour','refresh')}${button('pc18Manager','Ouvrir Script Manager')}${button('pc17Sync','Synchroniser les préférences','refresh')}</div><p id="pc18UpdateStatus" role="status"></p></section>${typeof utilisateurCourantRole!=='undefined'&&utilisateurCourantRole==='admin'?`<section><h2>Administration</h2><div class="pc17-setting-buttons">${button('pc18Users','Gestion des utilisateurs')}${button('pc18Diagnostic','Diagnostic de l’application')}</div></section>`:''}</div>`;
     window.cdqIconThemesV2514?.mount(m);
     const advanced=document.createElement('section');const heading=document.createElement('h2');heading.textContent='Avancé';advanced.append(heading);m.querySelector('.pc17-settings').append(advanced);window.cdqAccountV2647?.mount(advanced);
     const note=$('.cdq-icon-picker-v2514 > p',m);if(note)note.textContent='Le même jeu d’icônes personnel sur PC et Android.';
@@ -17113,7 +17252,6 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
     $$('[data-pc-range]',m).forEach(input=>input.oninput=()=>{preferences[input.dataset.pcRange]=+input.value;$('#pc17Value-'+input.dataset.pcRange).textContent=input.value+' / 100';savePreferences()});
     const saveAccount=value=>{try{window.cdqSetGoogleDefaultAccountV2294(value);$('#pc18GoogleEmail').value=value;$('#pc18AccountStatus').textContent=value?'Compte enregistré : '+value:'Google demandera le compte.'}catch(e){$('#pc18AccountStatus').textContent=e.message||String(e)}};
     action('pc18SaveAccount',()=>saveAccount($('#pc18GoogleEmail').value.trim()));action('pc18ResetAccount',()=>saveAccount(''));action('pc18CurrentAccount',()=>saveAccount(typeof utilisateurCourantEmail==='undefined'?'':utilisateurCourantEmail));
-    $$('[data-pc-reader]',m).forEach(b=>b.onclick=()=>{localStorage.setItem('cdqPdfReaderPreferenceV1',b.dataset.pcReader);window.cdqPcSettingsV2518?.save();$$('[data-pc-reader]',m).forEach(x=>x.setAttribute('aria-pressed',String(x===b)))});
     action('pc18CheckUpdate',()=>{window.cdqPcSettingsV2518?.check();$('#pc18UpdateStatus').textContent='Vérification demandée. Les mises à jour disponibles seront signalées dans l’application.'});
     action('pc18Manager',()=>window.open('https://jprodrigue86.github.io/Balance-CDQ-distribution/apps-script-manager/','_blank','noopener'));
     action('pc17Sync',()=>{window.cdqIconThemesV2514?.synchronize();api.sync()});
@@ -17144,7 +17282,7 @@ html.windows #cdqPcV16 .pc16-stage{margin:0!important;}
 (function(){
 'use strict';
 if(!document.documentElement.classList.contains('windows'))return;
-const BUILD='2026.10.04-v26.73-precision-cyan-triangle';
+const BUILD='2026.10.05-v26.74-cdq-reader-stable-companies';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const st={
@@ -20092,32 +20230,7 @@ html:is(.android,.ios,.mobile-device) #cdqTopActionsV2204 > .cdq-top-action{
   box-sizing:border-box!important;
 }
 </style>
-<script id="cdqV2214CompanyOpenSafety">
-(function(){
-"use strict";
-let lastCompanyTouchV2214=0;
 
-document.addEventListener("pointerup",function(e){
-  const item=e.target&&e.target.closest?e.target.closest("#companyList .company-item"):null;
-  if(!item)return;
-  const now=Date.now();
-  if(now-lastCompanyTouchV2214<300)return;
-  lastCompanyTouchV2214=now;
-
-  const id=String(item.dataset.companyId||"");
-  if(!id)return;
-  try{
-    const c=(typeof toutesLesCompagnies!=="undefined"?toutesLesCompagnies:[])
-      .find(function(x){return String(x.id)===id;});
-    if(c && String(compagnieSelectionnee)!==id){
-      choisirCompagnie(c);
-    }
-  }catch(err){
-    console.error("Sélection compagnie V22.14",err);
-  }
-},true);
-})();
-</script>
 <script id="cdqV2215PwaPrefsViewport">
 (function(){
 "use strict";
@@ -20786,7 +20899,7 @@ html.windows #cdqPcV16 #cdqPcUpdateBtnV2244:hover{filter:brightness(1.08);}
 <script id="cdqPcV2244UpdateBannerJs">
 (function(){
   'use strict';
-  const BUILD='2026.10.04-v26.73-precision-cyan-triangle';
+  const BUILD='2026.10.05-v26.74-cdq-reader-stable-companies';
   const PARENT_ORIGIN='https://jprodrigue86.github.io';
   let queryTimer=0;
 
@@ -20967,7 +21080,7 @@ html:is(.android,.ios,.mobile-device) #cdqInlineDisplayPanelV2204.open input[typ
   // Un seul gestionnaire tactile pour les boutons qui posaient problème.
   document.addEventListener('pointerup',function(e){
     const btn=e.target&&e.target.closest
-      ? e.target.closest('#cdqInlineDisplayPanelV2204.open button[data-long],#cdqInlineDisplayPanelV2204.open button[data-swipe],#cdqInlineDisplayPanelV2204.open button[data-pdf-reader]')
+      ? e.target.closest('#cdqInlineDisplayPanelV2204.open button[data-long],#cdqInlineDisplayPanelV2204.open button[data-swipe]')
       : null;
     if(!btn)return;
 
@@ -20992,13 +21105,6 @@ html:is(.android,.ios,.mobile-device) #cdqInlineDisplayPanelV2204.open input[typ
         return;
       }
 
-      if(btn.dataset.pdfReader){
-        const value=String(btn.dataset.pdfReader);
-        localStorage.setItem('cdqPdfReaderPreferenceV1',value);
-        markActive(btn,'button[data-pdf-reader]');
-        save();
-        try{afficherMessage('Lecteur PDF par défaut enregistré.',true);}catch(_){}
-      }
     }finally{
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -21009,7 +21115,7 @@ html:is(.android,.ios,.mobile-device) #cdqInlineDisplayPanelV2204.open input[typ
   document.addEventListener('click',function(e){
     if(Date.now()>swallowClickUntil)return;
     const btn=e.target&&e.target.closest
-      ? e.target.closest('#cdqInlineDisplayPanelV2204.open button[data-long],#cdqInlineDisplayPanelV2204.open button[data-swipe],#cdqInlineDisplayPanelV2204.open button[data-pdf-reader]')
+      ? e.target.closest('#cdqInlineDisplayPanelV2204.open button[data-long],#cdqInlineDisplayPanelV2204.open button[data-swipe]')
       : null;
     if(!btn)return;
     e.preventDefault();
@@ -21879,14 +21985,13 @@ html.android #cdqTopDisplayButtonV2204>span:last-child,html.mobile-device #cdqTo
   }
   function native() { return /BalanceCDQAndroid\/\d+(?:\.\d+)?/i.test(navigator.userAgent || ''); }
   let lastOpen = {id: '', at: 0};
-  function open(id, requestedKind, readerOverride) {
+  function open(id, requestedKind) {
     id = String(id || '');
     if (!/^[A-Za-z0-9_-]{10,200}$/.test(id)) return false;
     const m = meta(id), type = requestedKind || kind(m);
     if (!type || !native()) return false;
     if(type==='sheet')return window.cdqOpenSheetV2526(id);
-    // Keep an explicitly selected CDQ reader on its established internal route.
-    const selectedReader='cdq';
+    // PDF opening has one route: the integrated reader.
     if(type==='pdf'){
       window.cdqOpenPdfV2520(id,m).catch(afficherErreur);return true;
     }
@@ -21906,7 +22011,7 @@ html.android #cdqTopDisplayButtonV2204>span:last-child,html.mobile-device #cdqTo
       name: String(m.name || (type === 'note' ? 'Note.txt' : 'Rapport.pdf')).slice(0, 180),
       account: email,
       accountMode: email ? 'default' : 'ask',
-      reader: type === 'pdf' ? selectedReader : 'system',
+      reader: 'system',
       readOnly: typeof utilisateurCourantRole !== 'undefined' && utilisateurCourantRole === 'lecture' ? '1' : '0'
     });
     // No browser fallback: a failed native handoff must not open a Drive viewer.
@@ -22235,6 +22340,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
       let chromeChanged=false;
       for(const record of records)for(const node of record.addedNodes){
         if(node.nodeType!==1 || /^(STYLE|SCRIPT)$/.test(node.tagName))continue;
+        if(node.closest('#companyMenu'))continue;
         if(node.closest('#filesContainer')){applyRowsV2631(node);continue;}
         if(node.closest('#cdqInventoryModernV2592,#cdqInvoicePageV2590'))continue;
         chromeChanged=true;
@@ -22295,64 +22401,14 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     schedule();
   }
   function installCompanyMenu() {
-    const menu = document.getElementById('companyMenu');
-    if (menuInstalled || !menu || !root.classList.contains('cdq-mobile-layout')) return;
-    menuInstalled = true;
-    // A body-level sheet avoids every legacy zoom/overflow ancestor. Stop only
-    // bubbling clicks so the old outside-click handler still works elsewhere.
-    document.body.appendChild(menu);
-    menu.addEventListener('click', e => e.stopPropagation());
-    menu.addEventListener('keydown', e => { if (e.key === 'Escape') { closeCompanyMenu(); document.getElementById('companyButton')?.focus(); } });
-    const drive = document.createElement('button');
-    drive.type='button';drive.className='cdq-company-drive';drive.title='Ouvrir le Drive général';drive.setAttribute('aria-label','Ouvrir le Drive général');
-    drive.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#efb52d" d="M2 5a2 2 0 0 1 2-2h5l3 3h8a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z"/><path fill="#ffd35a" d="M2 9h20v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2Z"/></svg>';
-    drive.onclick=()=>{closeCompanyMenu();window.cdqDriveV2521.open();};menu.appendChild(drive);
-    const close = document.createElement('button');
-    close.type = 'button'; close.className = 'cdq-company-close'; close.textContent = '×';
-    close.setAttribute('aria-label','Fermer la recherche de compagnie'); close.onclick = closeCompanyMenu;
-    menu.appendChild(close);
-    menu.setAttribute('role','dialog'); menu.setAttribute('aria-modal','true'); menu.setAttribute('aria-label','Choisir une compagnie');
-    const search = document.getElementById('companySearch');
-    search?.setAttribute('aria-label','Rechercher une compagnie');
-    const backdrop = document.createElement('div');
-    backdrop.id = 'cdqCompanyBackdrop'; backdrop.hidden = true; backdrop.onclick = closeCompanyMenu;
-    document.body.appendChild(backdrop);
-    new MutationObserver(() => {
-      const open = menu.style.display !== 'none' && !!menu.style.display;
-      if (open !== menuWasOpen) { menuWasOpen = open; schedule(); }
-    }).observe(menu, {attributes:true,attributeFilter:['style']});
-    const original = window.ajusterMenuAndroid;
-    window.ajusterMenuAndroid = function () {
-      if (root.classList.contains('cdq-mobile-layout')) schedule();
-      else if (typeof original === 'function') return original.apply(this,arguments);
-    };
-    schedule();
+    const menu=document.getElementById('companyMenu');
+    if(menuInstalled||!menu||!root.classList.contains('cdq-mobile-layout'))return;
+    menuInstalled=true;
+    window.cdqCompanyChooserV2674=window.cdqInstallCompanyChooserV2674(menu);
+    window.cdqCompanyChooserV2674.layout(lastMenuMetrics.unit,lastMenuMetrics.textScale);
   }
-  function layoutCompanyMenu(unit, textScale) {
-    const menu = document.getElementById('companyMenu');
-    if (!menu) return;
-    const open = menu.style.display !== 'none' && !!menu.style.display;
-    const backdrop = document.getElementById('cdqCompanyBackdrop');
-    if (backdrop) backdrop.hidden = !open;
-    document.getElementById('companyButton')?.setAttribute('aria-expanded', String(open));
-    if (!open) return;
-    const viewport = window.visualViewport;
-    const top = Math.max(8, parseFloat(getComputedStyle(document.body).paddingTop) || 0);
-    const available = Math.max(0, (viewport?.height || innerHeight) - top - 8);
-    set(menu, {'position':'fixed','top':px((viewport?.offsetTop || 0)+top),'left':px(viewport?.offsetLeft || 0),'right':'auto',
-      'width':px(viewport?.width || innerWidth),'max-width':'100%','height':px(available),'max-height':px(available),
-      'margin':'0','padding':'0','zoom':'1','transform':'none','z-index':'100101','border-radius':'12px','overflow':'hidden'});
-    // Preserve display:block: legacy toggleCompanyMenu relies on this exact value.
-    const searchHeight = Math.max(44,Math.min(56,44*unit));
-    set(document.getElementById('companySearch'), {'height':px(searchHeight),'min-height':'0','width':'100%',
-      'padding':'8px 96px 8px 12px','font-size':px(Math.max(16,Math.min(20,16*unit*textScale))),'line-height':'1.2','margin':'0'});
-    set(menu.querySelector('.cdq-company-close'), {'height':px(searchHeight),'width':'44px'});
-    set(menu.querySelector('.cdq-company-drive'), {'height':px(searchHeight),'width':'44px'});
-    set(document.getElementById('companyList'), {'height':px(Math.max(0,available-searchHeight)),
-      'max-height':px(Math.max(0,available-searchHeight)),'min-height':'0','overflow-y':'auto','overflow-x':'hidden','overscroll-behavior':'contain','touch-action':'pan-y'});
-    each('#companyList .company-item', {'min-height':'44px','height':'auto','padding':'2px 12px','font-size':px(Math.max(14,Math.min(18,15*unit*textScale))),'line-height':'1.25'});
-    each('#companyList .cdq-company-name', {'min-width':'0','flex':'1 1 0','white-space':'nowrap','overflow':'hidden','text-overflow':'ellipsis'});
-    each('#companyList .cdq-company-star', {'width':'40px','height':'40px','min-width':'40px','font-size':'22px','padding':'0','flex':'0 0 40px'});
+  function layoutCompanyMenu(unit,textScale) {
+    window.cdqCompanyChooserV2674?.layout(unit,textScale);
   }
 
   // Handle a revealed bar before legacy row handlers. A gesture can start on
@@ -23056,7 +23112,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.04-v26.73-precision-cyan-triangle',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.05-v26.74-cdq-reader-stable-companies',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
