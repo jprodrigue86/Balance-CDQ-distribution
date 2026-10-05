@@ -83,6 +83,6 @@
   }
   function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;home();layout();});}
   function start(){home();layout();new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','open','data-cdq-current','data-cdq-palette','data-workspace-route']});addEventListener('resize',schedule,{passive:true});addEventListener('online',schedule);addEventListener('offline',schedule);document.addEventListener('cdq:icons-changed',schedule);addEventListener('cdq:access-ready',schedule);document.addEventListener('pointerdown',e=>{if(menu&&!menu.contains(e.target)&&!e.target.closest('.cdq-pc-menu-button'))closeMenu();},true);document.addEventListener('keydown',e=>{if(e.key==='Escape'&&menu){const b=menuOwner?.querySelector('.cdq-pc-menu-button');closeMenu();b?.focus();}});}
-  window.cdqDesktopModel2={layout,schedule,version:'26.76',model:2};
+  window.cdqDesktopModel2={layout,schedule,version:root.dataset.cdqPcVersion,model:2};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();

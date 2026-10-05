@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-pc-version="26.76" data-cdq-pc-release="d6bad3e22bf7e9001192ee7f870bc0e15ae9232e2199a50f43b54dd6c2fddc87">
+<html lang="fr" data-cdq-pc-version="26.77" data-cdq-pc-release="b85b269e9add9d9f51d59ce3db69b94e585084f5b77e15e635fb7677c9fb70fd">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./app-session-v2661.js"></script>
@@ -414,6 +414,7 @@ moins de groupes mais des noms plus lisibles.
 @media(min-width:900px){#loading .music-wall-image{background-size:cover!important}}
 </style>
 <style id="cdqStartup25">#loading .box{background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important}#loading .loading-title{display:none!important}#loading .loading-label{text-shadow:0 1px 4px #000;font-size:14px!important}#loading .loading-bar{background:#ffffff30!important}</style>
+<script type="module" src="./navigation-v2677.mjs"></script>
 <style id="cdqPcShellV2676">:root{--interface-scale:1!important;--cdq-pc-shell-left:270px;--cdq-pc-shell-top:152px}#app{inset:0!important;width:100%!important;height:100%!important;transform:none!important;left:0!important;top:0!important;zoom:1!important}#legacy-pdf-reader{left:var(--cdq-pc-shell-left)!important;right:10px!important;top:var(--cdq-pc-shell-top)!important;bottom:10px!important;width:calc(100% - var(--cdq-pc-shell-left) - 10px)!important;height:calc(100dvh - var(--cdq-pc-shell-top) - 10px)!important;border:1px solid #39444f!important;border-radius:13px!important;box-sizing:border-box!important}@media(max-width:1149px){:root{--cdq-pc-shell-left:230px;--cdq-pc-shell-top:126px}}</style>
 </head>
 <body>
@@ -463,7 +464,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.05-v26.76-reports-calibration-groups';
+const CDQ_PWA_BUILD = '2026.10.05-v26.77-fluidity-reports';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1588,21 +1589,21 @@ function cdqAfficherPdf(data){
 }
 function cdqAfficherPdfV2304(data,source){
   if(cdqPdfV2304Context)return false;
-  const ctx={source,fileId:String(data.fileId||''),pending:new Map()};cdqPdfV2304Context=ctx;
+  const ctx={source,fileId:String(data.fileId||''),readerSession:String(data.readerSession||''),pending:new Map()};cdqPdfV2304Context=ctx;
   cdqAfficherPdf({...data,workspaceSource:source,
-    onOpened:()=>replyToSelector(source,{type:'CDQ_PDF_OPENED_V2523',fileId:ctx.fileId}),
-    onClose:()=>{if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId});},
-    onError:error=>{cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,error:error.message});},
+    onOpened:()=>replyToSelector(source,{type:'CDQ_PDF_OPENED_V2523',fileId:ctx.fileId,readerSession:ctx.readerSession}),
+    onClose:()=>{if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession});},
+    onError:error=>{if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession,error:error.message});},
     onDiscard:data.readerProtocol>=2520?()=>new Promise((resolve,reject)=>{
       const requestId='discard-'+crypto.randomUUID(),timer=setTimeout(()=>{ctx.pending.delete(requestId);reject(new Error('La fermeture n’a pas été confirmée.'));},12000);
-      ctx.pending.set(requestId,{resolve,reject,timer});replyToSelector(source,{type:'CDQ_PDF_DISCARD_REQUEST_V2520',fileId:ctx.fileId,requestId});
+      ctx.pending.set(requestId,{resolve,reject,timer});replyToSelector(source,{type:'CDQ_PDF_DISCARD_REQUEST_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession,requestId});
     }):null,
     onSave:data.readOnly?null:(blob,requestId,name)=>new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>{ctx.pending.delete(requestId);reject(new Error('La sauvegarde n’a pas été confirmée.'));},85000);
       ctx.pending.set(requestId,{resolve,reject,timer});
-      replyToSelector(source,{type:'CDQ_PDF_SAVE_REQUEST_V2304',fileId:ctx.fileId,requestId,blob,name});
+      replyToSelector(source,{type:'CDQ_PDF_SAVE_REQUEST_V2304',fileId:ctx.fileId,readerSession:ctx.readerSession,requestId,blob,name});
     })
-  }).catch(error=>{cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,error:error.message});});
+  }).catch(error=>{if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession,error:error.message});});
   return true;
 }
 function cdqPdfSaveResultV2304(data,source){

@@ -1,6 +1,8 @@
-import {divisions,convertMass,percentLoad,expectedSignal,analyzeBridge,bridgePairs} from './weighing-calculations-v2638.mjs';
+import {compareCornerSignals,cornerNames,wirePairLabel} from './corner-signals-v2677.mjs';
+import {divisions,convertMass,analyzeBridge,bridgePairs} from './weighing-calculations-v2638.mjs';
 import {analyzeSixWireBridge,sixWirePairs} from './bridge-six-v2658.mjs';
 import {calibrationIdentity,calibrationRpc} from './calibration-feedback-v2566.mjs';
+import {createDriveCache} from './drive-cache-v2677.mjs';
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=v=>Number(v).toLocaleString('fr-CA',{maximumFractionDigits:8});
@@ -24,11 +26,12 @@ const canRead=()=>!!window.cdqDriveEntryV2632?.canRead();
 const canWrite=()=>canRead()&&['admin','technicien'].includes(calibrationIdentity().role);
 const ownerKey=()=>calibrationIdentity().email+'|'+calibrationIdentity().role;
 async function rpc(name,...args){const key=ownerKey();if(!canRead())throw Error('Accès Drive requis.');const result=await calibrationRpc(name,...args);if(key!==ownerKey()||!canRead())throw Error('Le compte a changé.');return result;}
-let homeAfterReader=false,homeReaderSource=null;
+const driveCache=createDriveCache({owner:ownerKey,allowed:canRead,fetchFolder:(id,mode)=>rpc(mode==='favorites'?'obtenirFavorisGenerauxCDQV2521':'obtenirDossierGeneralCDQV2521',...(mode==='favorites'?['']:[id,'']))});
+let homeAfterReader=false,homeReaderSource=null,pendingNavigation=null;
 let active='',observedOwner='',queued=false,driveEpoch=0,driveState={mode:'drive',id:GENERAL,lastDriveId:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false},opportunities=[],opportunityEpoch=0;
 const pageByRoute={dossier:'cdqDrivePageV2638',favorites:'cdqDrivePageV2638',calcul:'cdqCalculPageV2638',opportunities:'cdqOpportunitiesPageV2638',report:'cdqReportOverlayV2578',calibration:'cdqCalibrationDialogV2565',inventory:'cdqInventoryModernV2592',invoices:'cdqInvoicePageV2590'};
 const labels={Accueil:'home',Dossier:'dossier',Dossiers:'dossier',Favoris:'favorites',Rapport:'report',Calibration:'calibration',Calcul:'calcul',Inventaire:'inventory',Factures:'invoices',Opportunités:'opportunities',Corbeille:'trash'};
-const order=[...new Set(Object.values(labels))],cache=new Map();
+const order=[...new Set(Object.values(labels))];
 const navColors={home:'#45d6ff',dossier:'#ff6285',favorites:'#ffd34d',report:'#458fff',calibration:'#63edcf',calcul:'#ffb64d',inventory:'#d783ff',invoices:'#6be9a9',opportunities:'#65eda4',drive:'#48ceff',trash:'#ddd4c8'};
 function page(id,title,subtitle=''){
   let p=$('#'+id);if(p)return p;p=document.createElement('section');p.id=id;p.className='cdq-workspace-page';p.hidden=true;p.setAttribute('aria-label',title);
@@ -37,12 +40,12 @@ function page(id,title,subtitle=''){
 }
 function measure(){
   const root=document.documentElement;if(!root.classList.contains('cdq-mobile-layout'))return;
-  const header=$('#appHeader'),nav=$('.bottom-nav'),top=Math.max(0,Math.ceil(header?.getBoundingClientRect().bottom||0));
-  const h=window.visualViewport?.height||innerHeight,bottom=document.documentElement.classList.contains("cdq-desktop-v2676")?0:Math.max(0,Math.ceil(h-(nav?.getBoundingClientRect().top||h)));
+  const header=$('#appHeader'),nav=$('.bottom-nav'),top=root.classList.contains('cdq-desktop-v2676')?(parseFloat(getComputedStyle(root).getPropertyValue('--cdq-pc-top'))||152):Math.max(0,Math.ceil(header?.getBoundingClientRect().bottom||0));
+  const h=window.visualViewport?.height||innerHeight,bottom=root.classList.contains('cdq-desktop-v2676')?0:Math.max(0,Math.ceil(h-(nav?.getBoundingClientRect().top||h)));
   const set=(key,value)=>{if(root.style.getPropertyValue(key)!==value)root.style.setProperty(key,value);};
   set('--cdq-workspace-top',top+'px');set('--cdq-workspace-bottom',bottom+'px');
   root.dataset.cdqWorkspaceOwner=ownerKey();
-  const reader=$('#cdqReaderFrame');if(reader){reader.dataset.workspaceRoute??=active;reader.hidden=reader.dataset.workspaceRoute!==active||!canRead();root.classList.toggle('cdq-workspace-reader-open',!reader.hidden);const readerTop=Math.max(0,Math.ceil(header?.getBoundingClientRect().bottom||0));reader.style.setProperty('height',Math.max(0,h-readerTop-bottom)+'px','important');set('--cdq-workspace-top',readerTop+'px');}
+  const reader=$('#cdqReaderFrame');if(reader){reader.dataset.workspaceRoute??=active;reader.hidden=!canRead();root.classList.toggle('cdq-workspace-reader-open',!reader.hidden);const readerTop=Math.max(0,Math.ceil(header?.getBoundingClientRect().bottom||0));reader.style.setProperty('height',Math.max(0,h-readerTop-bottom)+'px','important');set('--cdq-workspace-top',readerTop+'px');}
   const payload={type:'CDQ_WORKSPACE_LAYOUT_V2638',top,bottom,route:active,owner:ownerKey(),canRead:canRead()};
   const signature=JSON.stringify(payload);if(measure.last!==signature){measure.last=signature;window.parent.postMessage(payload,location.origin);}
 }
@@ -122,6 +125,7 @@ function hidePages(){
   document.documentElement.classList.remove('cdq-report-open-v2578','cdq-inventory-modern-open-v2592','cdq-invoice-open-v2590');
 }
 export function navigate(route,{toggle=false,adopt=false}={}){
+  if(!adopt&&route!=='home'&&document.documentElement.classList.contains('cdq-workspace-reader-open')){pendingNavigation={route,toggle};window.parent.postMessage({type:'CDQ_WORKSPACE_READER_NAV_V2677'},location.origin);return;}
   const favorites=route==='favorites';
   if(route==='drive'||favorites)route='dossier';if(route==='home')route='';if(toggle&&active===route)route='';
   if(!calibrationIdentity().email)return;
@@ -176,12 +180,12 @@ function openDrive(mode){
   const id=mode==='favorites'?'':driveState.mode==='drive'?driveState.id||GENERAL:driveState.lastDriveId||GENERAL;
   driveState={...driveState,mode,id,query:''};loadDrive(false);
 }
-async function loadDrive(append=false,id=driveState.id){
+async function loadDrive(append=false,id=driveState.id,force=false){
   const p=drivePage(),mode=driveState.mode,key=driveCacheKey(mode,id),epoch=++driveEpoch,account=ownerKey();driveState.id=id;if(mode==='drive')driveState.lastDriveId=id;driveState.loading=true;
-  const old=cache.get(key);if(!append){driveState.items=old?.items||[];driveState.crumbs=old?.crumbs||[];driveState.token=old?.token||'';}renderDrive();status(p,old&&!append?'Actualisation…':'Chargement…');
-  try{const result=await rpc(mode==='favorites'?'obtenirFavorisGenerauxCDQV2521':'obtenirDossierGeneralCDQV2521',...(mode==='favorites'?[append?driveState.token:'']:[id,append?driveState.token:'']));if(epoch!==driveEpoch||account!==ownerKey()||!['dossier','favorites'].includes(active))return;
+  const old=driveCache.peek(id,mode);if(!append){driveState.items=old?.items||[];driveState.crumbs=old?.crumbs||[];driveState.token=old?.nextPageToken||'';}driveState.loading=!old||append;renderDrive();status(p,old&&!append?driveState.items.length+' élément(s)':'Chargement…');
+  try{const result=append?await rpc(mode==='favorites'?'obtenirFavorisGenerauxCDQV2521':'obtenirDossierGeneralCDQV2521',...(mode==='favorites'?[driveState.token]:[id,driveState.token])):await driveCache.request(id,mode,{force});if(epoch!==driveEpoch||account!==ownerKey()||!['dossier','favorites'].includes(active))return;
     const seen=new Set();driveState.items=(append?[...driveState.items,...(result.items||[])]:result.items||[]).filter(x=>!seen.has(x.id)&&seen.add(x.id));driveState.crumbs=result.crumbs||[];driveState.token=result.nextPageToken||'';driveState.loading=false;
-    cache.set(key,{items:driveState.items.map(x=>({...x})),crumbs:driveState.crumbs,token:driveState.token});while(cache.size>12)cache.delete(cache.keys().next().value);renderDrive();status(p,driveState.items.length+' élément(s)'+(driveState.token?' · autres éléments disponibles':''));
+    if(mode==='drive')driveCache.prefetch(driveState.items);renderDrive();status(p,driveState.items.length+' élément(s)'+(driveState.token?' · autres éléments disponibles':''));
   }catch(e){if(epoch===driveEpoch&&account===ownerKey()){driveState.loading=false;renderDrive();status(p,e.message,true);}}
 }
 function renderDrive(){
@@ -190,15 +194,16 @@ function renderDrive(){
   $('[data-drive-search]',p).oninput=e=>{driveState.query=e.target.value;renderDriveRows(p);};
   $('[data-drive-back]',p).disabled=mode!=='favorites'&&driveState.crumbs.length<2;$('[data-drive-back]',p).onclick=()=>mode==='favorites'?openDrive('drive'):loadDrive(false,driveState.crumbs.at(-2).id);
   $('[data-drive-favorites]',p).onclick=()=>openDrive('favorites');
-  $('[data-drive-root]',p).onclick=()=>{driveState.mode='drive';active='dossier';document.documentElement.dataset.cdqWorkspace=active;syncNav();loadDrive(false,GENERAL);};$('[data-drive-refresh]',p).onclick=()=>loadDrive(false);
+  $('[data-drive-root]',p).onclick=()=>{driveState.mode='drive';active='dossier';document.documentElement.dataset.cdqWorkspace=active;syncNav();loadDrive(false,GENERAL);};$('[data-drive-refresh]',p).onclick=()=>loadDrive(false,driveState.id,true);
   for(const crumb of mode==='favorites'?[]:driveState.crumbs){const b=document.createElement('button');b.textContent=crumb.nom;b.onclick=()=>loadDrive(false,crumb.id);$('.cdq-workspace-crumbs',p).append(b);}
   $('[data-drive-more]',p).hidden=!driveState.token;$('[data-drive-more]',p).disabled=driveState.loading;$('[data-drive-more]',p).onclick=()=>loadDrive(true);renderDriveRows(p);
 }
 function renderDriveRows(p){
   const list=$('[data-drive-list]',p);list.replaceChildren();const q=driveState.query.toLocaleLowerCase('fr'),items=driveState.items.filter(x=>(x.nom+' '+(x.path||'')).toLocaleLowerCase('fr').includes(q));
   for(const item of items){const row=document.createElement('article');row.className='cdq-workspace-row';row.innerHTML='<button type="button" class="open">'+workspaceIcon(item.kind==='folder'?'folder':'file')+'<span><strong>'+esc(item.nom)+'</strong><small>'+esc(item.path||(item.kind==='folder'?'Dossier':/pdf/.test(item.mimeType)?'PDF':'Fichier'))+'</small></span></button><button type="button" class="pin" aria-label="'+esc(item.favori?'Retirer des favoris':'Ajouter aux favoris')+'" aria-pressed="'+!!item.favori+'">'+(item.favori?'★':'☆')+'</button>';
+    if(item.kind==='folder')$('.open',row).onpointerenter=()=>driveCache.request(item.id).catch(()=>{});
     $('.open',row).onclick=async()=>{if(item.kind==='folder'){driveState.mode='drive';active='dossier';document.documentElement.dataset.cdqWorkspace=active;syncNav();await loadDrive(false,item.id);}else try{if(item.mimeType==='application/pdf')await window.cdqOpenPdfV2520?.(item.id,{nom:item.nom});else if(item.mimeType==='application/vnd.google-apps.spreadsheet')await window.cdqOpenSheetV2526?.(item.id);else window.open('https://drive.google.com/file/d/'+encodeURIComponent(item.id)+'/view','_blank','noopener');}catch(e){status(p,e.message,true);}};
-    const pin=$('.pin',row);pin.onclick=async()=>{pin.disabled=true;try{const r=await rpc('definirFavoriGeneralCDQV2521',item.id,!item.favori);item.favori=r.favori;cache.clear();if(driveState.mode==='favorites')driveState.items=driveState.items.filter(x=>x.id!==item.id||item.favori);if(!p.hidden)renderDriveRows(p);}catch(e){status(p,e.message,true);}finally{pin.disabled=false;}};list.append(row);
+    const pin=$('.pin',row);pin.onclick=async()=>{pin.disabled=true;try{const r=await rpc('definirFavoriGeneralCDQV2521',item.id,!item.favori);item.favori=r.favori;driveCache.invalidate();if(driveState.mode==='favorites')driveState.items=driveState.items.filter(x=>x.id!==item.id||item.favori);if(!p.hidden)renderDriveRows(p);}catch(e){status(p,e.message,true);}finally{pin.disabled=false;}};list.append(row);
   }
   if(!items.length)list.innerHTML='<section class="cdq-workspace-card"><h3>'+esc(q?'Aucun résultat':driveState.loading?'Chargement…':driveState.mode==='favorites'?'Aucun favori':'Dossier vide')+'</h3><p>'+esc(driveState.mode==='favorites'?'Touchez l’étoile d’un dossier ou d’un fichier pour le retrouver ici.':'Les dossiers s’ouvrent dans cette page; utilisez le chemin pour remonter.')+'</p></section>';
 }
@@ -209,10 +214,10 @@ function openCalcul(){
   const p=page(pageByRoute.calcul,'Calcul','Outils de pesage');p.hidden=false;if($('[data-calcul-form]',p))return;const body=$('.cdq-workspace-body',p);
   body.innerHTML=calculatorCard('Divisions et GRADS','<p class="cdq-workspace-hint">Nombre de divisions = capacité maximale ÷ échelon. Les unités sont converties automatiquement. GRADS correspond au nombre de divisions pour les indicateurs qui emploient ce réglage.</p><form data-calcul-form="divisions"><div class="cdq-workspace-grid">'+field('Capacité maximale','capacity','5000')+units('capacityUnit')+field('Échelon','increment','0,5')+units('incrementUnit')+'</div><div class="cdq-workspace-actions"><button>Calculer</button></div><output class="cdq-workspace-result" aria-live="polite"></output></form>')+
     calculatorCard('Kilogrammes ↔ livres','<p class="cdq-workspace-hint">Facteur utilisé : 1 kg = 2,20462 lb.</p><form data-calcul-form="convert"><div class="cdq-workspace-grid">'+field('Valeur','value','1')+'<label>Conversion<select name="direction"><option value="kg">kg → lb</option><option value="lb">lb → kg</option></select></label></div><div class="cdq-workspace-actions"><button>Convertir</button></div><output class="cdq-workspace-result" aria-live="polite"></output></form>')+
-    calculatorCard('Charge et signal d’une cellule','<form data-calcul-form="signal"><div class="cdq-workspace-grid">'+field('Sensibilité (mV/V)','sensitivity','2')+field('Excitation (V)','excitation','10')+field('Capacité de la cellule','capacity','1000')+field('Charge appliquée, même unité','load','500')+'</div><div class="cdq-workspace-actions"><button>Calculer le signal</button></div><output class="cdq-workspace-result" aria-live="polite"></output></form><p class="cdq-workspace-hint">Signal théorique au-dessus du zéro. Une boîte de jonction ou plusieurs cellules demandent une interprétation adaptée.</p>')+
-    calculatorCard('Pont de résistance','<p>Débranchez la cellule de l’indicateur et coupez l’alimentation avant les mesures. N’incluez pas les fils Sense ni le blindage. Nommez les quatre fils A, B, C et D, puis mesurez chaque paire en ohms.</p><svg class="cdq-bridge-schema" viewBox="0 0 320 190" aria-label="Pont de Wheatstone, quatre résistances, quatre points de mesure"><path d="M160 25L80 95l80 70 80-70z"/><path d="M160 5v20m-100 70h20m160 0h20m-100 70v20"/><rect x="109" y="49" width="22" height="12" transform="rotate(-41 120 55)"/><rect x="189" y="49" width="22" height="12" transform="rotate(41 200 55)"/><rect x="109" y="127" width="22" height="12" transform="rotate(41 120 133)"/><rect x="189" y="127" width="22" height="12" transform="rotate(-41 200 133)"/><text x="146" y="18">E+</text><text x="253" y="100">S+</text><text x="146" y="183">E−</text><text x="35" y="100">S−</text></svg><p class="cdq-workspace-hint">Schéma de principe. Les lettres A–D ci-dessous sont vos repères de fils; elles ne désignent pas encore E/S.</p><form data-calcul-form="bridge"><div class="cdq-workspace-grid">'+bridgePairs.map(pair=>field(pair+' (Ω)','r'+pair,'','Mesure ou OL')).join('')+field('Entrée nominale du certificat (Ω), facultatif','nominalInput')+field('Sortie nominale du certificat (Ω), facultatif','nominalOutput')+field('Tolérance de comparaison (%)','tolerance','5')+'</div><div class="cdq-workspace-actions"><button>Analyser les six mesures</button></div><output class="cdq-workspace-result" aria-live="polite"></output></form><p class="cdq-workspace-hint">Les résistances seules ne confirment ni la polarité ni tous les défauts. Les cellules symétriques peuvent avoir une entrée et une sortie indiscernables. Comparez le certificat; confirmez E+/E− et S+/S− avec le fabricant et un essai de signal sous excitation.</p><a href="https://www.ricelake.com/resources/articles/advanced-load-cell-troubleshooting" target="_blank" rel="noopener">Méthode de diagnostic Rice Lake</a>');
+    calculatorCard('Signaux des quatre coins','<p class="cdq-workspace-hint">Relevez les signaux en mV avec la même charge de test, placée successivement sur chaque coin. Comparez les écarts pour régler l’excentricité.</p><form data-calcul-form="signal"><div class="cdq-corners-v2677">'+Object.entries(cornerNames).map(([key,label])=>'<label class="cdq-corner-v2677" data-corner="'+key+'"><strong>'+label+'</strong><span>Signal relevé (mV)</span><input name="'+key+'" inputmode="decimal" placeholder="Ex. 2,035" required><small data-corner-delta></small></label>').join('')+'</div><label>Référence<select name="reference"><option value="mean">Moyenne des quatre coins</option>'+Object.entries(cornerNames).map(([key,label])=>'<option value="'+key+'">'+label+'</option>').join('')+'</select></label><div class="cdq-workspace-actions"><button>Comparer les quatre coins</button></div><output class="cdq-workspace-result" aria-live="polite"></output></form>')+
+    calculatorCard('Pont de résistance','<p>Débranchez la cellule de l’indicateur et coupez l’alimentation avant les mesures. Mesurez toutes les paires entre les fils rouge, noir, vert et blanc. Pour six fils, ajoutez bleu et jaune. Ne mesurez pas le blindage.</p><form data-calcul-form="bridge"><div class="cdq-workspace-grid">'+bridgePairs.map(pair=>field(wirePairLabel(pair)+' (Ω)','r'+pair,'','Mesure ou OL')).join('')+field('Entrée nominale du certificat (Ω), facultatif','nominalInput')+field('Sortie nominale du certificat (Ω), facultatif','nominalOutput')+field('Tolérance de comparaison (%)','tolerance','5')+'</div><div class="cdq-workspace-actions"><button>Analyser les six mesures</button></div><output class="cdq-workspace-result" aria-live="polite"></output></form><p class="cdq-workspace-hint">Les résistances seules ne confirment ni la polarité ni tous les défauts. Les cellules symétriques peuvent avoir une entrée et une sortie indiscernables. Comparez le certificat; confirmez E+/E− et S+/S− avec le fabricant et un essai de signal sous excitation.</p><a href="https://www.ricelake.com/resources/articles/advanced-load-cell-troubleshooting" target="_blank" rel="noopener">Méthode de diagnostic Rice Lake</a>');
   const tabs=document.createElement('nav');tabs.className='cdq-calcul-tabs-v2668';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label','Choisir un calcul');
-  const labels=['Divisions et GRADS','Conversion','Signal de cellule','Pont de résistance'];
+  const labels=['Divisions et GRADS','Conversion','Signaux des quatre coins','Pont de résistance'];
   const panels=Array.from(body.children);panels.forEach((panel,i)=>{const key=$('[data-calcul-form]',panel).dataset.calculForm;
     panel.id='cdqCalculPanel-'+key;panel.setAttribute('role','tabpanel');panel.setAttribute('aria-labelledby','cdqCalculTab-'+key);
     const tab=document.createElement('button');tab.type='button';tab.id='cdqCalculTab-'+key;tab.setAttribute('role','tab');tab.setAttribute('aria-controls',panel.id);tab.dataset.calculTab=key;tab.textContent=labels[i];
@@ -220,13 +225,13 @@ function openCalcul(){
   });body.prepend(tabs);tabs.firstElementChild.click();
   tabs.onkeydown=e=>{const i=Array.from(tabs.children).indexOf(document.activeElement);if(i<0)return;let next;if(e.key==='ArrowRight'||e.key==='ArrowDown')next=(i+1)%panels.length;else if(e.key==='ArrowLeft'||e.key==='ArrowUp')next=(i+panels.length-1)%panels.length;else if(e.key==='Home')next=0;else if(e.key==='End')next=panels.length-1;else return;e.preventDefault();tabs.children[next].click();tabs.children[next].focus();};
   const bridgeForm=$('[data-calcul-form=bridge]',p),mode=document.createElement('label');mode.innerHTML='Cellule<select name="wires"><option value="4">4 fils</option><option value="6">6 fils avec Sense</option></select>';bridgeForm.prepend(mode);
-  const six=document.createElement('div');six.hidden=true;six.innerHTML='<p>Nommez les six fils A à F, sans le blindage. Mesurez les quinze paires, cellule débranchée. Le seuil sert à rechercher les liaisons Sense; il doit être adapté à la résistance du câble.</p><div class="cdq-workspace-grid">'+sixWirePairs.map(pair=>field(pair+' (Ω)','s'+pair,'','Mesure ou OL')).join('')+field('Seuil de recherche excitation/Sense (Ω)','senseLimit','5')+'</div><a href="https://www.hbm.com/fileadmin/mediapool/hbmdoc/technical/A02427.pdf" target="_blank" rel="noopener">Raccordement 4 et 6 fils — HBK</a>';bridgeForm.insertBefore(six,$('.cdq-workspace-actions',bridgeForm));
+  const six=document.createElement('div');six.hidden=true;six.innerHTML='<p>Mesurez les quinze paires rouge, noir, vert, blanc, bleu et jaune, cellule débranchée. Le seuil sert à rechercher les liaisons Sense; il doit être adapté à la résistance du câble.</p><div class="cdq-workspace-grid">'+sixWirePairs.map(pair=>field(wirePairLabel(pair)+' (Ω)','s'+pair,'','Mesure ou OL')).join('')+field('Seuil de recherche excitation/Sense (Ω)','senseLimit','5')+'</div><a href="https://www.hbm.com/fileadmin/mediapool/hbmdoc/technical/A02427.pdf" target="_blank" rel="noopener">Raccordement 4 et 6 fils — HBK</a>';bridgeForm.insertBefore(six,$('.cdq-workspace-actions',bridgeForm));
   mode.querySelector('select').onchange=e=>{const useSix=e.target.value==='6';six.hidden=!useSix;for(const input of six.querySelectorAll('input'))input.disabled=!useSix;for(const input of bridgeForm.querySelectorAll('input[name^=r]')){input.disabled=useSix;input.closest('label').hidden=useSix;}bridgeForm.querySelector('button').textContent=useSix?'Analyser les quinze mesures':'Analyser les six mesures';};mode.querySelector('select').dispatchEvent(new Event('change'));
   for(const form of $$('[data-calcul-form]',p))form.onsubmit=e=>{e.preventDefault();const v=Object.fromEntries(new FormData(form)),out=$('output',form);try{out.classList.remove('cdq-workspace-error');
     if(form.dataset.calculForm==='divisions'){const r=divisions(v.capacity,v.increment,v.capacityUnit,v.incrementUnit);out.textContent=fmt(r.count)+' divisions · GRADS = '+fmt(r.count)+(r.whole?'':' · résultat non entier : vérifiez la capacité et l’échelon.');}
     else if(form.dataset.calculForm==='convert'){const to=v.direction==='kg'?'lb':'kg';out.textContent=convertMass(v.value,v.direction,to).toLocaleString('fr-CA',{maximumFractionDigits:5})+' '+to;}
-    else if(form.dataset.calculForm==='signal')out.textContent=fmt(expectedSignal(v.sensitivity,v.excitation,v.load,v.capacity))+' mV · '+fmt(percentLoad(v.load,v.capacity))+' % de la capacité';
-    else{const r=v.wires==='6'?analyzeSixWireBridge(Object.fromEntries(sixWirePairs.map(p=>[p,v['s'+p]])),v):analyzeBridge(Object.fromEntries(bridgePairs.map(p=>[p,v['r'+p]])),v);out.innerHTML=(r.sensePairs?.length?'<p>Liaisons excitation/Sense probables : '+r.sensePairs.map(p=>esc(p.wires)+' ('+fmt(p.ohms)+' Ω)').join(' · ')+'</p>':'')+'<strong>'+esc(r.identified?'Entrée probable : '+r.input+' · sortie probable : '+r.output:r.open.length||r.short.length?'Anomalie à vérifier':'Entrée et sortie non confirmées')+'</strong>'+(r.warnings.length?'<ul class="cdq-bridge-warnings">'+r.warnings.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul>':'<p>Les mesures sont cohérentes avec un pont habituel. Cela ne garantit pas que la cellule est fonctionnelle.</p>');}
+    else if(form.dataset.calculForm==='signal'){const r=compareCornerSignals(v,v.reference);out.textContent='Écart maximal : '+fmt(r.range)+' mV · moyenne : '+fmt(r.mean)+' mV';for(const [key,delta] of Object.entries(r.deltas)){const box=form.querySelector('[data-corner="'+key+'"]');box.querySelector('[data-corner-delta]').textContent='Écart à la référence : '+(delta>0?'+':'')+fmt(delta)+' mV';}}
+    else{const r=v.wires==='6'?analyzeSixWireBridge(Object.fromEntries(sixWirePairs.map(p=>[p,v['s'+p]])),v):analyzeBridge(Object.fromEntries(bridgePairs.map(p=>[p,v['r'+p]])),v);out.innerHTML=(r.sensePairs?.length?'<p>Liaisons excitation/Sense probables : '+r.sensePairs.map(p=>esc(wirePairLabel(p.wires))+' ('+fmt(p.ohms)+' Ω)').join(' · ')+'</p>':'')+'<strong>'+esc(r.identified?'Excitation probable : '+wirePairLabel(r.input)+' · signal probable : '+wirePairLabel(r.output):r.open.length||r.short.length?'Anomalie à vérifier':'Entrée et sortie non confirmées')+'</strong>'+'<p>Mesures, de la plus élevée à la plus faible :</p><ol>'+Object.entries(r.values).sort((a,b)=>b[1]-a[1]).map(([pair,value])=>'<li>'+esc(wirePairLabel(pair))+' : '+(Number.isFinite(value)?fmt(value)+' Ω':'OL')+'</li>').join('')+'</ol>'+(r.warnings.length?'<ul class="cdq-bridge-warnings">'+r.warnings.map(t=>'<li>'+esc(t.replace(/\b[A-F]{2}\b/g,wirePairLabel))+'</li>').join('')+'</ul>':'<p>Les mesures sont cohérentes avec un pont habituel. Cela ne garantit pas que la cellule est fonctionnelle.</p>');}
   }catch(e){out.textContent=e.message;out.classList.add('cdq-workspace-error');}};
 }
 function openOpportunities(){
@@ -256,15 +261,15 @@ function adoptPages(){
   const p=$('#'+pageByRoute[active]);if(p&&(p instanceof HTMLDialogElement?!p.open:p.hidden)){active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
 }
 function restoreDossierControls(){const host=document.querySelector('.desktop-main')||document.body;for(const name of ['selectionBar','filesContainer','sendArea','message']){const el=document.getElementById(name);if(el&&el.closest('#cdqDossierPageV2638'))host.append(el);}}
-function clearPrivate(){homeAfterReader=false;homeReaderSource=null;driveEpoch++;opportunityEpoch++;cache.clear();opportunities=[];driveState={mode:'drive',id:GENERAL,lastDriveId:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false};restoreDossierControls();for(const id of ['cdqDossierPageV2638','cdqDrivePageV2638','cdqOpportunitiesPageV2638'])$('#'+id)?.remove();hidePages();active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
+function clearPrivate(){pendingNavigation=null;homeAfterReader=false;homeReaderSource=null;driveEpoch++;opportunityEpoch++;driveCache.clear();opportunities=[];driveState={mode:'drive',id:GENERAL,lastDriveId:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false};restoreDossierControls();for(const id of ['cdqDossierPageV2638','cdqDrivePageV2638','cdqOpportunitiesPageV2638'])$('#'+id)?.remove();hidePages();active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
 function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;if(observedOwner!==ownerKey()){observedOwner=ownerKey();clearPrivate();}syncNav();adoptPages();});}
 function returnHome(){
   homeAfterReader=false;homeReaderSource=null;navigate('');
   try{deselectionnerCompagnie();if(typeof cdqDossierOuvertId!=='undefined')cdqDossierOuvertId=null;if(typeof cdqDossierOuvertNom!=='undefined')cdqDossierOuvertNom='';}catch{}
   syncNav();window.scrollTo({top:0,left:0,behavior:'auto'});
 }
-function readerClosed(){if(homeAfterReader)returnHome();}
-function readerCancelled(){homeAfterReader=false;homeReaderSource=null;}
+function readerClosed(){if(homeAfterReader)returnHome();else if(pendingNavigation){const target=pendingNavigation;pendingNavigation=null;navigate(target.route,{toggle:target.toggle});}}
+function readerCancelled(){homeAfterReader=false;homeReaderSource=null;pendingNavigation=null;}
 function requestHome(){
   const reader=$('#cdqReaderFrame');
   if(document.documentElement.classList.contains('cdq-workspace-reader-open')){
@@ -274,6 +279,15 @@ function requestHome(){
     return;
   }
   returnHome();
+}
+function back(){
+ const overlay=document.querySelector('dialog[open]:not(#cdqCalibrationDialogV2565)');
+ if(overlay){if(overlay.querySelector('.copy-cancel,button[data-cancel]'))overlay.querySelector('.copy-cancel,button[data-cancel]').click();else overlay.dispatchEvent(new Event('cancel',{cancelable:true}));return true;}
+ const calibration=document.querySelector('#cdqCalibrationDialogV2565');
+ if(active==='calibration'&&calibration?.open){const b=calibration.querySelector('[data-cal-back]');if(b)b.click();else{calibration.close();navigate('');}return true;}
+ if(active==='dossier'){if(driveState.mode==='favorites')openDrive('drive');else if(driveState.crumbs.length>1)loadDrive(false,driveState.crumbs.at(-2).id);else navigate('');return true;}
+ if(active==='calcul'||active==='opportunities'){navigate('');return true;}
+ return false;
 }
 function start(){
   observedOwner=ownerKey();syncNav();
@@ -288,7 +302,8 @@ function start(){
   new MutationObserver(records=>{if(records.some(r=>[...r.removedNodes].some(n=>n.id==='cdqReaderFrame')))document.documentElement.classList.remove('cdq-workspace-reader-open');if(records.some(r=>r.type==='childList'||r.attributeName==='hidden'||r.attributeName==='open'))schedule();}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','open']});
   document.addEventListener('cdq:icons-changed',schedule);window.addEventListener('storage',schedule);window.addEventListener('cdq:access-ready',schedule);window.addEventListener('cdq:drive-cleared-v2632',clearPrivate);window.addEventListener('cdq:access-state-v2527',e=>{if(e.detail!=='ready')clearPrivate();});
   // Existing data modules are bundled and may be warmed only after both checks.
-  window.addEventListener('cdq:drive-ready-v2632',()=>{if(!canRead())return;import('./calibration-db-v2565.mjs').catch(()=>{});});
+  window.addEventListener('cdq:drive-ready-v2632',()=>{if(!canRead())return;setTimeout(()=>{if(canRead())driveCache.request(GENERAL).then(r=>driveCache.prefetch(r.items)).catch(()=>{});},250);});
+  for(const event of ['cdq:copied','cdq:moved','cdq:renamed','cdq:deleted'])window.addEventListener(event,()=>driveCache.invalidate());
 }
-window.cdqWorkspaceV2638={prepareNavigation:syncNav,navigate,measure,readerClosed,readerCancelled,active:()=>active,version:'26.44'};
+window.cdqWorkspaceV2638={prepareNavigation:syncNav,navigate,back,driveCache,measure,readerClosed,readerCancelled,active:()=>active,version:'26.77'};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();

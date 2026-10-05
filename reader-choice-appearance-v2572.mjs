@@ -1,3 +1,4 @@
+import {normalizeReportLayoutV2677} from './reader-report-layout-v2677.mjs';
 import {alignStatusAppearances} from './reader-status-v2656.mjs';
 import {normalizePrecisionAppearanceV2665} from './reader-precision-appearance-v2665.mjs';
 import {repairReportFormV2676} from './reader-report-repair-v2676.mjs';
@@ -29,7 +30,9 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const {PDFDocument,PDFName}=L;
   const pdf=await PDFDocument.load(data,{updateMetadata:false});
   const form=pdf.getForm();
+  normalizeReportLayoutV2677(pdf,L);
   const changed=normalizePrecisionAppearanceV2665(pdf,L)|repairReportFormV2676(pdf,L)|compactToleranceActions(pdf,L)|centerSingleLineAppearances(pdf,L)|await alignStatusAppearances(pdf,L);
+  normalizeReportLayoutV2677(pdf,L);
   if(!changed&&!rawNeedsAppearanceRepair(data))return data;
   form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
   return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
@@ -40,6 +43,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
   const {PDFDocument,PDFName,PDFArray,StandardFonts}=L;
   const pdf=await PDFDocument.load(bytes,{updateMetadata:false});
   const form=pdf.getForm();
+  normalizeReportLayoutV2677(pdf,L);
   compactToleranceActions(pdf,L);
   normalizePrecisionAppearanceV2665(pdf,L);
   await alignStatusAppearances(pdf,L);
@@ -100,6 +104,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
   // appearances for edited fields; preserve those streams and every widget.
   centerSingleLineAppearances(pdf,L);
   repairReportFormV2676(pdf,L);
+  normalizeReportLayoutV2677(pdf,L);
   return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
 }
 

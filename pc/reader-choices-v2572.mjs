@@ -1,6 +1,6 @@
 // One reader-owned choice interface. PDF fields only store values and calculate.
 // No PDF field is moved, hidden or made read-only while this dialog is open.
-const TITLES={client_technicien:'Technicien',frequence_etalonnage:"Fréquence d’étalonnage",legal_pour_commerce:'Légal pour le commerce',unite_mesure:'Unité de mesure',etalon_utilise:'Étalon utilisé'};
+const TITLES={points_test:'Points de test',client_technicien:'Technicien',frequence_etalonnage:"Fréquence d’étalonnage",legal_pour_commerce:'Légal pour le commerce',unite_mesure:'Unité de mesure',etalon_utilise:'Étalon utilisé'};
 const CDQ_STANDARD_KITS=Object.freeze(['Kit X','X1-X10','Kit Y','Y1-Y10','Kit Z','Z1-Z10','C1-C50','CDQ1882020','CDQ1882022','B1-B20','Kit CDQ2-1']);
 
 export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()=>{},isReadOnly=()=>false}){
