@@ -40,6 +40,21 @@
     }).join('~')).join('##');
     return {ready,signature};
   }
+  function permissionsReady(){
+    return new Promise(resolve=>{
+      let timer,done=false;
+      const events=['cdq:access-state-v2527','cdq:access-ready','cdq:drive-ready-v2632','cdq:drive-cleared-v2632'];
+      const pending=()=>typeof cdqAccessState!=='undefined'&&(cdqAccessState==='pending'||cdqAccessState==='ready'&&window.cdqDriveEntryV2632?.status?.()==='pending');
+      const check=()=>{
+        clearTimeout(timer);
+        if(pending()){timer=setTimeout(check,1000);return;}
+        done=true;for(const name of events)window.removeEventListener(name,wake);resolve();
+      };
+      const wake=()=>{if(done)return;clearTimeout(timer);timer=setTimeout(check,0);};
+      for(const name of events)window.addEventListener(name,wake);
+      check();
+    });
+  }
   async function prepare(){
     // DOMContentLoaded includes completion of the deferred navigation modules.
     await domReady;
@@ -49,12 +64,18 @@
     window.cdqCalibrationV2565.prepareNavigation();
     window.cdqWorkspaceV2638.prepareNavigation();
     window.cdqMobileLayout?.apply?.();
+    // Fetch and decode the complete selected artwork while the current account
+    // and its Drive access are being checked. The final barrier still verifies
+    // the actual palette, labels and geometry before revealing anything.
+    const artwork=paints().then(()=>Promise.all(urls().map(decode)));
+    const fonts=document.fonts?document.fonts.ready:Promise.resolve();
+    artwork.catch(()=>{});
+    await Promise.all([artwork,fonts]);
     await paints();
-    if(document.fonts)await document.fonts.ready;
-    while(typeof cdqAccessState!=='undefined'&&cdqAccessState==='pending')await new Promise(r=>setTimeout(r,50));
-    while(typeof cdqAccessState!=='undefined'&&cdqAccessState==='ready'&&window.cdqDriveEntryV2632?.status?.()==='pending')await new Promise(r=>setTimeout(r,50));
+    const prepared=snapshot();
+    await permissionsReady();
     // Client rows load independently after authorization; they no longer hold the whole interface behind the splash.
-    let last='',started=performance.now();
+    let last=prepared.ready?prepared.signature:'',started=performance.now();
     for(;;){
       await Promise.all(urls().map(decode));
       await paints();
