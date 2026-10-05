@@ -19,10 +19,34 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: macos-15
+    runs-on: windows-latest
     steps:
+      - name: Preserve exact Git file bytes on Windows
+        shell: bash
+        run: git config --global core.autocrlf false
       - name: Checkout
         uses: actions/checkout@v6
+      - name: Verify deployment files match Git exactly
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+          import {execFileSync} from 'node:child_process';
+          const entries=execFileSync('git',['ls-files','--stage','-z'],{encoding:'utf8'}).split('\0').filter(Boolean);
+          let count=0;
+          for(const record of entries){
+            const tab=record.indexOf('\t');
+            const [mode,expected,stage]=record.slice(0,tab).split(' ');
+            const name=record.slice(tab+1);
+            if(!['100644','100755'].includes(mode)||stage!=='0')throw Error('Unexpected deployment entry: '+name);
+            const bytes=fs.readFileSync(name);
+            const actual=crypto.createHash('sha1').update(Buffer.from('blob '+bytes.length+'\0')).update(bytes).digest('hex');
+            if(actual!==expected)throw Error('Deployment file differs from Git: '+name);
+            count++;
+          }
+          console.log('Verified '+count+' exact Git deployment files.');
+          JS
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload distribution
