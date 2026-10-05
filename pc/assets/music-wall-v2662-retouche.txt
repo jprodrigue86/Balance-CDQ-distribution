@@ -1,0 +1,7 @@
+Mode : retouche avec l’outil image_gen intégré.
+Image source : music-wall-android-v2523.webp
+Image intégrée : music-wall-android-v2662.webp
+Export : WebP, qualité 92, dimensions conservées 793 × 1983.
+
+Consigne exacte :
+Edit the supplied existing music-wall wallpaper, preserving the original tall portrait composition, every existing band logo, positions, sizes, readability, black cracked marble, chains, white distressed metal lettering and sparse dark red accents. Make ONLY this localized change: in the horizontal open gap BELOW the Fit for a King / Shadow of Intent / Bullet for My Valentine row and ABOVE the Death / Dying Fetus / Suffocation row, insert two additional clearly legible band wordmarks: exact text 'INSOMNIUM' on the LEFT half, and exact text 'SEPTICFLESH' on the RIGHT half. Fit both within that existing empty band of space (roughly 62%–69% of image height), without moving, covering, resizing or deleting any existing band wordmark. The small filler graffiti in that gap may be replaced to make room. INSOMNIUM should use elegant weathered gothic melodic death metal lettering; SEPTICFLESH should use sharp ritualistic symphonic death metal lettering, both off-white/silver, detailed and organic like the other logos. Keep them big enough to read on a phone but smaller than the Death row. Preserve all other pixels and artwork as closely as possible. Output the complete clean wallpaper, same original tall aspect ratio, no phone status bar, no app UI, no loading words or progress bar, no borders, no watermark.

@@ -1,35 +1,25 @@
 {
   "id": "/Balance-CDQ-distribution/pc/",
-  "name": "Balance CDQ PC — Rapports d’étalonnage",
-  "short_name": "Balance CDQ PC",
-  "description": "Application PC propre Balance CDQ pour les rapports d’étalonnage.",
-  "start_url": "/Balance-CDQ-distribution/pc/?installed=1&shell=2239",
-  "scope": "/Balance-CDQ-distribution/pc/",
+  "name": "Balance CDQ — PC",
+  "short_name": "Balance CDQ",
+  "description": "Application PC Balance CDQ — navigation à gauche",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "orientation": "any",
-  "theme_color": "#000000",
-  "background_color": "#000000",
-  "launch_handler": {
-    "client_mode": "navigate-existing"
-  },
+  "theme_color": "#080b10",
+  "background_color": "#080b10",
   "icons": [
     {
-      "src": "../icons/icon-heavy-v3-192.png",
+      "src": "./icons/icon-heavy-v3-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "../icons/icon-heavy-v3-512.png",
+      "src": "./icons/icon-heavy-v3-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "../icons/icon-heavy-v3-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ]
 }

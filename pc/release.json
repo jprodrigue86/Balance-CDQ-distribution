@@ -1,0 +1,10 @@
+{
+  "platform": "pc-pwa",
+  "version": "26.76",
+  "release": "d6bad3e22bf7e9001192ee7f870bc0e15ae9232e2199a50f43b54dd6c2fddc87",
+  "desktopModel": 2,
+  "androidSourceBuild": "2026.10.05-v26.76-reports-calibration-groups",
+  "androidSelectorSha256": "a1fde78907e27435f8982fe21dd715723e5ac52c29a053f4b360681043d1560a",
+  "generatedFrom": "scripts/build-pc-v2676.mjs",
+  "files": 450
+}

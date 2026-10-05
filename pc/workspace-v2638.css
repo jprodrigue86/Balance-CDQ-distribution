@@ -1,0 +1,163 @@
+/* Fixed viewport boundaries. Content height can grow; content never owns width. */
+html.cdq-mobile-layout{--cdq-workspace-top:92px;--cdq-workspace-bottom:86px}
+html.cdq-mobile-layout:is(.cdq-workspace-open,.cdq-workspace-reader-open),html.cdq-mobile-layout:is(.cdq-workspace-open,.cdq-workspace-reader-open) body{overflow:hidden!important}
+html.cdq-mobile-layout:is(.cdq-workspace-open,.cdq-workspace-reader-open) #appHeader{position:fixed!important;top:0!important;left:0!important;right:0!important;width:100%!important;z-index:2147483200!important;box-sizing:border-box!important;margin:0!important;background:var(--cdq-page)!important}
+html.cdq-mobile-layout:is(.cdq-workspace-open,.cdq-workspace-reader-open) :is(.top-bar,#cdqTopActionsV2204,.brand-footer,#clientInfoBar){visibility:hidden!important;pointer-events:none!important}
+html.cdq-mobile-layout #resetCompanyButton{display:none!important}
+html.cdq-mobile-layout .company-wrapper{grid-template-columns:minmax(0,1fr) auto!important;gap:7px!important}
+html.cdq-mobile-layout .company-button{flex:1 1 0!important;min-width:0!important;width:auto!important;max-width:100%!important}
+html.cdq-mobile-layout body .bottom-nav{z-index:2147483500!important;border-top:1px solid var(--cdq-line)!important;background:var(--cdq-page)!important}
+html.cdq-mobile-layout body .bottom-nav .bottom-nav-item{position:relative!important;flex-shrink:0!important;--cdq-accent:var(--cdq-nav-accent)}
+html.cdq-mobile-layout body .bottom-nav .bottom-nav-item::after{display:block!important;content:''!important;position:absolute!important;bottom:0!important;left:20%!important;right:20%!important;height:3px!important;border-radius:3px!important;background:transparent!important}
+html.cdq-mobile-layout body .bottom-nav .bottom-nav-item[data-cdq-current="true"]::after{background:var(--cdq-nav-accent,var(--cdq-accent))!important;box-shadow:0 0 5px var(--cdq-nav-accent,var(--cdq-accent))!important}
+html.cdq-mobile-layout body .bottom-nav .bottom-nav-item small{color:var(--cdq-nav-accent,var(--cdq-accent))!important;-webkit-text-fill-color:var(--cdq-nav-accent,var(--cdq-accent))!important;text-shadow:0 0 7px var(--cdq-nav-accent)!important}
+html.cdq-mobile-layout body .bottom-nav .cdq-workspace-icon{color:var(--cdq-nav-accent,var(--cdq-accent));background:none!important;display:grid!important;place-items:center!important;filter:none!important}
+html.cdq-mobile-layout body .bottom-nav .cdq-workspace-icon::after{display:none!important}
+html.cdq-mobile-layout body .bottom-nav .cdq-workspace-icon :is(svg,img){display:block!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;object-fit:contain;stroke:currentColor;filter:none!important}
+.cdq-workspace-page{box-sizing:border-box;position:fixed;inset:var(--cdq-workspace-top,0px) 0 var(--cdq-workspace-bottom,85px);z-index:2147483150;background:var(--cdq-page,#050b10);color:var(--cdq-ink,#edf4f8);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;font:15px/1.45 system-ui,sans-serif;color-scheme:dark;max-width:100%;margin:0;border:0;padding:0}
+.cdq-workspace-page,.cdq-workspace-page *{box-sizing:border-box!important}
+.cdq-workspace-page :is(form,.cdq-workspace-grid,label){min-width:0!important;max-width:100%!important}
+.cdq-workspace-page :is(input,select,textarea){display:block;width:100%!important;min-width:0!important;max-width:100%!important}
+.cdq-workspace-page :is(h2,h3,label,p){overflow-wrap:anywhere}
+#cdqOpportunitiesPageV2638 .cdq-workspace-body{container-type:inline-size}
+#cdqOpportunitiesPageV2638 .cdq-workspace-grid{grid-template-columns:1fr}
+#cdqOpportunitiesPageV2638 .cdq-workspace-grid .wide{grid-column:1/-1}
+@container(min-width:620px){#cdqOpportunitiesPageV2638 .cdq-workspace-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.cdq-workspace-page[hidden]{display:none!important}
+html.cdq-mobile-layout #cdqReaderFrame{inset:var(--cdq-workspace-top) 0 var(--cdq-workspace-bottom)!important;height:calc(100dvh - var(--cdq-workspace-top) - var(--cdq-workspace-bottom))!important;min-height:0!important;max-height:none!important;z-index:2147483300!important}
+html.cdq-mobile-layout #cdqReaderFrame[hidden]{display:none!important}
+html[data-cdq-palette="light"] .cdq-workspace-page{color-scheme:light}
+.cdq-workspace-head{display:flex;position:sticky;top:0;z-index:5;align-items:center;gap:10px;background:var(--cdq-surface,#101820);padding:12px;border-bottom:1px solid var(--cdq-line,#345268)}
+.cdq-workspace-head h2{flex:1;min-width:0;margin:0;font-size:21px;line-height:1.2;overflow-wrap:anywhere}
+.cdq-workspace-head small{display:block;font-size:12px;font-weight:500;color:var(--cdq-muted);margin-top:5px}
+.cdq-workspace-head button{flex:0 0 40px;width:40px;height:40px;display:grid;place-items:center;padding:0!important;font-size:24px!important;line-height:1!important}
+.cdq-workspace-body{box-sizing:border-box;padding:14px;max-width:960px;width:100%;margin:auto;min-width:0}
+.cdq-workspace-page :is(button,input,select,textarea){box-sizing:border-box;max-width:100%;font:inherit;border:1px solid var(--cdq-line,#345268);border-radius:10px;background:var(--cdq-raised,#122a3c);color:var(--cdq-ink,#edf4f8);padding:10px 12px;min-height:44px}
+.cdq-workspace-page button{cursor:pointer}
+.cdq-workspace-page button:disabled{opacity:.5;cursor:default}
+.cdq-workspace-page :is(input,select,textarea):focus{outline:2px solid var(--cdq-accent);outline-offset:1px}
+.cdq-workspace-page label{display:grid;gap:6px;min-width:0;font-weight:650}
+.cdq-workspace-page textarea{min-height:96px;resize:vertical}
+.cdq-workspace-page :is(h3,p){margin:0 0 10px}
+.cdq-workspace-page h3{font-size:18px}
+.cdq-workspace-card{border:1px solid var(--cdq-line,#345268);border-radius:15px;background:var(--cdq-surface,#101820);padding:16px;margin-bottom:14px;min-width:0}
+.cdq-workspace-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cdq-workspace-grid .wide{grid-column:1/-1}
+.cdq-workspace-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.cdq-workspace-actions .primary{background:var(--cdq-selected);border-color:var(--cdq-accent)}
+.cdq-workspace-result{display:block;padding:12px;margin-top:12px;border-radius:10px;border:1px solid var(--cdq-line);font-size:18px;background:var(--cdq-selected);overflow-wrap:anywhere}
+.cdq-workspace-result:empty{display:none}
+.cdq-workspace-hint{font-size:13px;color:var(--cdq-muted)}
+.cdq-workspace-status{overflow-wrap:anywhere;margin-top:10px;font-size:14px}
+.cdq-workspace-error{color:#ef8d85}
+html[data-cdq-palette="light"] .cdq-workspace-error{color:#9d2520}
+.cdq-workspace-crumbs{display:flex;overflow-x:auto;gap:5px;padding:10px 0;white-space:nowrap;align-items:center}
+.cdq-workspace-crumbs button{flex:0 0 auto;font-size:13px;min-height:38px}
+.cdq-workspace-list{display:grid;gap:8px}
+.cdq-workspace-row{display:flex;align-items:center;gap:10px;border:1px solid var(--cdq-line);border-radius:12px;background:var(--cdq-surface);padding:8px}
+.cdq-workspace-row .open{flex:1;min-width:0;display:flex;gap:12px;align-items:center;text-align:left;border:0;background:transparent;padding:6px}
+.cdq-workspace-row .open svg{width:30px;height:30px;flex:0 0 30px;stroke:var(--cdq-accent)}
+.cdq-workspace-row strong{display:block;overflow-wrap:anywhere}
+.cdq-workspace-row small{display:block;line-height:1.4;font-size:12px;color:var(--cdq-muted);overflow-wrap:anywhere}
+.cdq-workspace-row .pin{flex:0 0 44px;font-size:22px;padding:5px}
+.cdq-workspace-row .pin[aria-pressed="true"]{color:var(--cdq-accent);background:var(--cdq-selected)}
+.cdq-workspace-search{width:100%;margin-bottom:12px}
+.cdq-bridge-schema{display:block;width:100%;max-width:320px;height:auto;margin:8px auto;stroke:var(--cdq-accent);fill:none}
+.cdq-bridge-schema text{fill:var(--cdq-ink);stroke:none;font:600 14px system-ui}
+.cdq-bridge-warnings{margin:10px 0;padding-left:22px}
+.cdq-opportunity-badge{display:inline-block;border:1px solid var(--cdq-line);border-radius:20px;padding:3px 9px;font-size:12px;color:var(--cdq-accent)}
+html.cdq-mobile-layout :is(#cdqInventoryModernV2592,#cdqInvoicePageV2590,#cdqReportOverlayV2578,#cdqCalibrationDialogV2565){top:var(--cdq-workspace-top)!important;bottom:var(--cdq-workspace-bottom)!important;left:0!important;right:0!important;width:100%!important;height:auto!important;max-width:100%!important;max-height:none!important;margin:0!important;transform:none!important;z-index:2147483150!important}
+html.cdq-mobile-layout #cdqReportOverlayV2578{display:block!important;background:var(--cdq-page)!important;overflow:auto!important}
+html.cdq-mobile-layout #cdqReportOverlayV2578[hidden]{display:none!important}
+html.cdq-mobile-layout #cdqReportOverlayV2578 .cdq-report-sheet-v2578{width:100%!important;min-height:100%!important;max-height:none!important;box-shadow:none!important;border:0!important;border-radius:0!important;padding:12px!important}
+html.cdq-mobile-layout #cdqReportOverlayV2578 header{top:-12px!important}
+#cdqCalibrationDialogV2565 :is(.cdq-cal-shell,.cdq-cal-head){background:var(--cdq-page)!important;color:var(--cdq-ink)!important}
+#cdqCalibrationDialogV2565 :is(.cdq-cal-section,.cdq-cal-card,.cdq-cal-model){background:var(--cdq-surface)!important;color:var(--cdq-ink)!important;border-color:var(--cdq-line)!important}
+#cdqCalibrationDialogV2565 :is(button,input,textarea,.cdq-cal-key){background:var(--cdq-raised)!important;color:var(--cdq-ink)!important;border-color:var(--cdq-line)!important}
+#cdqCalibrationDialogV2565 :is(.cdq-cal-intro,.cdq-cal-step p,.cdq-cal-param b){color:var(--cdq-ink)!important}
+#cdqCalibrationDialogV2565 :is(.cdq-cal-model small,.cdq-cal-status,.cdq-cal-param small){color:var(--cdq-muted)!important}
+#cdqCalibrationDialogV2565 :is(.cdq-cal-source,.cdq-cal-param code){color:var(--cdq-accent)!important}
+#cdqCalibrationDialogV2565 .cdq-cal-num{background:var(--cdq-selected)!important;color:var(--cdq-ink)!important;border:1px solid var(--cdq-accent)}
+#cdqCalibrationDialogV2565 :is(.cdq-cal-head,.cdq-cal-step,.cdq-cal-param){border-color:var(--cdq-line)!important}
+html.cdq-mobile-layout :is(#modalOverlay,#createFolderModalOverlay,#renameModalOverlay,#copyModalOverlay,#deleteModalOverlay,#deleteFolderModalOverlay,#noteModalOverlay,#adminModalOverlay,#cdqV19PhotoModal,#cdqSettingsModalV2294,#cdqShareAppModal,#cdqV19InventoryModal,#cdqV23InventoryActionModal){top:var(--cdq-workspace-top)!important;bottom:var(--cdq-workspace-bottom)!important;height:auto!important;padding:12px!important;box-sizing:border-box!important;z-index:2147483250!important;background:var(--cdq-page)!important}
+html.cdq-mobile-layout :is(#modalOverlay,#createFolderModalOverlay,#renameModalOverlay,#copyModalOverlay,#deleteModalOverlay,#deleteFolderModalOverlay,#noteModalOverlay,#adminModalOverlay,#cdqV19PhotoModal,#cdqSettingsModalV2294,#cdqShareAppModal,#cdqV19InventoryModal,#cdqV23InventoryActionModal)>.modal{max-height:100%!important;overflow:auto!important;width:100%!important;max-width:960px!important;background:var(--cdq-surface)!important;color:var(--cdq-ink)!important;border-color:var(--cdq-line)!important}
+#cdqV19PhotoModal .cdq-v19-photo-toolbar{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px!important;padding:12px 0}
+#cdqV19PhotoModal .cdq-v19-photo-help{grid-column:1/-1;color:var(--cdq-muted)!important}
+#cdqV19PhotoModal .cdq-v19-photo-toolbar button{min-height:54px;display:flex;align-items:center;justify-content:center;gap:10px;background:var(--cdq-raised)!important;color:var(--cdq-ink)!important;border:1px solid var(--cdq-line);border-radius:12px;font:650 15px system-ui}
+#cdqV19PhotoModal .cdq-v19-photo-toolbar svg{width:25px;height:25px;stroke:var(--cdq-accent)}
+#cdqV19PhotoModal :is(.cdq-v19-photo-card,.cdq-v19-photo-card button){background:var(--cdq-raised)!important;color:var(--cdq-ink)!important;border-color:var(--cdq-line)!important}
+@media(min-width:700px){.cdq-workspace-body{padding:22px}.cdq-workspace-grid{gap:16px}}
+@media(max-width:360px){.cdq-workspace-body{padding:10px}.cdq-workspace-grid{grid-template-columns:1fr}.cdq-workspace-grid .wide{grid-column:auto}}
+
+html.cdq-mobile-layout[data-cdq-workspace-unlocked="false"] .bottom-nav{visibility:hidden!important;pointer-events:none!important}
+/* Preserve the approved colored artwork; a page palette must not desaturate it. */
+html.cdq-mobile-layout .bottom-nav svg{color:var(--cdq-nav-accent)!important;stroke:currentColor!important}
+html.cdq-mobile-layout .bottom-nav .cdq-icon-host-v2514::after,
+html.cdq-mobile-layout .bottom-nav img.cdq-calibration-indicator{filter:none!important}
+html.cdq-mobile-layout[data-cdq-palette="light"] .bottom-nav .bottom-nav-item small{text-shadow:none!important}
+
+/* Accueil owns the selected client's files; Dossiers owns shared Drive browsing. */
+html.cdq-mobile-layout #cdqCreateClientV2640{display:grid!important;place-items:center!important;flex:0 0 48px!important;width:48px!important;min-width:48px!important;height:50px!important;padding:0!important;font:500 30px/1 system-ui!important;color:var(--cdq-accent)!important;background:var(--cdq-raised)!important;border:1px solid var(--cdq-line)!important;border-radius:13px!important}
+html.cdq-mobile-layout #cdqCreateClientV2640[hidden],html.cdq-mobile-layout .cdq-company-drive,#cdqClientActionsV2640[hidden]{display:none!important}
+#cdqClientActionsV2640{max-width:100%;box-sizing:border-box}
+#cdqClientActionsV2640 button{min-height:44px;max-width:100%;padding:10px 12px;border:1px solid var(--cdq-line);border-radius:10px;font:600 14px system-ui;color:var(--cdq-ink);background:var(--cdq-raised)}
+
+#cdqClientActionsV2640 [data-balance-list-status]{flex:1 0 100%;margin:0;font-size:13px;color:var(--cdq-muted)}
+
+/* V26.71: use the approved Inventaire heading on every workspace page. */
+body [data-cdq-heading-v2671]{display:flex!important;align-items:center!important;gap:10px!important;position:sticky!important;top:0!important;padding:9px 12px 8px!important;margin-top:0!important;margin-bottom:0!important;border-bottom:1px solid var(--cdq-line,#0f5374)!important;background:var(--cdq-surface,#101820)!important;font-family:Arial,Helvetica,sans-serif!important}
+body [data-cdq-heading-v2671] .cdq-im-head{width:100%}
+body [data-cdq-heading-v2671]>img{width:44px!important;height:44px!important;object-fit:contain}
+body [data-cdq-heading-title-v2671]{display:block!important;flex:1;min-width:0;margin:0!important;font:950 25px/normal Arial,Helvetica,sans-serif!important;letter-spacing:.01em!important;text-shadow:none!important;text-transform:none!important;color:var(--cdq-ink,#eef8ff)!important}
+body [data-cdq-heading-subtitle-v2671]{display:block!important;margin:1px 0 0!important;padding:0!important;font:400 13px/normal Arial,Helvetica,sans-serif!important;letter-spacing:normal!important;color:var(--cdq-muted,#2fe9ff)!important}
+body [data-cdq-heading-v2671]>:is(div,h2){flex:1;min-width:0}
+body :is([data-cdq-heading-close-v2671],[data-cdq-heading-back-v2671]){flex:0 0 44px!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;max-width:44px!important;padding:0!important;margin:0!important;display:flex!important;align-items:center!important;justify-content:center!important;border:1px solid var(--cdq-line,#2f6c88)!important;border-radius:12px!important;background:var(--cdq-raised,#0a1821)!important;color:var(--cdq-ink,#fff)!important;line-height:0!important;transform:none!important;align-self:center!important}
+body :is([data-cdq-heading-close-v2671],[data-cdq-heading-back-v2671])>svg{display:block!important;flex:0 0 24px!important;width:24px!important;height:24px!important;margin:0!important;padding:0!important;fill:none;stroke:currentColor;stroke-width:2.25;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}
+body [data-cdq-heading-back-v2671][hidden]{display:none!important}
+body :is([data-cdq-heading-close-v2671],[data-cdq-heading-back-v2671]):focus-visible{outline:2px solid var(--cdq-accent,#49d5ef);outline-offset:2px}
+html.cdq-mobile-layout #cdqReportOverlayV2578 .cdq-report-sheet-v2578{padding-top:0!important}
+#cdqReportOverlayV2578 [data-cdq-heading-v2671]{margin-left:-12px;margin-right:-12px}
+@media(max-width:460px){body [data-cdq-heading-v2671]{padding-left:9px!important;padding-right:9px!important}body [data-cdq-heading-title-v2671]{font-size:22px!important}}
+
+/* The dialog must stay inside the viewport; the method body owns scrolling. */
+html.cdq-mobile-layout #cdqCalibrationDialogV2565{position:fixed!important;box-sizing:border-box!important;height:calc(100dvh - var(--cdq-workspace-top) - var(--cdq-workspace-bottom))!important;min-height:0!important;overflow:hidden!important}
+html.cdq-mobile-layout #cdqCalibrationDialogV2565 .cdq-cal-shell{height:100%!important;min-height:0!important;overflow:hidden!important}
+html.cdq-mobile-layout #cdqCalibrationDialogV2565 .cdq-cal-head{flex:0 0 auto!important}
+html.cdq-mobile-layout #cdqCalibrationDialogV2565 .cdq-cal-body{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding-bottom:24px!important}
+
+/* Favorites are a view within Dossiers, beside the existing root control. */
+.cdq-drive-toolbar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.cdq-drive-toolbar button{min-width:0;padding:10px 4px;font-size:clamp(12px,3.4vw,16px);line-height:1.2}
+.cdq-drive-toolbar [data-drive-favorites][aria-pressed="true"]{background:var(--cdq-selected);border-color:var(--cdq-accent);color:var(--cdq-accent)}
+
+/* V26.48: one client action row, with equal-size buttons. */
+#clientInfoBar{display:none!important}
+#cdqClientActionsV2640{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+#cdqClientActionsV2640[hidden]{display:none!important}
+#cdqClientActionsV2640 button{width:100%;min-width:0;min-height:46px;margin:0;padding:9px 5px;line-height:1.15;white-space:normal;font-size:clamp(11px,3.1vw,15px)}
+/* Dossier now opens the shared folder browser. Keep its navigation control
+   present while Drive is checked or denied; the browser already checks canRead.
+   The separate create/duplicate actions keep their existing role restrictions. */
+html.cdq-mobile-layout body.cdq-role-lecture .bottom-nav > #folderActionButton{display:flex!important}
+
+/* List controls and status occupy their own full row, without covering files. */
+#cdqClientActionsV2640 [data-balance-list-status]{grid-column:1/-1}
+#cdqClientActionsV2640 [data-balance-list-menu]{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+
+/* Separate calculators retain their values when switching tools. */
+.cdq-calcul-tabs-v2668{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.cdq-calcul-tabs-v2668 button{min-height:48px;padding:10px;border:1px solid var(--cdq-line,#444);border-radius:12px;background:var(--cdq-raised,#1b1b1b);color:inherit;font-weight:700;font-size:14px}
+.cdq-calcul-tabs-v2668 button[aria-selected=true]{border-color:var(--cdq-accent,#ffb64d);box-shadow:inset 0 -3px var(--cdq-accent,#ffb64d)}
+#cdqCalculPageV2638 [role=tabpanel][hidden]{display:none!important}
+@media(min-width:760px){.cdq-calcul-tabs-v2668{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* V26.75: symmetric columns center the title on the page, with one close action. */
+body [data-cdq-heading-layout-v2675]{display:grid!important;grid-template-columns:44px minmax(0,1fr) 44px!important;align-items:center!important;column-gap:10px!important}
+body [data-cdq-heading-center-v2675]{grid-column:2!important;grid-row:1!important;text-align:center!important;min-width:0!important}
+body [data-cdq-heading-center-v2675] :is([data-cdq-heading-title-v2671],[data-cdq-heading-subtitle-v2671]){text-align:center!important}
+body [data-cdq-heading-icon-v2675]{grid-column:1!important;grid-row:1!important;display:flex!important;align-items:center;justify-content:center;width:44px!important;height:44px!important}
+body [data-cdq-heading-icon-v2675] :is(img,svg){width:44px!important;height:44px!important;object-fit:contain!important;max-width:44px!important;max-height:44px!important}
+body [data-cdq-heading-layout-v2675] [data-cdq-heading-close-v2671]{grid-column:3!important;grid-row:1!important;position:static!important}
+body [data-cdq-heading-back-v2671],body [data-cdq-heading-layout-v2675]>.cdq-calibration-indicator,body .cdq-invoice-title>i,body [data-cdq-heading-layout-v2675]>img{display:none!important}
+body #cdqInventoryModernV2592 #cdqImBack,body #cdqReportOverlayV2578 [data-cdq-heading-layout-v2675] [data-report-back],body #cdqCalibrationDialogV2565 [data-cdq-heading-layout-v2675] [data-cal-back]{display:none!important}
+body #cdqInvoicePageV2590 .cdq-invoice-tech{margin-top:12px!important}

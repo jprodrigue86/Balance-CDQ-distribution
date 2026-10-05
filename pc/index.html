@@ -1,7 +1,12 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-cdq-pc-version="26.76" data-cdq-pc-release="d6bad3e22bf7e9001192ee7f870bc0e15ae9232e2199a50f43b54dd6c2fddc87">
 <head>
-<base href="../">
+<script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
+<script src="./app-session-v2661.js"></script>
+<script src="./pc-update.js"></script>
+<script src="https://accounts.google.com/gsi/client" defer></script>
+<script src="./embedded-rpc.js"></script>
+<link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#000000">
@@ -9,15 +14,25 @@
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
 <link rel="dns-prefetch" href="//script.google.com">
 <link rel="dns-prefetch" href="//script.googleusercontent.com">
-<meta name="interface-scale" content="1">
-<link rel="manifest" href="/Balance-CDQ-distribution/pc/manifest.webmanifest">
+<meta name="interface-scale" content="1.30">
+<link rel="manifest" href="manifest.webmanifest">
 <script src="./firebase-config.js" defer></script>
 <script src="./google-auth-config.js" defer></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
-<title>Rapports D’étalonnages</title>
+
+<title>Balance CDQ — PC</title>
+<script>
+(function(){
+  try{
+    if(/BalanceCDQAndroid\/\d+(?:\.\d+)?/i.test(String(navigator.userAgent||''))){
+      document.documentElement.style.setProperty('--interface-scale','1','important');
+      document.documentElement.dataset.cdqNativeScale='1';
+    }
+  }catch(e){}
+})();
+</script>
 <style>
 :root{
---interface-scale:1;
+--interface-scale:1.20;
 }
 html,body{
 margin:0;
@@ -30,14 +45,13 @@ body{
 font-family:system-ui,-apple-system,Segoe UI,sans-serif;
 }
 #app{
-width:100%;
-height:100%;
+width:calc(100% / var(--interface-scale));
+height:calc(100% / var(--interface-scale));
 border:0;
 display:block;
-transform:none;
+transform:scale(var(--interface-scale));
 transform-origin:top left;
 visibility:hidden;
-opacity:0;
 }
 #loading{
 position:fixed;
@@ -226,7 +240,7 @@ isolation:isolate;
 position:absolute;
 inset:0;
 z-index:-3;
-background-image:url("../assets/music-wall-pc-v2521.webp");
+background-image:url("assets/music-wall-android-v2667.webp");
 background-size:contain;
 background-position:center center;
 background-repeat:no-repeat;
@@ -267,7 +281,8 @@ border-radius:18px;
 #loading .loading-bar{margin-top:13px;}
 @media(min-width:900px){
 .music-wall-image{
-background-size:contain;
+background-image:url("assets/music-wall-pc-v2521.webp");
+background-size:cover;
 background-position:center center;
 }
 #loading .box{width:280px;}
@@ -318,21 +333,19 @@ border:1px solid #315777;box-shadow:0 18px 55px rgba(0,0,0,.5);text-align:center
 
 
 /* =====================================================
-MUR MUSICAL PC — V25.17
-Composition panoramique issue du mur Android, avec plus de groupes.
+MUR MUSICAL PC — V21.73
+Le téléphone conserve son mur existant.
+Le PC utilise une composition large, responsive, avec
+moins de groupes mais des noms plus lisibles.
 ===================================================== */
 .music-wall-pc{display:none}
 @media (min-width:900px) and (min-aspect-ratio:4/3){
-  .music-wall-image{
-    display:block!important;
-    background-image:url("../assets/music-wall-pc-v2521.webp")!important;
-    background-size:cover!important;
-    background-position:center center!important;
-    background-repeat:no-repeat!important;
-    filter:brightness(.64) contrast(1.08) saturate(.92)!important;
-  }
+  .music-wall-image{display:none!important}
   .music-wall-pc{display:none!important}
   #loading{background:#000!important}
+  #loading.pc-frame-ready{background:transparent!important}
+  #loading.pc-frame-ready::before,
+  #loading.pc-frame-ready::after{opacity:0!important}
   .music-wall-pc-unused{
     position:absolute;inset:0;z-index:-3;display:grid;
     grid-template-columns:repeat(6,minmax(0,1fr));
@@ -373,8 +386,26 @@ Composition panoramique issue du mur Android, avec plus de groupes.
   #loading .loading-label{font-size:10px}
   #loading .loading-bar{margin-top:10px}
 }
+
+#cdq-auth-bottom-mask-v2507{
+  position:fixed;
+  left:0;right:0;bottom:0;
+  height:calc(104px + env(safe-area-inset-bottom,0px));
+  background:#000;
+  z-index:10050;
+  display:block;
+  pointer-events:auto;
+}
+#cdq-auth-bottom-mask-v2507.cdq-auth-ready-v2507{
+  display:none;
+  pointer-events:none;
+}
 </style>
 <style id="cdqStartup23">
+#cdq-auth-bottom-mask-v2507{display:none!important;pointer-events:none!important}
+#loading{inset:0!important;height:100%!important;min-height:100%!important}
+#loading .box{z-index:5!important}
+
 #loading{align-items:end!important;padding-bottom:max(18px,env(safe-area-inset-bottom))!important;box-sizing:border-box}
 #loading .box{position:relative!important;top:auto!important;bottom:auto!important;transform:none!important;max-width:280px!important;padding:10px 14px!important;border-radius:14px!important;margin:0 auto!important}
 #loading .box img{display:none!important}#loading .loading-title{font-size:15px!important}#loading .loading-bar{margin-top:8px!important}
@@ -383,8 +414,10 @@ Composition panoramique issue du mur Android, avec plus de groupes.
 @media(min-width:900px){#loading .music-wall-image{background-size:cover!important}}
 </style>
 <style id="cdqStartup25">#loading .box{background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important}#loading .loading-title{display:none!important}#loading .loading-label{text-shadow:0 1px 4px #000;font-size:14px!important}#loading .loading-bar{background:#ffffff30!important}</style>
+<style id="cdqPcShellV2676">:root{--interface-scale:1!important;--cdq-pc-shell-left:270px;--cdq-pc-shell-top:152px}#app{inset:0!important;width:100%!important;height:100%!important;transform:none!important;left:0!important;top:0!important;zoom:1!important}#legacy-pdf-reader{left:var(--cdq-pc-shell-left)!important;right:10px!important;top:var(--cdq-pc-shell-top)!important;bottom:10px!important;width:calc(100% - var(--cdq-pc-shell-left) - 10px)!important;height:calc(100dvh - var(--cdq-pc-shell-top) - 10px)!important;border:1px solid #39444f!important;border-radius:13px!important;box-sizing:border-box!important}@media(max-width:1149px){:root{--cdq-pc-shell-left:230px;--cdq-pc-shell-top:126px}}</style>
 </head>
 <body>
+<div id="cdq-auth-bottom-mask-v2507" aria-hidden="true"></div>
 <div id="loading">
 <div class="music-wall-image" aria-hidden="true"></div>
 <div class="music-wall-pc" aria-hidden="true"><span class="pc-band white" style="--r:-2deg">Metallica</span><span class="pc-band red" style="--r:1deg">Slayer</span><span class="pc-band blue" style="--r:0deg">Megadeth</span><span class="pc-band white" style="--r:-1deg">Iron Maiden</span><span class="pc-band dim" style="--r:2deg">Judas Priest</span><span class="pc-band white" style="--r:0deg">Black Sabbath</span><span class="pc-band red" style="--r:-2deg">Slipknot</span><span class="pc-band white" style="--r:1deg">Korn</span><span class="pc-band dim" style="--r:0deg">System of a Down</span><span class="pc-band white" style="--r:-1deg">Disturbed</span><span class="pc-band dim" style="--r:2deg">Tool</span><span class="pc-band blue" style="--r:0deg">Deftones</span><span class="pc-band white" style="--r:-2deg">Lorna Shore</span><span class="pc-band red" style="--r:1deg">Cannibal Corpse</span><span class="pc-band white" style="--r:0deg">Despised Icon</span><span class="pc-band dim" style="--r:-1deg">Whitechapel</span><span class="pc-band white" style="--r:2deg">Gojira</span><span class="pc-band blue" style="--r:0deg">Meshuggah</span><span class="pc-band white" style="--r:-2deg">Lamb of God</span><span class="pc-band dim" style="--r:1deg">Behemoth</span><span class="pc-band white" style="--r:0deg">Arch Enemy</span><span class="pc-band blue" style="--r:-1deg">In Flames</span><span class="pc-band white" style="--r:2deg">Children of Bodom</span><span class="pc-band dim" style="--r:0deg">Trivium</span><span class="pc-band white" style="--r:-2deg">Killswitch Engage</span><span class="pc-band white" style="--r:1deg">Parkway Drive</span><span class="pc-band red" style="--r:0deg">August Burns Red</span><span class="pc-band blue" style="--r:-1deg">Periphery</span><span class="pc-band white" style="--r:2deg">Death</span><span class="pc-band dim" style="--r:0deg">Tesseract</span><img class="music-wall-pc-logo" src="./icons/icon-heavy-v3-512.png" alt=""></div>
@@ -408,7 +441,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 <div id="load-help" aria-live="polite">
 <div class="load-card">
 <h2 id="load-title">Connexion à Balance CDQ</h2>
-<p id="load-message">Connectez votre compte Google pour continuer.</p>
+<p id="load-message">Vérification de votre accès Balance CDQ…</p>
 <div id="google-button-container" style="display:flex;justify-content:center;min-height:56px"></div>
 <button id="google-touch-fallback" type="button" hidden>Continuer avec Google</button>
 <div id="google-touch-help" hidden>Si le bouton Google blanc ne répond pas sur ce téléphone, utilisez « Continuer avec Google ».</div>
@@ -428,18 +461,9 @@ referrerpolicy="strict-origin-when-cross-origin">
 </div>
 </div>
 
-<div id="bio-setup" aria-live="polite">
-<div class="bio-card">
-<div class="bio-icon">🔐</div>
-<h2 id="bio-title">Biométrie CDQ</h2>
-<p id="bio-text">Utilisez la biométrie de votre téléphone.</p>
-<button id="bio-action" type="button">Continuer</button>
-<button id="bio-cancel" type="button">Annuler</button>
-</div>
-</div>
 
 <script>
-const CDQ_PWA_BUILD = '2026.09.23-v25.27-demarrage-dossiers';
+const CDQ_PWA_BUILD = '2026.10.05-v26.76-reports-calibration-groups';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -454,8 +478,8 @@ try{
   }
 }catch(e){}
 
-if ('serviceWorker' in navigator) {
-navigator.serviceWorker.register('/Balance-CDQ-distribution/pc/sw.js', {scope:'/Balance-CDQ-distribution/pc/', updateViaCache:'none'})
+if (false && 'serviceWorker' in navigator) {
+navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'})
 .then(reg => {
 swRegistration = reg;
 reg.update().catch(()=>{});
@@ -477,18 +501,94 @@ cdqReloadOuterOnceV88();
 }
 
 const app = document.getElementById('app');
+
+let cdqFileHandoffStateV2307={until:0,timer:null,saved:null};
+
+function cdqFileHandoffFrozenV2307(){
+  return Number(cdqFileHandoffStateV2307.until||0)>Date.now();
+}
+
+function cdqStartFileHandoffFreezeV2307(duration){
+  duration=Math.max(1200,Math.min(12000,Number(duration)||4200));
+  const until=Date.now()+duration;
+  cdqFileHandoffStateV2307.until=Math.max(Number(cdqFileHandoffStateV2307.until)||0,until);
+
+  const frame=document.getElementById('app');
+  if(frame){
+    if(!cdqFileHandoffStateV2307.saved){
+      cdqFileHandoffStateV2307.saved={
+        width:frame.style.width,
+        height:frame.style.height,
+        maxWidth:frame.style.maxWidth,
+        maxHeight:frame.style.maxHeight,
+        transition:frame.style.transition,
+        willChange:frame.style.willChange,
+        contain:frame.style.contain
+      };
+    }
+
+    // Conserver exactement la taille de mise en page actuelle de l'iframe.
+    // Le transform CSS 1.20 reste inchangé : seul le viewport externe est gelé.
+    const layoutW=frame.offsetWidth;
+    const layoutH=frame.offsetHeight;
+    if(layoutW>0)frame.style.width=layoutW+'px';
+    if(layoutH>0)frame.style.height=layoutH+'px';
+    frame.style.maxWidth='none';
+    frame.style.maxHeight='none';
+    frame.style.transition='none';
+    frame.style.willChange='transform';
+    frame.style.contain='layout paint style';
+  }
+
+  document.documentElement.classList.add('cdq-file-handoff-freeze-v2307');
+
+  clearTimeout(cdqFileHandoffStateV2307.timer);
+  cdqFileHandoffStateV2307.timer=setTimeout(function(){
+    cdqReleaseFileHandoffFreezeV2307(0);
+  },duration+250);
+}
+
+function cdqReleaseFileHandoffFreezeV2307(delay){
+  delay=Math.max(0,Number(delay)||0);
+  clearTimeout(cdqFileHandoffStateV2307.timer);
+  cdqFileHandoffStateV2307.timer=setTimeout(function(){
+    const frame=document.getElementById('app');
+    const saved=cdqFileHandoffStateV2307.saved;
+    if(frame&&saved){
+      frame.style.width=saved.width;
+      frame.style.height=saved.height;
+      frame.style.maxWidth=saved.maxWidth;
+      frame.style.maxHeight=saved.maxHeight;
+      frame.style.transition=saved.transition;
+      frame.style.willChange=saved.willChange;
+      frame.style.contain=saved.contain;
+    }
+    cdqFileHandoffStateV2307.saved=null;
+    cdqFileHandoffStateV2307.until=0;
+    document.documentElement.classList.remove('cdq-file-handoff-freeze-v2307');
+
+    // Une seule mesure, après stabilisation du viewport Android.
+    setTimeout(function(){
+      if(selectorWindow)cdqReplyViewportV2215(selectorWindow);
+    },160);
+  },delay);
+}
+
+
 const loading = document.getElementById('loading');
 const loadHelp = document.getElementById('load-help');
 
 const APP_URL = 'https://script.google.com/macros/s/AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw/exec';
-const CDQ_PC_BOOT_NONCE = Date.now() + '-' + Math.random().toString(36).slice(2);
-function cdqFreshAppUrl(reason='startup'){
-  const sep=APP_URL.includes('?')?'&':'?';
-  return APP_URL+sep+'cdq_boot=1&cdq_pc=1&cdq_reason='+encodeURIComponent(reason)+
-    '&cdq_live='+encodeURIComponent(CDQ_PC_BOOT_NONCE)+'&ts='+Date.now();
+const CDQ_BOOT_NONCE = Date.now() + '-' + Math.random().toString(36).slice(2);
+function cdqFreshAppUrl(reason='boot'){
+  return new URL('./Selector.html',location.href).href;
 }
 const MIN_LOADING_MS = 0;
+let cdqFirstFrameStableV2543=false;
+let cdqFirstFrameStableSourceV2543='';
+let cdqFirstFrameFallbackV2543=null;
 let loadingShownAt = performance.now();
+let cdqInterfaceReadyV2648=false;
 let selectorReady = false;
 let iframeLoaded = false;
 let selectorAwaitingAccess = false;
@@ -496,13 +596,12 @@ let accessWaitTimer = null;
 let selectorWindow = null;
 let selectorOrigin = '';
 let backendBuild = '';
-const cdqSheetLauncher26=import('../sheet-launcher-v2526.mjs');
-const cdqOffline = import('../offline-templates-v2527.mjs').then(module=>module.createOfflineTemplates({
+const cdqOffline = import('./offline-templates-v2636.mjs').then(module=>module.createOfflineTemplates({
 send:data=>replyToSelector(selectorWindow,data),
 openPdf:data=>cdqAfficherPdf(data),
 warmPdf:data=>{
 if(document.getElementById('cdq-warm-reader'))return;
-const frame=document.createElement('iframe');frame.id='cdq-warm-reader';frame.src='../reader-v2525.html';
+const frame=document.createElement('iframe');frame.id='cdq-warm-reader';frame.src='./reader-v2525.html';
 frame.title='Préparation du lecteur hors ligne';frame.tabIndex=-1;frame.setAttribute('aria-hidden','true');
 frame.style.cssText='position:fixed;left:-12000px;top:0;width:800px;height:1000px;pointer-events:none;opacity:0';
 function warm(event){
@@ -513,50 +612,13 @@ window.addEventListener('message',warm);document.body.append(frame);
 setTimeout(()=>{window.removeEventListener('message',warm);frame.remove();},30000);
 },
 unlock:async email=>{
-const saved=bioLoadMap()[email];
-if(!saved?.id)throw new Error('Activez la biométrie dans CDQ avec Internet pour déverrouiller les copies au prochain démarrage hors ligne.');
-const assertion=await navigator.credentials.get({mediation:'required',publicKey:{
-challenge:bioRandomBytes(32),allowCredentials:[{type:'public-key',id:bioFromB64Url(saved.id),transports:['internal']}],
-hints:['client-device'],userVerification:'required',timeout:60000
-}});
-if(!assertion || bioB64Url(assertion.rawId)!==saved.id || !(new Uint8Array(assertion.response.authenticatorData)[32]&4))
-throw new Error('Le déverrouillage de l’appareil n’a pas été confirmé.');
+  const saved=String(localStorage.getItem('cdqLastUnlockEmailV2511')||'').trim().toLowerCase();
+  if(!saved||saved!==String(email||'').trim().toLowerCase()||!localStorage.getItem('cdq_auth_device_token_v2'))throw Error('Connectez d’abord votre compte CDQ avec Internet.');
 }
 })).catch(()=>({handle(){},lock(){}}));
 let loadingTimer = null;
 let hideLoadingTimer = null;
 let loadGeneration = 0;
-let pcStartupGate = true;
-let pcRevealTimer = null;
-let pcLastReadyAt = 0;
-const PC_STABLE_REVEAL_MS = 150;
-
-function cdqIsPcV2239(){
-  return !!(window.matchMedia && matchMedia('(min-width:900px) and (min-aspect-ratio:4/3)').matches);
-}
-function cdqCancelPcRevealV2239(){
-  clearTimeout(pcRevealTimer);
-  pcRevealTimer=null;
-}
-function cdqSchedulePcRevealV2239(){
-  if(!cdqIsPcV2239())return false;
-  if(!pcStartupGate&&selectorReady&&!selectorAwaitingAccess&&iframeLoaded)return true;
-  pcLastReadyAt=Date.now();
-  cdqCancelPcRevealV2239();
-  app.style.visibility='hidden';
-  app.style.opacity='0';
-  loading.style.display='grid';
-  loading.classList.remove('pc-frame-ready');
-  pcRevealTimer=setTimeout(()=>{
-    if(!selectorReady || selectorAwaitingAccess || !iframeLoaded)return;
-    app.style.visibility='visible';
-    app.style.opacity='1';
-    loading.style.display='none';
-    loadHelp.style.display='none';
-    pcStartupGate=false;
-  },PC_STABLE_REVEAL_MS);
-  return true;
-}
 document.getElementById('open-direct').href = cdqFreshAppUrl('direct');
 app.src = cdqFreshAppUrl('startup');
 
@@ -723,6 +785,10 @@ async function afficherConnexionGoogleV42(data){
     document.getElementById('load-message').textContent='La configuration Google de Balance CDQ est incomplète.';
     fallback.hidden=false;return;
   }
+  if(window.BalanceCDQNative){
+    touchHelp.textContent='Connexion Google sécurisée. Retour automatique dans Balance CDQ.';
+    return;
+  }
   if(cdqGoogleRenderingV42)return;
   cdqGoogleRenderingV42=true;
   try{
@@ -808,6 +874,7 @@ function memoireConnexion(data,send) {
 function isSelectorMessage(event) {
 if (app.src === 'about:blank') return false;
 if (!event.source || !event.data || typeof event.data !== 'object') return false;
+return event.origin===location.origin && event.source===app.contentWindow;
 let origin;
 try { origin = new URL(event.origin); } catch(e) { return false; }
 const host = origin.hostname;
@@ -845,37 +912,51 @@ function armLoadingTimeout() {
   },15000);
   loadingTimer=setTimeout(()=>{
     if(selectorReady||iframeLoaded||generation!==loadGeneration)return;
-    afficherConnexionGoogle(false,'chargement');
+    loading.style.display='none';
+    loadHelp.style.display='flex';
+    document.getElementById('load-title').textContent='Connexion Balance CDQ';
+    document.getElementById('load-message').textContent='Le service CDQ ne répond pas. Réessayez la connexion à l’application.';
+    document.getElementById('google-button-container').innerHTML='';
+    document.getElementById('google-connect').hidden=true;
+    const touch=document.getElementById('google-touch-fallback');if(touch)touch.hidden=true;
+    const help=document.getElementById('google-touch-help');if(help)help.hidden=true;
+    document.getElementById('load-retry').hidden=false;
+    document.getElementById('open-direct').hidden=true;
   },45000);
 }
 
 function recevoirEtatAcces(state) {
 if (!['pending','input','ready'].includes(state)) return;
+const authMask=document.getElementById('cdq-auth-bottom-mask-v2507');
+if(authMask)authMask.classList.toggle('cdq-auth-ready-v2507',state==='ready');
 const wasPending = selectorAwaitingAccess;
 selectorAwaitingAccess = state === 'pending';
-if (state!=='ready' && cdqIsPcV2239()) {
-  cdqCancelPcRevealV2239();
-  app.style.visibility='hidden';
-  app.style.opacity='0';
-  loading.style.display='grid';
-  loading.classList.remove('pc-frame-ready');
-}
 if (selectorAwaitingAccess) {
+// Authorization can change within the same already prepared local frame.
+clearTimeout(cdqFirstFrameFallbackV2543);
 clearTimeout(hideLoadingTimer);
-loading.style.display = 'grid';
-const pcOneWall=cdqIsPcV2239();
-if(pcOneWall){app.style.visibility='hidden';app.style.opacity='0';loading.classList.remove('pc-frame-ready');}
+loading.style.display = cdqInterfaceReadyV2648?'none':'grid';
+if(cdqInterfaceReadyV2648)app.style.visibility='visible';
+const pcOneWall=window.matchMedia && matchMedia('(min-width:900px) and (min-aspect-ratio:4/3)').matches;
+if(pcOneWall && cdqFirstFrameStableV2543){app.style.visibility='visible';loading.classList.add('pc-frame-ready');}
 // Dernier secours si le Selector cesse complètement de répondre.
 if (!wasPending) accessWaitTimer = setTimeout(() => {
 if (!selectorAwaitingAccess) return;
-annulerPontBiometrique();
-loading.style.display = 'none';
-afficherConnexionGoogle();
+
+loading.style.display='none';
+loadHelp.style.display='flex';
+document.getElementById('load-title').textContent='Connexion Balance CDQ';
+document.getElementById('load-message').textContent='La vérification de votre accès CDQ prend trop de temps. Réessayez.';
+document.getElementById('google-button-container').innerHTML='';
+document.getElementById('google-connect').hidden=true;
+const touch=document.getElementById('google-touch-fallback');if(touch)touch.hidden=true;
+const help=document.getElementById('google-touch-help');if(help)help.hidden=true;
+document.getElementById('load-retry').hidden=false;
+document.getElementById('open-direct').hidden=true;
 }, 90000);
 } else {
 clearTimeout(accessWaitTimer);
 loadHelp.style.display = 'none';
-if(state==='ready' && cdqSchedulePcRevealV2239()) return;
 masquerMurApresDelaiMinimum();
 }
 }
@@ -886,18 +967,22 @@ loading.style.display = 'grid';
 }
 
 function masquerMurApresDelaiMinimum() {
-if(cdqIsPcV2239()){
-  cdqSchedulePcRevealV2239();
+const elapsed = performance.now() - loadingShownAt;
+if(!cdqFirstFrameStableV2543){
+  const generation=loadGeneration;
+  clearTimeout(cdqFirstFrameFallbackV2543);
+  cdqFirstFrameFallbackV2543=setTimeout(()=>{
+    if(generation!==loadGeneration || cdqFirstFrameStableV2543)return;
+    replyToSelector(app.contentWindow,{type:'CDQ_FIRST_FRAME_ARM_V2543',generation});
+  },2500);
   return;
 }
-const elapsed = performance.now() - loadingShownAt;
 const remaining = Math.max(0, MIN_LOADING_MS - elapsed);
 clearTimeout(hideLoadingTimer);
 const generation = loadGeneration;
 hideLoadingTimer = setTimeout(() => {
 if (selectorReady && !selectorAwaitingAccess && generation === loadGeneration) {
 app.style.visibility = 'visible';
-app.style.opacity = '1';
 loading.style.display = 'none';
 }
 }, remaining);
@@ -909,17 +994,16 @@ app.addEventListener('load', () => {
 if(!app.src || app.src === 'about:blank')return;
 iframeLoaded = true;
 const pcOneWall=window.matchMedia && matchMedia('(min-width:900px) and (min-aspect-ratio:4/3)').matches;
-if(pcOneWall){
-  app.style.visibility='hidden';
-  loading.classList.remove('pc-frame-ready');
+if(pcOneWall && cdqFirstFrameStableV2543){
+  app.style.visibility='visible';
+  loading.classList.add('pc-frame-ready');
 }
 // V21.95 : le rendu de l'application ne dépend plus exclusivement du postMessage.
 // Sur certains Android/PWA, le Selector est chargé mais CDQ_SELECTOR_READY peut se perdre.
 // Après un très court délai, montrer l'iframe chargée au lieu de bloquer l'utilisateur.
 setTimeout(()=>{
+  if(!cdqFirstFrameStableV2543)return;
   if(!iframeLoaded || selectorReady)return;
-  const pc=window.matchMedia && matchMedia('(min-width:900px) and (min-aspect-ratio:4/3)').matches;
-  if(pc)return;
   clearTimeout(loadingTimer);
   clearTimeout(slowLoadingTimer);
   clearTimeout(hideLoadingTimer);
@@ -933,15 +1017,16 @@ if (!selectorReady) armLoadingTimeout();
 function reessayerChargement() {
 if (navigator.onLine === false) { afficherConnexionGoogle(false); return; }
 loadGeneration++;
-pcStartupGate=true;
-cdqCancelPcRevealV2239();
-app.style.opacity='0';
 cdqOffline.then(controller=>controller.lock());
+cdqInterfaceReadyV2648=false;
 selectorReady = false;
 iframeLoaded = false;
 selectorAwaitingAccess = false;
+cdqFirstFrameStableV2543=false;
+cdqFirstFrameStableSourceV2543='';
+clearTimeout(cdqFirstFrameFallbackV2543);
 clearTimeout(accessWaitTimer);
-annulerPontBiometrique();
+
 selectorWindow = null;
 selectorOrigin = '';
 const pcOneWall=window.matchMedia && matchMedia('(min-width:900px) and (min-aspect-ratio:4/3)').matches;
@@ -951,12 +1036,13 @@ clearTimeout(hideLoadingTimer);
 armLoadingTimeout();
 if(loadHelp) loadHelp.style.display = 'none';
 afficherMurChargement();
+const separator = APP_URL.indexOf('?') === -1 ? '?' : '&';
 app.src = cdqFreshAppUrl('retry');
 }
 
 async function lireVersionDistante() {
 try {
-const response = await fetch('/Balance-CDQ-distribution/pc/version.json?ts=' + Date.now(), {cache:'no-store'});
+const response = await fetch('./version.json?ts=' + Date.now(), {cache:'no-store'});
 if (!response.ok) throw new Error('version unavailable');
 const data = await response.json();
 return String(data.version || CDQ_PWA_BUILD);
@@ -977,95 +1063,6 @@ function cdqComparerVersions(a,b) {
   }
   return va.localeCompare(vb,undefined,{numeric:true});
 }
-const CDQ_PC_LATEST_MANIFEST='/Balance-CDQ-distribution/bundles/balance-cdq/latest/manifest.json';
-let cdqPcUpdateCheckBusyV2244=false;
-
-function cdqPcReplyV2244(source,origin,payload){
-  try{source.postMessage(payload,origin||'*');}catch(e){
-    try{source.postMessage(payload,'*');}catch(_){}
-  }
-}
-
-function cdqPcHealthBuildV2244(targetBuild,timeoutMs=12000){
-  return new Promise(resolve=>{
-    let done=false;
-    const frame=document.createElement('iframe');
-    frame.title='Vérification mise à jour Balance CDQ';
-    frame.tabIndex=-1;
-    frame.setAttribute('aria-hidden','true');
-    frame.style.cssText='position:fixed;left:-12000px;top:0;width:10px;height:10px;opacity:0;pointer-events:none;border:0';
-    const finish=value=>{
-      if(done)return;
-      done=true;
-      clearTimeout(timer);
-      window.removeEventListener('message',onMessage);
-      try{frame.remove()}catch(e){}
-      resolve(value);
-    };
-    const onMessage=e=>{
-      const d=e.data||{};
-      if(d.type!=='CDQ_HEALTH_READY')return;
-      const host=(()=>{try{return new URL(e.origin).hostname}catch(_){return ''}})();
-      if(!(host==='script.google.com'||host==='script.googleusercontent.com'||host.endsWith('-script.googleusercontent.com')))return;
-      const seen=String(d.selectorBuild||d.build||'');
-      if(seen && cdqComparerVersions(seen,targetBuild)>=0){
-        finish({ok:true,build:seen});
-      }
-    };
-    window.addEventListener('message',onMessage);
-    const sep=APP_URL.includes('?')?'&':'?';
-    frame.src=APP_URL+sep+'cdq_health=1&expected='+encodeURIComponent(targetBuild)+'&pc_update_probe=1&ts='+Date.now();
-    document.body.appendChild(frame);
-    const timer=setTimeout(()=>finish({ok:false,build:''}),timeoutMs);
-  });
-}
-
-async function cdqPcCheckUpdateV2244(source,origin,currentBuild){
-  if(cdqPcUpdateCheckBusyV2244)return;
-  cdqPcUpdateCheckBusyV2244=true;
-  try{
-    const r=await fetch(CDQ_PC_LATEST_MANIFEST+'?ts='+Date.now(),{cache:'no-store'});
-    if(!r.ok)throw new Error('manifest '+r.status);
-    const m=await r.json();
-    const targetBuild=String(m.build||'');
-    const targetVersion=String(m.version||targetBuild||'');
-    const current=String(currentBuild||'');
-    if(!targetBuild || !current || cdqComparerVersions(targetBuild,current)<=0){
-      cdqPcReplyV2244(source,origin,{type:'CDQ_PC_UPDATE_STATUS',available:false,deployed:false,currentBuild:current,targetBuild,targetVersion});
-      return;
-    }
-    const health=await cdqPcHealthBuildV2244(targetBuild,12000);
-    cdqPcReplyV2244(source,origin,{
-      type:'CDQ_PC_UPDATE_STATUS',
-      available:!!health.ok,
-      deployed:!!health.ok,
-      currentBuild:current,
-      targetBuild,
-      targetVersion,
-      liveBuild:health.build||''
-    });
-  }catch(e){
-    cdqPcReplyV2244(source,origin,{type:'CDQ_PC_UPDATE_STATUS',available:false,deployed:false,error:String(e&&e.message||e)});
-  }finally{
-    cdqPcUpdateCheckBusyV2244=false;
-  }
-}
-
-function cdqPcApplyUpdateV2244(){
-  loadGeneration++;
-  selectorReady=false;
-  iframeLoaded=false;
-  selectorAwaitingAccess=false;
-  clearTimeout(accessWaitTimer);
-  clearTimeout(hideLoadingTimer);
-  if(typeof cdqCancelPcRevealV2239==='function')cdqCancelPcRevealV2239();
-  app.style.visibility='hidden';
-  app.style.opacity='0';
-  loadHelp.style.display='none';
-  afficherMurChargement();
-  app.src=cdqFreshAppUrl('pc-update-button');
-}
-
 
 let cdqLiveUpdateBusyV2254=false;
 let cdqLiveUpdateTimerV2254=null;
@@ -1117,6 +1114,7 @@ function cdqVerifierProductionV2254(expectedBuild,timeoutMs=9000){
 }
 
 async function cdqVerifierMiseAJourLiveV2254(source,buildSelector,force){
+  return; // Packaged Android/iPhone interfaces have their own release channels.
   if(cdqLiveUpdateBusyV2254 && !force)return;
   const cible=source||selectorWindow;
   const selector=String(buildSelector||cdqSelectorBuildV2254||'');
@@ -1124,11 +1122,25 @@ async function cdqVerifierMiseAJourLiveV2254(source,buildSelector,force){
   cdqLiveUpdateBusyV2254=true;
   try{
     const latest=await cdqLireDernierBundleV2254();
-    const available=!!latest.build && cdqComparerVersions(latest.build,selector)>0;
+    const publishedNewer=!!latest.build && cdqComparerVersions(latest.build,selector)>0;
+    const managerHandoffReady=cdqComparerVersions(selector,'2026.09.21-v25.03-mobile-ui-update-center-fix')>=0;
+    let liveReady=!!(publishedNewer && backendBuild && backendBuild!=='inconnue' && cdqComparerVersions(backendBuild,latest.build)>=0);
+    let liveBuild=liveReady?backendBuild:'';
 
-    // La version PUBLIÉE est la source de vérité pour le centre de mise à jour.
-    // Le probe Apps Script est seulement informatif : il ne peut plus masquer
-    // une mise à jour réelle sur Android si Google bloque l'iframe caché.
+    // Ancien Selector : la bannière n'est permise que si la version est déjà
+    // réellement déployée, afin d'éviter le bouton mort vu sur Android.
+    if(publishedNewer && !managerHandoffReady && !liveReady){
+      try{
+        const live=await cdqVerifierProductionV2254(latest.build,5000);
+        liveReady=!!(live&&live.ok);
+        liveBuild=String(live&&live.build||'');
+        if(liveBuild)backendBuild=liveBuild;
+      }catch(e){}
+    }
+
+    // V25.03+ : le bouton ouvre Script Manager de façon fiable via l'enveloppe
+    // PWA, donc une version publiée peut être proposée avant son déploiement.
+    const available=publishedNewer && (managerHandoffReady || liveReady);
     try{
       replyToSelector(cible,{
         type:'CDQ_UPDATE_STATUS',
@@ -1138,15 +1150,9 @@ async function cdqVerifierMiseAJourLiveV2254(source,buildSelector,force){
         current:selector,
         selectorCurrent:selector,
         pwaCurrent:CDQ_PWA_BUILD,
-        backendCurrent:backendBuild
+        backendCurrent:liveBuild||backendBuild
       });
     }catch(e){}
-
-    if(available){
-      cdqVerifierProductionV2254(latest.build,5000).then(function(live){
-        if(live&&live.build)backendBuild=String(live.build);
-      }).catch(function(){});
-    }
   }finally{
     cdqLiveUpdateBusyV2254=false;
   }
@@ -1158,6 +1164,8 @@ async function repondreEtatMiseAJour(source, buildSelector) {
 }
 
 function cdqDemarrerSurveillanceMiseAJourV2254(){
+  return; // Embedded interface updates are delivered by Android.
+
   if(cdqLiveUpdateTimerV2254)return;
   cdqLiveUpdateTimerV2254=setInterval(function(){
     if(document.visibilityState==='visible'&&selectorWindow&&cdqSelectorBuildV2254){
@@ -1174,6 +1182,22 @@ function cdqDemarrerSurveillanceMiseAJourV2254(){
   });
 }
 
+function cdqOpenScriptManagerFromSelectorV2503(rawUrl){
+  try{
+    const u=new URL(String(rawUrl||''),location.href);
+    const allowedPath='/Balance-CDQ-distribution/apps-script-manager/';
+    if(u.origin!==location.origin || !u.pathname.startsWith(allowedPath))return false;
+    if(/BalanceCDQAndroid\/\d+(?:\.\d+)?/i.test(String(navigator.userAgent||''))){
+      const target=u.host+u.pathname+u.search;
+      const intent='intent://'+target+'#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(u.href)+';end';
+      window.location.href=intent;
+    }else{
+      window.location.assign(u.href);
+    }
+    return true;
+  }catch(e){return false;}
+}
+
 async function forcerMiseAJour(source) {
   const selector=String(cdqSelectorBuildV2254||'');
   const latest=await cdqLireDernierBundleV2254();
@@ -1183,7 +1207,20 @@ async function forcerMiseAJour(source) {
     return;
   }
 
-  // Ne plus bloquer le redémarrage sur le probe iframe Apps Script.
+  // V25.03 : ne jamais relancer en boucle vers un bundle qui n'est pas encore déployé.
+  let liveReady=!!(backendBuild && backendBuild!=='inconnue' && cdqComparerVersions(backendBuild,latest.build)>=0);
+  if(!liveReady){
+    try{
+      const live=await cdqVerifierProductionV2254(latest.build,6000);
+      liveReady=!!(live&&live.ok);
+      if(live&&live.build)backendBuild=String(live.build);
+    }catch(e){}
+  }
+  if(!liveReady){
+    updateRequested=false;
+    try{replyToSelector(source,{type:'CDQ_UPDATE_STATUS',available:false,latest:'',current:selector,selectorCurrent:selector,pwaCurrent:CDQ_PWA_BUILD,backendCurrent:backendBuild});}catch(e){}
+    return;
+  }
   updateRequested=true;
   try{sessionStorage.setItem('cdq_update_target_v88',latest.build);}catch(e){}
   if('serviceWorker' in navigator){
@@ -1204,6 +1241,20 @@ CDQ V22.15 — PRÉFÉRENCES D’AFFICHAGE PWA + VIEWPORT RÉEL
 ===================================================== */
 const CDQ_DISPLAY_PREFS_PWA_KEY_V2215='cdq_display_prefs_by_email_v2215';
 const CDQ_DISPLAY_PREFS_LAST_KEY_V2216='cdq_display_prefs_last_v2216';
+const CDQ_NATIVE_DISPLAY_RESTORE_KEY_V2503='cdq_native_display_restore_v2505';
+function cdqNativeAndroidShellV2503(){
+  return /BalanceCDQAndroid\/\d+(?:\.\d+)?/i.test(String(navigator.userAgent||''));
+}
+function cdqNativeDisplayRestorePendingV2503(){
+  if(!cdqNativeAndroidShellV2503())return false;
+  try{return localStorage.getItem(CDQ_NATIVE_DISPLAY_RESTORE_KEY_V2503)!=='1';}catch(e){return false;}
+}
+function cdqPriorDisplayPrefsV2503(){
+  return {uiScale:50,uiTextScale:50,uiIconScale:50,uiScaleMapVersion:2202,uiUpdatedAt:Date.now()};
+}
+function cdqMarkNativeDisplayRestoredV2503(){
+  try{localStorage.setItem(CDQ_NATIVE_DISPLAY_RESTORE_KEY_V2503,'1');}catch(e){}
+}
 function cdqLastPrefsLoadV2216(){
   try{
     const v=JSON.parse(localStorage.getItem(CDQ_DISPLAY_PREFS_LAST_KEY_V2216)||'null');
@@ -1251,7 +1302,9 @@ function cdqReplyViewportV2215(source){
 }
 function cdqHandleDisplayPrefsV2215(data,source){
   if(data.type==='CDQ_DISPLAY_PREFS_BOOTSTRAP_GET'){
-    replyToSelector(source,{type:'CDQ_DISPLAY_PREFS_BOOTSTRAP',prefs:cdqLastPrefsLoadV2216()});
+    const prefs=cdqNativeDisplayRestorePendingV2503()?cdqPriorDisplayPrefsV2503():cdqLastPrefsLoadV2216();
+    if(cdqNativeDisplayRestorePendingV2503())cdqLastPrefsSaveV2216(prefs);
+    replyToSelector(source,{type:'CDQ_DISPLAY_PREFS_BOOTSTRAP',prefs});
     return true;
   }
 
@@ -1260,19 +1313,27 @@ function cdqHandleDisplayPrefsV2215(data,source){
 
   if(data.type==='CDQ_DISPLAY_PREFS_SET'){
     const map=cdqPrefsMapLoadV2215();
-    const incoming=cdqSanitizeDisplayPrefsV2215(data.prefs);
+    const restoreNative=cdqNativeDisplayRestorePendingV2503();
+    const incoming=restoreNative?cdqPriorDisplayPrefsV2503():cdqSanitizeDisplayPrefsV2215(data.prefs);
     const current=map[email]||null;
-    if(!current || Number(incoming.uiUpdatedAt||0)>=Number(current.uiUpdatedAt||0)){
+    if(restoreNative || !current || Number(incoming.uiUpdatedAt||0)>=Number(current.uiUpdatedAt||0)){
       map[email]=incoming;
       cdqPrefsMapSaveV2215(map);
     }
     cdqLastPrefsSaveV2216(map[email]||incoming);
+    if(restoreNative)cdqMarkNativeDisplayRestoredV2503();
     replyToSelector(source,{type:'CDQ_DISPLAY_PREFS_VALUE',prefs:map[email]||incoming});
     return true;
   }
 
   if(data.type==='CDQ_DISPLAY_PREFS_GET'){
     const map=cdqPrefsMapLoadV2215();
+    if(cdqNativeDisplayRestorePendingV2503()){
+      map[email]=cdqPriorDisplayPrefsV2503();
+      cdqPrefsMapSaveV2215(map);
+      cdqLastPrefsSaveV2216(map[email]);
+      cdqMarkNativeDisplayRestoredV2503();
+    }
     replyToSelector(source,{type:'CDQ_DISPLAY_PREFS_VALUE',prefs:map[email]||null});
     return true;
   }
@@ -1280,18 +1341,86 @@ function cdqHandleDisplayPrefsV2215(data,source){
   return false;
 }
 
+
+
+// =====================================================
+// V22.97 — COMPTE GOOGLE PAR DÉFAUT PERSISTANT DANS LA PWA
+// =====================================================
+const CDQ_DEFAULT_GOOGLE_ACCOUNT_KEY_V2297='cdq_default_google_account_v2297';
+
+function cdqLoadDefaultGoogleAccountV2297(){
+  try{
+    const v=JSON.parse(localStorage.getItem(CDQ_DEFAULT_GOOGLE_ACCOUNT_KEY_V2297)||'null');
+    if(!v||typeof v!=='object')return {email:'',reset:false};
+    return {
+      email:String(v.email||'').trim().toLowerCase(),
+      reset:!!v.reset
+    };
+  }catch(e){return {email:'',reset:false};}
+}
+function cdqSaveDefaultGoogleAccountV2297(email,reset){
+  const value={
+    email:String(email||'').trim().toLowerCase(),
+    reset:!!reset,
+    updatedAt:Date.now()
+  };
+  try{localStorage.setItem(CDQ_DEFAULT_GOOGLE_ACCOUNT_KEY_V2297,JSON.stringify(value));}catch(e){}
+  return value;
+}
+function cdqReplyDefaultGoogleAccountV2297(source){
+  if(!source)return;
+  const v=cdqLoadDefaultGoogleAccountV2297();
+  replyToSelector(source,{
+    type:'CDQ_DEFAULT_GOOGLE_ACCOUNT_VALUE',
+    email:v.email,
+    reset:v.reset
+  });
+}
+const cdqSheetLauncher26=import('./sheet-launcher-v2526.mjs');
+function cdqOpenSheetDefaultAccountV2297(data){
+  cdqSheetLauncher26.then(m=>m.openSheet(data)).catch(e=>alert(e.message));
+  return true;
+}
+function cdqHandleDefaultGoogleAccountV2297(data,source){
+  if(data.type==='CDQ_DEFAULT_GOOGLE_ACCOUNT_GET'){
+    cdqReplyDefaultGoogleAccountV2297(source);
+    return true;
+  }
+  if(data.type==='CDQ_DEFAULT_GOOGLE_ACCOUNT_SET'){
+    const email=String(data.email||'').trim().toLowerCase();
+    const reset=!!data.reset;
+    const value=cdqSaveDefaultGoogleAccountV2297(email,reset);
+    // Keep Android's native account store identical to the Settings value.
+    // Clearing the default must also clear any older native remembered account.
+    try{
+      if(window.BalanceCDQNative&&typeof BalanceCDQNative.setDefaultGoogleAccount==='function'){
+        BalanceCDQNative.setDefaultGoogleAccount(value.email,value.reset);
+      }
+    }catch(_){}
+    replyToSelector(source,{
+      type:'CDQ_DEFAULT_GOOGLE_ACCOUNT_VALUE',
+      email:value.email,
+      reset:value.reset
+    });
+    return true;
+  }
+  if(data.type==='CDQ_OPEN_SHEET_DEFAULT_ACCOUNT'||data.type==='CDQ_OPEN_SHEET'){
+    cdqOpenSheetDefaultAccountV2297(data);
+    return true;
+  }
+  return false;
+}
+
+// =====================================================
+// V22.74 — PDF géré uniquement par le Selector Balance CDQ.
+// La coque PWA ne gère plus l'ouverture PDF.
+// =====================================================
+
+// V22.82 — l'ouverture PDF ne passe plus par la coque PWA.
+// =====================================================
 window.addEventListener('message', event => {
 const data = event.data || {};
 if (!isSelectorMessage(event)) return;
-if(data.type==='CDQ_OPEN_SHEET'||data.type==='CDQ_OPEN_SHEET_DEFAULT_ACCOUNT'){cdqSheetLauncher26.then(m=>m.openSheet(data)).catch(e=>alert(e.message));return;}
-if(data.type==='CDQ_PC_UPDATE_QUERY'){
-  cdqPcCheckUpdateV2244(event.source,event.origin,String(data.build||''));
-  return;
-}
-if(data.type==='CDQ_PC_APPLY_UPDATE'){
-  cdqPcApplyUpdateV2244();
-  return;
-}
 if (data.type === 'CDQ_SELECTOR_READY' || data.type === 'CDQ_CHECK_UPDATE') {
 if (selectorWindow && selectorWindow !== event.source) return;
 selectorWindow = event.source;
@@ -1299,7 +1428,7 @@ selectorOrigin = event.origin;
 selectorReady = true;
 if(data.build)cdqSelectorBuildV2254=String(data.build);
 cdqDemarrerSurveillanceMiseAJourV2254();
-if(cdqSelectorBuildV2254)setTimeout(function(){cdqVerifierMiseAJourLiveV2254(selectorWindow,cdqSelectorBuildV2254,true)},1200);
+// Native release checks run outside the initial interface render.
 clearTimeout(loadingTimer);
 clearTimeout(slowLoadingTimer);
 loadHelp.style.display = 'none';
@@ -1307,6 +1436,39 @@ if (data.authProtocol >= 24) recevoirEtatAcces(data.accessState || 'pending');
 else if (!selectorAwaitingAccess) masquerMurApresDelaiMinimum();
 }
 if (event.source !== selectorWindow || event.origin !== selectorOrigin) return;
+
+if(data.type==='CDQ_PREWARM_READER_V2554'){
+  cdqWarmPdfReaderV2554();
+  return;
+}
+
+if(data.type==='CDQ_INTERFACE_FAILED_V2652'){loadHelp.style.display='flex';document.getElementById('load-title').textContent='Préparation de l’interface';document.getElementById('load-message').textContent='Une image ou un module n’a pas pu être chargé. Réessayez le chargement.';return;}
+if(data.type==='CDQ_INTERFACE_READY_V2648'){
+  cdqInterfaceReadyV2648=true;app.style.visibility='visible';loading.style.display='none';
+  return;
+}
+if(data.type==='CDQ_SELECTOR_READY' || (data.type==='CDQ_ACCESS_STATE' && data.state!=='pending'))replyToSelector(event.source,{type:'CDQ_FIRST_FRAME_ARM_V2543',generation:loadGeneration});
+if(data.type==='CDQ_FIRST_FRAME_STABLE_V2543'){
+  if(Number(data.generation)!==loadGeneration)return;
+  cdqFirstFrameStableV2543=true;
+  cdqFirstFrameStableSourceV2543='signal';
+  clearTimeout(cdqFirstFrameFallbackV2543);
+  masquerMurApresDelaiMinimum();
+  return;
+}
+
+if(data.type==='CDQ_FILE_HANDOFF_FREEZE_V2307'){
+  cdqStartFileHandoffFreezeV2307(data.duration);
+  return;
+}
+if(data.type==='CDQ_FILE_HANDOFF_RELEASE_V2307'){
+  cdqReleaseFileHandoffFreezeV2307(data.delay||650);
+  return;
+}
+if(cdqHandleDefaultGoogleAccountV2297(data,event.source))return;
+if(data.type==='CDQ_OPEN_PDF_V2304'){cdqAfficherPdfV2304(data,event.source);return;}
+if(data.type==='CDQ_PDF_SAVE_RESULT_V2304'){cdqPdfSaveResultV2304(data,event.source);return;}
+
 if(data.type==='CDQ_VIEWPORT_GET'){cdqReplyViewportV2215(event.source);return;}
 if(data.type==='CDQ_DISPLAY_PREFS_BOOTSTRAP_GET'){
   let prefs=null;
@@ -1317,7 +1479,7 @@ if(data.type==='CDQ_DISPLAY_PREFS_BOOTSTRAP_GET'){
 if(cdqHandleDisplayPrefsV2215(data,event.source))return;
 if(data.type==='CDQ_GOOGLE_AUTH_REQUIRED'){afficherConnexionGoogleV42(data);return;}
 if(data.type==='CDQ_GOOGLE_AUTH_OK'){
-  loading.style.display='grid';loadHelp.style.display='none';if(cdqIsPcV2239()){app.style.visibility='hidden';app.style.opacity='0';}
+  loading.style.display='grid';loadHelp.style.display='none';
   document.getElementById('google-button-container').innerHTML='';
 }
 if(data.type==='CDQ_GOOGLE_AUTH_ERROR'){
@@ -1328,14 +1490,19 @@ if(data.type==='CDQ_GOOGLE_AUTH_ERROR'){
 if(data.type==='CDQ_GOOGLE_AUTH_HIDE')masquerConnexionGoogleV42();
 if(String(data.type||'').startsWith('CDQ_OFFLINE_'))cdqOffline.then(controller=>controller.handle(data));
 if(data.type==='CDQ_ACCESS_STATE' && data.state!=='ready')cdqOffline.then(controller=>controller.lock());
-if((data.type==='CDQ_ACCESS_STATE' && data.state==='ready') || (data.type==='CDQ_SELECTOR_READY' && data.accessState==='ready'))replyToSelector(event.source,{type:'CDQ_OFFLINE_PREPARE'});
-if(data.type==='CDQ_OPEN_PDF_V2304'){cdqAfficherPdfV2304(data,event.source);return;}
-if(data.type==='CDQ_PDF_SAVE_RESULT_V2304'){cdqPdfSaveResultV2304(data,event.source);return;}
+if((data.type==='CDQ_ACCESS_STATE' && data.state==='ready') || (data.type==='CDQ_SELECTOR_READY' && data.accessState==='ready')){
+  replyToSelector(event.source,{type:'CDQ_OFFLINE_PREPARE'});
+  replyToSelector(event.source,{type:'CDQ_FIRST_FRAME_ARM_V2543',generation:loadGeneration});
+}
 if (data.type === 'CDQ_OPEN_PDF') cdqAfficherPdf(data);
 if (data.type === 'CDQ_ACCESS_STATE') recevoirEtatAcces(data.state);
 if (data.type === 'CDQ_BACKEND_STATUS') backendBuild = String(data.build || 'inconnue');
 if(memoireConnexion(data,payload=>replyToSelector(event.source,payload)))return;
 
+if (data.type === 'CDQ_OPEN_SCRIPT_MANAGER') {
+cdqOpenScriptManagerFromSelectorV2503(data.url);
+return;
+}
 if (data.type === 'CDQ_CHECK_UPDATE') {
 repondreEtatMiseAJour(event.source, data.build);
 }
@@ -1355,38 +1522,74 @@ permission:('Notification' in window ? Notification.permission : 'unsupported')
 });
 }
 }
-if (data.type === 'CDQ_BIOMETRIC_REGISTER') {
-ouvrirPontBiometrique('register',event.source,String(data.email||''),String(data.requestId||''));
-}
-if (data.type === 'CDQ_BIOMETRIC_REQUEST') {
-ouvrirPontBiometrique('unlock',event.source,String(data.email||''),String(data.requestId||''));
-}
-if (data.type === 'CDQ_BIOMETRIC_CANCEL') {
-if (!data.requestId || (bioContext && data.requestId === bioContext.requestId)) annulerPontBiometrique();
-}
+
 });
 
 window.addEventListener('resize',function(){
+  if(cdqFileHandoffFrozenV2307())return;
   if(selectorWindow)cdqReplyViewportV2215(selectorWindow);
 },{passive:true});
 if(window.visualViewport){
   visualViewport.addEventListener('resize',function(){
+    if(cdqFileHandoffFrozenV2307())return;
     if(selectorWindow)cdqReplyViewportV2215(selectorWindow);
   },{passive:true});
 }
+
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible' && cdqFileHandoffFrozenV2307()){
+    cdqReleaseFileHandoffFreezeV2307(650);
+  }
+},{passive:true});
+window.addEventListener('focus',function(){
+  if(cdqFileHandoffFrozenV2307())cdqReleaseFileHandoffFreezeV2307(650);
+},{passive:true});
 
 
 
 
 // Lecteur commun PC/Android, hébergé dans la fenêtre de l’application.
+
+let cdqReaderPrewarmV2554=null;
+let cdqReaderPrewarmDoneV2554=false;
+function cdqWarmPdfReaderV2554(){
+  if(cdqReaderPrewarmDoneV2554)return Promise.resolve(true);
+  if(cdqReaderPrewarmV2554)return cdqReaderPrewarmV2554;
+  cdqReaderPrewarmV2554=import('./reader-host-v2525.mjs').then(()=>new Promise(resolve=>{
+    const frame=document.createElement('iframe');
+    frame.id='cdq-reader-prewarm-v2554';
+    frame.title='Préparation du lecteur PDF';
+    frame.src='./reader-v2525.html';
+    frame.setAttribute('aria-hidden','true');
+    frame.style.cssText='position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0';
+    let finished=false;
+    const done=()=>{
+      if(finished)return;
+      finished=true;
+      clearTimeout(timeout);
+      window.removeEventListener('message',onMessage);
+      frame.remove();
+      cdqReaderPrewarmDoneV2554=true;
+      resolve(true);
+    };
+    const onMessage=event=>{
+      if(event.source===frame.contentWindow&&event.data?.type==='CDQ_READER_READY')done();
+    };
+    const timeout=setTimeout(done,8000);
+    window.addEventListener('message',onMessage);
+    document.body.appendChild(frame);
+  })).catch(()=>false).finally(()=>{cdqReaderPrewarmV2554=null;});
+  return cdqReaderPrewarmV2554;
+}
+
 let cdqPdfV2304Context=null;
 function cdqAfficherPdf(data){
-  return import('../reader-host-v2525.mjs').then(m=>m.openReader(data));
+  return import('./reader-host-v2525.mjs').then(m=>m.openReader(data));
 }
 function cdqAfficherPdfV2304(data,source){
   if(cdqPdfV2304Context)return false;
   const ctx={source,fileId:String(data.fileId||''),pending:new Map()};cdqPdfV2304Context=ctx;
-  cdqAfficherPdf({...data,
+  cdqAfficherPdf({...data,workspaceSource:source,
     onOpened:()=>replyToSelector(source,{type:'CDQ_PDF_OPENED_V2523',fileId:ctx.fileId}),
     onClose:()=>{if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId});},
     onError:error=>{cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,error:error.message});},
@@ -1394,10 +1597,10 @@ function cdqAfficherPdfV2304(data,source){
       const requestId='discard-'+crypto.randomUUID(),timer=setTimeout(()=>{ctx.pending.delete(requestId);reject(new Error('La fermeture n’a pas été confirmée.'));},12000);
       ctx.pending.set(requestId,{resolve,reject,timer});replyToSelector(source,{type:'CDQ_PDF_DISCARD_REQUEST_V2520',fileId:ctx.fileId,requestId});
     }):null,
-    onSave:data.readOnly?null:(blob,requestId)=>new Promise((resolve,reject)=>{
+    onSave:data.readOnly?null:(blob,requestId,name)=>new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>{ctx.pending.delete(requestId);reject(new Error('La sauvegarde n’a pas été confirmée.'));},85000);
       ctx.pending.set(requestId,{resolve,reject,timer});
-      replyToSelector(source,{type:'CDQ_PDF_SAVE_REQUEST_V2304',fileId:ctx.fileId,requestId,blob});
+      replyToSelector(source,{type:'CDQ_PDF_SAVE_REQUEST_V2304',fileId:ctx.fileId,requestId,blob,name});
     })
   }).catch(error=>{cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,error:error.message});});
   return true;
@@ -1408,156 +1611,6 @@ function cdqPdfSaveResultV2304(data,source){
   if(data.ok)p.resolve({queued:!!data.queued});else p.reject(new Error(data.error||'Enregistrement impossible.'));
   return true;
 }
-
-/* =====================================================
-CDQ V21.19 — PONT BIOMÉTRIQUE ANDROID (WebAuthn)
-Le secret d'application reste côté serveur. Le PWA
-fournit seulement la preuve locale de présence utilisateur.
-===================================================== */
-const bioSetup = document.getElementById('bio-setup');
-const bioTitle = document.getElementById('bio-title');
-const bioText = document.getElementById('bio-text');
-const bioAction = document.getElementById('bio-action');
-const bioCancel = document.getElementById('bio-cancel');
-let bioContext = null;
-let bioAbortController = null;
-
-function bioRandomBytes(n){
-const a=new Uint8Array(n);crypto.getRandomValues(a);return a;
-}
-function bioB64Url(buf){
-const bytes=new Uint8Array(buf);
-let s='';bytes.forEach(b=>s+=String.fromCharCode(b));
-return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-function bioFromB64Url(s){
-s=String(s||'').replace(/-/g,'+').replace(/_/g,'/');
-while(s.length%4)s+='=';
-const bin=atob(s),a=new Uint8Array(bin.length);
-for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);
-return a;
-}
-function bioLoadMap(){
-try{return JSON.parse(localStorage.getItem('cdq_biometric_credentials_v1')||'{}')||{};}catch(e){return {};}
-}
-function bioSaveMap(m){
-try{localStorage.setItem('cdq_biometric_credentials_v1',JSON.stringify(m||{}));}catch(e){}
-}
-function bioReply(source,type,payload){
-replyToSelector(source,Object.assign({type},payload||{}));
-}
-async function bioSupported(){
-if(!window.PublicKeyCredential || !navigator.credentials)return false;
-if(typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable==='function'){
-try{return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();}catch(e){return false;}
-}
-return true;
-}
-function bioEnsureCurrent(ctx){
-if(bioContext!==ctx || ctx.controller.signal.aborted)throw new Error('Demande annulée.');
-}
-async function bioRegister(email,ctx){
-if(!(await bioSupported()))throw new Error('Biométrie indisponible.');
-bioEnsureCurrent(ctx);
-const map=bioLoadMap();
-if(map[email]&&map[email].id)return map[email];
-const cred=await navigator.credentials.create({
-publicKey:{
-challenge:bioRandomBytes(32),rp:{name:'Balance CDQ'},
-user:{id:bioRandomBytes(24),name:email,displayName:email},
-pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
-authenticatorSelection:{authenticatorAttachment:'platform',residentKey:'discouraged',userVerification:'required'},
-timeout:60000,attestation:'none'
-},signal:ctx.controller.signal
-});
-bioEnsureCurrent(ctx);
-if(!cred)throw new Error('Enregistrement annulé.');
-map[email]={id:bioB64Url(cred.rawId),createdAt:Date.now()};
-bioSaveMap(map);
-return map[email];
-}
-async function bioUnlock(email,ctx){
-const saved=bioLoadMap()[email];
-// L'absence d'inscription doit mener au NIP, jamais à une inscription
-// biométrique pendant une tentative de déverrouillage.
-if(!saved||!saved.id)throw new Error('Biométrie non activée pour ce compte.');
-if(!(await bioSupported()))throw new Error('Biométrie indisponible.');
-bioEnsureCurrent(ctx);
-const assertion=await navigator.credentials.get({
-mediation:'required',
-publicKey:{
-challenge:bioRandomBytes(32),
-allowCredentials:[{type:'public-key',id:bioFromB64Url(saved.id),transports:['internal']}],
-hints:['client-device'],userVerification:'required',timeout:60000
-},signal:ctx.controller.signal
-});
-bioEnsureCurrent(ctx);
-if(!assertion)throw new Error('Biométrie non reconnue.');
-return true;
-}
-function annulerPontBiometrique(){
-const ctx=bioContext;
-bioContext=null;
-if(ctx&&ctx.controller)ctx.controller.abort();
-bioAbortController=null;
-bioSetup.style.display='none';
-bioAction.disabled=false;
-}
-async function executerPontBiometrique(ctx){
-if(bioContext!==ctx || ctx.running)return;
-ctx.running=true;
-ctx.controller=new AbortController();
-bioAbortController=ctx.controller;
-bioAction.disabled=true;
-try{
-if(ctx.mode==='register')await bioRegister(ctx.email,ctx);
-else await bioUnlock(ctx.email,ctx);
-bioEnsureCurrent(ctx);
-bioReply(ctx.source,ctx.mode==='register'?'CDQ_BIOMETRIC_REGISTERED':'CDQ_BIOMETRIC_RESULT',{
-success:true,requestId:ctx.requestId
-});
-}catch(e){
-if(bioContext!==ctx)return;
-bioReply(ctx.source,ctx.mode==='register'?'CDQ_BIOMETRIC_UNAVAILABLE':'CDQ_BIOMETRIC_RESULT',{
-success:false,requestId:ctx.requestId,message:'Entrez votre NIP à 4 chiffres.'
-});
-}finally{
-if(bioContext===ctx){
-bioContext=null;bioAbortController=null;
-bioSetup.style.display='none';bioAction.disabled=false;
-}
-}
-}
-function ouvrirPontBiometrique(mode,source,email,requestId){
-email=String(email||'').trim().toLowerCase();
-if(bioContext && bioContext.mode===mode && bioContext.source===source &&
-bioContext.email===email && bioContext.requestId===requestId)return;
-annulerPontBiometrique();
-if(!email){bioReply(source,'CDQ_BIOMETRIC_UNAVAILABLE',{requestId,message:'Compte inconnu.'});return;}
-const ctx={mode,source,email,requestId,running:false,controller:null};
-bioContext=ctx;
-bioReply(source,'CDQ_BIOMETRIC_READY',{requestId});
-if(mode==='unlock'){
-// Appeler directement le téléphone, sans carte ni clic intermédiaire.
-executerPontBiometrique(ctx);
-return;
-}
-// La proposition initiale d'activation reste un choix explicite.
-bioTitle.textContent='Activer la biométrie';
-bioText.textContent='Activez le déverrouillage de CDQ avec la sécurité de ce téléphone.';
-bioAction.textContent='Activer la biométrie';
-bioSetup.style.display='flex';
-}
-bioAction.addEventListener('click',()=>{
-if(bioContext)executerPontBiometrique(bioContext);
-});
-bioCancel.addEventListener('click',()=>{
-const ctx=bioContext;
-annulerPontBiometrique();
-if(ctx)bioReply(ctx.source,ctx.mode==='unlock'?'CDQ_BIOMETRIC_RESULT':'CDQ_BIOMETRIC_UNAVAILABLE',{
-success:false,requestId:ctx.requestId,message:'Biométrie annulée.'
-});
-});
 
 /* =====================================================
 CDQ V21 — PONT PUSH FCM
