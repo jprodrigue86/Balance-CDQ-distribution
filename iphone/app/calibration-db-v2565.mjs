@@ -1,6 +1,14 @@
 import {applyCalibrationMethods} from './calibration-methods-v2566.mjs';
 import {applyCalibrationModelsV2668} from './calibration-models-v2668.mjs';
 const norm=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+// Group spelling variants without changing device keys, methods or file links.
+export function calibrationManufacturerGroup(value){
+  const key=norm(value).replace(/\s+/g,'');
+  if(key==='mettlertoledo')return 'Mettler Toledo';
+  if(key==='ricelake')return 'Rice Lake';
+  if(key==='ad'||key==='and')return 'AND';
+  return String(value??'').trim();
+}
 const slug=(manufacturer,model)=>norm(manufacturer).replace(/\s+/g,'-')+'::'+norm(model).replace(/\s+/g,'-');
 const detected=(category,manufacturer,model,aliases=[])=>({key:slug(manufacturer,model),category,manufacturer,model,aliases,verified:false,status:'detected',method:null});
 
@@ -151,6 +159,6 @@ function categories(){return [
   {id:'bench',label:'Balance de table',count:devices.filter(d=>d.category==='bench').length}
 ];}
 function manufacturers(category){
-  return [...new Set(devices.filter(d=>d.category===category).map(d=>d.manufacturer))].sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'}));
+  return [...new Set(devices.filter(d=>d.category===category).map(d=>calibrationManufacturerGroup(d.manufacturer)))].sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'}));
 }
 export {devices,fileIndex,norm,slug,findCalibration,byKey,forFile,categories,manufacturers,addClientDevices,resetClientDevices};

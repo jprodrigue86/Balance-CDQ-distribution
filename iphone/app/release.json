@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.75",
-  "release": "1f44744f9173c2ae67b828d0058ff0d631a9cd97f3fe389b2e25fae6fa7a5ac9",
+  "version": "26.76",
+  "release": "73ac57354d90a27fca0a95b18b62d46cbdfb633dabc80f2e119582a941bf3f24",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.05-v26.75-pdf-centered-menus-trash-return",
-  "androidSelectorSha256": "285b31cd896872475defca7c1dfbaa70d8c4722c781d352664d83dba865de56b",
+  "androidSourceBuild": "2026.10.05-v26.76-reports-calibration-groups",
+  "androidSelectorSha256": "a1fde78907e27435f8982fe21dd715723e5ac52c29a053f4b360681043d1560a",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
-  "files": 434
+  "files": 447
 }

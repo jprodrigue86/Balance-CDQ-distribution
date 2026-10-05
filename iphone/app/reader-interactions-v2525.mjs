@@ -344,7 +344,7 @@ export function installNativeTextInput(surface){
   return {configure(fields){
     for(const input of surface.querySelectorAll('.textWidgetAnnotation input,.textWidgetAnnotation textarea')){
       const fieldActions=(fields?.get?.(input.name)||fields?.[input.name])?.[0]?.actions;const actions=fieldActions?.get?.('Keystroke')||fieldActions?.Keystroke;
-      if(actions?.length&&actions.every(code=>/^\s*if\(event\.willCommit && event\.commitKey===2/.test(code)&&code.includes('_cdqNavigationTimer')))input.dataset.cdqNativeInput='true';
+      if(actions?.length&&actions.every(code=>/^\s*if\(event\.willCommit && (?:event\.commitKey===2|\(event\.commitKey===2 \|\| event\.commitKey===3\))/.test(code)&&code.includes('_cdqNavigationTimer')))input.dataset.cdqNativeInput='true';
     }
   }};
 }

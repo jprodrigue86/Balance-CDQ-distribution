@@ -1,7 +1,7 @@
 import {createCalibrationScan,scanCalibrationPdf} from './calibration-scan-v2668.mjs';
 import {calibrationIcon} from './calibration-icon-v2566.mjs';
 import {calibrationIdentity,calibrationRpc,revisionOf,queueFeedback,flushFeedback,pendingFeedback} from './calibration-feedback-v2566.mjs';
-import {devices,forFile,categories,manufacturers,findCalibration,addClientDevices,resetClientDevices} from './calibration-db-v2565.mjs';
+import {devices,forFile,categories,manufacturers,calibrationManufacturerGroup,findCalibration,addClientDevices,resetClientDevices} from './calibration-db-v2565.mjs';
 import {calibrationNotes,calibrationNotesSource} from './calibration-notes-v2658.mjs';
 
 const $=(s,r=document)=>r.querySelector(s);
@@ -110,12 +110,13 @@ function renderSearch(value){
 }
 function showCategory(category){
   state={view:'category',category,manufacturer:'',device:null,returnView:null};const label=categories().find(c=>c.id===category)?.label||'Calibration';
-  const cards=manufacturers(category).map(m=>{const count=devices.filter(d=>d.category===category&&d.manufacturer===m).length;return '<button class="cdq-cal-card" data-mfr="'+esc(m)+'"><strong>'+esc(m)+'</strong><small>'+count+' modèle'+(count>1?'s':'')+'</small></button>';}).join('');
+  const cards=manufacturers(category).map(m=>{const count=devices.filter(d=>d.category===category&&calibrationManufacturerGroup(d.manufacturer)===m).length;return '<button class="cdq-cal-card" data-mfr="'+esc(m)+'"><strong>'+esc(m)+'</strong><small>'+count+' modèle'+(count>1?'s':'')+'</small></button>';}).join('');
   shell(label,'<div class="cdq-cal-grid">'+cards+'</div>',true);$$('[data-mfr]',dialog).forEach(b=>b.onclick=()=>showManufacturer(category,b.dataset.mfr));
 }
 function modelButton(d){return '<button class="cdq-cal-model" data-device-key="'+esc(d.key)+'"><strong>'+esc(d.model)+'</strong><small>'+esc(d.manufacturer)+'</small><small class="'+(d.verified?'verified':'pending')+'">'+(d.verified?'✓ Vérifiée dans le manuel':(d.review?.label||'Manuel à vérifier'))+'</small></button>';}
 function showManufacturer(category,manufacturer){
-  state={view:'manufacturer',category,manufacturer,device:null,returnView:null};const list=devices.filter(d=>d.category===category&&d.manufacturer===manufacturer).sort((a,b)=>a.model.localeCompare(b.model,'fr',{numeric:true}));
+  manufacturer=calibrationManufacturerGroup(manufacturer);
+  state={view:'manufacturer',category,manufacturer,device:null,returnView:null};const list=devices.filter(d=>d.category===category&&calibrationManufacturerGroup(d.manufacturer)===manufacturer).sort((a,b)=>a.model.localeCompare(b.model,'fr',{numeric:true}));
   shell(manufacturer,'<div class="cdq-cal-grid">'+list.map(modelButton).join('')+'</div>',true);$$('[data-device-key]',dialog).forEach(b=>b.onclick=()=>openDevice(list.find(d=>d.key===b.dataset.deviceKey)));
 }
 function stepHtml(step,index){
