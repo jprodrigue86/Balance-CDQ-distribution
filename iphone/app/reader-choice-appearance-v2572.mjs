@@ -1,3 +1,4 @@
+import {normalizeVesselLayoutV2678} from './reader-vessel-layout-v2678.mjs';
 import {normalizeReportLayoutV2677} from './reader-report-layout-v2677.mjs';
 import {alignStatusAppearances} from './reader-status-v2656.mjs';
 import {normalizePrecisionAppearanceV2665} from './reader-precision-appearance-v2665.mjs';
@@ -33,7 +34,8 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   normalizeReportLayoutV2677(pdf,L);
   const changed=normalizePrecisionAppearanceV2665(pdf,L)|repairReportFormV2676(pdf,L)|compactToleranceActions(pdf,L)|centerSingleLineAppearances(pdf,L)|await alignStatusAppearances(pdf,L);
   normalizeReportLayoutV2677(pdf,L);
-  if(!changed&&!rawNeedsAppearanceRepair(data))return data;
+  const vesselChanged=normalizeVesselLayoutV2678(pdf,L);
+  if(!changed&&!vesselChanged&&!rawNeedsAppearanceRepair(data))return data;
   form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
   return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
 }
@@ -105,6 +107,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
   centerSingleLineAppearances(pdf,L);
   repairReportFormV2676(pdf,L);
   normalizeReportLayoutV2677(pdf,L);
+  normalizeVesselLayoutV2678(pdf,L);
   return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
 }
 
