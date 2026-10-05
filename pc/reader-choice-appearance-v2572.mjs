@@ -1,3 +1,4 @@
+import {compactReportV2682,compactReportReadyV2682} from './pdf-compact-v2682.mjs';
 import {normalizeVesselLayoutV2678} from './reader-vessel-layout-v2678.mjs';
 import {normalizeReportLayoutV2677} from './reader-report-layout-v2677.mjs';
 import {alignStatusAppearances} from './reader-status-v2656.mjs';
@@ -31,12 +32,14 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const {PDFDocument,PDFName}=L;
   const pdf=await PDFDocument.load(data,{updateMetadata:false});
   const form=pdf.getForm();
+  if(compactReportReadyV2682(pdf,L))return data;
   normalizeReportLayoutV2677(pdf,L);
   const changed=normalizePrecisionAppearanceV2665(pdf,L)|repairReportFormV2676(pdf,L)|compactToleranceActions(pdf,L)|centerSingleLineAppearances(pdf,L)|await alignStatusAppearances(pdf,L);
   normalizeReportLayoutV2677(pdf,L);
   const vesselChanged=normalizeVesselLayoutV2678(pdf,L);
   if(!changed&&!vesselChanged&&!rawNeedsAppearanceRepair(data))return data;
   form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
+  compactReportV2682(pdf,L);
   return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
 }
 
@@ -108,6 +111,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
   repairReportFormV2676(pdf,L);
   normalizeReportLayoutV2677(pdf,L);
   normalizeVesselLayoutV2678(pdf,L);
+  compactReportV2682(pdf,L);
   return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
 }
 

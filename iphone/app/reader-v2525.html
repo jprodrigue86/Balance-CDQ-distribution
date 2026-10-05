@@ -191,6 +191,8 @@ header{background:#161a20;border-color:#3d4652}header button,#more button{backgr
   body.cdq-keyboard-field #status{display:none!important}
 }
 
+/* Reveal the fully composed first page in one frame. Preserve layout while it paints. */
+#viewer:not([data-ready="true"]){opacity:0;pointer-events:none}
 </style><link rel="stylesheet" href="./reader-ui-v2572.css"></head><body>
 <header id="readerTop"><button id="back" aria-label="Retour dans CDQ"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg><span>Retour</span></button><div id="zoomControls" aria-label="Zoom du PDF"><button id="minus" class="zoom-button" aria-label="Réduire"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><span id="zoom">100 %</span><button id="plus" class="zoom-button" aria-label="Agrandir"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button></div><button id="menu" aria-label="Options du PDF" aria-expanded="false"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></header>
 <div id="more" role="menu" hidden><button id="fit" role="menuitem">Ajuster à la largeur</button><button id="download" role="menuitem">Télécharger</button><button id="save" role="menuitem" class="primary" disabled>Enregistrer</button><button id="cancelMenu" role="menuitem" title="Fermer le menu et continuer la saisie">Annuler</button><button id="quitMenu" role="menuitem">Quitter</button></div><footer id="readerNameBar" aria-label="Nom du rapport"><span id="name">PDF</span></footer>

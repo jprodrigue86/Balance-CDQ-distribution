@@ -1,3 +1,4 @@
+import {firstReaderPaintV2682} from './reader-first-paint-v2682.mjs';
 import {paintReaderResults} from './reader-results-v2648.mjs';
 import {identificationReportName} from './report-name-v2648.mjs';
 import {installTouchNavigation,installFormNavigation,installNativeTextInput} from './reader-interactions-v2525.mjs';
@@ -240,7 +241,7 @@ async function open(data){
   $('name').textContent=name;$('empty').style.display='none';status('Ouverture du PDF…');
   const sourceBytes=await normalizeEditableFormOnOpen(new Uint8Array(await blob.arrayBuffer()));
   const task=api.getDocument({data:sourceBytes,standardFontDataUrl:assets+'standard_fonts/',cMapUrl:assets+'cmaps/',cMapPacked:true,wasmUrl:assets+'wasm/',isEvalSupported:false,enableXfa:false,enableHWA:false});
-  doc=await task.promise;viewer.setDocument(doc);viewer.linkService.setDocument(doc);
+  doc=await task.promise;const firstPaint=firstReaderPaintV2682(viewer.eventBus);viewer.setDocument(doc);viewer.linkService.setDocument(doc);
   doc.annotationStorage.onSetModified=()=>{if(!readOnly&&!opening){dirty=true;status('');}};
   $('save').hidden=readOnly;$('saveClose').hidden=readOnly;
   // Scripting can initialise fields after the first canvas appears. User input is
@@ -248,9 +249,11 @@ async function open(data){
   await viewer.firstPagePromise;
   const fields=fieldDefinitions=await doc.getFieldObjects(),actions=await doc.getJSActions();
   if(fields?.get?.('identification_balance')||fields?.identification_balance)autoReportName=true;
+  let firstPageHasAnnotations=false;
   for(let p=1;p<=doc.numPages;p++){
-    const page=await doc.getPage(p);
-    for(const annotation of await page.getAnnotations({intent:'display'})){
+    const page=await doc.getPage(p),annotations=await page.getAnnotations({intent:'display'});
+    if(p===1)firstPageHasAnnotations=annotations.length>0;
+    for(const annotation of annotations){
       if(!annotation.fieldName||!annotation.defaultAppearanceData||!['Tx','Ch'].includes(annotation.fieldType))continue;
       let size=Number(annotation.defaultAppearanceData.fontSize)||11.25;
       fieldTypography.set(annotation.fieldName,size);
@@ -261,7 +264,9 @@ async function open(data){
   readerCalibration=installReaderCalibration({surface:$('viewer'),doc,fields,tell});
   nativeInput.configure(fields);$('viewer').classList.toggle('cdq-form',!!(fields?.get?.('client_nom')||fields?.client_nom)&&!!(fields?.get?.('charge_point_1_charge_utilisee')||fields?.charge_point_1_charge_utilisee));
   if(fields?.size||fields&&Object.keys(fields).length||actions){const deadline=Date.now()+12000;while(!scripting.ready){if(Date.now()>deadline)throw Error('Les calculs du PDF n’ont pas pu démarrer. Fermez le document puis réessayez.');await new Promise(r=>setTimeout(r,25));}}
+  await firstPaint.wait(firstPageHasAnnotations);
   cdqRestoreInteractiveFieldsV2581();applyFieldTypography();choices.refresh();applyFieldTypography();form.refresh();refreshResults();
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   opening=false;busy(false);$('viewer').dataset.ready='true';status(readOnly?'Consultation seulement':'');
   applyLateIdentity();
   tell({type:'CDQ_READER_OPENED'});

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="26.81" data-cdq-iphone-release="50e7f54a617d7b4f0d92fcc638afb10f755f2c6371884e6568d7d00a00d2ee64">
+<html lang="fr" data-cdq-iphone-version="26.82" data-cdq-iphone-release="109b8ab87f1e70e740db3b36af53c949dbf5a78ae8109e90d584916ac7192f10">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./app-session-v2661.js"></script>
@@ -466,7 +466,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.05-v26.81-fast-startup';
+const CDQ_PWA_BUILD = '2026.10.05-v26.82-compact-reports';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -602,17 +602,11 @@ let backendBuild = '';
 const cdqOffline = import('./offline-templates-v2636.mjs').then(module=>module.createOfflineTemplates({
 send:data=>replyToSelector(selectorWindow,data),
 openPdf:data=>cdqAfficherPdf(data),
-warmPdf:data=>{
-if(document.getElementById('cdq-warm-reader'))return;
-const frame=document.createElement('iframe');frame.id='cdq-warm-reader';frame.src='./reader-v2525.html';
-frame.title='Préparation du lecteur hors ligne';frame.tabIndex=-1;frame.setAttribute('aria-hidden','true');
-frame.style.cssText='position:fixed;left:-12000px;top:0;width:800px;height:1000px;pointer-events:none;opacity:0';
-function warm(event){
-if(event.source===frame.contentWindow && event.origin===location.origin && event.data?.type==='CDQ_READER_READY')
-frame.contentWindow.postMessage({type:'CDQ_READER_OPEN',blob:data.blob,name:String(data.name||'Modèle CDQ.pdf'),fileId:'',readOnly:true},location.origin);
+warmPdf:()=>{
+if(document.querySelector('link[data-cdq-reader-preload-v2682]'))return;
+for(const name of ['reader-v2525.mjs','vendor/pdfjs-6.3.289/build/pdf.mjs','vendor/pdfjs-6.3.289/web/pdf_viewer.mjs']){
+const link=document.createElement('link');link.rel='modulepreload';link.href='./'+name;link.dataset.cdqReaderPreloadV2682='';document.head.append(link);
 }
-window.addEventListener('message',warm);document.body.append(frame);
-setTimeout(()=>{window.removeEventListener('message',warm);frame.remove();},30000);
 },
 unlock:async email=>{
   const saved=String(localStorage.getItem('cdqLastUnlockEmailV2511')||'').trim().toLowerCase();
