@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="26.78" data-cdq-iphone-release="3ad27e8db60ed7b7801b91fc8be39bbce4d9eba6f61f38645cfd92e0ab58f506">
+<html lang="fr" data-cdq-iphone-version="26.79" data-cdq-iphone-release="2c0512b77c85a6d6c00a1b9f0bfa8bb0a5a541f9da3249eb55de1c680bfe287c">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./app-session-v2661.js"></script>
@@ -466,7 +466,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.05-v26.78-cuve-tremie';
+const CDQ_PWA_BUILD = '2026.10.05-v26.79-pdf-session-tremie';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -490,7 +490,7 @@ reg.update().catch(()=>{});
 .catch(()=>{});
 
 function cdqReloadOuterOnceV88(){
-if(reloadingForUpdate)return;
+if(cdqDeferReloadV2679()||reloadingForUpdate)return;
 reloadingForUpdate=true;
 try{sessionStorage.setItem('cdq_update_reload_v88','1');}catch(e){}
 const u=new URL(window.location.href);
@@ -623,7 +623,7 @@ let loadingTimer = null;
 let hideLoadingTimer = null;
 let loadGeneration = 0;
 document.getElementById('open-direct').href = cdqFreshAppUrl('direct');
-app.src = cdqFreshAppUrl('startup');
+if(!cdqDeferReloadV2679())app.src = cdqFreshAppUrl('startup');
 
 let cdqGoogleChallengeV42 = null;
 let cdqGoogleRenderingV42 = false;
@@ -1017,7 +1017,19 @@ setTimeout(()=>{
 if (!selectorReady) armLoadingTimeout();
 });
 
+function cdqReaderBusyV2679(){
+  if(document.querySelector('#legacy-pdf-reader,#cdqReaderFrame'))return true;
+  try{return !!document.getElementById('app')?.contentDocument?.querySelector('#cdqReaderFrame');}catch{return false;}
+ }
+ function cdqDeferReloadV2679(){
+  if(!cdqReaderBusyV2679())return false;
+  try{replyToSelector(app.contentWindow,{type:'CDQ_READER_UPDATE_DEFERRED_V2679'});}catch{}
+  return true;
+ }
+ window.cdqReaderBusyV2679=cdqReaderBusyV2679;
+ 
 function reessayerChargement() {
+if(cdqDeferReloadV2679())return false;
 if (navigator.onLine === false) { afficherConnexionGoogle(false); return; }
 loadGeneration++;
 cdqOffline.then(controller=>controller.lock());
@@ -1202,6 +1214,7 @@ function cdqOpenScriptManagerFromSelectorV2503(rawUrl){
 }
 
 async function forcerMiseAJour(source) {
+if(cdqDeferReloadV2679())return false;
   const selector=String(cdqSelectorBuildV2254||'');
   const latest=await cdqLireDernierBundleV2254();
   if(!latest.build || !selector || cdqComparerVersions(latest.build,selector)<=0){

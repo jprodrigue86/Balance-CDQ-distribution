@@ -1,10 +1,10 @@
 {
   "platform": "pc-pwa",
-  "version": "26.78",
-  "release": "04afd1948544c1e54479ea48ba06dee2882b07f1be760b7646179d5856333a77",
+  "version": "26.79",
+  "release": "bc929bf4bf24f05def201e2f0757ac42e3e7d88e3a65a5e872e13bb2972e2137",
   "desktopModel": 2,
-  "androidSourceBuild": "2026.10.05-v26.78-cuve-tremie",
-  "androidSelectorSha256": "0c7a7650aade64c62b382569309d0b12a6d9b255dad8eab759686883905b768e",
+  "androidSourceBuild": "2026.10.05-v26.79-pdf-session-tremie",
+  "androidSelectorSha256": "5d5c36f6afb9821148b85d23224c0f1c9dd656e8cf875ee6703e43dba1d33865",
   "generatedFrom": "scripts/build-pc-v2676.mjs",
-  "files": 455
+  "files": 457
 }

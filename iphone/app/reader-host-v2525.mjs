@@ -3,6 +3,8 @@ export const currentReader=()=>active;
 let openQueue=Promise.resolve();
 export function openReader(data){const result=openQueue.then(()=>openReaderInternal(data));openQueue=result.catch(()=>{});return result;}
 async function openReaderInternal(data){
+  // Metadata refreshes and duplicate open messages must not replace this form.
+  if(data.fileId&&active&&active.fileId===String(data.fileId))return active;
   if(active){
     await active.requestClose();
   }
@@ -11,17 +13,27 @@ async function openReaderInternal(data){
   frame.src=new URL('./reader-v2525.html',import.meta.url).href;frame.referrerPolicy='origin';
   frame.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:#101820';
   const origin=new URL(frame.src).origin,saves=new Map();let closed=false,guard=false,ready=false,opened=false,prefillValues=null,closeWaiters=[],pendingClose=false,handle=null;
-  let workspaceOwner=null;
+  let workspaceOwner=null,lastWorkspaceLayout=null;
   function layout(message){
     if(!data.workspaceSource)return;
+    if(message)lastWorkspaceLayout=message;
+    else message=lastWorkspaceLayout;
     try{
       const source=data.workspaceSource,doc=source.document,root=doc.documentElement;
       if(!root.classList.contains('cdq-mobile-layout'))return;
       workspaceOwner??=root.dataset.cdqWorkspaceOwner||'';
-      if(message&&(!message.canRead||workspaceOwner&&message.owner!==workspaceOwner)){close();return;}
-      // Delayed report/list renders may change the workspace route. Only an
-      // explicit close, an account change or revoked access closes this reader.
+      // Access checks temporarily blank the public identity. Keep the document
+      // and its fields alive; genuine loss of access suspends their display.
+      const state=message?.accessState||'ready',pending=['pending','checking'].includes(state);
+      const account=String(message?.account||message?.owner?.split('|')[0]||'');
+      const original=String(workspaceOwner||'').split('|')[0];
+      if(message&&((account&&original&&account!==original)||(!pending&&!message.canRead))){
+        frame.hidden=true;return;
+      }
+      // Delayed report/list renders may change the workspace route. Access loss
+      // suspends the reader; only an explicit close destroys its form.
       frame.hidden=false;root.classList.add('cdq-workspace-reader-open');
+      root.dataset.cdqReaderSessionV2679=marker;
       const bounds=source.frameElement?.getBoundingClientRect(),offset=bounds?.top||0,viewport=window.visualViewport?.height||innerHeight;
       const top=root.classList.contains('cdq-desktop-v2676')?(parseFloat(getComputedStyle(root).getPropertyValue('--cdq-pc-top'))||152):Math.max(0,offset+(doc.getElementById('appHeader')?.getBoundingClientRect().bottom||0)),bottom=root.classList.contains('cdq-desktop-v2676')?10:Math.max(0,viewport-offset-(doc.querySelector('.bottom-nav')?.getBoundingClientRect().top||viewport));
       frame.style.inset=top+'px 0 '+bottom+'px';frame.style.height=Math.max(0,viewport-top-bottom)+'px';
@@ -34,7 +46,7 @@ async function openReaderInternal(data){
   function close(){
     if(closed)return;closed=true;if(active===handle)active=null;clearTimeout(timer);
     window.removeEventListener('message',receive);window.removeEventListener('popstate',pop);window.removeEventListener('resize',resize);window.removeEventListener('cdq:keyboard-insets-v2653',resize);window.visualViewport?.removeEventListener('resize',resize);frame.remove();
-    try{data.workspaceSource?.document.documentElement.classList.remove('cdq-workspace-reader-open');data.workspaceSource?.cdqWorkspaceV2638?.readerClosed();data.workspaceSource?.cdqWorkspaceV2638?.measure();}catch{}
+    try{const root=data.workspaceSource?.document.documentElement;if(root?.dataset.cdqReaderSessionV2679===marker)delete root.dataset.cdqReaderSessionV2679;root?.classList.remove('cdq-workspace-reader-open');data.workspaceSource?.cdqWorkspaceV2638?.readerClosed();data.workspaceSource?.cdqWorkspaceV2638?.measure();}catch{}
     // A delayed history.back() could otherwise reach and close the next PDF.
     if(guard&&history.state?.cdqReader===marker)history.replaceState(null,'',location.href);
     data.onClose?.();
@@ -42,8 +54,9 @@ async function openReaderInternal(data){
   }
   async function receive(event){
     if(!closed&&data.workspaceSource&&event.source===data.workspaceSource&&event.origin===location.origin&&event.data?.type==='CDQ_WORKSPACE_LAYOUT_V2638'){layout(event.data);return;}
-    if(!closed&&data.workspaceSource&&event.source===data.workspaceSource&&event.origin===location.origin&&event.data?.type==='CDQ_WORKSPACE_READER_HOME_V2640'){requestClose();return;}
-    if(!closed&&data.workspaceSource&&event.source===data.workspaceSource&&event.origin===location.origin&&event.data?.type==='CDQ_WORKSPACE_READER_NAV_V2677'){requestClose();return;}
+    if(!closed&&data.workspaceSource&&event.source===data.workspaceSource&&event.origin===location.origin&&['CDQ_WORKSPACE_READER_HOME_V2640','CDQ_WORKSPACE_READER_NAV_V2677'].includes(event.data?.type)){
+      if(event.data.userInitiated===true&&event.data.readerSession===marker)requestClose();return;
+    }
     if(closed||event.source!==frame.contentWindow||event.origin!==origin)return;
     const m=event.data||{};
     if(m.type==='CDQ_READER_READY'){

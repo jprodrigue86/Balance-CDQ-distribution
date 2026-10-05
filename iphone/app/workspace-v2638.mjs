@@ -45,8 +45,9 @@ function measure(){
   const set=(key,value)=>{if(root.style.getPropertyValue(key)!==value)root.style.setProperty(key,value);};
   set('--cdq-workspace-top',top+'px');set('--cdq-workspace-bottom',bottom+'px');
   root.dataset.cdqWorkspaceOwner=ownerKey();
-  const reader=$('#cdqReaderFrame');if(reader){reader.dataset.workspaceRoute??=active;reader.hidden=!canRead();root.classList.toggle('cdq-workspace-reader-open',!reader.hidden);const readerTop=Math.max(0,Math.ceil(header?.getBoundingClientRect().bottom||0));reader.style.setProperty('height',Math.max(0,h-readerTop-bottom)+'px','important');set('--cdq-workspace-top',readerTop+'px');}
-  const payload={type:'CDQ_WORKSPACE_LAYOUT_V2638',top,bottom,route:active,owner:ownerKey(),canRead:canRead()};
+  const accessState=typeof cdqAccessState==='undefined'?'ready':cdqAccessState,account=typeof utilisateurCourantEmail==='undefined'?'':String(utilisateurCourantEmail||'');
+  const reader=$('#cdqReaderFrame');if(reader){reader.dataset.workspaceRoute??=active;reader.hidden=!canRead()&&!['pending','checking'].includes(accessState);root.classList.toggle('cdq-workspace-reader-open',!reader.hidden);const readerTop=Math.max(0,Math.ceil(header?.getBoundingClientRect().bottom||0));reader.style.setProperty('height',Math.max(0,h-readerTop-bottom)+'px','important');set('--cdq-workspace-top',readerTop+'px');}
+  const payload={type:'CDQ_WORKSPACE_LAYOUT_V2638',top,bottom,route:active,owner:ownerKey(),account,accessState,canRead:canRead()};
   const signature=JSON.stringify(payload);if(measure.last!==signature){measure.last=signature;window.parent.postMessage(payload,location.origin);}
 }
 function iconTheme(){if(window.cdqIconThemesV2514?.getStyle)return window.cdqIconThemesV2514.getStyle();try{return JSON.parse(localStorage.getItem('cdqIconThemeV2514:'+calibrationIdentity().email)||'null')?.style||'current';}catch{return 'current';}}
@@ -124,8 +125,11 @@ function hidePages(){
   for(const p of $$('dialog[open]')){if(/access|auth|biometric/i.test(p.id))continue;p.close();}
   document.documentElement.classList.remove('cdq-report-open-v2578','cdq-inventory-modern-open-v2592','cdq-invoice-open-v2590');
 }
-export function navigate(route,{toggle=false,adopt=false}={}){
-  if(!adopt&&route!=='home'&&document.documentElement.classList.contains('cdq-workspace-reader-open')){pendingNavigation={route,toggle};window.parent.postMessage({type:'CDQ_WORKSPACE_READER_NAV_V2677'},location.origin);return;}
+export function navigate(route,{toggle=false,adopt=false,userInitiated=false}={}){
+  if(!adopt&&document.documentElement.classList.contains('cdq-workspace-reader-open')){
+    if(userInitiated){pendingNavigation={route,toggle};window.parent.postMessage({type:'CDQ_WORKSPACE_READER_NAV_V2677',userInitiated:true,readerSession:document.documentElement.dataset.cdqReaderSessionV2679},location.origin);}
+    return;
+  }
   const favorites=route==='favorites';
   if(route==='drive'||favorites)route='dossier';if(route==='home')route='';if(toggle&&active===route)route='';
   if(!calibrationIdentity().email)return;
@@ -275,7 +279,7 @@ function requestHome(){
   if(document.documentElement.classList.contains('cdq-workspace-reader-open')){
     homeAfterReader=true;
     if(reader&&!reader.hidden){homeReaderSource=reader.contentWindow;homeReaderSource?.postMessage({type:'CDQ_READER_REQUEST_CLOSE'},new URL(reader.src||location.href,location.href).origin);}
-    else window.parent.postMessage({type:'CDQ_WORKSPACE_READER_HOME_V2640'},location.origin);
+    else window.parent.postMessage({type:'CDQ_WORKSPACE_READER_HOME_V2640',userInitiated:true,readerSession:document.documentElement.dataset.cdqReaderSessionV2679},location.origin);
     return;
   }
   returnHome();
@@ -293,7 +297,7 @@ function start(){
   observedOwner=ownerKey();syncNav();
   // Capture at window before legacy navigation handlers. The same route closes,
   // another route switches; unsaved invoice inputs remain in their existing DOM.
-  window.addEventListener('click',e=>{const b=e.target.closest?.('.bottom-nav-item');if(!b)return;const route=b.dataset.workspaceRoute||labels[$('small',b)?.textContent.trim()];if(!route)return;e.preventDefault();e.stopImmediatePropagation();if(route==='home'){requestHome();return;}navigate(route,{toggle:true});},true);
+  window.addEventListener('click',e=>{const b=e.target.closest?.('.bottom-nav-item');if(!b)return;const route=b.dataset.workspaceRoute||labels[$('small',b)?.textContent.trim()];if(!route)return;e.preventDefault();e.stopImmediatePropagation();if(route==='home'){requestHome();return;}navigate(route,{toggle:true,userInitiated:true});},true);
   window.addEventListener('message',e=>{if(!homeReaderSource||e.source!==homeReaderSource)return;if(e.data?.type==='CDQ_READER_CLOSE')readerClosed();if(e.data?.type==='CDQ_READER_CLOSE_CANCELLED_V2640')readerCancelled();});
   const choose=window.choisirCompagnie;if(typeof choose==='function')window.choisirCompagnie=function(...args){const r=choose.apply(this,args);if(canRead()){navigate('');window.cdqFastContextV2642?.warm(companyId());}schedule();return r;};
   if(window.cdqDriveV2521){window.cdqDriveV2521.open=()=>navigate('dossier');window.cdqDriveV2521.openFavorites=()=>navigate('favorites');window.cdqDriveV2521.close=()=>{if(['dossier','favorites'].includes(active))navigate('');};}

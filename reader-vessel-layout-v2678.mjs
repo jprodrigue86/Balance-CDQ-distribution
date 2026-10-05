@@ -1,9 +1,11 @@
-// Points measured on the load-cell collars of the four approved photographs.
+import {tremiePhotoV2679} from './reader-tremie-photo-v2679.mjs';
+import {curvedTremieArrowV2679} from './reader-tremie-arrows-v2679.mjs';
+// Points measured on the load-cell collars of the report photographs.
 // Coordinates are normalized from each image's top left, not the page.
 export const vesselFeetV2678=Object.freeze({
  cuve3:{arriere_gauche:[.48,.834],avant_gauche:[.25,.926],avant_droit:[.759,.926]},
  cuve4:{arriere_gauche:[.373,.68],arriere_droit:[.758,.69],avant_gauche:[.235,.813],avant_droit:[.71,.831]},
- tremie3:{arriere_gauche:[.66,.742],avant_gauche:[.143,.851],avant_droit:[.86,.851]},
+ tremie3:{arriere_gauche:[.563,.707],avant_gauche:[.18,.813],avant_droit:[.815,.819]},
  tremie4:{arriere_gauche:[.282,.693],arriere_droit:[.719,.693],avant_gauche:[.135,.852],avant_droit:[.865,.852]}
 });
 export function normalizeVesselLayoutV2678(pdf,L){
@@ -12,6 +14,7 @@ export function normalizeVesselLayoutV2678(pdf,L){
  const type=form.getField('type_balance'),title=type.getSelected?.().join(' ')||type.getText?.()||'',kind=/cuve/i.test(title)?'cuve':/tr[eé]mie/i.test(title)?'tremie':'';
  if(!kind)return false;
  const marker=N('CDQVesselLayoutV2678'),first=!page.node.has(marker),font=pdf.embedStandardFont(L.StandardFonts.HelveticaBold);
+ const diagramMarker=N('CDQTremieDiagramV2679'),refreshDiagram=first||kind==='tremie'&&!page.node.has(diagramMarker);
  const embedded={};for(const [ref,o]of pdf.context.enumerateIndirectObjects())if(o instanceof L.PDFDict&&o.get(N('Type'))===N('Font')){
   const name=o.get(N('BaseFont'))?.decodeText?.()||'',d=o.lookupMaybe(N('FontDescriptor'),L.PDFDict);
   if(d&&(d.has(N('FontFile'))||d.has(N('FontFile2'))||d.has(N('FontFile3')))&&o.get(N('Encoding'))===N('WinAnsiEncoding')){
@@ -54,13 +57,20 @@ export function normalizeVesselLayoutV2678(pdf,L){
   }
   page.node.normalize();const resources=page.node.Resources(),fonts=resources.lookupMaybe(N('Font'),L.PDFDict)||pdf.context.obj({});fonts.set(N('CDQ78'),fontRef);resources.set(N('Font'),fonts);
   const ref=pdf.context.register(pdf.context.flateStream(art));page.node.addContentStream(ref);page.node.set(marker,ref);
+ }
+ if(refreshDiagram){
   // Stable widget locations in both variants keep the live form aligned.
   for(const phase of ['avant','apres'])for(const position of ['arriere_gauche','arriere_droit','avant_gauche','avant_droit'])
    for(const w of form.getField('excentricite_'+phase+'_'+position).acroField.getWidgets())w.setRectangle(cornerRect(phase,position));
   const blank=stream('q Q',591,116);
   for(const count of [3,4]){
    const box=form.getCheckBox('_cdq_points_diagram_'+count),w=box.acroField.getWidgets()[0],old=w.dict.lookup(N('AP'),L.PDFDict).lookup(N('N'),L.PDFDict).lookup(N('Yes'),L.PDFRawStream);
-   const imageRef=old.dict.lookup(N('Resources'),L.PDFDict).lookup(N('XObject'),L.PDFDict).get(N('Hardware'+count)),image=pdf.context.lookup(imageRef);
+   let imageRef=old.dict.lookup(N('Resources'),L.PDFDict).lookup(N('XObject'),L.PDFDict).get(N('Hardware'+count));
+   if(kind==='tremie'&&count===3){
+    const photo=tremiePhotoV2679,encoded=Uint8Array.from(atob(photo.jpeg),c=>c.charCodeAt(0));
+    imageRef=pdf.context.register(L.PDFRawStream.of(pdf.context.obj({Type:'XObject',Subtype:'Image',Width:photo.width,Height:photo.height,ColorSpace:'DeviceRGB',BitsPerComponent:8,Filter:'DCTDecode'}),encoded));
+   }
+   const image=pdf.context.lookup(imageRef);
    const ratio=image.dict.lookup(N('Width'),L.PDFNumber).asNumber()/image.dict.lookup(N('Height'),L.PDFNumber).asNumber(),hh=Math.min(90,94/ratio),hw=hh*ratio,px=157-hw/2,py=154,feet=vesselFeetV2678[kind+count];
    let src='q 1 1 1 rg 10.5 148 591 116 re f Q\n';
    for(const [phase,dx]of [['avant',0],['apres',300]]){
@@ -72,13 +82,15 @@ export function normalizeVesselLayoutV2678(pdf,L){
      const r=cornerRect(phase,position),rear=position.startsWith('arriere'),left=position.endsWith('gauche'),label=rear?(count===3?'Arrière':left?'Arrière gauche':'Arrière droit'):left?'Avant gauche':'Avant droit';
      const tx=px+dx+u*hw,ty=py+(1-v)*hh,sx=left?r.x+r.width:r.x,sy=r.y+r.height/2,knee=rear?[left?106+dx:208+dx,ty]:[sx,sy],angle=Math.atan2(ty-knee[1],tx-knee[0]),a=angle+2.65,b=angle-2.65;
      src+=cell(r)+text(label,r.x,r.y+r.height+3,8.2,r.width);
-     src+='q .075 .22 .64 RG .075 .22 .64 rg .9 w '+sx+' '+sy+' m '+knee.join(' ')+' l '+tx+' '+ty+' l S '+tx+' '+ty+' m '+(tx+4*Math.cos(a))+' '+(ty+4*Math.sin(a))+' l '+(tx+4*Math.cos(b))+' '+(ty+4*Math.sin(b))+' l h f Q\n';
+     if(kind==='tremie')src+=curvedTremieArrowV2679(sx+(left?.9:-.9),sy,tx,ty,{rear,left});
+     else src+='q .075 .22 .64 RG .075 .22 .64 rg .9 w '+sx+' '+sy+' m '+knee.join(' ')+' l '+tx+' '+ty+' l S '+tx+' '+ty+' m '+(tx+4*Math.cos(a))+' '+(ty+4*Math.sin(a))+' l '+(tx+4*Math.cos(b))+' '+(ty+4*Math.sin(b))+' l h f Q\n';
     }
    }
    const ap=stream('q 1 0 0 1 -10.5 -148 cm\n'+src+' Q',591,116,{Font:{CDQ78:fontRef},XObject:{['Hardware'+count]:imageRef}});
    w.setRectangle({x:10.5,y:148,width:591,height:116});w.dict.set(N('AP'),pdf.context.obj({N:{Yes:ap,Off:blank}}));
    const kids=box.acroField.dict.lookup(N('Kids'),L.PDFArray),annots=page.node.Annots();for(const ref of kids.asArray()){const i=annots.asArray().findIndex(a=>String(a)===String(ref));if(i>=0){annots.remove(i);annots.insert(0,ref);}}
   }
+  if(kind==='tremie')page.node.set(diagramMarker,L.PDFBool.True);
  }
  // Clear MK as well as BS: otherwise edited PDF.js fields recreate old frames.
  for(const f of form.getFields()){

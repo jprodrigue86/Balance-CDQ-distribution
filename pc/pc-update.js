@@ -48,6 +48,7 @@
     return;
   }
   let reg=null,checking=null,applying=false,latest=null,lastCheck=0;
+  function pdfOpen(){if(document.querySelector('#legacy-pdf-reader,#cdqReaderFrame'))return true;try{return !!document.getElementById('app')?.contentDocument?.querySelector('#cdqReaderFrame');}catch{return false;}}
   function post(){
     const frame=document.getElementById('app');
     if(frame?.contentWindow)frame.contentWindow.postMessage({type:'CDQ_PC_STATUS',state},origin);
@@ -105,10 +106,12 @@
   }
   async function apply(){
     if(applying)return;
+    if(pdfOpen()){status('Fermez le PDF avant de relancer la mise à jour.',true);return;}
     if(legacyPath){location.href=canonicalBase.href;return;}
     await check(true);
     if(!reg?.waiting||!latest||latest.release===current){await waiting();return;}
     if(!(await waiting()))return;
+    if(pdfOpen()){status('Fermez le PDF avant de relancer la mise à jour.',true);return;}
     if(!confirm('Enregistrez et fermez vos documents avant la mise à jour.\n\nRedémarrer CDQ maintenant ?'))return;
     applying=true;status('Installation de la mise à jour PC…',false,true);
     reg.waiting.postMessage({type:'CDQ_PC_ACTIVATE',release:latest.release});
@@ -122,7 +125,7 @@
     else if(['CDQ_PC_APPLY','CDQ_FORCE_UPDATE','CDQ_OPEN_SCRIPT_MANAGER'].includes(type)){e.stopImmediatePropagation();void apply();}
     else if(type==='CDQ_SELECTOR_READY'){post();void check();}
   },true);
-  if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('controllerchange',()=>{if(applying)location.reload();});
+  if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('controllerchange',()=>{if(applying){if(pdfOpen()){applying=false;status('Mise à jour prête. Fermez le PDF avant de relancer.',true);return;}location.reload();}});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void check();});
   window.addEventListener('online',()=>{void check(true);});
   window.addEventListener('load',()=>{void check();},{once:true});
