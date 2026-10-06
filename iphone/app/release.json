@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.91",
-  "release": "4ffc5a06075fd3ddbd1a81bf520cf390fb2ca584f5fb1b8b686611d4540cb829",
+  "version": "26.92",
+  "release": "1e31899328240e45c978a0fbdff95ba7387347a07640c3eda6f53a1d8efca46d",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.06-v26.91-screen-pdf-fixes",
-  "androidSelectorSha256": "ed37756e7391edb78abcb4859c956fcef5c9f7759291e9f1c718a89f74ca9405",
+  "androidSourceBuild": "2026.10.06-v26.92-music-overlay",
+  "androidSelectorSha256": "879d75d67505f896bde526722df353c8c072de0e7104bf44b02d6594cd9e1a13",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
   "files": 460
 }
