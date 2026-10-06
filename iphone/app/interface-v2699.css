@@ -1,0 +1,24 @@
+/* Shared interface refinements; product photographs retain their original colors. */
+#cdqInventoryModernV2592 :is(.cdq-im-photo,.cdq-im-thumb,.cdq-im-alert-thumb){background:#000!important;color:#fff!important}
+#cdqInventoryModernV2592 :is(.cdq-im-photo,.cdq-im-thumb,.cdq-im-alert-thumb)>img{background:transparent!important}
+#cdqOpportunitiesPageV2638 .cdq-op-required>:is(input,select){border-left:3px solid #eb505a!important}
+#cdqOpportunitiesPageV2638 label{min-width:0}
+#cdqOpportunitiesPageV2638 :is(input,select,textarea){min-width:0;box-sizing:border-box;width:100%}
+#cdqDrivePageV2638 .cdq-workspace-row>.open>svg{display:block!important;flex:0 0 34px!important;width:34px!important;height:34px!important;min-width:34px!important;color:var(--cdq-ink)!important}
+#cdqDrivePageV2638 [data-drive-kind=folder]>.open>svg{color:#e8b947!important}
+#cdqDrivePageV2638 [data-drive-kind=pdf]>.open>svg{color:#ec6675!important}
+#cdqDrivePageV2638 [data-drive-kind=sheet]>.open>svg{color:#42bd82!important}
+#cdqDrivePageV2638 [data-drive-kind=doc]>.open>svg{color:#549aec!important}
+html[data-cdq-icon-style=minimal] body .bottom-nav :is(svg,.cdq-workspace-icon){color:var(--cdq-ink)!important;stroke:currentColor!important}
+html[data-cdq-icon-style=minimal] body [data-cdq-heading-icon-v2675] svg{color:var(--cdq-ink)!important;stroke:currentColor!important}
+html body .cdq-icon-choice-v2514[data-icon-style=minimal] .cdq-preview-art-v2651{color:#eef6fa!important}
+html body .cdq-icon-choice-v2514[data-icon-style=minimal] .cdq-preview-art-v2651 svg{color:#eef6fa!important;stroke:currentColor!important}
+html[data-cdq-icon-style=minimal][data-cdq-palette=light] body .bottom-nav .cdq-icon-host-v2514[data-art-source=transparent]::after{filter:brightness(0)!important}
+html[data-cdq-icon-style=minimal][data-cdq-palette=light] body :is([data-cdq-heading-icon-v2675],[data-pc-home-art]) .cdq-icon-host-v2514[data-art-source=transparent]::after{filter:brightness(0)!important}
+.cdq-workspace-row>.cdq-swipe-overlay[hidden]{display:none!important}
+.cdq-drive-edit-v2699{width:min(480px,calc(100% - 32px));max-height:calc(100dvh - 40px);overflow:auto;box-sizing:border-box;border:1px solid var(--cdq-line);border-radius:12px;background:var(--cdq-surface);color:var(--cdq-ink);padding:20px}
+.cdq-drive-edit-v2699::backdrop{background:#0009}
+.cdq-drive-edit-v2699 h2{margin-top:0}.cdq-drive-edit-v2699 p{overflow-wrap:anywhere}
+.cdq-drive-edit-v2699 input{box-sizing:border-box;width:100%;padding:10px;background:var(--cdq-raised);color:var(--cdq-ink);border:1px solid var(--cdq-line);border-radius:7px;font:inherit}
+.cdq-drive-edit-v2699 footer{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+.cdq-drive-edit-v2699 button{padding:10px 16px;background:var(--cdq-raised);color:var(--cdq-ink);border:1px solid var(--cdq-line);border-radius:7px;font:inherit;cursor:pointer}
