@@ -40,8 +40,8 @@ export function createPdfSaveRecoveryV2680({get,put,rpc,guard,owner,original,cle
   }
   guard(email);
   if(!result?.ok||!result.id||!result.revision)throw Error('La sauvegarde n’a pas été confirmée. Les réponses restent sur cet appareil.');
-  await put('pdf-save-receipt',a.id,{revision:result.revision,targetId:result.id,fileName:result.nom,clientId:result.clientId});guard(email);
-  if(result.id!==a.targetId)await clearSource(a.targetId,a.id);guard(email);
+  await put('pdf-save-receipt',a.id,{...result,revision:result.revision,targetId:result.id,fileName:result.nom,clientId:result.clientId});guard(email);
+  await clearSource(a.targetId,a.id);guard(email);
   return {...result,recovered:result.id!==a.targetId};
  };
 }

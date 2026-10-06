@@ -1,11 +1,11 @@
 {
   "platform": "pc-pwa",
-  "version": "26.90",
-  "release": "27aeb12600d96726a6ff88080f3795933039d144325a2afd665a5c13aa5dffec",
+  "version": "26.91",
+  "release": "4a8b555d6b7882998c1c468922c2449774021734b8138906e4502eed59a6aeef",
   "desktopModel": 3,
-  "androidSourceBuild": "2026.10.06-v26.90-photo-navigation",
-  "androidSelectorSha256": "8680d05fef29ea31c98180ebdc76feaec0380eaf73d2698aefe770dba5c1c2c1",
+  "androidSourceBuild": "2026.10.06-v26.91-screen-pdf-fixes",
+  "androidSelectorSha256": "ed37756e7391edb78abcb4859c956fcef5c9f7759291e9f1c718a89f74ca9405",
   "generatedFrom": "scripts/build-pc-v2676.mjs",
-  "files": 460,
-  "build": "2026.10.06-v26.90-pc-workspace"
+  "files": 464,
+  "build": "2026.10.06-v26.91-pc-workspace"
 }
