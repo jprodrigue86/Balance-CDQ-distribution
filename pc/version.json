@@ -1,11 +1,11 @@
 {
   "platform": "pc-pwa",
-  "version": "26.99",
-  "release": "b74b16a29f45114c81b347462dba71622e5ee5427285854c50341e2260a7d8bd",
+  "version": "27.00",
+  "release": "15685d3dc55aab238f734ab516ff6a818f8ba44164226c08c6acf9f5f27aaeb9",
   "desktopModel": 3,
-  "androidSourceBuild": "2026.10.06-v26.99-opportunity-home-drive-inventory-themes",
-  "androidSelectorSha256": "fbc1c9ede4af7e354728e41a5c4d7818513c0138e51588450b3653b53c4054e1",
+  "androidSourceBuild": "2026.10.06-v27.00-precision-fonts",
+  "androidSelectorSha256": "fe3ee798730b73d7682274d22dc604cc30378cba5261a5f52d5a3cd8ee5f0246",
   "generatedFrom": "scripts/build-pc-v2676.mjs",
-  "files": 478,
-  "build": "2026.10.06-v26.99-pc-workspace"
+  "files": 479,
+  "build": "2026.10.06-v27.00-pc-workspace"
 }
