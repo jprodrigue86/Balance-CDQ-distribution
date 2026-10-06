@@ -239,7 +239,7 @@ export function isNavigableField(field){
   return isEditable(field)&&!field.dataset?.cdqChoiceSource&&!isAutomaticFieldName(field.name);
 }
 
-export function installFormNavigation({surface, toolbar, previous, next, done, owner = document, reveal,openChoice,choiceIsOpen=()=>false}) {
+export function installFormNavigation({surface, toolbar, previous, next, done, owner = document, reveal,openChoice,choiceIsOpen=()=>false,validate=()=>true}) {
   const selector = '.textWidgetAnnotation input, .textWidgetAnnotation textarea, .choiceWidgetAnnotation select, button[data-cdq-choice]';
   let active = null,autoChoice = null;
   const isChoice = field => field?.tagName === 'SELECT' && field.matches?.('.choiceWidgetAnnotation select');
@@ -268,6 +268,7 @@ export function installFormNavigation({surface, toolbar, previous, next, done, o
   }
   function go(step, from = active) {
     if(choiceIsOpen())return false;
+    if(!validate(from))return true; // handled: keep native Tab/Enter from leaving an invalid reading
     const list = fields(), index = list.indexOf(from), target = list[index + step];
     if (index < 0 || !target) return false;
     autoChoice=null;
@@ -344,7 +345,7 @@ export function installNativeTextInput(surface){
   return {configure(fields){
     for(const input of surface.querySelectorAll('.textWidgetAnnotation input,.textWidgetAnnotation textarea')){
       const fieldActions=(fields?.get?.(input.name)||fields?.[input.name])?.[0]?.actions;const actions=fieldActions?.get?.('Keystroke')||fieldActions?.Keystroke;
-      if(actions?.length&&actions.every(code=>/^\s*if\(event\.willCommit && (?:event\.commitKey===2|\(event\.commitKey===2 \|\| event\.commitKey===3\))/.test(code)&&code.includes('_cdqNavigationTimer')))input.dataset.cdqNativeInput='true';
+      if(actions?.length&&actions.every(code=>code.includes('CDQDecimalPrecisionV2695')||/^\s*if\(event\.willCommit && (?:event\.commitKey===2|\(event\.commitKey===2 \|\| event\.commitKey===3\))/.test(code)&&code.includes('_cdqNavigationTimer')))input.dataset.cdqNativeInput='true';
     }
   }};
 }
