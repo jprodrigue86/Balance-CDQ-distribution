@@ -1,10 +1,10 @@
 {
   "platform": "pc-pwa",
-  "version": "26.92",
-  "release": "50f2fb17b0e117716ed9df4590e8c0c77eff95ebe1165d248d6937a0c7016049",
+  "version": "26.93",
+  "release": "246c659c261e6db9975f4a1e4425ed3f18416894398f9ead48a4b55493689772",
   "desktopModel": 3,
-  "androidSourceBuild": "2026.10.06-v26.92-music-overlay",
-  "androidSelectorSha256": "879d75d67505f896bde526722df353c8c072de0e7104bf44b02d6594cd9e1a13",
+  "androidSourceBuild": "2026.10.06-v26.93-precision-cyan-persistence",
+  "androidSelectorSha256": "36e3f2bfbdccde323e287e1cdbfa8bbe2691c5474606efebebd158b00309ec1d",
   "generatedFrom": "scripts/build-pc-v2676.mjs",
   "files": 464
 }

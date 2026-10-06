@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.92",
-  "release": "1e31899328240e45c978a0fbdff95ba7387347a07640c3eda6f53a1d8efca46d",
+  "version": "26.93",
+  "release": "a3e06170f47cf92f8a16244adde0810593ba27e655079b3c79c67b3cf3ea7e1a",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.06-v26.92-music-overlay",
-  "androidSelectorSha256": "879d75d67505f896bde526722df353c8c072de0e7104bf44b02d6594cd9e1a13",
+  "androidSourceBuild": "2026.10.06-v26.93-precision-cyan-persistence",
+  "androidSelectorSha256": "36e3f2bfbdccde323e287e1cdbfa8bbe2691c5474606efebebd158b00309ec1d",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
   "files": 460
 }

@@ -7,7 +7,9 @@ export const precisionEquipmentV2691=[
 export function normalizePrecisionEquipmentV2691(pdf,L){
  const N=L.PDFName.of,form=pdf.getForm(),page=pdf.getPage(0);
  if(!form.getFieldMaybe('type_plateau')||!form.getFieldMaybe('resolution'))return false;
- const marker=N('CDQPrecisionEquipmentV2691');if(page.node.has(marker))return false;
+ // Repaint reports saved before the V2693 stacking fix as well as new masters.
+ // Their V2691 marker can remain even after a save has erased these cells.
+ const marker=N('CDQPrecisionEquipmentV2693');if(page.node.has(marker))return false;
  const labels=[['IDENTIFICATION DE LA BALANCE','TYPE DE BALANCE','TYPE DE PLATEAU','ÉTENDUE VÉRIFIÉE','LÉGAL POUR LE COMMERCE'],['CAPACITÉ MAXIMALE (Max)','UNITÉ DE MESURE','ÉCHELON (e)','RÉSOLUTION (d)','ÉTALON UTILISÉ']];
  const font=pdf.embedStandardFont(L.StandardFonts.HelveticaBold),left=11.5,width=113.8,gap=5;
  // The older mask erased the lower half of the printer category's border.

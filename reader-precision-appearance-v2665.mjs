@@ -96,10 +96,14 @@ export function normalizePrecisionAppearanceV2665(pdf,L){
  for(const [page,rectangles]of boxes){
   const unique=[...new Map(rectangles.map(r=>[[r.x,r.y,r.width,r.height].join(','),r])).values()];
   const source='% CDQ precision single cells V2673\nq 0.6 0.992156863 0.992156863 rg 0.02 0.85 0.94 RG 1 w\n'+unique.map(r=>[r.x,r.y,r.width,r.height].join(' ')+' re B').join('\n')+'\nQ\n';
-  const marker=N('CDQPrecisionBackgroundV2670'),ref=page.node.get(marker),old=ref&&pdf.context.lookup(ref);
-  if(old instanceof PDFRawStream&&sourceOf(old)===source)continue;
-  if(old instanceof PDFRawStream)replace(ref,old,source);
-  else{const stream=pdf.context.flateStream(Uint8Array.from(source,c=>c.charCodeAt(0))),added=pdf.context.register(stream);page.node.addContentStream(added);page.node.set(marker,added);changed=true;}
+  const marker=N('CDQPrecisionBackgroundV2670');let ref=page.node.get(marker);const old=ref&&pdf.context.lookup(ref);
+  if(old instanceof PDFRawStream){if(sourceOf(old)!==source)replace(ref,old,source);}
+  else{const stream=pdf.context.flateStream(Uint8Array.from(source,c=>c.charCodeAt(0)));ref=pdf.context.register(stream);page.node.addContentStream(ref);page.node.set(marker,ref);changed=true;}
+  // A later equipment layout paints white behind its labels. The one cyan
+  // backing must follow that mask even when its rectangle bytes are unchanged.
+  // Otherwise saving removes the layout's temporary cells and leaves blanks.
+  const contents=page.node.Contents(),index=contents.asArray().findIndex(r=>String(r)===String(ref));
+  if(index>=0&&index<contents.size()-1){contents.remove(index);contents.push(ref);changed=true;}
  }
  // The two upper-right cells must follow the same visibility as their inputs.
  // A read-only checkbox owns their paint; its Off appearance is empty for
