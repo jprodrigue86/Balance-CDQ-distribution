@@ -42,12 +42,12 @@ function page(id,title,subtitle=''){
 function measure(){
   const root=document.documentElement;if(!root.classList.contains('cdq-mobile-layout'))return;
   const header=$('#appHeader'),nav=$('.bottom-nav'),top=root.classList.contains('cdq-desktop-v2676')?(parseFloat(getComputedStyle(root).getPropertyValue('--cdq-pc-top'))||152):Math.max(0,Math.ceil(header?.getBoundingClientRect().bottom||0));
-  const h=window.visualViewport?.height||innerHeight,bottom=root.classList.contains('cdq-desktop-v2676')?0:Math.max(0,Math.ceil(h-(nav?.getBoundingClientRect().top||h)));
+  const h=window.visualViewport?.height||innerHeight,bottom=root.classList.contains('cdq-desktop-v2676')?10:Math.max(0,Math.ceil(h-(nav?.getBoundingClientRect().top||h)));
   const set=(key,value)=>{if(root.style.getPropertyValue(key)!==value)root.style.setProperty(key,value);};
   set('--cdq-workspace-top',top+'px');set('--cdq-workspace-bottom',bottom+'px');
   root.dataset.cdqWorkspaceOwner=ownerKey();
   const accessState=typeof cdqAccessState==='undefined'?'ready':cdqAccessState,account=typeof utilisateurCourantEmail==='undefined'?'':String(utilisateurCourantEmail||'');
-  const reader=$('#cdqReaderFrame');if(reader){reader.dataset.workspaceRoute??=active;reader.hidden=!canRead()&&!['pending','checking'].includes(accessState);root.classList.toggle('cdq-workspace-reader-open',!reader.hidden);const readerTop=Math.max(0,Math.ceil(header?.getBoundingClientRect().bottom||0));reader.style.setProperty('height',Math.max(0,h-readerTop-bottom)+'px','important');set('--cdq-workspace-top',readerTop+'px');}
+  const reader=$('#cdqReaderFrame');if(reader){reader.dataset.workspaceRoute??=active;reader.hidden=!canRead()&&!['pending','checking'].includes(accessState);root.classList.toggle('cdq-workspace-reader-open',!reader.hidden);const readerTop=root.classList.contains('cdq-desktop-v2676')?top:Math.max(0,Math.ceil(header?.getBoundingClientRect().bottom||0));reader.style.setProperty('height',Math.max(0,h-readerTop-bottom)+'px','important');set('--cdq-workspace-top',readerTop+'px');}
   const payload={type:'CDQ_WORKSPACE_LAYOUT_V2638',top,bottom,route:active,owner:ownerKey(),account,accessState,canRead:canRead()};
   const signature=JSON.stringify(payload);if(measure.last!==signature){measure.last=signature;window.parent.postMessage(payload,location.origin);}
 }
@@ -298,7 +298,7 @@ function start(){
   observedOwner=ownerKey();syncNav();
   // Capture at window before legacy navigation handlers. The same route closes,
   // another route switches; unsaved invoice inputs remain in their existing DOM.
-  window.addEventListener('click',e=>{const b=e.target.closest?.('.bottom-nav-item');if(!b)return;const route=b.dataset.workspaceRoute||labels[$('small',b)?.textContent.trim()];if(!route)return;e.preventDefault();e.stopImmediatePropagation();if(route==='home'){requestHome();return;}navigate(route,{toggle:true,userInitiated:true});},true);
+  window.addEventListener('click',e=>{const b=e.target.closest?.('.bottom-nav-item');if(!b)return;const route=b.dataset.workspaceRoute||labels[$('small',b)?.textContent.trim()];if(!route)return;e.preventDefault();e.stopImmediatePropagation();if(route==='home'){requestHome();return;}if(document.documentElement.classList.contains('cdq-desktop-v2676')&&active===route)return;navigate(route,{toggle:true,userInitiated:true});},true);
   window.addEventListener('message',e=>{if(!homeReaderSource||e.source!==homeReaderSource)return;if(e.data?.type==='CDQ_READER_CLOSE')readerClosed();if(e.data?.type==='CDQ_READER_CLOSE_CANCELLED_V2640')readerCancelled();});
   const choose=window.choisirCompagnie;if(typeof choose==='function')window.choisirCompagnie=function(...args){const r=choose.apply(this,args);if(canRead()){navigate('');window.cdqFastContextV2642?.warm(companyId());}schedule();return r;};
   if(window.cdqDriveV2521){window.cdqDriveV2521.open=()=>navigate('dossier');window.cdqDriveV2521.openFavorites=()=>navigate('favorites');window.cdqDriveV2521.close=()=>{if(['dossier','favorites'].includes(active))navigate('');};}
