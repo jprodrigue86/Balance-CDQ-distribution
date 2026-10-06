@@ -50,9 +50,11 @@ function cdqStartupCachedV2527_(state) {
   // Server-confirmed session and a live Drive permission check travel together.
   // Never include customer metadata in a preview-only login response.
   try{
+    cdqTraceStageV2687_('drive');
     const access=cdqVerifierCompteDriveV2620_(state.email);
     state.cdqDriveAccessV2638={ok:access.ok===true,email:state.email,checkedAt:Date.now()};
     if(access.ok===true){
+      cdqTraceStageV2687_('company-cache');
       const raw=CacheService.getScriptCache().get('LISTE_COMPAGNIES_V8_UI');
       const companies=raw?JSON.parse(raw):null;
       if(Array.isArray(companies))state.compagniesInitiales=companies;

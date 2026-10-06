@@ -147,7 +147,7 @@ let feedbackOwner='',alerts=[],seenAlerts=new Set(),polling=false;
 function syncIdentity(){
   const owner=calibrationIdentity().email;if(owner===feedbackOwner)return;
   feedbackOwner=owner;alerts=[];seenAlerts=new Set();$('.cdq-cal-notice')?.remove();
-  if(dialog?.open)dialog.close();if(owner)syncFeedback();
+  if(dialog?.open)dialog.close();if(owner)setTimeout(()=>{if(calibrationIdentity().email===owner)syncFeedback();},15000);
 }
 function bindFeedback(device){
   const box=$('[data-cal-feedback]',dialog),owner=calibrationIdentity().email;

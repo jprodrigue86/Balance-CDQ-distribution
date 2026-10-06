@@ -52,7 +52,7 @@ function cdqDriveGateExplicitPermissionsV2620_(){
       pageToken=String(page.nextPageToken||'');
     }while(pageToken);
     return {users:users,domains:domains};
-  }catch(_){}
+  }catch(error){console.warn('CDQ_DRIVE_FALLBACK_V2687 '+cdqTraceSafeErrorV2687_(error));}
 
   // Compatibility when the advanced service is unavailable. The normal path
   // reads the current owner, users and domains in one paginated API request.

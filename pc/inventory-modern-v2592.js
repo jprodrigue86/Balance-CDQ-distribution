@@ -196,7 +196,7 @@ function inventoryScopeV2631(){return email()+'|'+String(typeof utilisateurCoura
 function inventoryAllowedV2631(){return (!window.cdqDriveEntryV2632||window.cdqDriveEntryV2632.canRead())&&!!email()&&(typeof cdqAccessState==='undefined'||cdqAccessState==='ready')}
 function resetInventoryCacheV2631(){inventoryEpochV2631++;inventoryPendingV2631=null;historyPendingV2631=null;inventoryLoadedAtV2631=0;clearTimeout(inventoryWarmTimerV2631);state.inv=null;state.article=null;state.history=[];state.serialServerReady=null;photoCache.clear();photoPendingV2631.clear();inventoryOwnerV2631=inventoryScopeV2631()}
 function syncInventoryScopeV2631(){if(inventoryOwnerV2631!==inventoryScopeV2631())resetInventoryCacheV2631()}
-function queueInventoryWarmV2631(){clearTimeout(inventoryWarmTimerV2631);var epoch=inventoryEpochV2631;inventoryWarmTimerV2631=setTimeout(()=>{if(epoch===inventoryEpochV2631&&inventoryAllowedV2631()&&navigator.onLine!==false)load(false).catch(()=>{})},1800)}
+function queueInventoryWarmV2631(){clearTimeout(inventoryWarmTimerV2631);var epoch=inventoryEpochV2631;inventoryWarmTimerV2631=setTimeout(()=>{if(epoch===inventoryEpochV2631&&inventoryAllowedV2631()&&navigator.onLine!==false&&page&&!page.hidden)load(false).catch(()=>{})},1800)}
 function load(force){
   syncInventoryScopeV2631();
   if(!inventoryAllowedV2631())return Promise.reject(Error('Connectez-vous avant d’ouvrir Inventaire.'));

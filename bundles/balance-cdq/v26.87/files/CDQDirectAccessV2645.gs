@@ -3,7 +3,8 @@ function cdqDirectSessionV2645_(u, registerDevice, verifiedInThisRequest) {
   if (!u || !u.email) throw new Error('Compte CDQ non autorisé.');
   const current = verifiedInThisRequest === true ? u : trouverUtilisateurAutoriseParEmail_(u.email);
   if (!current) throw new Error('Accès retiré par l’administrateur.');
-  lierCleTemporaireCDQ_(current);
+  cdqTraceStageV2687_('session');
+  if(!CDQ_BOOTSTRAP_RPC_V2687_)lierCleTemporaireCDQ_(current);
   const state = {
     autorise:true, email:current.email, role:current.role,
     jetonSession:creerSessionRpcCDQ_(current), versionBackend:CDQ_BACKEND_BUILD_,
