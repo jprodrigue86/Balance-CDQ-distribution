@@ -1,3 +1,4 @@
+import {installDecimalPrecisionV2695,decimalPrecisionErrorV2695,isCorrectionReadingV2695} from './reader-decimals-v2695.mjs';
 import {firstReaderPaintV2682} from './reader-first-paint-v2682.mjs';
 import {paintReaderResults} from './reader-results-v2648.mjs';
 import {identificationReportName} from './report-name-v2648.mjs';
@@ -28,7 +29,7 @@ $('viewer').addEventListener('change',()=>requestAnimationFrame(applyFieldTypogr
 try{const o=new URL(document.referrer).origin;if(o===location.origin||/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(o))parentOrigin=o;}catch(_){}
 const tell=data=>{if(hosted&&parentOrigin)parent.postMessage(data,parentOrigin)};
 let api,viewer,scripting,doc,touch,form,readOnly=false,dirty=false,version=0,savedVersion=0,saving=false;
-let lastAttempt=null,fieldDefinitions=null,nativeInput,readerCalibration=null,choices=null;
+let lastAttempt=null,fieldDefinitions=null,nativeInput,readerCalibration=null,choices=null,decimalGuard=null;
 const touchedIdentity=new Set();let lateIdentity=null;
 function applyLateIdentity(){
   if(!lateIdentity||!doc||opening||readOnly||closed)return;
@@ -199,12 +200,14 @@ function modified(){if(!readOnly&&!opening){dirty=true;version++;status('');}}
 function close(){if(closed)return;closed=true;dirty=false;try{$('closeDialog').close()}catch(_){};tell({type:'CDQ_READER_CLOSE'});if(!hosted)history.back();}
 async function requestClose(){
   if(saving){status('Enregistrement en cours…');return;}
+  if(decimalGuard&&!decimalGuard.validate())return;
   commitActive();await new Promise(r=>setTimeout(r,120));
   if(!dirty||readOnly){close();return;}
   $('closeError').textContent='';if(!$('closeDialog').open)$('closeDialog').showModal();
   $('keepEditing').focus();
 }
 async function output(){
+  if(decimalGuard&&!decimalGuard.validateAll())throw Error("Corrigez les décimales de la mesure avant d’enregistrer.");
   commitActive();await new Promise(r=>setTimeout(r,120));
   await scripting.dispatchWillSave();await new Promise(r=>setTimeout(r,0));
   let bytes=await doc.saveDocument();
@@ -221,6 +224,7 @@ async function finishDocument(){
 }
 async function save(external=false){
   if(!doc||saving||readOnly&&!external)return;
+  if(!readOnly&&decimalGuard&&!decimalGuard.validateAll())return;
   busy(true);$('closeError').textContent='';status(external?'Téléchargement…':'Enregistrement…');
   try{
     let blob=await output();const snapshot=version;if(lastAttempt?.version===snapshot)blob=lastAttempt.blob;
@@ -288,6 +292,7 @@ $('back').onclick=requestClose;$('saveClose').onclick=()=>{$('closeDialog').clos
 $('dismissKeyboard').addEventListener('pointerdown',e=>e.preventDefault());
 $('dismissKeyboard').onclick=()=>{
   if(saving||!doc)return;
+  if(decimalGuard&&!decimalGuard.validate())return;
   commitActive();
   cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;
   cdqKeyboardFieldV2550(false);
@@ -362,7 +367,8 @@ try{
     onConfirm:field=>form.advance(field),
     onOpen:()=>{cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;cdqKeyboardFieldV2550(false);},
     onClose:()=>form.refresh()});
-  form=installFormNavigation({surface:$('viewer'),toolbar:$('formNav'),previous:$('previousField'),next:$('nextField'),done:$('doneFields'),openChoice:field=>choices.open(field),choiceIsOpen:()=>choices.isOpen(),reveal:field=>{
+  decimalGuard=installDecimalPrecisionV2695({surface:$('viewer'),getEchelon:()=>$('viewer').querySelector('[name="echelon"]')?.value||cdqStoredFieldStateV2581('echelon').value,status});
+  form=installFormNavigation({validate:field=>decimalGuard.validate(field),surface:$('viewer'),toolbar:$('formNav'),previous:$('previousField'),next:$('nextField'),done:$('doneFields'),openChoice:field=>choices.open(field),choiceIsOpen:()=>choices.isOpen(),reveal:field=>{
     if(cdqTextEntryFieldV2550(field)){
       cdqNavigationTextFieldV2562=field;
       cdqDirectTextFieldV2557=null;
@@ -388,6 +394,7 @@ try{
     const field=e.target,value=String(field.value??'');
     if(readOnly||opening||saving||!field.name||!(/^(echelon|capacite_maximale|charge_excentricite|charge_point_\d+_(charge_utilisee|charge_contrainte|avant_correction|apres_correction)|excentricite_(avant|apres)_)/.test(field.name)))return;
     clearTimeout(liveCalculationTimer);
+    if(isCorrectionReadingV2695(field.name)&&decimalPrecisionErrorV2695(value,$('viewer').querySelector('[name="echelon"]')?.value||cdqStoredFieldStateV2581('echelon').value))return;
     if(value!==''&&!/^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(value.replace(/[\s\u00a0\u202f]/g,'')))return;
     liveCalculationTimer=setTimeout(()=>{
       if(readOnly||opening||saving||document.activeElement!==field)return;
@@ -401,3 +408,4 @@ try{
   if(hosted){$('empty').style.display='none';status('Ouverture…');}else status('Choisissez un PDF.');
   tell({type:'CDQ_READER_READY'});
 }catch(e){fail(e);$('empty').textContent='Le lecteur n’a pas pu démarrer. Fermez puis mettez à jour l’application.';}
+

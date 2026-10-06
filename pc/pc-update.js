@@ -1,4 +1,4 @@
-/* PC PWA only. Never installs APKs, touches account permissions or clears user data. */
+/* PC automatic updates: activate only after verified download and a quiet, idle workspace. Never installs APKs, touches account permissions or clears user data. */
 (() => {
   'use strict';
   const base=new URL('./',document.currentScript.src), canonicalBase=new URL('https://jprodrigue86.github.io/Balance-CDQ-distribution/pc/'), origin=location.origin;
@@ -12,7 +12,7 @@
     scheduled=false;
     const center=document.querySelector('.cdq-update-center');
     if(center){
-      text(center.querySelector('.cdq-update-help'),'Application PC : les mises à jour se téléchargent ici. Enregistrez vos documents avant de relancer. Aucune APK ni ouverture de Script Manager.');
+      text(center.querySelector('.cdq-update-help'),'Application PC : les mises à jour se téléchargent automatiquement et s’installent après la fermeture de vos documents, pendant une période d’inactivité.');
       const status=center.querySelector('#cdqUpdateStatus');text(status,state.message);
       const install=center.querySelector('#cdqInstallUpdateButton');
       if(install){install.disabled=!state.available||state.checking;text(install,state.available?'Mettre à jour et relancer':'Mise à jour PC');install.title='Mise à jour PC';}
@@ -32,6 +32,9 @@
     window.cdqReinstallerApkV2502=()=>window.open(new URL('installer.html',base).href,'_blank','noopener');
   }
   if(inside){
+    window.cdqPcUpdateSafetyV2695=async()=>{
+      try{if(typeof cdqV19SyncRunning!=='undefined'&&cdqV19SyncRunning||window.cdqDriveMain23?.active())return false;const pending=await window.cdqSyncDetailsV2679?.pending?.();return !pending?.length;}catch{return false;}
+    };
     window.addEventListener('message',e=>{
       if(e.source!==parent||e.origin!==origin||e.data?.type!=='CDQ_PC_STATUS')return;
       state=e.data.state;schedule();
@@ -47,19 +50,39 @@
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mountFrame,{once:true});else mountFrame();
     return;
   }
-  let reg=null,checking=null,applying=false,latest=null,lastCheck=0;
+  let reg=null,checking=null,applying=false,latest=null,lastCheck=0,lastActivity=Date.now(),autoTimer=null;
+  function safeIdle(){
+    if(document.visibilityState!=='visible'||Date.now()-lastActivity<15000||pdfOpen())return false;
+    const documents=[document,document.getElementById('app')?.contentDocument].filter(Boolean);
+    return documents.every(d=>{
+      if(d.querySelector('dialog[open],#legacy-pdf-reader,#cdqReaderFrame,[aria-busy="true"]'))return false;
+      const active=d.activeElement;if(active?.matches?.('input,textarea,select,[contenteditable="true"]'))return false;
+      if([...d.querySelectorAll('.modal,.cdq-modal,#invoiceModal,#inventoryModal')].some(el=>!el.hidden&&el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden'))return false;
+      const w=d.defaultView;
+      try{if(w.cdqDriveMain23?.active()||w.cdqPdfSyncV2680?.active?.()||w.cdqPendingSaveV2691)return false;}catch{return false;}
+      return true;
+    });
+  }
+  async function transfersIdle(){try{const frame=document.getElementById('app')?.contentWindow;return !frame?.cdqPcUpdateSafetyV2695||await frame.cdqPcUpdateSafetyV2695();}catch{return false;}}
+  function scheduleAutomatic(){
+    if(autoTimer||applying||!state.available||legacyPath)return;
+    autoTimer=setTimeout(async()=>{autoTimer=null;if(safeIdle()&&await transfersIdle())await apply(true);else scheduleAutomatic();},5000);
+  }
+  function activity(){lastActivity=Date.now();}
+  for(const type of ['pointerdown','keydown','input','change'])document.addEventListener(type,activity,true);
+  function trackFrame(){const d=document.getElementById('app')?.contentDocument;if(!d||d.__cdqAutoUpdateTrackedV2695)return;d.__cdqAutoUpdateTrackedV2695=true;for(const type of ['pointerdown','keydown','input','change'])d.addEventListener(type,activity,true);}
   function pdfOpen(){if(document.querySelector('#legacy-pdf-reader,#cdqReaderFrame'))return true;try{return !!document.getElementById('app')?.contentDocument?.querySelector('#cdqReaderFrame');}catch{return false;}}
   function post(){
     const frame=document.getElementById('app');
     if(frame?.contentWindow)frame.contentWindow.postMessage({type:'CDQ_PC_STATUS',state},origin);
   }
-  function status(message,available=false,busy=false){state={message,available,checking:busy};post();}
+  function status(message,available=false,busy=false){state={message,available,checking:busy};post();if(available)scheduleAutomatic();}
   async function waiting(){
     if(reg?.waiting&&latest&&latest.release!==current){
       const expected=latest.release,worker=reg.waiting;
       const actual=await new Promise(resolve=>{const ports=new MessageChannel(),timer=setTimeout(()=>{ports.port1.close();resolve('');},4000);ports.port1.onmessage=e=>{clearTimeout(timer);ports.port1.close();resolve(e.data?.release);};worker.postMessage({type:'CDQ_PC_VERSION'},[ports.port2]);});
       if(actual!==expected||worker!==reg.waiting)return false;
-      status('Mise à jour PC '+latest.version+' prête. Enregistrez vos documents avant de relancer.',true);return true;}
+      status('Mise à jour PC '+latest.version+' prête. Installation automatique lorsque vos documents sont fermés et que vous avez terminé.',true);return true;}
     return false;
   }
   async function check(force=false){
@@ -104,15 +127,16 @@
     })();
     return checking;
   }
-  async function apply(){
-    if(applying)return;
+  async function apply(automatic=false){
+    if(applying||automatic&&!safeIdle())return;
     if(pdfOpen()){status('Fermez le PDF avant de relancer la mise à jour.',true);return;}
     if(legacyPath){location.href=canonicalBase.href;return;}
-    await check(true);
+    if(!automatic)await check(true);
     if(!reg?.waiting||!latest||latest.release===current){await waiting();return;}
     if(!(await waiting()))return;
     if(pdfOpen()){status('Fermez le PDF avant de relancer la mise à jour.',true);return;}
-    if(!confirm('Enregistrez et fermez vos documents avant la mise à jour.\n\nRedémarrer CDQ maintenant ?'))return;
+    if(automatic&&(!safeIdle()||!await transfersIdle())){scheduleAutomatic();return;}
+    if(!automatic&&!confirm('Enregistrez et fermez vos documents avant la mise à jour.\n\nRedémarrer CDQ maintenant ?'))return;
     applying=true;status('Installation de la mise à jour PC…',false,true);
     reg.waiting.postMessage({type:'CDQ_PC_ACTIVATE',release:latest.release});
   }
@@ -123,11 +147,12 @@
     const type=e.data?.type;
     if(['CDQ_PC_CHECK','CDQ_CHECK_UPDATE'].includes(type)){e.stopImmediatePropagation();void check(true);}
     else if(['CDQ_PC_APPLY','CDQ_FORCE_UPDATE','CDQ_OPEN_SCRIPT_MANAGER'].includes(type)){e.stopImmediatePropagation();void apply();}
-    else if(type==='CDQ_SELECTOR_READY'){post();void check();}
+    else if(type==='CDQ_SELECTOR_READY'){trackFrame();post();void check();}
   },true);
   if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('controllerchange',()=>{if(applying){if(pdfOpen()){applying=false;status('Mise à jour prête. Fermez le PDF avant de relancer.',true);return;}location.reload();}});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void check();});
   window.addEventListener('online',()=>{void check(true);});
   window.addEventListener('load',()=>{void check();},{once:true});
+  setInterval(()=>{trackFrame();if(document.visibilityState==='visible'){void check();scheduleAutomatic();}},60000);
   window.cdqPcUpdates={check:()=>check(true),apply,status:()=>({...state})};
 })();

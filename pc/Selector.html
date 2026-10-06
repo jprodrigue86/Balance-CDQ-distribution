@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="26.94" data-cdq-pc-release="a71cb270a48501313cc9e517f114b1527c35e4f6e2798a31f7022166c4d0a806">
+<html data-cdq-pc-version="26.95" data-cdq-pc-release="44700ce026ac94ca7d3143ee9da5cc7dc68831f446aa8cd2296848b506935e2a">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -791,7 +791,7 @@ for(const name of ["workspace-v2638.mjs","corner-signals-v2677.mjs","weighing-ca
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.06-v26.94-anchored-eccentricity-tremie-constraint">
+<meta name="cdq-package-build" content="2026.10.06-v26.95-decimal-precision-stable-pc-report-art">
 
 
 <script id="cdqBridgeV23">
@@ -845,7 +845,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.06-v26.94-anchored-eccentricity-tremie-constraint'
+    build:'2026.10.06-v26.95-decimal-precision-stable-pc-report-art'
   });
 }
 
@@ -858,7 +858,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.06-v26.94-anchored-eccentricity-tremie-constraint'
+        build:'2026.10.06-v26.95-decimal-precision-stable-pc-report-art'
       });
     }
   } catch(e) {}
@@ -8899,7 +8899,7 @@ window.cdqHandleAndroidBackV2602=function(){
   if (window.cdqStableFoldersV2627) return;
   let tree = null, owner = '', restoring = false;
   const nodes = new Map();
-  const fileState = new WeakMap(), folderState = new WeakMap();
+  const fileState = new WeakMap(), folderState = new WeakMap(), fileDataV2695 = new WeakMap();
   const scope = () => String(typeof utilisateurCourantEmail === 'undefined' ? '' : utilisateurCourantEmail || '').toLowerCase() + '|' + String(typeof compagnieSelectionnee === 'undefined' ? '' : compagnieSelectionnee || '');
   const mobile = () => document.documentElement.matches('.android,.ios,.mobile-device');
   const direct = (el, selector) => el.querySelector(':scope > ' + selector);
@@ -8935,12 +8935,36 @@ window.cdqHandleAndroidBackV2602=function(){
     if (!node || !host || depth > 80) return;
     const old = new Map(Array.from(host.children).map(el => [key(el), el]).filter(([k]) => k));
     const desired = [];
-    for (const file of node.fichiers || []) {
+    const desktopV2695=document.documentElement.classList.contains('cdq-desktop-v2676');
+    let filesV2695=node.fichiers||[];
+    if(desktopV2695){
+      const remaining=new Map(filesV2695.map(f=>['f:'+String(f.id),f]));
+      filesV2695=[];
+      for(const el of host.children){const id=key(el);if(remaining.has(id)){filesV2695.push(remaining.get(id));remaining.delete(id);}}
+      filesV2695.push(...remaining.values());
+    }
+    for (const file of filesV2695) {
       const id = 'f:' + String(file.id), signature = JSON.stringify(file);
       let row = old.get(id);
       if (!row || fileState.get(row) !== signature) {
         const checked = row?.querySelector('.file-checkbox')?.checked || false;
-        const replacement = creerLigneFichier(file);
+        const dataV2695=fileDataV2695.get(row)||{...file};for(const name of Object.keys(dataV2695))if(!(name in file))delete dataV2695[name];Object.assign(dataV2695,file);
+        const replacement = creerLigneFichier(dataV2695);
+        if(desktopV2695&&row&&fileDataV2695.has(row)){
+          // Retain the row, checkbox and pointer handlers during metadata updates.
+          for(const [name,value]of Object.entries(replacement.dataset))row.dataset[name]=value;
+          for(const selector of ['.file-name-text','.file-date']){
+            const old=row.querySelector(selector),fresh=replacement.querySelector(selector);if(old&&fresh)old.textContent=fresh.textContent;
+          }
+          for(const selector of ['.file-favorite-mark','.note-presence-badge','.file-today-done-badge']){
+            const old=row.querySelector(selector),fresh=replacement.querySelector(selector);if(old&&fresh){old.hidden=fresh.hidden;old.style.display=fresh.style.display;}
+          }
+          const oldPhoto=row.querySelector('.file-photo-button,.photo-presence-badge'),freshPhoto=replacement.querySelector('.file-photo-button,.photo-presence-badge');
+          if(oldPhoto&&freshPhoto)oldPhoto.replaceWith(freshPhoto);
+          const icon=row.querySelector('.file-icon'),freshIcon=replacement.querySelector('.file-icon');if(icon&&freshIcon&&icon.innerHTML!==freshIcon.innerHTML)icon.replaceWith(freshIcon);
+          fileState.set(row,signature);desired.push(row);continue;
+        }
+        fileDataV2695.set(replacement,dataV2695);
         const check = replacement.querySelector('.file-checkbox');
         if (check && checked) { check.checked = true; replacement.classList.add('selected'); }
         if (row) row.replaceWith(replacement);
@@ -9025,7 +9049,7 @@ window.cdqHandleAndroidBackV2602=function(){
     window.dispatchEvent(new CustomEvent('cdq:folder-render-v2627'));
   }
   function restore() {
-    if (restoring || !tree || owner !== scope() || !mobile()) return;
+    if (restoring || !tree || owner !== scope() || (!mobile()&&!document.documentElement.classList.contains("cdq-desktop-v2676"))) return;
     if (typeof cdqSelectionWorkActiveV2605 === 'function' && cdqSelectionWorkActiveV2605()) return;
     const host = document.getElementById('filesContainer');
     if (!host) return;
@@ -9045,7 +9069,7 @@ window.cdqHandleAndroidBackV2602=function(){
     window.dispatchEvent(new CustomEvent('cdq:folder-render-v2627'));
   }
   window.cdqStableFoldersV2627 = {
-    version: '26.27', render, reconcile, restore, mobile,
+    version: '26.95', render, reconcile, restore, mobile,
     node: id => nodes.get(String(id)) || null,
     adopt: node => { rememberNodes(node); },
     scope,
@@ -9053,10 +9077,17 @@ window.cdqHandleAndroidBackV2602=function(){
   };
 })();
 
+// V26.95: a refresh cannot replace the target between pointerdown and click.
+document.addEventListener('pointerdown',function(e){if(document.documentElement.classList.contains('cdq-desktop-v2676')&&e.target.closest?.('.file-row'))window.cdqFilePointerHeldV2695=true;},true);
+function cdqReleaseFilePointerV2695(){window.cdqFilePointerHeldV2695=false;setTimeout(function(){const value=window.cdqDeferredPointerRenderV2695;window.cdqDeferredPointerRenderV2695=null;if(value)window.afficherContenu(value);},350);}
+document.addEventListener('pointerup',cdqReleaseFilePointerV2695,true);
+document.addEventListener('pointercancel',cdqReleaseFilePointerV2695,true);
+window.addEventListener('blur',cdqReleaseFilePointerV2695);
 function afficherContenu(
   contenu
 ){
-  if(window.cdqStableFoldersV2627.mobile() && contenu){
+  if(window.cdqFilePointerHeldV2695&&document.documentElement.classList.contains('cdq-desktop-v2676')){window.cdqDeferredPointerRenderV2695=contenu;return;}
+  if((window.cdqStableFoldersV2627.mobile()||document.documentElement.classList.contains('cdq-desktop-v2676')) && contenu){
     if(cdqSelectionWorkActiveV2605()){cdqDeferredClientRenderV2605=contenu;return;}
     const host=document.getElementById('filesContainer');
     if(!host)return;
@@ -11345,7 +11376,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.06-v26.94-anchored-eccentricity-tremie-constraint";
+  const CDQ_BUILD = "2026.10.06-v26.95-decimal-precision-stable-pc-report-art";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13636,7 +13667,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.06-v26.94-anchored-eccentricity-tremie-constraint";
+const CDQ_V19_BUILD = "2026.10.06-v26.95-decimal-precision-stable-pc-report-art";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15755,7 +15786,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.06-v26.94-anchored-eccentricity-tremie-constraint";
+const CDQ_V20_BUILD = "2026.10.06-v26.95-decimal-precision-stable-pc-report-art";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16602,7 +16633,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.06-v26.94-anchored-eccentricity-tremie-constraint";
+const CDQ_V21_BUILD = "2026.10.06-v26.95-decimal-precision-stable-pc-report-art";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21259,7 +21290,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.06-v26.94-anchored-eccentricity-tremie-constraint',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.06-v26.95-decimal-precision-stable-pc-report-art',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
