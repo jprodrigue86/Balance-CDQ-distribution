@@ -16,7 +16,8 @@
     }catch(_){}
     const sameTask=restored&&window.cdqAppSessionV2661?.id&&
       saved?.sessionId===window.cdqAppSessionV2661.id&&
-      String(saved.email||'').trim().toLowerCase()===email&&saved.token&&Number(saved.until)>Date.now();
+      String(saved.email||'').trim().toLowerCase()===email&&saved.token&&
+      Number(saved.until)>Date.now()&&Number(saved.serverExpiresAtV2686)>Date.now();
     const fresh=()=>window.cdqEmbeddedRpcV2529.prepareSession(token);
     session=sameTask?new Promise((resolve,reject)=>{
       window.cdqEmbeddedRpcV2529.run.withSuccessHandler(resolve).withFailureHandler(reject)

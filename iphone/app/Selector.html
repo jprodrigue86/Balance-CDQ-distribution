@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.86" data-cdq-iphone-release="0e8d87962e5300908e1cf3c57613559311df4c892c931a48bdc8c032a4507064">
+<html data-cdq-iphone-version="26.86" data-cdq-iphone-release="91426e3e731aad50818537f9fec29bfd9591041bf1e2c2649265a30493866e00">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqNavigationPreloadV2681">(function(){
@@ -7300,7 +7300,7 @@ function appliquerAccesAutorise(etat){
   try{if(etat&&etat.email&&cdqObtenirJetonAppareil())localStorage.setItem('cdqLastUnlockEmailV2511',String(etat.email));}catch(_){}
 
   if(etat&&etat.jetonSession)cdqSauverSessionRpcV58(etat.jetonSession);
-  window.cdqSessionExpiryV2686=Number(etat.sessionExpiresAtV2686)||Date.now()+18*60*60*1000;
+  window.cdqSessionExpiryV2686=Number(etat.sessionExpiresAtV2686)||0;
   cdqGarderActivationV41(null);
   cdqSauverTicketGoogleV42("");
   cdqGooglePromptDelegatedV42=false;
@@ -7456,7 +7456,7 @@ const cdqSession24 = (() => {
   function remember(){
     if(!mobile()||cdqAccessState!=='ready'||!cdqSessionRpcV58||!cdqObtenirJetonAppareil())return;
     touched=Date.now();
-    try{localStorage.setItem(key,JSON.stringify({token:cdqSessionRpcV58,email:utilisateurCourantEmail,sessionId:window.cdqAppSessionV2661?.id||'',until:Number(window.cdqSessionExpiryV2686)||touched+grace}));}catch(_){}
+    try{localStorage.setItem(key,JSON.stringify({token:cdqSessionRpcV58,email:utilisateurCourantEmail,sessionId:window.cdqAppSessionV2661?.id||'',serverExpiresAtV2686:Number(window.cdqSessionExpiryV2686)||0,until:Number(window.cdqSessionExpiryV2686)||touched+grace}));}catch(_){}
   }
   function resume(fallback){
     if(!mobile()||restoring)return false;
