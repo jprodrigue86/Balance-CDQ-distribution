@@ -8,7 +8,7 @@ export const navigationIconsV2651=[
   {label:'Inventaire',key:'inventory',index:3,color:'#d783ff'},
   {label:'Factures',key:'invoices',index:4,color:'#6be9a9'},
   {label:'Opportunités',key:'opportunities',color:'#65eda4'},
-  {label:'Corbeille',key:'trash',index:5,color:'#ddd4c8'}
+  {label:'Corbeille',key:'trash',index:5,color:'#ff6262'}
 ];
 function fill(preview,style){
   if(preview.dataset.previewStyle===style)return;
