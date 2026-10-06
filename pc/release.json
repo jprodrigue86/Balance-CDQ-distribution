@@ -1,10 +1,10 @@
 {
   "platform": "pc-pwa",
-  "version": "26.93",
-  "release": "246c659c261e6db9975f4a1e4425ed3f18416894398f9ead48a4b55493689772",
+  "version": "26.94",
+  "release": "a71cb270a48501313cc9e517f114b1527c35e4f6e2798a31f7022166c4d0a806",
   "desktopModel": 3,
-  "androidSourceBuild": "2026.10.06-v26.93-precision-cyan-persistence",
-  "androidSelectorSha256": "36e3f2bfbdccde323e287e1cdbfa8bbe2691c5474606efebebd158b00309ec1d",
+  "androidSourceBuild": "2026.10.06-v26.94-anchored-eccentricity-tremie-constraint",
+  "androidSelectorSha256": "930ee46658268dba873fe6caf1139c1bc906c74ebee39028cb16f714d6b5b675",
   "generatedFrom": "scripts/build-pc-v2676.mjs",
-  "files": 464
+  "files": 465
 }
