@@ -31,9 +31,9 @@ export function normalizeReportLayoutV2677(pdf,L,key=''){
   const groups=[['identification_balance','type_balance','type_plateau','etendue_verifiee','legal_pour_commerce'],['capacite_maximale','unite_mesure','echelon','resolution','etalon_utilise']];
   const labels=[['IDENTIFICATION DE LA BALANCE','TYPE DE BALANCE','TYPE DE PLATEAU','ÉTENDUE VÉRIFIÉE','LÉGAL POUR LE COMMERCE'],['CAPACITÉ MAXIMALE (Max)','UNITÉ DE MESURE','ÉCHELON (e)','RÉSOLUTION (d)','ÉTALON UTILISÉ']];
   const size=8.4,widths=labels[0].map((_,i)=>Math.max(...labels.map(row=>font.widthOfTextAtSize(row[i],size)))+8),extra=(590-20-widths.reduce((a,b)=>a+b,0))/5;
-  art+='q 1 1 1 rg 10.5 467.5 591 57 re f Q\n';
+  art+='q 1 1 1 rg 10.5 467.5 591 56 re f Q\n';
   for(let row=0;row<2;row++){let x=11.5;for(let i=0;i<5;i++){
-   const f=form.getField(groups[row][i]),w=f.acroField.getWidgets()[0],r=w.getRectangle(),width=widths[i]+extra;w.setRectangle({...r,x,width});art+=cell({...r,x,width})+text(labels[row][i],x,r.y+r.height+3,size,'.114 .059 .871',width);x+=width+5;
+   const f=form.getField(groups[row][i]),w=f.acroField.getWidgets()[0],r=w.getRectangle(),width=113.8;w.setRectangle({...r,x,width});art+=cell({...r,x,width})+text(labels[row][i],x,r.y+r.height+3,Math.min(size,(width-2)/font.widthOfTextAtSize(labels[row][i],1)),'.114 .059 .871',width);x+=width+5;
   }}
  }
  function patchScripts(change){const seen=new Set();function walk(o){if(o instanceof L.PDFRef)o=pdf.context.lookup(o);if(!o||seen.has(o))return;seen.add(o);if(o instanceof L.PDFDict){if(o.get(N('S'))===N('JavaScript')){const s=o.lookup(N('JS'));let js=s instanceof L.PDFRawStream?new TextDecoder().decode(L.decodePDFRawStream(s).decode()):s?.decodeText?.()||'';if(js.includes('function cdqResults(d)')){const next=change(js);if(next!==js)o.set(N('JS'),L.PDFHexString.fromText(next));}}for(const[,v]of o.entries())walk(v);}else if(o instanceof L.PDFArray)for(const v of o.asArray())walk(v);else if(o instanceof L.PDFStream)walk(o.dict);}for(const[,o]of pdf.context.enumerateIndirectObjects())walk(o);}

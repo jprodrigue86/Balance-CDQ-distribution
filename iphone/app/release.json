@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.90",
-  "release": "13b34ca59470533476c4f33f94db9da6123686215c8c96aebbe02ab168705403",
+  "version": "26.91",
+  "release": "4ffc5a06075fd3ddbd1a81bf520cf390fb2ca584f5fb1b8b686611d4540cb829",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.06-v26.90-photo-navigation",
-  "androidSelectorSha256": "8680d05fef29ea31c98180ebdc76feaec0380eaf73d2698aefe770dba5c1c2c1",
+  "androidSourceBuild": "2026.10.06-v26.91-screen-pdf-fixes",
+  "androidSelectorSha256": "ed37756e7391edb78abcb4859c956fcef5c9f7759291e9f1c718a89f74ca9405",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
-  "files": 456
+  "files": 460
 }

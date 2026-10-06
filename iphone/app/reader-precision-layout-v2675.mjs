@@ -8,7 +8,7 @@ export function normalizePrecisionLayoutV2675(pdf,L){
  if(page.node.has(marker))return false;
  const font=pdf.embedStandardFont(L.StandardFonts.HelveticaBold),left=11.5,width=113.8,gap=5;
  const labels=[['IDENTIFICATION DE LA BALANCE','TYPE DE BALANCE','TYPE DE PLATEAU','ÉTENDUE VÉRIFIÉE','LÉGAL POUR LE COMMERCE'],['CAPACITÉ MAXIMALE (Max)','UNITÉ DE MESURE','ÉCHELON (e)','RÉSOLUTION (d)','ÉTALON UTILISÉ']];
- let art='q 1 1 1 rg 10.5 467.5 591 57 re f Q\n';
+ let art='q 1 1 1 rg 10.5 467.5 591 56 re f Q\n';
  for(let row=0;row<2;row++)for(let column=0;column<5;column++){
   const f=form.getField(precisionColumnsV2675[row][column]),w=f.acroField.getWidgets()[0],r=w.getRectangle(),x=left+column*(width+gap);w.setRectangle({...r,x,width});
   const value=f.getText?f.getText()||'':(f.getSelected()||[]).join(' '),size=value?Math.min(10.36,(width-4)*10.36/Math.max(1,font.widthOfTextAtSize(value,10.36))):10.36;

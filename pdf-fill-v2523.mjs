@@ -1,3 +1,4 @@
+import {normalizeFloorStatusV2691} from './reader-floor-status-v2691.mjs';
 // Fill raw inputs, then run the approved PDF's own JavaScript calculations.
 import {floorTemplate} from './floor-template-v2519.mjs';
 import {compactToleranceActions,centerSingleLineAppearances} from './reader-layout-v2653.mjs';
@@ -11,7 +12,7 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false}={}){
   let bytes=new Uint8Array(await (blob||(await floorTemplate()).blob).arrayBuffer());
   await import('./vendor/pdf-lib-1.17.1.min.js');
   const lib=await globalThis.PDFLib.PDFDocument.load(bytes),form=lib.getForm();let changed=false;
-  changed=compactToleranceActions(lib,globalThis.PDFLib);
+  changed=compactToleranceActions(lib,globalThis.PDFLib)|normalizeFloorStatusV2691(lib,globalThis.PDFLib);
   for(const entry of entries){
     const [name,value]=entry;const field=form.getFieldMaybe(name);
     if(!field){if(strict)throw Error('Champ absent du modèle : '+name);continue;}
