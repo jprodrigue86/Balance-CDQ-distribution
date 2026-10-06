@@ -3,7 +3,7 @@
  */
 var CDQ_WS_RPC_PERMISSION_V2638_=null;
 function cdqWsRpcPermissionV2638_(name,email){
- var entry=['obtenirPreferencesUtilisateurCDQV72','obtenirStyleIconesCDQV2514','verifierAccesDriveEmailCDQV2620','verifierJetonDriveGoogleCDQV2620','cdqDriveGateCapabilitiesV2620','deconnecterAppareil'];
+ var entry=['obtenirPreferencesUtilisateurCDQV72','obtenirStyleIconesCDQV2514','verifierAccesDriveEmailCDQV2620','verifierJetonDriveGoogleCDQV2620','cdqDriveGateCapabilitiesV2620','deconnecterAppareil','cdqStartupMaintenanceV2686'];
  if(entry.indexOf(name)>=0)return null;
  var access=cdqVerifierCompteDriveV2620_(email);if(!access.ok)throw Error('Accès aux données ou modification non autorisé sans permission Drive.');
  return {email:email,ok:true};

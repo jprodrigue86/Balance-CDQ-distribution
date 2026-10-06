@@ -31,3 +31,4 @@ function creerRapportLocalCDQV2642(key,folderId,clientId,name,requestId,base64){
  }finally{lock.releaseLock();}
 }
 
+

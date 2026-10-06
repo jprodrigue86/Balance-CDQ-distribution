@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.85",
-  "release": "6e76a0e76153425233c152f99b397071d29b877ce74661c2295bbdebc93aa83e",
+  "version": "26.86",
+  "release": "0e8d87962e5300908e1cf3c57613559311df4c892c931a48bdc8c032a4507064",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.05-v26.85-shared-navigation-art",
-  "androidSelectorSha256": "2566d820de6fc73099643b12659f89c04ea4acbc520629acb7118fe81ea78624",
+  "androidSourceBuild": "2026.10.06-v26.86-startup-resume",
+  "androidSelectorSha256": "b02c0c154e0b9225fa3566acc126c23a7b73469d10876748a65f8a27a9f1c217",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
   "files": 455
 }

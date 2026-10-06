@@ -32,3 +32,4 @@ function deplacerElementCDQV2677(id,destinationId,requestId){
   return entry.result;
  }finally{lock.releaseLock();}
 }
+

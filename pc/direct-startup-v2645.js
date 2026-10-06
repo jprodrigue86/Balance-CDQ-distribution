@@ -9,7 +9,19 @@
   const current=()=>read('cdq_auth_device_token_v2')===token&&read('cdqLastUnlockEmailV2511').trim().toLowerCase()===email;
   function prepare(){
     if(session||!current()||!window.cdqEmbeddedRpcV2529)return;
-    session=window.cdqEmbeddedRpcV2529.prepareSession(token);
+    let saved=null,restored=false;
+    try{
+      restored=window.BalanceCDQNative?.isTaskRestoredV2686?.()===true;
+      saved=JSON.parse(read('cdqResumeSessionV2524')||'null');
+    }catch(_){}
+    const sameTask=restored&&window.cdqAppSessionV2661?.id&&
+      saved?.sessionId===window.cdqAppSessionV2661.id&&
+      String(saved.email||'').trim().toLowerCase()===email&&saved.token&&Number(saved.until)>Date.now();
+    const fresh=()=>window.cdqEmbeddedRpcV2529.prepareSession(token);
+    session=sameTask?new Promise((resolve,reject)=>{
+      window.cdqEmbeddedRpcV2529.run.withSuccessHandler(resolve).withFailureHandler(reject)
+        .reprendreSessionCourteCDQV2524(saved.token,token);
+    }).then(state=>state?.autorise===true?state:fresh(),()=>fresh()):fresh();
     session.then(state=>{
       const access=state?.cdqDriveAccessV2638,age=Date.now()-Number(access?.checkedAt||0);
       if(!current()||state?.autorise!==true||String(state.email||'').trim().toLowerCase()!==email||!state.jetonSession||access?.ok!==true||access.email!==email||age < -5000||age>=30000)return;

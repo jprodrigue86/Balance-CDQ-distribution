@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="26.85" data-cdq-iphone-release="6e76a0e76153425233c152f99b397071d29b877ce74661c2295bbdebc93aa83e">
+<html data-cdq-iphone-version="26.86" data-cdq-iphone-release="0e8d87962e5300908e1cf3c57613559311df4c892c931a48bdc8c032a4507064">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqNavigationPreloadV2681">(function(){
@@ -787,7 +787,7 @@ for(const name of ["workspace-v2638.mjs","corner-signals-v2677.mjs","weighing-ca
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.05-v26.85-shared-navigation-art">
+<meta name="cdq-package-build" content="2026.10.06-v26.86-startup-resume">
 
 
 <script id="cdqBridgeV23">
@@ -841,7 +841,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.05-v26.85-shared-navigation-art'
+    build:'2026.10.06-v26.86-startup-resume'
   });
 }
 
@@ -854,7 +854,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.05-v26.85-shared-navigation-art'
+        build:'2026.10.06-v26.86-startup-resume'
       });
     }
   } catch(e) {}
@@ -7288,11 +7288,19 @@ function afficherConnexionCodePersonnel(message,emailPrefill){
   cdqNettoyerErreurAcces();
   cdqSetAccessState("input");
 }
+function cdqAfterFirstFrameV2686(task){
+  const email=String(utilisateurCourantEmail||'');
+  const ready=window.cdqStartupFrameV2652?.wait?.()||Promise.resolve();
+  Promise.resolve(ready).then(()=>setTimeout(()=>{
+    if(cdqAccessState==='ready'&&email===String(utilisateurCourantEmail||''))task();
+  },400)).catch(()=>{});
+}
 function appliquerAccesAutorise(etat){
   if(etat?.autorise!==true||!String(etat.email||'').trim()||!String(etat.jetonSession||'').trim())return false;
   try{if(etat&&etat.email&&cdqObtenirJetonAppareil())localStorage.setItem('cdqLastUnlockEmailV2511',String(etat.email));}catch(_){}
 
   if(etat&&etat.jetonSession)cdqSauverSessionRpcV58(etat.jetonSession);
+  window.cdqSessionExpiryV2686=Number(etat.sessionExpiresAtV2686)||Date.now()+18*60*60*1000;
   cdqGarderActivationV41(null);
   cdqSauverTicketGoogleV42("");
   cdqGooglePromptDelegatedV42=false;
@@ -7441,14 +7449,14 @@ window.addEventListener("message",function(e){
 
 
 const cdqSession24 = (() => {
-  const key='cdqResumeSessionV2524', grace=30*60*1000;
+  const key='cdqResumeSessionV2524', grace=18*60*60*1000;
   let touched=0, restoring=false;
   const mobile=()=>/Android|iPhone|iPad|BalanceCDQAndroid\//i.test(navigator.userAgent||'');
   function clear(){try{localStorage.removeItem(key);}catch(_){}}
   function remember(){
     if(!mobile()||cdqAccessState!=='ready'||!cdqSessionRpcV58||!cdqObtenirJetonAppareil())return;
     touched=Date.now();
-    try{localStorage.setItem(key,JSON.stringify({token:cdqSessionRpcV58,email:utilisateurCourantEmail,until:touched+grace}));}catch(_){}
+    try{localStorage.setItem(key,JSON.stringify({token:cdqSessionRpcV58,email:utilisateurCourantEmail,sessionId:window.cdqAppSessionV2661?.id||'',until:Number(window.cdqSessionExpiryV2686)||touched+grace}));}catch(_){}
   }
   function resume(fallback){
     if(!mobile()||restoring)return false;
@@ -7467,6 +7475,7 @@ const cdqSession24 = (() => {
   for(const event of ['pointerdown','keydown'])document.addEventListener(event,()=>{if(Date.now()-touched>60000)remember();},{passive:true});
   
   document.addEventListener('visibilitychange',()=>{if(document.hidden)remember();});
+  window.cdqSessionResumeV2686={remember};
   return {resume,clear,remember};
 })();
 
@@ -11331,7 +11340,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.05-v26.85-shared-navigation-art";
+  const CDQ_BUILD = "2026.10.06-v26.86-startup-resume";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13622,7 +13631,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.05-v26.85-shared-navigation-art";
+const CDQ_V19_BUILD = "2026.10.06-v26.86-startup-resume";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -14202,6 +14211,13 @@ async function cdqPreparerQuvre4Pwa(){
   if(cdqAccessState!=='ready')return false;
   cdqPublierSessionHorsLigne();
   cdqMemoriserDestinationQuvre4();
+  if(etat.startupMaintenanceV2686===true){
+    const email=utilisateurCourantEmail,session=cdqSessionRpcV58;
+    setTimeout(()=>{
+      if(cdqAccessState==='ready'&&email===utilisateurCourantEmail&&session===cdqSessionRpcV58)
+        cdqApiRun().withSuccessHandler(()=>{}).withFailureHandler(()=>{}).cdqStartupMaintenanceV2686();
+    },20000);
+  }
   return true;
 }
 window.cdqPreparerQuvre4Pwa=cdqPreparerQuvre4Pwa;
@@ -14211,7 +14227,7 @@ window.cdqEnvoyerDestinationOfflinePwa=cdqMemoriserDestinationQuvre4;
 window.addEventListener('cdq:access-ready',function(){
   cdqPublierSessionHorsLigne();
   cdqMemoriserDestinationQuvre4();
-  cdqRafraichirTechniciensRapports(false).catch(function(){});
+  cdqAfterFirstFrameV2686(()=>cdqRafraichirTechniciensRapports(false).catch(function(){}));
 });
 window.addEventListener('online',function(){
   cdqPublierSessionHorsLigne();
@@ -15711,7 +15727,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.05-v26.85-shared-navigation-art";
+const CDQ_V20_BUILD = "2026.10.06-v26.86-startup-resume";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16558,7 +16574,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.05-v26.85-shared-navigation-art";
+const CDQ_V21_BUILD = "2026.10.06-v26.86-startup-resume";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21209,7 +21225,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.05-v26.85-shared-navigation-art',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.06-v26.86-startup-resume',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -22503,25 +22519,45 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
  const owner=()=>{try{return String(utilisateurCourantEmail||'').toLowerCase();}catch{return '';}};
  const key=()=>owner()?'cdq-workspace-position-v2658:'+owner():'';
  const session=()=>window.cdqAppSessionV2661?.id||'';
- let restoring=false;
+ let restoring=false,pendingScroll=null;
+ function restoreScroll(){
+  const saved=pendingScroll;
+  if(!saved||saved.owner!==owner()||saved.sessionId!==session()||saved.clientId!==String(compagnieSelectionnee||''))return;
+  requestAnimationFrame(()=>{
+    if(pendingScroll!==saved)return;
+    scrollTo(0,saved.scrollY||0);
+    if((document.documentElement.scrollHeight||0)-(window.innerHeight||0)>=(saved.scrollY||0))pendingScroll=null;
+  });
+ }
  function remember(){
   if(restoring||!key()||cdqAccessState!=='ready'||!window.cdqDriveEntryV2632?.canRead())return;
   const route=document.documentElement.dataset.cdqWorkspace||'';
-  try{localStorage.setItem(key(),JSON.stringify({sessionId:session(),clientId:String(compagnieSelectionnee||''),folderId:String(cdqDossierOuvertId||''),folderName:String(cdqDossierOuvertNom||''),route:route==='trash'?'':route,scrollY:scrollY,savedAt:Date.now()}));}catch{}
+  try{localStorage.setItem(key(),JSON.stringify({sessionId:session(),clientId:String(compagnieSelectionnee||''),folderId:String(cdqDossierOuvertId||''),folderName:String(cdqDossierOuvertNom||''),route:route==='trash'?'':route,scrollY:pendingScroll?.scrollY??scrollY,savedAt:Date.now()}));}catch{}
  }
  async function restore(){
   if(!key()||!window.cdqDriveEntryV2632?.canRead()||document.documentElement.dataset.cdqRestoredV2658===owner())return;
-  document.documentElement.dataset.cdqRestoredV2658=owner();
   let saved;try{saved=JSON.parse(localStorage.getItem(key())||'null');}catch{}
-  if(!saved?.clientId||!session()||saved.sessionId!==session())return;
-  const client=toutesLesCompagnies.find(c=>String(c.id)===saved.clientId);if(!client)return;
-  restoring=true;try{choisirCompagnie(client);if(saved.folderId){cdqDossierOuvertId=saved.folderId;cdqDossierOuvertNom=saved.folderName;chargerFichiers();}if(saved.route&&saved.route!=='trash'&&window.cdqWorkspaceV2638?.navigate)window.cdqWorkspaceV2638.navigate(saved.route);requestAnimationFrame(()=>scrollTo(0,saved.scrollY||0));}finally{restoring=false;}
+  if(!saved||!session()||saved.sessionId!==session())return;
+  const client=saved.clientId?toutesLesCompagnies.find(c=>String(c.id)===saved.clientId):null;
+  if(saved.clientId&&!client)return;
+  document.documentElement.dataset.cdqRestoredV2658=owner();
+  restoring=true;try{
+    if(client){choisirCompagnie(client);if(saved.folderId){cdqDossierOuvertId=saved.folderId;cdqDossierOuvertNom=saved.folderName;chargerFichiers();}}
+    if(saved.route&&saved.route!=='trash'&&window.cdqWorkspaceV2638?.navigate)window.cdqWorkspaceV2638.navigate(saved.route);
+    pendingScroll={...saved,owner:owner()};restoreScroll();
+  }finally{restoring=false;}
  }
  document.addEventListener('visibilitychange',()=>{if(document.hidden)remember();});
  addEventListener('pagehide',remember);addEventListener('scroll',()=>{clearTimeout(remember.timer);remember.timer=setTimeout(remember,250);},{passive:true});
  document.addEventListener('click',()=>setTimeout(remember,100),true);
  const observer=new MutationObserver(()=>{if(document.documentElement.dataset.cdqClientsOwnerV2658===owner())restore();});
  observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-cdq-clients-owner-v2658']});
+ // Retry the saved scroll only when delayed folder rows are actually rendered.
+ if(typeof afficherContenu==='function'){
+  const render=afficherContenu;
+  afficherContenu=function(){const result=render.apply(this,arguments);restoreScroll();return result;};
+ }
+ for(const event of ['pointerdown','keydown'])document.addEventListener(event,()=>{pendingScroll=null;},{passive:true});
  window.cdqWorkspaceResumeV2658={remember,restore};
 })();
 </script>

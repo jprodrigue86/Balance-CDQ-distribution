@@ -51,3 +51,4 @@ function cdqScannerCalibrationV2658(clientId,offset){
   }
   return {ok:true,items:items,checked:end,total:sources.length,next:end<sources.length?end:null,warnings:warnings};
 }
+

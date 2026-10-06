@@ -1,9 +1,9 @@
 {
   "schema": "cdq-script-bundle-v3",
   "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
-  "version": "V26.77",
-  "build": "2026.10.05-v26.77-fluidity-reports",
-  "title": "Balance CDQ V26.77 — fluidité, déplacement et rapports",
+  "version": "V26.86",
+  "build": "2026.10.06-v26.86-startup-resume",
+  "title": "Balance CDQ V26.86 — ouverture et reprise de session",
   "requiresBuild": [
     "2026.10.02-v26.38-workspace-drive-security",
     "2026.10.02-v26.45-direct-access",
@@ -16,11 +16,12 @@
     "2026.10.03-v26.60-document-workflow",
     "2026.10.04-v26.65-client-workflow",
     "2026.10.04-v26.68-interface-calibration",
-    "2026.10.05-v26.77-fluidity-reports"
+    "2026.10.05-v26.77-fluidity-reports",
+    "2026.10.06-v26.86-startup-resume"
   ],
   "patches": [
     {
-      "id": "application-build-v2677",
+      "id": "application-build-v2686",
       "file": "Code.gs",
       "op": "replace_build_any",
       "from": [
@@ -35,9 +36,10 @@
         "2026.10.03-v26.60-document-workflow",
         "2026.10.04-v26.65-client-workflow",
         "2026.10.04-v26.68-interface-calibration",
-        "2026.10.05-v26.77-fluidity-reports"
+        "2026.10.05-v26.77-fluidity-reports",
+        "2026.10.06-v26.86-startup-resume"
       ],
-      "to": "2026.10.05-v26.77-fluidity-reports"
+      "to": "2026.10.06-v26.86-startup-resume"
     },
     {
       "id": "obtenirEtatAcces-direct-v2645",
@@ -134,52 +136,88 @@
       "expected": 2,
       "search": "['current', 'minimal', 'dark-pro', 'metal-music', 'isometric']",
       "replacement": "['current', 'minimal', 'dark-pro', 'metal-music', 'isometric', 'aurora', 'obsidian', 'titanium', 'solar', 'cyberwave']"
+    },
+    {
+      "id": "reuse-request-user-v2686",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "CDQ_ACCES_RPC_COURANT_ = { email:u.email, role:u.role };",
+      "replacement": "CDQ_ACCES_RPC_COURANT_ = { email:u.email, role:u.role, verifiedUserV2686:u };",
+      "expected": 1
+    },
+    {
+      "id": "avoid-repeated-user-read-v2686",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "const uRpc = trouverUtilisateurAutoriseParEmail_(CDQ_ACCES_RPC_COURANT_.email);",
+      "replacement": "const uRpc = CDQ_ACCES_RPC_COURANT_.verifiedUserV2686 || trouverUtilisateurAutoriseParEmail_(CDQ_ACCES_RPC_COURANT_.email);",
+      "expected": 1
     }
   ],
   "extraFiles": [
     {
-      "name": "CDQDirectAccessV2645.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.77/files/CDQDirectAccessV2645.gs",
-      "sha256": "66a4702db0b52fb1a0280d33a5664dde647c3b74cec27c8b3be8bd03899778b0"
-    },
-    {
-      "name": "CDQWorkspaceV2638.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.77/files/CDQWorkspaceV2638.gs",
-      "sha256": "ecf0ee47598c838064acc75c1a1aa1abbfeaf2cf6f9100e594d2805076a0aed9"
-    },
-    {
-      "name": "CDQReportFastV2642.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.77/files/CDQReportFastV2642.gs",
-      "sha256": "781694dd4f954c938e00fc6bc1734cd76508e7478eb19d0ff071b134a0a25913"
-    },
-    {
       "name": "CDQCalibrationIndexV2658.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.77/files/CDQCalibrationIndexV2658.gs",
-      "sha256": "63e936b0b3c2b62407153d6f18bcd4642a4e76132090f18bbefb6c1eb8710b81"
-    },
-    {
-      "name": "CDQInvoicesV2590.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.77/files/CDQInvoicesV2590.gs",
-      "sha256": "063e5106a51664a0863ab76628b4a3cccef5c516502cb0d677048c312a6b2b44"
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.86/files/CDQCalibrationIndexV2658.gs",
+      "sha256": "e854b5ad81dfd61e91eff0e2cc8187e799c1287c6dfaa250f1e0561890fa9f72"
     },
     {
       "name": "CDQCalibrationV2566.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.77/files/CDQCalibrationV2566.gs",
-      "sha256": "761dd93434d18c55534b820aeb07d7b7c5d2e2983206c460fadde890ccbd88df"
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.86/files/CDQCalibrationV2566.gs",
+      "sha256": "f5c9150d0a2d846dbc9dccf6b505629a8fd2b58361b74423d0167bcb41877fcb"
+    },
+    {
+      "name": "CDQDirectAccessV2645.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.86/files/CDQDirectAccessV2645.gs",
+      "sha256": "4ffbef141cd769fdad70a0edcf09f6ef51a1dc1d56f06c5a9a3c4b86c2298c9a"
+    },
+    {
+      "name": "CDQDriveGateV2620.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.86/files/CDQDriveGateV2620.gs",
+      "sha256": "fdb8de64aabc1efeee7ad133cea0a1fc44c253d9c4a09b8dd6b81827f9e56f45"
     },
     {
       "name": "CDQFileMoveV2677.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.77/files/CDQFileMoveV2677.gs",
-      "sha256": "81b26c78061f8041667c89709a756a5c060a6ce995bdba2be1d0d5af8621d298"
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.86/files/CDQFileMoveV2677.gs",
+      "sha256": "42aea740135acd08b06dd8627822b3d0d2adbbdd2a87f4d8f58f50cb2bf0d62a"
+    },
+    {
+      "name": "CDQInvoicesV2590.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.86/files/CDQInvoicesV2590.gs",
+      "sha256": "be75fe5fce4918df491907d65a06064a671dcb8c9c7ebba709d6e2c8ffe60ee2"
+    },
+    {
+      "name": "CDQPerformance.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.86/files/CDQPerformance.gs",
+      "sha256": "d569cdfc7a3aaf1c9b8c8383628a202b9002fc6be27f906e91bbede094f7b909"
+    },
+    {
+      "name": "CDQReportFastV2642.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.86/files/CDQReportFastV2642.gs",
+      "sha256": "31ee0a4c50040d0973fa17f322923fe8cb8d230e38d56225a9507d5c53292b08"
+    },
+    {
+      "name": "CDQSessionResume.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.86/files/CDQSessionResume.gs",
+      "sha256": "9a255b2c1ab8cf0df1d902f5813526440832bd03a6ecbe5f84b0565d1449c576"
+    },
+    {
+      "name": "CDQStartupV2686.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.86/files/CDQStartupV2686.gs",
+      "sha256": "1dad6fbdaad58b9e0e9968ce0d4296114cf02db3ec434986cc4f08aa7a2a2b71"
+    },
+    {
+      "name": "CDQWorkspaceV2638.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.86/files/CDQWorkspaceV2638.gs",
+      "sha256": "2d4dfa265bd7bb3925e290d46d0cd98da37f0dea50e40ddd51b511ccd0d5b76e"
     }
   ],
   "removeFiles": [],
   "audit": {
-    "androidAppRecommended": "26.77",
+    "androidAppRecommended": "26.86",
     "calibration": "Lecture paginée des feuilles et PDF des clients, dossiers actifs inclus. Position confirmée par lot, reprise après erreur et redémarrage à zéro; accès et portée des dossiers contrôlés. Aucun PDF conservé automatiquement hors ligne.",
     "catalogue": "55 modèles, dont 35 procédures documentées; les références incertaines restent à confirmer.",
-    "interface": "Dossiers préchargés, démarrage indépendant du chargement des clients, reprise Android, retour interne, copie et déplacement.",
-    "preservation": "Déplacement conservant identifiants, liens, données et permissions. Modèles de création approuvés conservés; corrections éditables appliquées après création.",
-    "install": "ÉCRIRE + DÉPLOYER dans Script Manager, puis installer Android 26.77."
+    "interface": "Reprise du même task Android avec une session valide et les accès actuels.",
+    "preservation": "Durée maximale des sessions, révocation, rôles, permissions Drive et modèles PDF conservés.",
+    "install": "ÉCRIRE + DÉPLOYER dans Script Manager, puis installer Android 26.86."
   }
 }

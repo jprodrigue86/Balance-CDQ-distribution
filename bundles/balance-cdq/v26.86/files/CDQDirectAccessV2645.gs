@@ -1,13 +1,14 @@
 /* Persistent device recognition; every server session checks current user access. */
-function cdqDirectSessionV2645_(u, registerDevice) {
+function cdqDirectSessionV2645_(u, registerDevice, verifiedInThisRequest) {
   if (!u || !u.email) throw new Error('Compte CDQ non autorisé.');
-  const current = trouverUtilisateurAutoriseParEmail_(u.email);
+  const current = verifiedInThisRequest === true ? u : trouverUtilisateurAutoriseParEmail_(u.email);
   if (!current) throw new Error('Accès retiré par l’administrateur.');
   lierCleTemporaireCDQ_(current);
   const state = {
     autorise:true, email:current.email, role:current.role,
     jetonSession:creerSessionRpcCDQ_(current), versionBackend:CDQ_BACKEND_BUILD_,
-    ouvertureDirecte:true
+    ouvertureDirecte:true, sessionExpiresAtV2686:Date.now()+18*60*60*1000,
+    startupMaintenanceV2686:true
   };
   if (registerDevice) {
     state.jetonAppareil = creerJetonAppareilCDQ_(current);
@@ -17,10 +18,9 @@ function cdqDirectSessionV2645_(u, registerDevice) {
 }
 
 function cdqDirectAccessV2645_(deviceToken, googleTicket) {
-  nettoyerSessionsExpireesCDQ_();
   const token=String(deviceToken||'').trim();
   const u=token ? lireUtilisateurDepuisJetonAppareilCDQ_(token) : null;
-  if (u) return cdqDirectSessionV2645_(u,false);
+  if (u) return cdqDirectSessionV2645_(u,false,true);
   const ticket=String(googleTicket||'').trim();
   if (ticket) {
     const lock=LockService.getScriptLock();
