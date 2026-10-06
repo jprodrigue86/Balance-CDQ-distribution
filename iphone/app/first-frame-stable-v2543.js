@@ -16,6 +16,7 @@
     const found=new Set();
     for(const control of controls())for(const node of [control,...control.querySelectorAll('*')]){
       if(node instanceof HTMLImageElement&&node.getAttribute('src'))found.add(node.currentSrc||node.src);
+      if(node.dataset.cdqArtSrcV2685)found.add(node.dataset.cdqArtSrcV2685);
       for(const pseudo of [null,'::before','::after']){
         const style=getComputedStyle(node,pseudo);
         for(const value of [style.backgroundImage,style.maskImage])for(const match of value.matchAll(/url\(["']?([^"')]+)["']?\)/g))found.add(new URL(match[1],location.href).href);
@@ -67,7 +68,7 @@
     // Fetch and decode the complete selected artwork while the current account
     // and its Drive access are being checked. The final barrier still verifies
     // the actual palette, labels and geometry before revealing anything.
-    const artwork=paints().then(()=>Promise.all(urls().map(decode)));
+    const artwork=paints().then(async()=>{await window.cdqPrepareNavigationArtV2685();await Promise.all(urls().map(decode));});
     const fonts=document.fonts?document.fonts.ready:Promise.resolve();
     artwork.catch(()=>{});
     await Promise.all([artwork,fonts]);

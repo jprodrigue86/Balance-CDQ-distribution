@@ -1,3 +1,4 @@
+import {sharedNavigationIconV2685} from './navigation-art-v2685.mjs';
 import {compareCornerSignals,cornerNames,wirePairLabel} from './corner-signals-v2677.mjs';
 import {divisions,convertMass,analyzeBridge,bridgePairs} from './weighing-calculations-v2638.mjs';
 import {analyzeSixWireBridge,sixWirePairs} from './bridge-six-v2658.mjs';
@@ -11,7 +12,7 @@ const paths={calcul:'<rect x="6" y="3" width="20" height="26" rx="3"/><path d="M
 export function workspaceIcon(key,style='current'){
   const special=globalThis.window?.cdqSpecialIconsV2658?.svg(key,style);if(special)return special;
   if(!['current','minimal','dark-pro','metal-music','isometric'].includes(style))style='current';
-  if(style==='metal-music'&&['calcul','opportunities','drive'].includes(key))return '<img class="cdq-workspace-art-v2639" data-icon-theme="metal-music" src="./assets/navigation-v2639/'+key+'.webp" alt="" aria-hidden="true" draggable="false">';
+  if(style==='metal-music'&&['calcul','opportunities','drive'].includes(key))return sharedNavigationIconV2685(key,'cdq-workspace-art-v2639','data-icon-theme');
   const body=paths[key]||paths.file;
   const drawing=style==='dark-pro'
     ?'<rect x="1" y="1" width="30" height="30" rx="7" fill="#111a24" stroke="#71899f"/><g transform="translate(3 3) scale(.81)" stroke="#c5e5f5" stroke-width="2">'+body+'</g>'

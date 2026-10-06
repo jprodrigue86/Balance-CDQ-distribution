@@ -1,11 +1,11 @@
 {
   "platform": "pc-pwa",
-  "version": "26.84",
-  "release": "fdccbfeb86c5346d8edb2710c839438ff2c94d270c0e9d0f9b0d18733a7b2b0f",
+  "version": "26.85",
+  "release": "b7f49a30a7c1962c497e0fc190e5d7f1e61f872794792636fc3d9b6a78b0f126",
   "desktopModel": 2,
-  "androidSourceBuild": "2026.10.05-v26.84-startup-icons-install",
-  "androidSelectorSha256": "20c6ce01acfd929d040f72cc5ea2ffe3072adf23986b0ce3b8505d58a64b0192",
+  "androidSourceBuild": "2026.10.05-v26.85-shared-navigation-art",
+  "androidSelectorSha256": "2566d820de6fc73099643b12659f89c04ea4acbc520629acb7118fe81ea78624",
   "generatedFrom": "scripts/build-pc-v2676.mjs",
-  "files": 461,
-  "build": "2026.10.05-v26.84-pc-model2"
+  "files": 458,
+  "build": "2026.10.05-v26.85-pc-model2"
 }

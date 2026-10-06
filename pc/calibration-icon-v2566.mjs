@@ -1,8 +1,9 @@
+import {sharedNavigationIconV2685} from './navigation-art-v2685.mjs';
 let serial=0;
 export function calibrationIcon(theme='current',size=32){
   const special=globalThis.window?.cdqSpecialIconsV2658?.svg('calibration',theme);if(special)return special;
   if(!['current','metal-music','isometric','minimal','dark-pro'].includes(theme))theme='current';
-  if(theme==='metal-music')return '<img class="cdq-calibration-indicator" data-theme="metal-music" src="'+new URL('./assets/calibration-metal-v2566.png',import.meta.url).href+'" width="'+Number(size)+'" height="'+Number(size)+'" alt="" aria-hidden="true">';
+  if(theme==='metal-music')return sharedNavigationIconV2685('calibration','cdq-calibration-indicator','data-theme',size);
   const id='cal2566-'+(++serial),metal=theme==='metal-music',iso=theme==='isometric',minimal=theme==='minimal',dark=theme==='dark-pro';
   const screen='<rect x="18" y="22" width="28" height="15" rx="2" fill="var(--cdq-surface,#041d20)" stroke="var(--cdq-accent,#46eedc)"/><path d="M23 27h5v5h-5zm13 0h5v5h-5z" fill="none" stroke="var(--cdq-accent,#80fff0)" stroke-width="1.5"/><circle cx="32" cy="32" r="1" fill="var(--cdq-accent,#80fff0)"/>';
   let drawing;

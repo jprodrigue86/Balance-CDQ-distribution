@@ -1,0 +1,233 @@
+{
+  "width": 1536,
+  "height": 1296,
+  "styles": {
+    "current": [
+      {
+        "x": 306,
+        "y": 5,
+        "crop": 82,
+        "width": 1536,
+        "height": 1024,
+        "source": "original"
+      },
+      {
+        "x": 515,
+        "y": 5,
+        "crop": 82,
+        "width": 1536,
+        "height": 1024,
+        "source": "original"
+      },
+      {
+        "x": 721,
+        "y": 5,
+        "crop": 82,
+        "width": 1536,
+        "height": 1024,
+        "source": "original"
+      },
+      {
+        "x": 928,
+        "y": 5,
+        "crop": 82,
+        "width": 1536,
+        "height": 1024,
+        "source": "original"
+      },
+      {
+        "x": 1136,
+        "y": 5,
+        "crop": 82,
+        "width": 1536,
+        "height": 1024,
+        "source": "original"
+      },
+      {
+        "x": 1357,
+        "y": 5,
+        "crop": 82,
+        "width": 1536,
+        "height": 1024,
+        "source": "original"
+      }
+    ],
+    "minimal": [
+      {
+        "x": 172,
+        "y": 260,
+        "crop": 116
+      },
+      {
+        "x": 396,
+        "y": 260,
+        "crop": 116
+      },
+      {
+        "x": 623,
+        "y": 260,
+        "crop": 116
+      },
+      {
+        "x": 851,
+        "y": 260,
+        "crop": 116
+      },
+      {
+        "x": 1078,
+        "y": 260,
+        "crop": 116
+      },
+      {
+        "x": 1302,
+        "y": 260,
+        "crop": 116
+      }
+    ],
+    "dark-pro": [
+      {
+        "x": 154,
+        "y": 400,
+        "crop": 152
+      },
+      {
+        "x": 378,
+        "y": 400,
+        "crop": 152
+      },
+      {
+        "x": 605,
+        "y": 400,
+        "crop": 152
+      },
+      {
+        "x": 833,
+        "y": 400,
+        "crop": 152
+      },
+      {
+        "x": 1060,
+        "y": 400,
+        "crop": 152
+      },
+      {
+        "x": 1284,
+        "y": 400,
+        "crop": 152
+      }
+    ],
+    "metal-music": [
+      {
+        "x": 148,
+        "y": 559,
+        "crop": 164
+      },
+      {
+        "x": 372,
+        "y": 559,
+        "crop": 164
+      },
+      {
+        "x": 599,
+        "y": 559,
+        "crop": 164
+      },
+      {
+        "x": 827,
+        "y": 559,
+        "crop": 164
+      },
+      {
+        "x": 1054,
+        "y": 559,
+        "crop": 164
+      },
+      {
+        "x": 1278,
+        "y": 559,
+        "crop": 164
+      }
+    ],
+    "isometric": [
+      {
+        "x": 148,
+        "y": 720,
+        "crop": 164
+      },
+      {
+        "x": 372,
+        "y": 720,
+        "crop": 164
+      },
+      {
+        "x": 599,
+        "y": 720,
+        "crop": 164
+      },
+      {
+        "x": 827,
+        "y": 720,
+        "crop": 164
+      },
+      {
+        "x": 1054,
+        "y": 720,
+        "crop": 164
+      },
+      {
+        "x": 1278,
+        "y": 720,
+        "crop": 164
+      }
+    ]
+  },
+  "extras": {
+    "calibration": {
+      "x": 4,
+      "y": 1036,
+      "crop": 256
+    },
+    "calcul": {
+      "x": 268,
+      "y": 1036,
+      "crop": 256
+    },
+    "opportunities": {
+      "x": 532,
+      "y": 1036,
+      "crop": 256
+    },
+    "drive": {
+      "x": 796,
+      "y": 1036,
+      "crop": 256
+    }
+  },
+  "sources": {
+    "bundles/balance-cdq/v25.15/icons-transparent.webp": {
+      "sha256": "6a44926b50489e4cd36589be2f5ab7cc0bce9896eb7c819b992b9cb19efc3996",
+      "bytes": 541040
+    },
+    "assets/calibration-metal-v2566.png": {
+      "sha256": "7c64c0fa0c9012500db29779a043f9b356e707038a21a4c1bfb74a3111f6114f",
+      "bytes": 2006629
+    },
+    "assets/navigation-v2639/calcul.webp": {
+      "sha256": "ddbd4e8c1e87b2367e3494bd757ad4aa3425c8bb46ab93e53ae6b8dadcf6d0f2",
+      "bytes": 21594
+    },
+    "assets/navigation-v2639/opportunities.webp": {
+      "sha256": "adfcf867afb4aaac55ebc82a0af0371573832bcbacc8df3467cdb347c5ff77b6",
+      "bytes": 14638
+    },
+    "assets/navigation-v2639/drive.webp": {
+      "sha256": "0ec1ff395703d0f30edcc103b51de2b4c62c58b50cb34ed3887f8f7788694b43",
+      "bytes": 15654
+    }
+  },
+  "calibrationPreviewBytes": 21640,
+  "calibrationPreviewSha256": "be0de2747d2d20b0f827e43203480a8601d709d79f08402d1894e69757f82f71",
+  "asset": "assets/navigation-v2685/icons.webp",
+  "bytes": 834736,
+  "sha256": "86229c57caca5a95555b62726bd7918162ade815844d379906330392d35bd7b2"
+}

@@ -1,7 +1,7 @@
 /* V25.40 — restore the V25.15 artwork binding only.
  * The icon/theme engine itself is unchanged. Both images are packaged locally. */
 :root{
-  --cdq-icon-art-v2514:url("./bundles/balance-cdq/v25.15/icons-transparent.webp");
+  --cdq-icon-art-v2514:url("./assets/navigation-v2685/icons.webp");
   --cdq-icon-original-v2515:url("./bundles/balance-cdq/v25.14/icons-reference.png");
 }
 .cdq-icon-sample-v2514,

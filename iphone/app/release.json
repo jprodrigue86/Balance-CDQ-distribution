@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "26.84",
-  "release": "dc5eae44e2a3c618ddbe24639a0ba41abe6fd0d7c129bcfad4cbf4fa0d60aca9",
+  "version": "26.85",
+  "release": "6e76a0e76153425233c152f99b397071d29b877ce74661c2295bbdebc93aa83e",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.05-v26.84-startup-icons-install",
-  "androidSelectorSha256": "20c6ce01acfd929d040f72cc5ea2ffe3072adf23986b0ce3b8505d58a64b0192",
+  "androidSourceBuild": "2026.10.05-v26.85-shared-navigation-art",
+  "androidSelectorSha256": "2566d820de6fc73099643b12659f89c04ea4acbc520629acb7118fe81ea78624",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
-  "files": 458
+  "files": 455
 }
