@@ -238,6 +238,7 @@ async function save(external=false){
 }
 async function open(data){
   applyReaderTheme(data.theme);
+  if(data.desktop===true){document.body.classList.add('cdq-reader-pc');$('readerTop').append($('name'));$('readerNameBar')?.remove();}
   const blob=data.blob;
   if(!(blob instanceof Blob)||blob.size>32*1024*1024||(await blob.slice(0,5).text())!=='%PDF-')throw Error('PDF invalide (32 Mo maximum).');
   if(doc)return; // A repeated READY/OPEN exchange must never erase current answers.
@@ -408,4 +409,3 @@ try{
   if(hosted){$('empty').style.display='none';status('Ouverture…');}else status('Choisissez un PDF.');
   tell({type:'CDQ_READER_READY'});
 }catch(e){fail(e);$('empty').textContent='Le lecteur n’a pas pu démarrer. Fermez puis mettez à jour l’application.';}
-

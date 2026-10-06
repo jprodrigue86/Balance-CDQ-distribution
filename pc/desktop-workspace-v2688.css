@@ -24,10 +24,10 @@ html.cdq-desktop-v2676 .bottom-nav .bottom-nav-item small{color:var(--cdq-ink)!i
 html.cdq-desktop-v2676 :is(.desktop-sidebar,.brand-footer,#resetCompanyButton,#clientInfoBar){display:none!important}
 html.cdq-desktop-v2676 :is(.desktop-workspace-layout,.desktop-main){display:block!important;min-width:0!important;padding:0!important;max-width:none!important;width:100%!important;margin:0!important}
 html.cdq-desktop-v2676 body .container{background:var(--cdq-surface)!important;color:var(--cdq-ink)!important;box-shadow:none!important;box-sizing:border-box!important}
-#cdqPcHomeHeading{display:flex;align-items:center;gap:10px;height:60px;min-height:60px;box-sizing:border-box;padding:10px 0;border-bottom:1px solid var(--cdq-line);margin:0 0 12px;background:var(--cdq-surface)}
-#cdqPcHomeHeading .cdq-pc-home-title{flex:1;min-width:0;text-align:left!important}
-#cdqPcHomeHeading h1{margin:0;font:700 calc(20px * var(--cdq-pc-text,1))/1.2 Arial,sans-serif;color:var(--cdq-ink);text-align:left!important}
-#cdqPcHomeHeading p{margin:2px 0 0;color:var(--cdq-muted);font-size:12px;text-align:left!important}
+#cdqPcHomeHeading{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;align-items:center;gap:10px;height:60px;min-height:60px;box-sizing:border-box;padding:10px 0;border-bottom:1px solid var(--cdq-line);margin:0 0 12px;background:var(--cdq-surface)}
+#cdqPcHomeHeading .cdq-pc-home-title{flex:1;min-width:0;text-align:center!important}
+#cdqPcHomeHeading h1{margin:0;font:700 calc(20px * var(--cdq-pc-text,1))/1.2 Arial,sans-serif;color:var(--cdq-ink);text-align:center!important}
+#cdqPcHomeHeading p{margin:2px 0 0;color:var(--cdq-muted);font-size:12px;text-align:center!important}
 #cdqPcHomeHeading [data-pc-home-art],#cdqPcHomeHeading [data-pc-home-art]>span{display:block;width:34px!important;height:34px!important;position:relative;background:none!important;min-width:34px!important;min-height:34px!important}
 #cdqPcHomeHeading [data-pc-home-art]>span::after{content:'';display:block;position:absolute;inset:0;background-image:var(--cdq-icon-art-v2514);background-size:var(--cdq-art-size);background-position:var(--cdq-art-position);background-repeat:no-repeat}
 #cdqPcHomeHeading [data-pc-home-art]>span[data-art-source=original]::after{background-image:var(--cdq-icon-original-v2515)}
@@ -72,14 +72,14 @@ html.cdq-desktop-v2676 body :is(.cdq-workspace-page,#cdqInvoicePageV2590,#cdqInv
 html.cdq-desktop-v2676 body .cdq-workspace-page{display:flex!important;flex-direction:column!important}
 html.cdq-desktop-v2676 body .cdq-workspace-page[hidden]{display:none!important}
 html.cdq-desktop-v2676 body .cdq-workspace-body{flex:1;min-height:0!important;overflow:auto!important;width:100%!important;max-width:none!important;margin:0!important;padding:16px!important;box-sizing:border-box!important}
-html.cdq-desktop-v2676 body [data-cdq-heading-layout-v2675]{display:flex!important;align-items:center!important;min-height:58px!important;max-height:none!important;height:auto!important;padding:10px 14px!important;gap:10px!important;background:var(--cdq-surface)!important;box-sizing:border-box!important;flex:0 0 auto!important}
-html.cdq-desktop-v2676 body [data-cdq-heading-center-v2675]{flex:1!important;min-width:0!important;order:2!important;text-align:left!important;margin:0!important}
-html.cdq-desktop-v2676 body [data-cdq-heading-title-v2671]{font-size:calc(20px * var(--cdq-pc-text,1))!important;line-height:1.2!important;text-align:left!important}
-html.cdq-desktop-v2676 body [data-cdq-heading-subtitle-v2671]{font-size:12px!important;line-height:1.3!important;margin-top:2px!important;text-align:left!important}
+html.cdq-desktop-v2676 body [data-cdq-heading-layout-v2675]{display:grid!important;grid-template-columns:34px minmax(0,1fr) 34px!important;align-items:center!important;min-height:58px!important;max-height:none!important;height:auto!important;padding:10px 14px!important;gap:10px!important;background:var(--cdq-surface)!important;box-sizing:border-box!important;flex:0 0 auto!important}
+html.cdq-desktop-v2676 body [data-cdq-heading-center-v2675]{grid-column:2!important;grid-row:1!important;min-width:0!important;text-align:center!important;margin:0!important}
+html.cdq-desktop-v2676 body [data-cdq-heading-title-v2671]{font-size:calc(20px * var(--cdq-pc-text,1))!important;line-height:1.2!important;text-align:center!important}
+html.cdq-desktop-v2676 body [data-cdq-heading-subtitle-v2671]{font-size:12px!important;line-height:1.3!important;margin-top:2px!important;text-align:center!important}
 html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675]{order:1!important;width:34px!important;height:34px!important;min-width:34px!important;flex:0 0 34px!important}
 html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675] :is(img,svg,span){width:34px!important;height:34px!important;min-width:34px!important;min-height:34px!important;max-width:none!important;max-height:none!important}
 html.cdq-desktop-v2676 body [data-cdq-heading-layout-v2675]:has([data-cdq-heading-back-v2671]:not([hidden]))>[data-cdq-heading-icon-v2675]{display:none!important}
-html.cdq-desktop-v2676 body [data-cdq-heading-back-v2671]{order:0!important}
+html.cdq-desktop-v2676 body [data-cdq-heading-back-v2671]{grid-column:1!important;grid-row:1!important;order:0!important}
 html.cdq-desktop-v2676 body [data-cdq-heading-close-v2671]{order:3!important;margin-left:auto!important}
 html.cdq-desktop-v2676 body :is([data-cdq-heading-back-v2671],[data-cdq-heading-close-v2671]){display:grid!important;place-items:center!important;width:34px!important;height:34px!important;min-width:34px!important;min-height:34px!important;flex:0 0 34px!important;padding:6px!important;border-radius:7px!important;background:var(--cdq-raised)!important;color:var(--cdq-ink)!important;border:1px solid var(--cdq-line)!important;cursor:pointer}
 html.cdq-desktop-v2676 body [data-cdq-heading-back-v2671][hidden]{display:none!important}
@@ -127,4 +127,3 @@ html.cdq-desktop-v2676 body #cdqSettingsModalV2294>.modal{width:100%!important;m
 @media(max-width:1300px){#cdqPcHomeControls{grid-template-columns:minmax(180px,230px) minmax(180px,1fr)}html.cdq-desktop-v2676 #cdqPcHomeControls #cdqTopActionsV2204{grid-column:1/-1;justify-content:flex-start}}
 @media(max-width:1100px){#cdqPcFileColumns{grid-template-columns:minmax(0,1fr) 80px 110px 30px}#cdqPcFileColumns span:nth-child(4),.cdq-pc-file-location{display:none}html.cdq-desktop-v2676 body #filesContainer .file-row{grid-template-columns:28px minmax(0,1fr) 80px 110px 30px!important}html.cdq-desktop-v2676 body .file-row :is(.file-actions,.file-menu-button,.file-more-button,.cdq-pc-menu-button){grid-column:5!important}}
 @media(max-width:899px){html.cdq-desktop-v2676 body .bottom-nav .bottom-nav-item small{display:none!important}#cdqPcAccount{flex-direction:column;justify-content:center;padding:8px 0 3px;gap:5px}#cdqPcAccount>div{width:100%;text-align:center}#cdqPcAccount strong{font-size:10px}#cdqPcAccount span{font-size:9px}#cdqPcVersion{font-size:9px;text-align:center}}
-

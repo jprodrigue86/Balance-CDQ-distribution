@@ -1,4 +1,5 @@
 import {normalizeFloorStatusV2691} from './reader-floor-status-v2691.mjs';
+import {normalizeConstraintsV2697} from './reader-constraints-v2697.mjs';
 
 // Include the applied load in the range: equal offsets cannot cancel, and
 // opposite offsets add. Preserve each report's tolerance and active positions.
@@ -47,5 +48,5 @@ export function normalizeCalculationsV2694(pdf,L,key=''){
   else{const next=pdf.context.obj({S:'JavaScript',JS:L.PDFHexString.fromText(recalculate)});if(action instanceof L.PDFDict)next.set(N('Next'),action);else if(action instanceof L.PDFArray)next.set(N('Next'),pdf.context.obj({S:'GoTo',D:action}));pdf.catalog.set(N('OpenAction'),next);}
   pdf.catalog.set(N('CDQCalculationsV2694'),pdf.context.obj(true));
  }
- return changed;
+ return normalizeConstraintsV2697(pdf,L)||changed;
 }

@@ -1,11 +1,15 @@
 import {calibrationIdentity,calibrationRpc} from './calibration-feedback-v2566.mjs';
+import {createEquipmentTrackerV2697} from './equipment-list-v2697.mjs';
+const smartPc=()=>document.documentElement.classList.contains('cdq-desktop-v2676');
+const equipment=smartPc()?createEquipmentTrackerV2697({identity:()=>calibrationIdentity().email,library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},loadPdf:id=>window.cdqLoadPdfForCalibrationV2668(id)}):null;
+window.cdqEquipmentListV2697=equipment;
 const canRead=()=>!!window.cdqDriveEntryV2632?.canRead()&&!!calibrationIdentity().email;
 const canWrite=()=>canRead()&&['admin','technicien'].includes(calibrationIdentity().role);
 // A list belongs to the client, never the archive or child folder currently expanded.
 const client=()=>{try{return String(compagnieSelectionnee||'');}catch{return '';}};
 const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
 const excluded=v=>/^(?:liste (?:de|des) balances?|archives?|rs(?: pdf)?|irs(?: pdf)?)(?:\b|[._ -])/.test(norm(v));
-let epoch=0,owner='',visibleClient='',timer=0;
+let epoch=0,owner='',visibleClient='',timer=0,pcScan=null;
 const jobs=new Map(),receipts=new Map(),states=new Map();
 // Saves belong to their client, independently of the visible page or selection.
 const saveWaits=new Map(),changes=new Map(),satisfied=new Map(),clientTimers=new Map();
@@ -33,8 +37,10 @@ function saved(event,local=false){
   const d=event.detail||{},id=String(d.clientId||'');if(!id){schedule();return;}
   if(!canWrite()||excluded(d.name||d.nom))return;
   const k=key(id),file=String(d.id||d.fileId||''),token=String(d.saveId||'');
+  if(smartPc()&&equipment.decision(token)===false&&!saveWaits.get(k)?.has(file))return;
   if(local&&d.pending!==false){let pending=saveWaits.get(k);if(!pending)saveWaits.set(k,pending=new Map());pending.set(file,token);paintRows();return;}
   const pending=saveWaits.get(k);if(pending?.has(file)&&(!token||pending.get(file)===token))pending.delete(file);
+  if(smartPc()&&(!local||d.pending===false))equipment.acknowledge(token);
   changes.set(k,(changes.get(k)||0)+1);const job=jobs.get(k);if(job)job.dirty=true;
   paintRows();scheduleClient(id);
 }
@@ -42,13 +48,14 @@ function root(id){try{return cacheContenuCompagnies[id]||null;}catch{return null
 function listFile(id){return (root(id)?.fichiers||[]).find(f=>norm(f.nom||f.name)==='liste de balance.pdf');}
 export function sourceFingerprint(tree){
   if(!tree)return '';
-  const rows=[['client',String(tree.id||''),tree.nom||tree.name||'']],take=(node,pdf)=>{for(const f of node.fichiers||[]){if(excluded(f.nom||f.name))continue;const type=f.mimeType||f.type;if(type==='application/vnd.google-apps.spreadsheet'||type==='GOOGLE_SHEETS'||pdf&&(type==='application/pdf'||type==='PDF'))rows.push([String(f.id),f.nom||f.name,type,f.modifiedTime||f.dateModification||'',String(f.version||f.revision||''),f.md5Checksum||f.sha256Checksum||'',f._cdqPendingSaveV2660||'',f._cdqConfirmedAt2530||'']);}};
+  const rows=[['client',String(tree.id||''),tree.nom||tree.name||'']],take=(node,pdf)=>{for(const f of node.fichiers||[]){if(excluded(f.nom||f.name))continue;const type=f.mimeType||f.type;if(smartPc()&&pdf&&(type==='application/pdf'||type==='PDF')){rows.push([String(f.id),type]);continue;}if(type==='application/vnd.google-apps.spreadsheet'||type==='GOOGLE_SHEETS'||pdf&&(type==='application/pdf'||type==='PDF'))rows.push([String(f.id),f.nom||f.name,type,f.modifiedTime||f.dateModification||'',String(f.version||f.revision||''),f.md5Checksum||f.sha256Checksum||'',f._cdqPendingSaveV2660||'',f._cdqConfirmedAt2530||'']);}};
   take(tree,true);
   for(const d of tree.dossiers||[])if(/^rapports? (?:d ?)?etalonnages?$/.test(norm(d.nom||d.name))){rows.push(['folder',String(d.id)]);take(d,false);}
   return JSON.stringify(rows.sort((a,b)=>a[0].localeCompare(b[0])));
 }
-function remembered(id){const k=key(id);if(receipts.has(k))return receipts.get(k);try{const r=JSON.parse(localStorage.getItem('cdqBalanceListV2660:'+k)||'null');if(r){receipts.set(k,r);return r;}}catch{}return null;}
-function remember(id,fingerprint){const r={fingerprint,requestedAt:Date.now()};receipts.set(key(id),r);try{localStorage.setItem('cdqBalanceListV2660:'+key(id),JSON.stringify(r));}catch{}}
+const receiptPrefix=()=>smartPc()?'cdqBalanceListV2697:':'cdqBalanceListV2660:';
+function remembered(id){const k=key(id);if(receipts.has(k))return receipts.get(k);try{const r=JSON.parse(localStorage.getItem(receiptPrefix()+k)||'null');if(r){receipts.set(k,r);return r;}}catch{}return null;}
+function remember(id,fingerprint){const r={fingerprint,requestedAt:Date.now()};receipts.set(key(id),r);try{localStorage.setItem(receiptPrefix()+key(id),JSON.stringify(r));}catch{}}
 function paint(id,text,error=false){if(id!==client())return;const p=document.getElementById('cdqClientActionsV2640');if(!p||p.hidden)return;let el=p.querySelector('[data-balance-list-status]');if(!el){el=document.createElement('p');el.dataset.balanceListStatus='';el.className='cdq-workspace-status';el.setAttribute('role','status');p.append(el);}if(el.textContent!==text)el.textContent=text;el.classList.toggle('cdq-workspace-error',error);}
 function ready(id,r,notify=false){states.set(key(id),r);if(r.fileId&&r.updatedAt)window.cdqInstantFiles2530?.confirm?.({id:r.fileId,nom:'Liste de balance.pdf',type:'PDF',dateModification:r.updatedAt},id,id);if(notify)paint(id,'Liste à jour · '+(r.count||0)+' balance(s)'+(r.warnings?.length?' · '+r.warnings.length+' fichier(s) à vérifier':''));}
 async function call(name,id,...args){const account=calibrationIdentity().email,version=epoch;if(!canRead())throw Error('Accès Drive requis.');const r=await calibrationRpc(name,id,...args);if(version!==epoch||account!==calibrationIdentity().email||!canRead())throw Error('Le compte a changé.');return r;}
@@ -107,7 +114,17 @@ function inspect(){
   const tree=root(id);if(!id||!tree)return;
   const fingerprint=sourceFingerprint(tree),job=jobs.get(key(id));
   if(job){if(fingerprint!==job.fingerprint)job.dirty=true;return;}
-  const receipt=remembered(id);if(receipt?.fingerprint!==fingerprint||Date.now()-Number(receipt?.requestedAt||0)>60000)refresh(false,true).catch(()=>{});
+  const receipt=remembered(id);
+  if(smartPc()){
+   // An existing list is readable as-is. First-time field snapshots establish
+   // a baseline without regenerating it merely because a folder was opened.
+   if(!receipt&&listFile(id))remember(id,fingerprint);
+   else if(receipt?.fingerprint!==fingerprint)refresh(false,true).catch(()=>{});
+   const version=epoch,k=key(id),files=(tree.fichiers||[]).filter(f=>!excluded(f.nom||f.name)&&['PDF','application/pdf'].includes(f.mimeType||f.type)&&!f._cdqPendingSaveV2660);
+   if(!pcScan){const task=equipment.inspect(files,()=>client()===id&&epoch===version);pcScan=task;task.then(changed=>{if(changed&&epoch===version&&canWrite()){changes.set(k,(changes.get(k)||0)+1);scheduleClient(id);}}).catch(()=>{}).finally(()=>{if(pcScan===task){pcScan=null;if(client()!==id)schedule();}});}
+   return;
+  }
+  if(receipt?.fingerprint!==fingerprint||Date.now()-Number(receipt?.requestedAt||0)>60000)refresh(false,true).catch(()=>{});
 }
 // Coalesce notifications without postponing the first check when rows repaint.
 function schedule(){if(timer)return;timer=setTimeout(()=>{timer=0;inspect();},150);}
@@ -119,4 +136,4 @@ window.addEventListener('cdq:pdf-local-saved',e=>saved(e,true));window.addEventL
 window.addEventListener('online',()=>{for(const k of changes.keys())if(k.startsWith(owner+'|')&&(changes.get(k)||0)>(satisfied.get(k)||0))scheduleClient(k.slice(owner.length+1));paintRows();schedule();});window.addEventListener('offline',paintRows);
 document.addEventListener('click',e=>{if(e.target.closest?.('.folder-header,.bottom-nav-item,.company-item')){closeMenu();schedule();}},true);
 const files=document.getElementById('filesContainer');if(files)new MutationObserver(schedule).observe(files,{childList:true,subtree:true});
-setInterval(()=>{if(!document.hidden)inspect();},30000);reset();schedule();
+if(!smartPc())setInterval(()=>{if(!document.hidden)inspect();},30000);reset();schedule();

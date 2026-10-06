@@ -95,5 +95,12 @@ body #formNav{bottom:58px}
   body.cdq-keyboard-field #formNav{bottom:0!important}
 }
 /* Equal trailing edge and equal icon positions for both status words. */
+.cdq-reader-pc #readerTop{display:flex!important;position:relative;align-items:center}
+.cdq-reader-pc #readerTop #name{position:absolute;left:50%;transform:translateX(-50%);width:calc(100% - 380px);min-width:0;max-width:none;margin:0;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;pointer-events:none}
+body.cdq-reader-pc #container{bottom:0!important}
+body.cdq-reader-pc.form-navigation #container{bottom:48px!important}
+body.cdq-reader-pc #formNav{bottom:0!important}
+body.cdq-reader-pc #status{left:50%!important;right:auto!important;bottom:52px!important;width:auto!important;max-width:calc(100% - 24px)!important;height:auto!important;min-height:0!important;padding:6px 10px!important;transform:translateX(-50%);border-radius:8px;background:var(--reader-panel)!important;opacity:0;pointer-events:none;z-index:65}
+body.cdq-reader-pc #status[data-active=true]{opacity:1}
 .cdq-result-indicator:not(.row-result){justify-content:flex-end;gap:6%;padding:0 3%}
 .cdq-result-indicator:not(.row-result) span{text-align:right;white-space:nowrap}

@@ -1,3 +1,4 @@
+import {normalizeFloorEquipmentV2697} from './reader-floor-equipment-v2697.mjs';
 // Native PDF layout fixes. Existing field names, readings and calibration rules survive.
 const images=new Map();
 async function imageBytes(key,supplied){
@@ -21,7 +22,7 @@ export async function normalizeReportPresentationV2695(pdf,L,{key='',imageData}=
  if(!form.getFieldMaybe('charge_point_1_charge_utilisee')||!['indicateur','base_balance','imprimante'].every(p=>form.getFieldMaybe(p+'_fabricant')))return false;
  key=key||(/multi/i.test(label)?'multitete':/camion/i.test(label)?'camion':/table/i.test(label)?'table':'other');
  if(key==='table'&&!form.getFieldMaybe('_cdq_points_diagram_4')||key==='multitete'&&!page.node.has(N('CDQReportLayoutV2677')))return false;
- const marker=N('CDQReportPresentationV2695'),first=!pdf.catalog.has(marker),font=pdf.embedStandardFont(L.StandardFonts.HelveticaBold);
+ const marker=N('CDQReportPresentationV2695'),first=!pdf.catalog.has(marker),font=pdf.embedStandardFont(L.StandardFonts.HelveticaBold);let appearanceChanged=false;
  const read=o=>new TextDecoder().decode(L.decodePDFRawStream(o).decode());
  const text=(s,x,y,size=8,color='.114 .059 .871',width=0)=>{
   if(width)size=Math.min(size,(width-3)/Math.max(1,font.widthOfTextAtSize(s,1)));
@@ -32,6 +33,7 @@ export async function normalizeReportPresentationV2695(pdf,L,{key='',imageData}=
   const old=w.dict.lookupMaybe(N('AP'),L.PDFDict)?.lookupMaybe(N('N'),L.PDFRawStream);if(!old)continue;
   const src=read(old),bits=src.match(/BT[\s\S]*?ET/g)||[],r=w.getRectangle();
   if(!/(?:\bre\s+[BbfS]|\bRG\b)/.test(src))continue;
+  appearanceChanged=true;
   w.dict.set(N('AP'),pdf.context.obj({N:pdf.context.register(pdf.context.flateStream('q '+bits.join('\n')+' Q',{Type:'XObject',Subtype:'Form',BBox:[0,0,r.width,r.height],Resources:old.dict.lookupMaybe(N('Resources'),L.PDFDict)||pdf.context.obj({})}))}));
   w.dict.set(N('Border'),pdf.context.obj([0,0,0]));w.dict.set(N('BS'),pdf.context.obj({W:0,S:'S'}));
  }};
@@ -97,5 +99,5 @@ export async function normalizeReportPresentationV2695(pdf,L,{key='',imageData}=
  }
  // Saves can regenerate widget borders: the page is the sole grid owner.
  for(const f of form.getFields())if(/^(?:indicateur|base_balance|imprimante)_(?:fabricant|modele|numero_serie|numero_am)$/.test(f.getName())||key==='table'&&/^excentricite_(?:avant|apres)_/.test(f.getName())||key==='multitete'&&/^charge_point_\d+_(?!conforme)/.test(f.getName()))plainAppearance(f);
- return first;
+ return normalizeFloorEquipmentV2697(pdf,L)||first||appearanceChanged;
 }

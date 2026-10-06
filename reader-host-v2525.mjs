@@ -36,7 +36,13 @@ async function openReaderInternal(data){
       root.dataset.cdqReaderSessionV2679=marker;
       const bounds=source.frameElement?.getBoundingClientRect(),offset=bounds?.top||0,viewport=window.visualViewport?.height||innerHeight;
       const top=root.classList.contains('cdq-desktop-v2676')?(parseFloat(getComputedStyle(root).getPropertyValue('--cdq-pc-top'))||152):Math.max(0,offset+(doc.getElementById('appHeader')?.getBoundingClientRect().bottom||0)),bottom=root.classList.contains('cdq-desktop-v2676')?10:Math.max(0,viewport-offset-(doc.querySelector('.bottom-nav')?.getBoundingClientRect().top||viewport));
-      frame.style.inset=top+'px 0 '+bottom+'px';frame.style.height=Math.max(0,viewport-top-bottom)+'px';
+      if(root.classList.contains('cdq-desktop-v2676')){
+        source.cdqDesktopModel2?.layout();
+        const safeTop=Math.max(top,Math.ceil(offset+(doc.getElementById('appHeader')?.getBoundingClientRect().bottom||0)+12));
+        const left=(bounds?.left||0)+(parseFloat(getComputedStyle(root).getPropertyValue('--cdq-pc-left'))||232);
+        for(const [key,value]of Object.entries({top:safeTop+'px',left:left+'px',right:'10px',bottom:'10px',width:Math.max(0,innerWidth-left-10)+'px',height:Math.max(0,viewport-safeTop-10)+'px'}))frame.style.setProperty(key,value,'important');
+        document.documentElement.style.setProperty('--cdq-pc-shell-top',safeTop+'px');document.documentElement.style.setProperty('--cdq-pc-shell-left',left+'px');
+      }else{frame.style.inset=top+'px 0 '+bottom+'px';frame.style.height=Math.max(0,viewport-top-bottom)+'px';}
     }catch{}
   }
   const marker='cdq-reader-'+crypto.randomUUID();
@@ -62,7 +68,7 @@ async function openReaderInternal(data){
     if(m.type==='CDQ_READER_READY'){
       ready=true;
       if(!guard&&!window.BalanceCDQNative&&!/BalanceCDQAndroid\//i.test(navigator.userAgent)){history.pushState({cdqReader:marker},'',location.href);guard=true;window.addEventListener('popstate',pop);}
-      tell({type:'CDQ_READER_OPEN',blob:data.blob,name:data.name,theme:data.theme,fileId:data.onSave?String(data.fileId||'local-copy'):'',readOnly:!!data.readOnly,autoReportName:data.autoReportName===true});
+      tell({type:'CDQ_READER_OPEN',blob:data.blob,name:data.name,theme:data.theme,fileId:data.onSave?String(data.fileId||'local-copy'):'',readOnly:!!data.readOnly,autoReportName:data.autoReportName===true,desktop:!!data.workspaceSource?.document.documentElement.classList.contains('cdq-desktop-v2676')});
     }
     if(m.type==='CDQ_READER_OPENED'){opened=true;clearTimeout(timer);data.onOpened?.();if(prefillValues)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});if(pendingClose)requestClose();}
     if(m.type==='CDQ_READER_CLOSE')close();
