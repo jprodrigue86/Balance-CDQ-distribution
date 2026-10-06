@@ -41,10 +41,11 @@
     for(const row of list?.children||[])set(row,{'font-size':'14px','min-height':'42px','padding':'10px 12px','border-radius':'6px','box-sizing':'border-box'});
   }
   function layout(){
-    const narrow=innerWidth<900,compact=innerWidth<1150,sidebar=narrow?58:compact?182:210,top=compact?76:84,left=sidebar+22;
+    const narrow=innerWidth<900,compact=innerWidth<1150,sidebar=narrow?58:compact?182:210,bannerHeight=Math.round(innerWidth*132/1536),top=bannerHeight+12,left=sidebar+22;
     const textScale=scale('Text',.85,1.25),iconScale=scale('Icon',.75,1.3),density=scale('General',.9,1.2);
+    set(root,{'--cdq-pc-shell-top':top+'px'});
     set(root,{'--cdq-pc-left':left+'px','--cdq-pc-sidebar':sidebar+'px','--cdq-workspace-top':top+'px','--cdq-workspace-bottom':'10px','--cdq-pc-top':top+'px','--cdq-row-text-v2631':'15px','--cdq-row-date-v2631':'12px','--cdq-row-fileIcon-v2631':'28px','--cdq-row-rowMin-v2631':'48px','--cdq-row-rowY-v2631':'7px','--cdq-row-rowLeft-v2631':'12px','--cdq-row-rowRight-v2631':'12px','--cdq-row-rowGap-v2631':'10px','--cdq-pc-text':String(textScale),'--cdq-pc-icon':String(iconScale),'--cdq-pc-row-min':Math.round(48*density)+'px'});
-    set($('#appHeader'),{'position':'fixed','top':'10px','left':'10px','right':'10px','width':'calc(100% - 20px)','height':(top-22)+'px','min-height':'0','max-height':'none','margin':'0','padding':'0','z-index':'2000','border-radius':'10px','overflow':'hidden','display':'flex','visibility':'visible','opacity':'1','transform':'none','zoom':'1'});
+    set($('#appHeader'),{'position':'fixed','top':'0','left':'0','right':'0','width':'100%','height':bannerHeight+'px','min-height':'0','max-height':'none','margin':'0','padding':'0','z-index':'2000','border-radius':'0','border':'0','overflow':'hidden','display':'flex','visibility':'visible','opacity':'1','transform':'none','zoom':'1'});
     const nav=$('.bottom-nav');if(nav&&nav.parentElement!==document.body)document.body.append(nav);
     set(nav,{'position':'fixed','top':top+'px','left':'10px','right':'auto','bottom':'10px','width':sidebar+'px','height':'auto','min-height':'0','max-height':'none','display':'flex','flex-direction':'column','grid-auto-flow':'row','padding':narrow?'4px':'7px','gap':'3px','margin':'0','transform':'none','zoom':'1','overflow-y':'auto','overflow-x':'hidden','border':'1px solid var(--cdq-line)','border-radius':'10px','z-index':'2000','box-sizing':'border-box'});
     for(const b of all('.bottom-nav > .bottom-nav-item')){
