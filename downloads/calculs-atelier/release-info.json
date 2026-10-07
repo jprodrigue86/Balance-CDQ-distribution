@@ -1,26 +1,25 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.7.6",
-  "versionCode": 17006,
+  "version": "1.7.7",
+  "versionCode": 17007,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-07T23:19:27.514526+00:00",
+  "releasedAt": "2026-10-07T23:32:25.420592+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "60353925ae776911a792e0c9d4ef1260ddfde48c92126226d7f2dc162cb546a7",
-  "htmlSha256": "749288087c62c2aae3149e2525df4485b0820c48bdc572d9a9546f8b3a2a3e2c",
-  "packageBytes": 16501285,
-  "htmlBytes": 9281121,
+  "packageSha256": "57aa1644f9d4f0314a291fb90552f5f0dce79afb61bd082e978fd8d20c722080",
+  "htmlSha256": "696d4aaf28ab6f731e549b29e4b6fa8092c909eb214e3b3e6e9e86cd2a719aa3",
+  "packageBytes": 16502393,
+  "htmlBytes": 9281825,
   "notes": [
-    "Material Conversions : point de split à partir de Qty planned, Remain Old Qty Mapxr et New Mat Qty demand.",
-    "Caisses anciennes, caisses nouvelles, première caisse de la nouvelle matière, zéro théorique et stock restant visibles directement.",
-    "Arrondi inférieur pour les caisses entières, sans coefficient arrondi intermédiaire; exemple de 35 000 caisses.",
-    "Numéro d’ancienne matière conservé avec la conversion et son archive; accès direct depuis Règle de trois."
+    "Titres des cases correspondant aux colonnes de la feuille : Qty planned, Remain Old Qty MapXr et New Mat Qty demand.",
+    "Règle de trois en X : demande en haut à gauche, stock ancien en haut à droite, quantité planifiée en bas à gauche et CS with Old Mat en bas à droite.",
+    "Explications françaises sous chaque titre et titres harmonisés dans Material Conversions."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.7.6.apk",
+  "androidApk": "Calculs-Atelier-Android-1.7.7.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
     "androidSignature": "APK v2/v3 avec le certificat historique; SDK Android recompilé",
     "physicalDeviceTest": false
   },
   "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée.",
-  "shellVersion": 17006
+  "shellVersion": 17007
 }
