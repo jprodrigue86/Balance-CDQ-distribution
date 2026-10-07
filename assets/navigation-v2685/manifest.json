@@ -118,12 +118,12 @@
     ],
     "metal-music": [
       {
-        "x": 48,
-        "y": 128,
-        "crop": 336,
-        "width": 1536,
-        "height": 1152,
-        "asset": "assets/navigation-v2690/icons.jpg",
+        "x": 44,
+        "y": 119,
+        "crop": 320,
+        "width": 1448,
+        "height": 1086,
+        "asset": "assets/navigation-v2701/icons.png",
         "key": "home"
       },
       {
@@ -132,39 +132,39 @@
         "crop": 164
       },
       {
-        "x": 416,
-        "y": 128,
-        "crop": 336,
-        "width": 1536,
-        "height": 1152,
-        "asset": "assets/navigation-v2690/icons.jpg",
+        "x": 396,
+        "y": 119,
+        "crop": 320,
+        "width": 1448,
+        "height": 1086,
+        "asset": "assets/navigation-v2701/icons.png",
         "key": "folder"
       },
       {
-        "x": 48,
-        "y": 600,
-        "crop": 336,
-        "width": 1536,
-        "height": 1152,
-        "asset": "assets/navigation-v2690/icons.jpg",
+        "x": 44,
+        "y": 575,
+        "crop": 320,
+        "width": 1448,
+        "height": 1086,
+        "asset": "assets/navigation-v2701/icons.png",
         "key": "inventory"
       },
       {
-        "x": 416,
-        "y": 600,
-        "crop": 336,
-        "width": 1536,
-        "height": 1152,
-        "asset": "assets/navigation-v2690/icons.jpg",
+        "x": 396,
+        "y": 575,
+        "crop": 320,
+        "width": 1448,
+        "height": 1086,
+        "asset": "assets/navigation-v2701/icons.png",
         "key": "invoices"
       },
       {
-        "x": 1168,
-        "y": 600,
-        "crop": 336,
-        "width": 1536,
-        "height": 1152,
-        "asset": "assets/navigation-v2690/icons.jpg",
+        "x": 1095,
+        "y": 575,
+        "crop": 320,
+        "width": 1448,
+        "height": 1086,
+        "asset": "assets/navigation-v2701/icons.png",
         "key": "trash"
       }
     ],
@@ -203,30 +203,30 @@
   },
   "extras": {
     "calibration": {
-      "x": 792,
-      "y": 128,
-      "crop": 336,
-      "width": 1536,
-      "height": 1152,
-      "asset": "assets/navigation-v2690/icons.jpg",
+      "x": 742,
+      "y": 119,
+      "crop": 320,
+      "width": 1448,
+      "height": 1086,
+      "asset": "assets/navigation-v2701/icons.png",
       "key": "calibration"
     },
     "calcul": {
-      "x": 1168,
-      "y": 128,
-      "crop": 336,
-      "width": 1536,
-      "height": 1152,
-      "asset": "assets/navigation-v2690/icons.jpg",
+      "x": 1095,
+      "y": 119,
+      "crop": 320,
+      "width": 1448,
+      "height": 1086,
+      "asset": "assets/navigation-v2701/icons.png",
       "key": "calcul"
     },
     "opportunities": {
-      "x": 792,
-      "y": 600,
-      "crop": 336,
-      "width": 1536,
-      "height": 1152,
-      "asset": "assets/navigation-v2690/icons.jpg",
+      "x": 742,
+      "y": 575,
+      "crop": 320,
+      "width": 1448,
+      "height": 1086,
+      "asset": "assets/navigation-v2701/icons.png",
       "key": "opportunities"
     },
     "drive": {
@@ -235,48 +235,48 @@
       "crop": 256
     },
     "home": {
-      "x": 48,
-      "y": 128,
-      "crop": 336,
-      "width": 1536,
-      "height": 1152,
-      "asset": "assets/navigation-v2690/icons.jpg",
+      "x": 44,
+      "y": 119,
+      "crop": 320,
+      "width": 1448,
+      "height": 1086,
+      "asset": "assets/navigation-v2701/icons.png",
       "key": "home"
     },
     "folder": {
-      "x": 416,
-      "y": 128,
-      "crop": 336,
-      "width": 1536,
-      "height": 1152,
-      "asset": "assets/navigation-v2690/icons.jpg",
+      "x": 396,
+      "y": 119,
+      "crop": 320,
+      "width": 1448,
+      "height": 1086,
+      "asset": "assets/navigation-v2701/icons.png",
       "key": "folder"
     },
     "inventory": {
-      "x": 48,
-      "y": 600,
-      "crop": 336,
-      "width": 1536,
-      "height": 1152,
-      "asset": "assets/navigation-v2690/icons.jpg",
+      "x": 44,
+      "y": 575,
+      "crop": 320,
+      "width": 1448,
+      "height": 1086,
+      "asset": "assets/navigation-v2701/icons.png",
       "key": "inventory"
     },
     "invoices": {
-      "x": 416,
-      "y": 600,
-      "crop": 336,
-      "width": 1536,
-      "height": 1152,
-      "asset": "assets/navigation-v2690/icons.jpg",
+      "x": 396,
+      "y": 575,
+      "crop": 320,
+      "width": 1448,
+      "height": 1086,
+      "asset": "assets/navigation-v2701/icons.png",
       "key": "invoices"
     },
     "trash": {
-      "x": 1168,
-      "y": 600,
-      "crop": 336,
-      "width": 1536,
-      "height": 1152,
-      "asset": "assets/navigation-v2690/icons.jpg",
+      "x": 1095,
+      "y": 575,
+      "crop": 320,
+      "width": 1448,
+      "height": 1086,
+      "asset": "assets/navigation-v2701/icons.png",
       "key": "trash"
     }
   },
@@ -314,6 +314,13 @@
       "width": 1536,
       "height": 1152,
       "mime": "image/jpeg"
+    },
+    "assets/navigation-v2701/icons.png": {
+      "bytes": 1915835,
+      "sha256": "c4a3bae5e2d145424b51b440ba89fcdfff363f74a50fac91ffabf67dfbfa26dc",
+      "width": 1448,
+      "height": 1086,
+      "mime": "image/png"
     }
   },
   "userPhotoV2690": {
@@ -321,5 +328,19 @@
     "originalSha256": "631bfd3fe28ac0ba4c6f379d7a9116b62ef434fc8a76991d42424deaca0c14cd",
     "encoding": "JPEG",
     "transform": "Original encoded bytes, artwork rectangles clipped at render time; captions remain native application text."
+  },
+  "approvedPaletteV2701": {
+    "asset": "assets/navigation-v2701/icons.png",
+    "source": "Approved eight-icon preview, exact encoded PNG bytes.",
+    "colors": {
+      "home": "#2466ff",
+      "folder": "#ff49b6",
+      "calibration": "#00deee",
+      "calcul": "#ff8b19",
+      "inventory": "#aa4dff",
+      "invoices": "#ffd839",
+      "opportunities": "#21e966",
+      "trash": "#ff3544"
+    }
   }
 }
