@@ -3,7 +3,7 @@ export function isPdfRevisionConflictV2680(error){
 }
 // Recovery uses the existing guarded, idempotent copy endpoint. The original
 // file's revision is never replaced with a freshly fetched revision to force a write.
-export function createPdfSaveRecoveryV2680({get,put,rpc,guard,owner,original,clearSource}){
+export function createPdfSaveRecoveryV2680({get,put,rpc,guard,owner,original,clearSource,onConfirmed=()=>{}}){
  return async function process(a){
   const email=owner();if(a.owner!==email)throw Error('Le compte a changé. Rouvrez le PDF.');
   const prior=a.predecessor?await get('pdf-save-receipt',a.predecessor):null;guard(email);
@@ -41,6 +41,9 @@ export function createPdfSaveRecoveryV2680({get,put,rpc,guard,owner,original,cle
   guard(email);
   if(!result?.ok||!result.id||!result.revision)throw Error('La sauvegarde n’a pas été confirmée. Les réponses restent sur cet appareil.');
   await put('pdf-save-receipt',a.id,{...result,revision:result.revision,targetId:result.id,fileName:result.nom,clientId:result.clientId});guard(email);
+  // Confirmation belongs to the durable upload receipt, independently of a
+  // row repaint or a replay. Retain the source ID when recovery creates a copy.
+  await onConfirmed({...result,sourceId:a.targetId,saveId:a.id});guard(email);
   await clearSource(a.targetId,a.id);guard(email);
   return {...result,recovered:result.id!==a.targetId};
  };
