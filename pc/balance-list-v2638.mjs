@@ -23,9 +23,12 @@ function paintRows(){
     let indicator=row.querySelector('[data-balance-list-working]');
     if(!isList||!running||!canRead()){indicator?.remove();row.removeAttribute('data-balance-list-busy');continue;}
     if(!indicator){indicator=document.createElement('span');indicator.dataset.balanceListWorking='';indicator.className='cdq-balance-list-working';indicator.setAttribute('role','status');const badge=row.querySelector('.file-today-done-badge');row.insertBefore(indicator,badge||null);}
-    const text=navigator.onLine===false?'Liste de balances : actualisation en attente de connexion':waiting(id)?'Liste de balances : synchronisation du rapport en cours':readerBusy()&&!jobs.has(k)?'Liste de balances : actualisation prévue après le rapport':'Liste de balances : actualisation en cours';
+    const active=jobs.has(k)&&navigator.onLine!==false;
+    const text=navigator.onLine===false?'Liste de balances : actualisation en attente de connexion':active?'Liste de balances : actualisation en cours':waiting(id)?'Liste de balances : sauvegarde du rapport en attente':failed.has(k)?'Liste de balances : actualisation interrompue; réessayez depuis le menu':'Liste de balances : actualisation prévue après le rapport';
     if(indicator.getAttribute('aria-label')!==text){indicator.setAttribute('aria-label',text);indicator.title=text;}
-    indicator.classList.toggle('cdq-balance-list-paused',navigator.onLine===false);row.dataset.balanceListBusy='true';
+    indicator.classList.toggle('cdq-balance-list-paused',!active);
+    indicator.textContent=active?'':waiting(id)?'Sauvegarde en attente':failed.has(k)?'À réessayer':'En attente';
+    row.dataset.balanceListBusy=active?'true':'false';
   }
 }
 function scheduleClient(id){
@@ -36,13 +39,17 @@ function saved(event,local=false){
   if(owner!==calibrationIdentity().email)reset();
   const d=event.detail||{},id=String(d.clientId||'');if(!id){schedule();return;}
   if(!canWrite()||excluded(d.name||d.nom))return;
-  const k=key(id),file=String(d.id||d.fileId||''),token=String(d.saveId||'');
-  const decision=equipment.decision(token);
-  if(decision===false){if(!local||d.pending===false)equipment.acknowledge(token,d);return;}
-  if(local&&d.pending!==false){let pending=saveWaits.get(k);if(!pending)saveWaits.set(k,pending=new Map());pending.set(file,token);paintRows();return;}
+  const k=key(id),file=String(d.sourceId||d.id||d.fileId||''),token=String(d.saveId||'');
   const pending=saveWaits.get(k);
-  if(pending?.has(file)&&token&&pending.get(file)!==token){equipment.acknowledge(token,d);return;}
-  if(pending?.has(file))pending.delete(file);
+  const matched=pending?.has(file)?file:token?[...(pending||[])].find(([,value])=>value===token)?.[0]:undefined;
+  if(!local||d.pending===false){
+    // An earlier acknowledgement cannot release a newer edit of this file.
+    if(matched!==undefined&&token&&pending.get(matched)!==token){equipment.acknowledge(token,d);return;}
+    if(matched!==undefined)pending.delete(matched);
+  }
+  const decision=equipment.decision(token);
+  if(decision===false){if(!local||d.pending===false)equipment.acknowledge(token,d);paintRows();return;}
+  if(local&&d.pending!==false){let pending=saveWaits.get(k);if(!pending)saveWaits.set(k,pending=new Map());pending.set(file,token);paintRows();return;}
   if(!local||d.pending===false)equipment.acknowledge(token,d);
   changes.set(k,(changes.get(k)||0)+1);const job=jobs.get(k);if(job)job.dirty=true;
   paintRows();scheduleClient(id);
