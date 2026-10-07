@@ -7,6 +7,10 @@ export const precisionEquipmentV2691=[
 export function normalizePrecisionEquipmentV2691(pdf,L){
  const N=L.PDFName.of,form=pdf.getForm(),page=pdf.getPage(0);
  if(!form.getFieldMaybe('type_plateau')||!form.getFieldMaybe('resolution'))return false;
+ if(page.node.has(N('CDQReportLayoutV2704'))){
+  if(!page.node.has(N('CDQPrecisionEquipmentV2693'))){page.node.set(N('CDQPrecisionEquipmentV2693'),page.node.lookup(N('CDQReportLayoutV2704'),L.PDFDict).get(N('Stream')));return true;}
+  return false;
+ }
  // Repaint reports saved before the V2693 stacking fix as well as new masters.
  // Their V2691 marker can remain even after a save has erased these cells.
  const marker=N('CDQPrecisionEquipmentV2693');if(page.node.has(marker))return false;
