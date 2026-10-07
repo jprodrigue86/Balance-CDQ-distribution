@@ -36,7 +36,7 @@ let active='',observedOwner='',queued=false,driveEpoch=0,driveState={mode:'drive
 const pageByRoute={dossier:'cdqDrivePageV2638',favorites:'cdqDrivePageV2638',calcul:'cdqCalculPageV2638',opportunities:'cdqOpportunitiesPageV2638',report:'cdqReportOverlayV2578',calibration:'cdqCalibrationDialogV2565',inventory:'cdqInventoryModernV2592',invoices:'cdqInvoicePageV2590'};
 const labels={Accueil:'home',Dossier:'dossier',Dossiers:'dossier',Favoris:'favorites',Rapport:'report',Calibration:'calibration',Calcul:'calcul',Inventaire:'inventory',Factures:'invoices',Opportunités:'opportunities',Corbeille:'trash'};
 const order=[...new Set(Object.values(labels))];
-const navColors={home:'#45d6ff',dossier:'#ff6285',favorites:'#ffd34d',report:'#458fff',calibration:'#63edcf',calcul:'#ffb64d',inventory:'#d783ff',invoices:'#6be9a9',opportunities:'#65eda4',drive:'#48ceff',trash:'#ff6262'};
+const navColors={home:'#2466ff',dossier:'#ff49b6',favorites:'#ffd34d',report:'#458fff',calibration:'#00deee',calcul:'#ff8b19',inventory:'#aa4dff',invoices:'#ffd839',opportunities:'#21e966',drive:'#48ceff',trash:'#ff3544'};
 function page(id,title,subtitle=''){
   let p=$('#'+id);if(p)return p;p=document.createElement('section');p.id=id;p.className='cdq-workspace-page';p.hidden=true;p.setAttribute('aria-label',title);
   p.innerHTML='<header class="cdq-workspace-head"><h2>'+esc(title)+'<small>'+esc(subtitle)+'</small></h2><button type="button" data-workspace-close aria-label="Fermer la page">×</button></header><main class="cdq-workspace-body"></main>';
