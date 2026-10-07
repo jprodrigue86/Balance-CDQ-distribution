@@ -148,6 +148,14 @@ window.cdqBalanceListV2638={refresh,open,menu,inspect};
 window.addEventListener('cdq:access-ready',()=>{if(owner!==calibrationIdentity().email)reset();schedule();});
 window.addEventListener('cdq:drive-cleared-v2632',reset);window.addEventListener('cdq:drive-ready-v2632',schedule);
 for(const event of ['cdq:copied','cdq:pdf-saved'])window.addEventListener(event,e=>saved(e));
+window.addEventListener('cdq:pdf-save-retired-v2707',e=>{
+ if(owner!==calibrationIdentity().email)reset();
+ const d=e.detail||{},k=key(String(d.clientId||'')),pending=saveWaits.get(k),file=String(d.sourceId||''),token=String(d.saveId||'');
+ if(!canRead()||d.owner&&d.owner!==calibrationIdentity().email)return;
+ if(pending?.get(file)===token)pending.delete(file);
+ equipment.retire(token);
+ paintRows();
+});
 window.addEventListener('cdq:pdf-local-saved',e=>saved(e,true));window.addEventListener('cdq:client-renamed',e=>saved(e));
 for(const event of ['cdq:deleted','cdq:moved','cdq:renamed'])window.addEventListener(event,schedule);
 window.addEventListener('cdq:reader-closed-v2703',()=>{for(const k of changes.keys())if(k.startsWith(owner+'|')&&(changes.get(k)||0)>(satisfied.get(k)||0))scheduleClient(k.slice(owner.length+1));schedule();});

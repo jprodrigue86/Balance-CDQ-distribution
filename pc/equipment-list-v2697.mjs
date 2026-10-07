@@ -19,10 +19,11 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
  async function snapshot(blob){return equipmentSnapshotV2697(blob,await library());}
  async function noteSave(rec,blob,saveId){
   sync();const email=owner,before=await snapshot(rec.blob),after=await snapshot(blob);if(email!==identity())throw Error('Le compte a changé.');
-  const prior=data.reports[rec.id],previous=data.saves[saveId],changed=!!(previous?.changed||before!==after||Object.values(data.saves).some(s=>s.fileId===String(rec.id)&&s.changed&&!s.acknowledged));data.reports[rec.id]={...prior,signature:after,local:true,saveId,confirmedRevision:''};data.saves[saveId]={...previous,changed,fileId:String(rec.id),at:Date.now()};
+  const prior=data.reports[rec.id],previous=data.saves[saveId],changed=!!(previous?.changed||before!==after||Object.values(data.saves).some(s=>s.fileId===String(rec.id)&&s.changed&&!s.acknowledged&&!s.retired));data.reports[rec.id]={...prior,signature:after,local:true,saveId,confirmedRevision:''};data.saves[saveId]={...previous,changed,fileId:String(rec.id),at:Date.now()};
   const entries=Object.entries(data.saves).sort(([,a],[,b])=>b.at-a.at);data.saves=Object.fromEntries(entries.slice(0,1000));persist();return changed;
  }
- function decision(saveId){sync();const save=data.saves[saveId];return save?.acknowledged?false:save?.changed;}
+ function decision(saveId){sync();const save=data.saves[saveId];return save?.acknowledged||save?.retired?false:save?.changed;}
+ function retire(saveId){sync();const save=data.saves[saveId];if(save){save.retired=true;if(data.reports[save.fileId]?.saveId===saveId)delete data.reports[save.fileId];persist()}}
  function acknowledge(saveId,meta={}){sync();const save=data.saves[saveId];if(save){save.acknowledged=true;const report=data.reports[save.fileId];if(report?.saveId===saveId){report.confirmedRevision=String(meta.modifiedTime||meta.dateModification||meta.revision||'');if(report.confirmedRevision){report.stamp=stamp(meta);report.local=false;}}persist();}}
  function signature(id){sync();return data.reports[id]?.signature||'';}
  async function inspect(files,stillCurrent=()=>true){
@@ -42,5 +43,5 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
    }catch{ /* Leave the previous fingerprint intact; the next Drive event can retry. */ }
   }return changed;})();scan=task;try{return await task;}finally{if(scan===task)scan=null;}
  }
- return {noteSave,decision,acknowledge,signature,inspect};
+ return {noteSave,decision,acknowledge,retire,signature,inspect};
 }
