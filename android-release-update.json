@@ -1,11 +1,11 @@
 {
-  "versionName": "27.02",
-  "versionCode": 2702,
+  "versionName": "27.03",
+  "versionCode": 2703,
   "apkUrl": "https://github.com/jprodrigue86/Balance-CDQ-distribution/releases/latest/download/Balance-CDQ-Android.apk",
-  "sha256": "4b3fb1f8c2631f9760f1b4803b19f13ce715b32d966cdd3e5e6933d434642ff6",
+  "sha256": "3b48c4b089d615161f3281d000b8db131d76448e683517578348102d6bfc3478",
   "mandatory": false,
   "channel": "stable",
   "signingCertificateSha256": "496030d9cd10e81ff4e9486c38491bc15389112c0c295c61c295981c101c4436",
   "compatibleReleaseIdentityFrom": "25.15",
-  "sourceCommit": "12228203e8783c6d7c7be2abb20a96f379515886"
+  "sourceCommit": "292f91e64206a4be8c4acdebec922796e4f9a845"
 }
