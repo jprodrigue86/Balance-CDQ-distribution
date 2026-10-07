@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.07" data-cdq-pc-release="217cae265f251a42d8244c31b9f7c01c2e625e0687fa9dff67abfee0c8396c92">
+<html data-cdq-pc-version="27.07" data-cdq-pc-release="01762c4ea8a9648cc46d1f8b14ff0240087de4f8339efc0ea6c5aa2eeee0734e">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -14111,7 +14111,7 @@ function cdqCopyButtonV2707(label,fn){const b=document.createElement('button');b
 async function cdqDownloadCopyV2707(id){
  const email=cdqReaderOwnerV2520(),copies=await cdqRetirementV2707.copies();cdqReaderGuardV2520(email);
  const a=copies.find(a=>a.id===id);if(!a)throw Error('Cette copie locale n’est plus disponible.');
- const blob=new Blob([cdqV2112Base64ToBytes(a.data)],{type:'application/pdf'});cdqDownloadPdf({nom:a.fileName,blob});
+ const blob=new Blob([cdqV2112Base64ToBytes(a.data)],{type:'application/pdf'}),{downloadPdf}=await import('./pdf-download-v2657.mjs');cdqReaderGuardV2520(email);return downloadPdf(blob,a.fileName);
 }
 async function cdqOpenCopiesV2707(){
  const email=cdqReaderOwnerV2520(),copies=await cdqRetirementV2707.copies();cdqReaderGuardV2520(email);
