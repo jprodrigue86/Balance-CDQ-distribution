@@ -19,9 +19,9 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
-      - name: Preserve exact Git file bytes on Windows
+      - name: Preserve exact Git file bytes
         shell: bash
         run: git config --global core.autocrlf false
       - name: Checkout
