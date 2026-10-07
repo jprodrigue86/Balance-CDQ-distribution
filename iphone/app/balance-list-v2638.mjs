@@ -27,7 +27,8 @@ function paintRows(){
     const text=navigator.onLine===false?'Liste de balances : actualisation en attente de connexion':active?'Liste de balances : actualisation en cours':waiting(id)?'Liste de balances : sauvegarde du rapport en attente':failed.has(k)?'Liste de balances : actualisation interrompue; réessayez depuis le menu':'Liste de balances : actualisation prévue après le rapport';
     if(indicator.getAttribute('aria-label')!==text){indicator.setAttribute('aria-label',text);indicator.title=text;}
     indicator.classList.toggle('cdq-balance-list-paused',!active);
-    indicator.textContent=active?'':waiting(id)?'Sauvegarde en attente':failed.has(k)?'À réessayer':'En attente';
+    const label=active?'':waiting(id)?'Sauvegarde en attente':failed.has(k)?'À réessayer':'En attente';
+    if(indicator.textContent!==label)indicator.textContent=label;
     row.dataset.balanceListBusy=active?'true':'false';
   }
 }
