@@ -1,4 +1,5 @@
 import {sharedNavigationIconV2685} from './navigation-art-v2685.mjs';
+import {navigationStyleV2708} from './navigation-style-v2708.mjs';
 import {compareCornerSignals,cornerNames,wirePairLabel} from './corner-signals-v2677.mjs';
 import {divisions,convertMass,analyzeBridge,bridgePairs} from './weighing-calculations-v2638.mjs';
 import {analyzeSixWireBridge,sixWirePairs} from './bridge-six-v2658.mjs';
@@ -12,6 +13,7 @@ const fmt=v=>Number(v).toLocaleString('fr-CA',{maximumFractionDigits:8});
 const GENERAL='1F7rgU20Hc1PmjxQHY7ALTqkqArN6RSsf';
 const paths={calcul:'<rect x="6" y="3" width="20" height="26" rx="3"/><path d="M10 7h12v5H10zM10 17h2m4 0h2m4 0h0M10 22h2m4 0h2m4 0v3"/>',opportunities:'<path d="M4 26h24M7 23V13h5v10m4 0V9h5v14m4-9V4M19 4h6v6M7 9l7-4 4 2 7-3"/>',drive:'<path d="M3 9V6h10l3 4h13v16H3z"/>',folder:'<path d="M3 9V6h10l3 4h13v16H3z"/>',report:'<path d="M7 3h13l6 6v20H7zM20 3v6h6M11 14h11m-11 5h11m-11 5h7"/>',camera:'<path d="M3 10h6l3-5h8l3 5h6v17H3z"/><circle cx="16" cy="18" r="6"/>',gallery:'<rect x="3" y="4" width="26" height="24" rx="3"/><circle cx="22" cy="10" r="2"/><path d="M4 24l8-10 7 7 4-4 6 7"/>',file:'<path d="M7 3h13l6 6v20H7zM20 3v6h6"/>'};
 export function workspaceIcon(key,style='current'){
+  const matching=navigationStyleV2708(key,style);if(matching)return matching;
   const special=globalThis.window?.cdqSpecialIconsV2658?.svg(key,style);if(special)return special;
   if(!['current','minimal','dark-pro','metal-music','isometric'].includes(style))style='current';
   if(style==='metal-music'&&['calcul','opportunities','drive'].includes(key))return sharedNavigationIconV2685(key,'cdq-workspace-art-v2639','data-icon-theme');
@@ -118,6 +120,7 @@ function syncNav(){
   }
   const sorted=$$('.bottom-nav-item',nav).sort((a,b)=>(order.indexOf(a.dataset.workspaceRoute)+1||99)-(order.indexOf(b.dataset.workspaceRoute)+1||99));
   sorted.forEach((b,i)=>{if(nav.children[i]!==b)nav.insertBefore(b,nav.children[i]||null);});
+  window.cdqInterfaceV2708?.applyOrder();
   measure();
 }
 function status(p,text,error=false){let el=$('[data-workspace-status]',p);if(!el){el=document.createElement('p');el.dataset.workspaceStatus='';el.className='cdq-workspace-status';el.setAttribute('role','status');$('.cdq-workspace-body',p).append(el);}el.textContent=text;el.classList.toggle('cdq-workspace-error',error);}

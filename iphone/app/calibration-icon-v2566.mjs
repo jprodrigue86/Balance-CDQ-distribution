@@ -1,6 +1,8 @@
+import {navigationStyleV2708} from './navigation-style-v2708.mjs';
 import {sharedNavigationIconV2685} from './navigation-art-v2685.mjs';
 let serial=0;
 export function calibrationIcon(theme='current',size=32){
+  const matching=navigationStyleV2708('calibration',theme,size);if(matching)return matching;
   const special=globalThis.window?.cdqSpecialIconsV2658?.svg('calibration',theme);if(special)return special;
   if(!['current','metal-music','isometric','minimal','dark-pro'].includes(theme))theme='current';
   if(theme==='metal-music')return sharedNavigationIconV2685('calibration','cdq-calibration-indicator','data-theme',size);

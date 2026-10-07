@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.08" data-cdq-pc-release="f2480610c9e61f9d5e76e0b0d705922561a3f8edb9e22b4b7b86cd12834b1070">
+<html data-cdq-pc-version="27.08" data-cdq-pc-release="1533ae2b05df5ad564160a06d0c2a7f522ae58d656dbbc9be8b81681508d327c">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -22795,7 +22795,7 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
   const reduced=button('Réduire les animations',()=>{put('cdqReducedMotionV2708',String(get('cdqReducedMotionV2708','false')!=='true'));motion();reduced.setAttribute('aria-pressed',root.dataset.cdqReducedMotionV2708)});reduced.setAttribute('aria-pressed',get('cdqReducedMotionV2708','false'));comfort.append(reduced);size.append(comfort);
   const account=$('#cdqDefaultGoogleStatusV2294',files)?.closest('section');if(account){$('h3',account).textContent='Compte Google par défaut';$('p',account).textContent='Choisissez le compte utilisé pour ouvrir les fichiers Google sur cet appareil.';files.prepend(account);}
   const reader=$('.cdq-display-group',files);if(reader){const title=$('.cdq-display-label',reader);if(title)title.textContent='Ouverture des PDF';}
-  const group=$('.cdq-display-group',gestures);if(group){const label=$('.cdq-display-label',group);if(label)label.textContent='Sélection et actions des fichiers';const long=$('[data-long="700"]',group);if(long&&!$('[data-long="500"]',group)){const fast=long.cloneNode(true);fast.dataset.long='500';fast.textContent='0,5 s';fast.onclick=()=>{window.cdqDisplaySetLongPressV2266?.('500');window.cdqDisplaySaveV2266?.();for(const b of all('[data-long]',group))b.classList.toggle('active',b===fast)};long.before(fast);}}
+  const group=$('.cdq-display-group',gestures);if(group){const label=$('.cdq-display-label',group);if(label)label.textContent='Sélection et actions des fichiers';const long=$('[data-long="700"]',group);if(long&&!$('[data-long="500"]',group)){const fast=long.cloneNode(true);fast.dataset.long='500';fast.textContent='0,5 s';fast.classList.toggle('active',get('cdqLongPressMs','1000')==='500');fast.onclick=()=>{window.cdqDisplaySetLongPressV2266?.('500');window.cdqDisplaySaveV2266?.();for(const b of all('[data-long]',group))b.classList.toggle('active',b===fast)};long.before(fast);}}
   const swipe=section('Sensibilité du glissement','Souple : 44 px · Normal : 62 px · Ferme : 82 px. Glissez horizontalement ici pour comparer.');
   const demo=document.createElement('div');demo.className='cdq-gesture-demo-v2708';demo.textContent='← Glissez pour essayer →';demo.setAttribute('role','status');let point=null;
   demo.onpointerdown=e=>{point={id:e.pointerId,x:e.clientX,y:e.clientY};demo.setPointerCapture(e.pointerId)};
