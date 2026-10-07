@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "27.02",
-  "release": "0185af4fe0dc31306ee8881d4aa28c7397a15fe75501ce27eb58ffbef5de4ed5",
+  "version": "27.03",
+  "release": "96bd89a84824108ae6c805b8731411729c4592e3b536a1604dec4b1d63b83339",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.07-v27.02-truck-frames-precision-widths",
-  "androidSelectorSha256": "a0eee9e35a87eabc981e59c1c03190fe63e0dacac18e4701050fea8c7dbc186b",
+  "androidSourceBuild": "2026.10.07-v27.03-targeted-balance-list",
+  "androidSelectorSha256": "8b7ef2c6e50a343eb764987df4fd57fb977369219ae2d68193550230467efb89",
   "generatedFrom": "scripts/build-embedded-android-v2528.mjs",
-  "files": 477
+  "files": 478
 }

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="27.02" data-cdq-iphone-release="0185af4fe0dc31306ee8881d4aa28c7397a15fe75501ce27eb58ffbef5de4ed5">
+<html data-cdq-iphone-version="27.03" data-cdq-iphone-release="96bd89a84824108ae6c805b8731411729c4592e3b536a1604dec4b1d63b83339">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqNavigationPreloadV2681">(function(){
@@ -791,7 +791,7 @@ for(const name of ["workspace-v2638.mjs","corner-signals-v2677.mjs","weighing-ca
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.07-v27.02-truck-frames-precision-widths">
+<meta name="cdq-package-build" content="2026.10.07-v27.03-targeted-balance-list">
 
 
 <script id="cdqBridgeV23">
@@ -845,7 +845,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.07-v27.02-truck-frames-precision-widths'
+    build:'2026.10.07-v27.03-targeted-balance-list'
   });
 }
 
@@ -858,7 +858,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.07-v27.02-truck-frames-precision-widths'
+        build:'2026.10.07-v27.03-targeted-balance-list'
       });
     }
   } catch(e) {}
@@ -11345,7 +11345,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.07-v27.02-truck-frames-precision-widths";
+  const CDQ_BUILD = "2026.10.07-v27.03-targeted-balance-list";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13636,7 +13636,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.07-v27.02-truck-frames-precision-widths";
+const CDQ_V19_BUILD = "2026.10.07-v27.03-targeted-balance-list";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -14746,6 +14746,7 @@ async function cdqOpenPdfInternal(id,preparedRecord){
   function close(){if(disposed)return;disposed=true;stopLoading();window.removeEventListener('message',receive);frame?.remove();cdqReaderOpeningV2520=false;}
   async function save(d){
     valid();if(d.name&&String(d.name)!==String(rec.nom))rec.autoReportName=true;if(remoteRevisionV2553&&String(remoteRevisionV2553)!==String(rec.revision||''))throw new Error('Une version plus récente de ce PDF existe dans le dossier client. Fermez puis rouvrez le rapport avant de l’enregistrer.');
+    await window.cdqEquipmentListV2697.noteSave(rec,d.blob,d.requestId);valid();
     if(rec.offlinePrepared&&rec.offlineVersion!==undefined)return cdqOffline24.save(rec,d.blob,d.requestId,d.name);
     valid();if(!['admin','technicien'].includes(utilisateurCourantRole))throw new Error('Accès en lecture seule.');
     const bytes=new Uint8Array(await d.blob.arrayBuffer());valid();
@@ -15755,7 +15756,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.07-v27.02-truck-frames-precision-widths";
+const CDQ_V20_BUILD = "2026.10.07-v27.03-targeted-balance-list";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16602,7 +16603,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.07-v27.02-truck-frames-precision-widths";
+const CDQ_V21_BUILD = "2026.10.07-v27.03-targeted-balance-list";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21260,7 +21261,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.07-v27.02-truck-frames-precision-widths',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.07-v27.03-targeted-balance-list',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
