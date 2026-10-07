@@ -5,23 +5,23 @@
   const $=s=>document.querySelector(s),all=s=>[...document.querySelectorAll(s)];
   const order=['home','dossier','calibration','calcul','inventory','invoices','opportunities','trash'];
   let queued=false,menu=null,menuOwner=null,menuButtons=[];
-  function closeMenu(focus=false){if(!menu)return;const owner=menuOwner;for(const [button,parent]of menuButtons){button.removeAttribute('role');if(parent.isConnected)parent.append(button);}menuButtons=[];menu.remove();menu=null;menuOwner=null;owner?.querySelector('.cdq-pc-menu-button')?.setAttribute('aria-expanded','false');if(focus&&owner?.isConnected)(owner.querySelector('.cdq-pc-menu-button')||owner).focus();}
+  function closeMenu(focus=false){if(!menu)return;const owner=menuOwner;for(const [button,parent]of menuButtons){button.removeAttribute('role');if(parent.isConnected)parent.append(button);}menuButtons=[];menu.remove();menu=null;menuOwner=null;if(focus&&owner?.isConnected)owner.focus();}
   function showRowMenu(row,point){
     closeMenu();const entries=[...row.querySelectorAll(':scope > .cdq-swipe-overlay > button')].filter(b=>!b.hidden&&getComputedStyle(b).display!=='none');if(!entries.length)return;
     menu=document.createElement('div');menu.id='cdqPcFileMenu';menu.setAttribute('role','menu');menu.setAttribute('aria-label','Actions du fichier');menuOwner=row;
-    for(const b of entries){menuButtons.push([b,b.parentElement]);b.setAttribute('role','menuitem');menu.append(b);}document.body.append(menu);row.querySelector('.cdq-pc-menu-button')?.setAttribute('aria-expanded','true');
-    const r=point||row.querySelector('.cdq-pc-menu-button').getBoundingClientRect(),width=menu.offsetWidth;
+    for(const b of entries){menuButtons.push([b,b.parentElement]);b.setAttribute('role','menuitem');menu.append(b);}document.body.append(menu);
+    const r=point||row.getBoundingClientRect(),width=menu.offsetWidth;
     menu.style.left=Math.max(8,Math.min(point?r.x:r.right-width,innerWidth-width-8))+'px';menu.style.top=Math.max(8,Math.min(point?r.y:r.bottom+6,innerHeight-menu.offsetHeight-8))+'px';
     menu.addEventListener('click',()=>{const activeMenu=menu;setTimeout(()=>{if(menu===activeMenu)closeMenu();},0);},true);
     menu.addEventListener('keydown',e=>{const buttons=[...menu.querySelectorAll('button:not(:disabled)')],i=buttons.indexOf(document.activeElement);if(['ArrowDown','ArrowUp','Home','End'].includes(e.key)){e.preventDefault();buttons[e.key==='Home'?0:e.key==='End'?buttons.length-1:(i+(e.key==='ArrowDown'?1:-1)+buttons.length)%buttons.length]?.focus();}if(e.key==='Escape'){e.preventDefault();closeMenu(true);}});
     menu.querySelector('button:not(:disabled)')?.focus();
   }
+  const actionRows=new WeakSet();
   function installRowActions(row){
-    if(row.querySelector(':scope > .cdq-pc-menu-button'))return;
-    const button=document.createElement('button');button.type='button';button.className='cdq-pc-menu-button';button.textContent='⋮';button.setAttribute('aria-label','Actions de '+(row.dataset.fileName||row.querySelector('.folder-name-text')?.textContent||'cet élément'));button.setAttribute('aria-haspopup','menu');button.setAttribute('aria-expanded','false');
-    button.onclick=e=>{e.preventDefault();e.stopPropagation();if(menuOwner===row){closeMenu();return;}showRowMenu(row);};
+    if(actionRows.has(row))return;
+    actionRows.add(row);if(!row.hasAttribute('tabindex'))row.tabIndex=0;
     row.addEventListener('contextmenu',e=>{e.preventDefault();e.stopPropagation();showRowMenu(row,{x:e.clientX,y:e.clientY});});
-    row.addEventListener('keydown',e=>{if(e.key==='ContextMenu'||e.key==='F10'&&e.shiftKey){e.preventDefault();e.stopPropagation();showRowMenu(row);}});row.append(button);
+    row.addEventListener('keydown',e=>{if(e.key==='ContextMenu'||e.key==='F10'&&e.shiftKey){e.preventDefault();e.stopPropagation();showRowMenu(row);}});
   }
   const normalized=v=>String(v||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('fr');
   function filterFiles(){
@@ -99,13 +99,12 @@
     }
     $('#cdqPcSettings')?.remove();
     const files=$('#filesContainer');
-    if(files&&!$('#cdqPcFileColumns')){const labels=document.createElement('div');labels.id='cdqPcFileColumns';labels.setAttribute('aria-hidden','true');labels.innerHTML='<span>Nom</span><span>Type</span><span>Modifié</span><span>Emplacement</span><span></span>';files.before(labels);}
+    if(files&&!$('#cdqPcFileColumns')){const labels=document.createElement('div');labels.id='cdqPcFileColumns';labels.setAttribute('aria-hidden','true');labels.innerHTML='<span>Nom</span><span>Modifié</span><span>Type</span><span></span>';files.before(labels);}
     for(const row of all('#filesContainer .file-row')){
       const type=row.dataset.fileType||'';let tag=row.querySelector('.cdq-pc-file-type');
       if(!tag){tag=document.createElement('span');tag.className='cdq-pc-file-type';row.append(tag);}text(tag,type==='GOOGLE_SHEETS'?'Sheets':type||'Fichier');
-      let location=row.querySelector('.cdq-pc-file-location');if(!location){location=document.createElement('span');location.className='cdq-pc-file-location';location.textContent='Drive';row.append(location);}
       const date=row.querySelector('.file-date');if(date&&row.dataset.fileDate){const d=new Date(row.dataset.fileDate);if(!Number.isNaN(d.getTime())){date.title=d.toLocaleString('fr-CA');text(date,new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'short',year:'numeric'}).format(d));}}
-      const badge=row.querySelector(':scope > .file-today-done-badge'),name=row.querySelector('.file-name');if(badge&&name)name.append(badge);
+      const badge=row.querySelector('.file-today-done-badge');if(badge&&badge.parentElement!==row)row.append(badge);
       installRowActions(row);
     }
     for(const row of all('#filesContainer .folder-header'))installRowActions(row);
@@ -118,9 +117,10 @@
     let version=$('#cdqPcVersion');if(!version){version=document.createElement('div');version.id='cdqPcVersion';account.querySelector('div').append(version);}if(version.parentElement!==account.querySelector('div'))account.querySelector('div').append(version);text(version,'PC · '+root.dataset.cdqPcVersion);
   }
   function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;home();layout();});}
-  function start(){home();const company=$('#companyMenu');if(company&&window.cdqInstallCompanyChooserV2674&&!window.cdqCompanyChooserV2674)window.cdqCompanyChooserV2674=window.cdqInstallCompanyChooserV2674(company);layout();new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','open','data-cdq-current','data-cdq-palette','data-workspace-route']});addEventListener('resize',()=>{closeMenu();schedule();},{passive:true});addEventListener('online',schedule);addEventListener('offline',schedule);document.addEventListener('cdq:icons-changed',schedule);addEventListener('cdq:drive-cleared-v2632',()=>closeMenu());addEventListener('cdq:access-ready',schedule);document.addEventListener('pointerdown',e=>{if(menu&&!menu.contains(e.target)&&!e.target.closest('.cdq-pc-menu-button'))closeMenu();},true);document.addEventListener('keydown',e=>{if(e.key==='Escape'&&menu){const b=menuOwner?.querySelector('.cdq-pc-menu-button');closeMenu();b?.focus();}});}
+  function start(){home();const company=$('#companyMenu');if(company&&window.cdqInstallCompanyChooserV2674&&!window.cdqCompanyChooserV2674)window.cdqCompanyChooserV2674=window.cdqInstallCompanyChooserV2674(company);layout();new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','open','data-cdq-current','data-cdq-palette','data-workspace-route']});addEventListener('resize',()=>{closeMenu();schedule();},{passive:true});addEventListener('online',schedule);addEventListener('offline',schedule);document.addEventListener('cdq:icons-changed',schedule);addEventListener('cdq:drive-cleared-v2632',()=>closeMenu());addEventListener('cdq:access-ready',schedule);document.addEventListener('pointerdown',e=>{if(menu&&!menu.contains(e.target))closeMenu();},true);document.addEventListener('keydown',e=>{if(e.key==='Escape'&&menu)closeMenu(true);});}
   window.cdqDesktopModel2={layout,layoutCompanyMenu,schedule,installRowActions,closeMenu,version:root.dataset.cdqPcVersion,model:3};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
+
 
 

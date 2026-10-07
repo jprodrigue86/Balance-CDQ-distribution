@@ -1,7 +1,7 @@
 {
   "platform": "pc-pwa",
-  "version": "27.08",
-  "release": "1533ae2b05df5ad564160a06d0c2a7f522ae58d656dbbc9be8b81681508d327c",
+  "version": "27.09",
+  "release": "8ec0be02a1b52351975c5fa72414d20a2fb29e522378c7b49c7efee286b73b42",
   "desktopModel": 3,
   "androidSourceBuild": "2026.10.07-v27.08-interface-sync",
   "androidSelectorSha256": "449687338a177972b279b5ec76e32aab021df57eeca23dc9dac0e5b208239ecc",
