@@ -1,4 +1,5 @@
 import {normalizeFloorEquipmentV2697} from './reader-floor-equipment-v2697.mjs';
+import {normalizeTruckEquipmentV2702} from './reader-truck-equipment-v2702.mjs';
 // Native PDF layout fixes. Existing field names, readings and calibration rules survive.
 const images=new Map();
 async function imageBytes(key,supplied){
@@ -99,5 +100,6 @@ export async function normalizeReportPresentationV2695(pdf,L,{key='',imageData}=
  }
  // Saves can regenerate widget borders: the page is the sole grid owner.
  for(const f of form.getFields())if(/^(?:indicateur|base_balance|imprimante)_(?:fabricant|modele|numero_serie|numero_am)$/.test(f.getName())||key==='table'&&/^excentricite_(?:avant|apres)_/.test(f.getName())||key==='multitete'&&/^charge_point_\d+_(?!conforme)/.test(f.getName()))plainAppearance(f);
- return normalizeFloorEquipmentV2697(pdf,L)||first||appearanceChanged;
+ const truckChanged=normalizeTruckEquipmentV2702(pdf,L),floorChanged=normalizeFloorEquipmentV2697(pdf,L);
+ return truckChanged||floorChanged||first||appearanceChanged;
 }

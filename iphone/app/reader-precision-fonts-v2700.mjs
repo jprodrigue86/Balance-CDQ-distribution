@@ -1,5 +1,6 @@
 import {precisionEquipmentV2691} from './reader-precision-equipment-v2691.mjs';
 import {normalizePrecisionWidthsV2701} from './reader-precision-widths-v2701.mjs';
+import {clearWidgetFrameV2702} from './reader-truck-equipment-v2702.mjs';
 
 // Use the master's embedded sans-serif throughout Precision. Standard Helvetica
 // was substituted differently by Android and external readers. Keep encodings,
@@ -19,7 +20,7 @@ export async function normalizePrecisionFontsV2700(pdf,L){
  const live=[],seen=new Set();
  const visit=value=>{
   const o=pdf.context.lookup(value);if(!o||seen.has(o))return;seen.add(o);
-  if(o instanceof L.PDFRawStream){if(o.dict.get(N('Subtype'))!==N('Image'))visit(o.dict);return;}
+  if(o instanceof L.PDFRawStream||o?.getUnencodedContents){if(o.dict.get(N('Subtype'))!==N('Image'))visit(o.dict);return;}
   if(o instanceof L.PDFDict){
    if(o.get(N('Type'))===N('Font')){live.push(o);return;}
    for(const[,v]of o.entries())visit(v);
@@ -38,9 +39,14 @@ export async function normalizePrecisionFontsV2700(pdf,L){
   changed=true;
  }
  changed=normalizePrecisionWidthsV2701(pdf,L,bold)||changed;
- const page=pdf.getPage(0),marker=N('CDQPrecisionFontsV2701'),backing=page.node.get(N('CDQPrecisionBackgroundV2670'));
- const oldMarker=N('CDQPrecisionFontsV2700'),oldCaption=page.node.get(oldMarker);
- if(oldCaption){const contents=page.node.Contents();for(let i=contents.size()-1;i>=0;i--)if(String(contents.get(i))===String(oldCaption))contents.remove(i);page.node.delete(oldMarker);changed=true;}
+ // The fixed Type field can receive its own cyan appearance from an external
+ // reader. All ten cells use only the common page backing, even after saving.
+ for(const name of precisionEquipmentV2691.flat())for(const w of form.getField(name).acroField.getWidgets())changed=clearWidgetFrameV2702(pdf,L,w)||changed;
+ const page=pdf.getPage(0),marker=N('CDQPrecisionFontsV2702'),backing=page.node.get(N('CDQPrecisionBackgroundV2670'));
+ for(const name of ['CDQPrecisionFontsV2700','CDQPrecisionFontsV2701']){
+  const oldMarker=N(name),oldCaption=page.node.get(oldMarker);
+  if(oldCaption){const contents=page.node.Contents();for(let i=contents.size()-1;i>=0;i--)if(String(contents.get(i))===String(oldCaption))contents.remove(i);page.node.delete(oldMarker);changed=true;}
+ }
  const lastBacking=()=>{const contents=page.node.Contents(),i=contents.asArray().findIndex(r=>String(r)===String(backing));if(i>=0&&i<contents.size()-1){contents.remove(i);contents.push(backing);changed=true;}};
  if(page.node.has(marker)){lastBacking();return changed;}
  const encoder=L.StandardFontEmbedder.for(L.StandardFonts.HelveticaBold),widths=bold.lookup(N('Widths'),L.PDFArray),size=precisionCaptionSizeV2700;
@@ -50,7 +56,7 @@ export async function normalizePrecisionFontsV2700(pdf,L){
  const top=form.getField(precisionEquipmentV2691[0][0]).acroField.getWidgets()[0].getRectangle(),bottom=form.getField(precisionEquipmentV2691[1][0]).acroField.getWidgets()[0].getRectangle();
  // Clear the complete former first row, including its two-line captions and
  // old borders. The authoritative cyan backing is then painted above this mask.
- let art='% CDQ precision embedded typography V2701\nq 1 1 1 rg 10.5 '+(top.y-.5)+' 591 '+(523.5-(top.y-.5))+' re f Q\n';
+ let art='% CDQ precision embedded typography V2702\nq 1 1 1 rg 10.5 '+(top.y-.5)+' 591 '+(523.5-(top.y-.5))+' re f Q\n';
  art+='q 1 1 1 rg 10.5 '+(bottom.y+bottom.height+.6)+' 591 12.6 re f Q\n';
  for(let row=0;row<2;row++)for(let col=0;col<5;col++){
   const r=form.getField(precisionEquipmentV2691[row][col]).acroField.getWidgets()[0].getRectangle(),label=precisionCaptionsV2700[row][col];

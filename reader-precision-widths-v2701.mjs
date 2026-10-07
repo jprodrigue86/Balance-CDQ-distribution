@@ -2,7 +2,9 @@ import {precisionEquipmentV2691} from './reader-precision-equipment-v2691.mjs';
 
 // Redistribute only the first equipment row. The second row and every other
 // field retain their approved geometry; the outer edges and 5pt gutters stay.
-export const precisionFirstRowWidthsV2701=[143.8,113.8,82.8,99.8,128.8];
+// V2702: the legal rectangle fits its 120.4056pt title; its 8.3pt gain
+// goes entirely to Type de balance, with the same row endpoints.
+export const precisionFirstRowWidthsV2701=[143.8,122.1,82.8,99.8,120.5];
 export const precisionFirstRowLeftV2701=11.5,precisionFirstRowGapV2701=5;
 export function normalizePrecisionWidthsV2701(pdf,L,bold){
  const N=L.PDFName.of,form=pdf.getForm();
