@@ -1,10 +1,10 @@
 {
   "platform": "pc-pwa",
-  "version": "27.02",
-  "release": "756dd99428a069bb40198e69c3f940fd5045edc63cb6036c4f65feeee50c58ab",
+  "version": "27.03",
+  "release": "9dc0b64104fb9f75e9f6e5ded6b6545a747023fd2f756dd49d13567af0545283",
   "desktopModel": 3,
-  "androidSourceBuild": "2026.10.07-v27.02-truck-frames-precision-widths",
-  "androidSelectorSha256": "a0eee9e35a87eabc981e59c1c03190fe63e0dacac18e4701050fea8c7dbc186b",
+  "androidSourceBuild": "2026.10.07-v27.03-targeted-balance-list",
+  "androidSelectorSha256": "8b7ef2c6e50a343eb764987df4fd57fb977369219ae2d68193550230467efb89",
   "generatedFrom": "scripts/build-pc-v2676.mjs",
-  "files": 482
+  "files": 483
 }

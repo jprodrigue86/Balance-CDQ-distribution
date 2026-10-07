@@ -56,6 +56,7 @@ async function openReaderInternal(data){
     // A delayed history.back() could otherwise reach and close the next PDF.
     if(guard&&history.state?.cdqReader===marker)history.replaceState(null,'',location.href);
     data.onClose?.();
+    try{data.workspaceSource?.dispatchEvent?.(new CustomEvent('cdq:reader-closed-v2703'));}catch{}
     for(const waiter of closeWaiters){clearTimeout(waiter.timer);waiter.resolve();}closeWaiters=[];
   }
   async function receive(event){
