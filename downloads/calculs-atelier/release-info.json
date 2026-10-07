@@ -1,26 +1,26 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.7.3",
-  "versionCode": 17003,
+  "version": "1.7.4",
+  "versionCode": 17004,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-03T05:20:51.484636+00:00",
+  "releasedAt": "2026-10-07T03:11:51.828781+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "1a9e4aa6bff66783e3ab3dd7be2d2777124277d6ee3f73b6f84b1f6660c4a3e0",
-  "htmlSha256": "18ed02d8f82701eab1104a7ab65a538db491714462b409af5e2c79649c0f0b61",
-  "packageBytes": 16457769,
-  "htmlBytes": 9256741,
+  "packageSha256": "51524e11611c8ccb37c2e8252cbda90c8189ef1ada7e08d4d5f13355133f2bc3",
+  "htmlSha256": "4f0a807cd206e90a048336863fc76fd9563fe4980022a797544de569d6a29ec8",
+  "packageBytes": 16475401,
+  "htmlBytes": 9266603,
   "notes": [
-    "Production Line défile horizontalement avec toutes les autres colonnes.",
-    "Les rectangles vert, jaune et rouge filtrent le tableau par catégorie sur Android et PC.",
-    "Tous les ordres rétablit la liste complète; le filtre actif est indiqué.",
-    "Retour depuis le détail conserve le filtre; Retour depuis la liste filtrée affiche tous les ordres."
+    "Règle de trois en X : trois valeurs à saisir et une case inconnue au choix.",
+    "Menus d’unités sur la même ligne : mètres, caisses, sacs, palettes, pièces, kg, heures et autres unités.",
+    "Les unités d’une colonne restent synchronisées; le résultat affiche le calcul et les arrondis entiers utiles.",
+    "Les anciens raccourcis de règle de trois sont remplacés; les autres calculs enregistrés restent accessibles."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.7.3.apk",
+  "androidApk": "Calculs-Atelier-Android-1.7.4.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
     "androidSignature": "APK v2/v3 avec le certificat historique; SDK Android recompilé",
     "physicalDeviceTest": false
   },
   "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée.",
-  "shellVersion": 17003
+  "shellVersion": 17004
 }
