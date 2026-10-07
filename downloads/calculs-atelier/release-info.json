@@ -1,26 +1,25 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.7.4",
-  "versionCode": 17004,
+  "version": "1.7.5",
+  "versionCode": 17005,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-07T03:11:51.828781+00:00",
+  "releasedAt": "2026-10-07T11:20:18.487856+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "51524e11611c8ccb37c2e8252cbda90c8189ef1ada7e08d4d5f13355133f2bc3",
-  "htmlSha256": "4f0a807cd206e90a048336863fc76fd9563fe4980022a797544de569d6a29ec8",
-  "packageBytes": 16475401,
-  "htmlBytes": 9266603,
+  "packageSha256": "ae82dff4f2bbfbe0f467f5036aae1aa6ca97d60b998a565675cbc3a64e7eeac4",
+  "htmlSha256": "cd6922d01893afb676f6cd1131fbaafaab93b0ba2927cf3966c3ba5953c258c8",
+  "packageBytes": 16475361,
+  "htmlBytes": 9266690,
   "notes": [
-    "Règle de trois en X : trois valeurs à saisir et une case inconnue au choix.",
-    "Menus d’unités sur la même ligne : mètres, caisses, sacs, palettes, pièces, kg, heures et autres unités.",
-    "Les unités d’une colonne restent synchronisées; le résultat affiche le calcul et les arrondis entiers utiles.",
-    "Les anciens raccourcis de règle de trois sont remplacés; les autres calculs enregistrés restent accessibles."
+    "Unités disposées verticalement : mètres en haut, caisses ou temps en bas, des deux côtés.",
+    "Les menus d’unités se synchronisent par rangée.",
+    "Exemple réorganisé en deux paires verticales; calcul en X avec les unités et résultat dans l’unité de la case choisie."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.7.4.apk",
+  "androidApk": "Calculs-Atelier-Android-1.7.5.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
     "androidSignature": "APK v2/v3 avec le certificat historique; SDK Android recompilé",
     "physicalDeviceTest": false
   },
   "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée.",
-  "shellVersion": 17004
+  "shellVersion": 17005
 }
