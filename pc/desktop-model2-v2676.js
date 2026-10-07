@@ -81,6 +81,8 @@
   function home(){
     const container=$('.container'),header=$('#appHeader');if(!container||!header)return;
     if(header.parentElement!==document.body)document.body.prepend(header);
+    if(!$('#cdqPcBannerSharpV2708')){const filter=document.createElementNS('http://www.w3.org/2000/svg','svg');filter.id='cdqPcBannerSharpV2708';filter.setAttribute('width','0');filter.setAttribute('height','0');filter.setAttribute('aria-hidden','true');filter.style.position='absolute';filter.innerHTML='<defs><filter id="cdq-pc-banner-sharp-v2708" color-interpolation-filters="sRGB"><feConvolveMatrix order="3" kernelMatrix="0 -.12 0 -.12 1.48 -.12 0 -.12 0" preserveAlpha="true" edgeMode="duplicate"/></filter></defs>';document.body.append(filter);}
+    set(header.querySelector('.header-metal-banner'),{'filter':'url(#cdq-pc-banner-sharp-v2708)'});
     let controls=$('#cdqPcHomeControls');
     if(!controls){controls=document.createElement('div');controls.id='cdqPcHomeControls';container.querySelector('.top-bar')?.before(controls);const search=document.createElement('label');search.className='cdq-pc-file-search';search.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></svg><input id="cdqPcFileSearch" type="search" placeholder="Rechercher dans ce dossier…" aria-label="Rechercher dans ce dossier">';controls.append(search);search.querySelector('input').oninput=filterFiles;}
     const company=container.querySelector('.top-bar');if(company&&company.parentElement!==controls)controls.prepend(company);
@@ -90,7 +92,12 @@
     const source=$('.bottom-nav-item[data-workspace-route="home"] > span'),target=$('[data-pc-home-art]');
     if(source&&target&&target.dataset.art!==source.outerHTML){target.replaceChildren(source.cloneNode(true));target.dataset.art=source.outerHTML;}
     const close=$('[data-pc-clear-client]');if(close){let id='';try{id=String(compagnieSelectionnee||'');}catch(_){}close.disabled=!id;}
-    const actions=$('#cdqClientActionsV2640');if(actions){let title=actions.querySelector('[data-pc-client-title]');if(!title){title=document.createElement('strong');title.dataset.pcClientTitle='';actions.prepend(title);}let name='';try{name=String(nomCompagnieSelectionnee||'');}catch(_){}text(title,name);}
+    const actions=$('#cdqClientActionsV2640');
+    if(actions){
+      actions.querySelector('[data-pc-client-title]')?.remove();
+      const search=$('.cdq-pc-file-search');if(search&&search.parentElement!==actions)actions.append(search);
+    }
+    $('#cdqPcSettings')?.remove();
     const files=$('#filesContainer');
     if(files&&!$('#cdqPcFileColumns')){const labels=document.createElement('div');labels.id='cdqPcFileColumns';labels.setAttribute('aria-hidden','true');labels.innerHTML='<span>Nom</span><span>Type</span><span>Modifié</span><span>Emplacement</span><span></span>';files.before(labels);}
     for(const row of all('#filesContainer .file-row')){
@@ -98,13 +105,14 @@
       if(!tag){tag=document.createElement('span');tag.className='cdq-pc-file-type';row.append(tag);}text(tag,type==='GOOGLE_SHEETS'?'Sheets':type||'Fichier');
       let location=row.querySelector('.cdq-pc-file-location');if(!location){location=document.createElement('span');location.className='cdq-pc-file-location';location.textContent='Drive';row.append(location);}
       const date=row.querySelector('.file-date');if(date&&row.dataset.fileDate){const d=new Date(row.dataset.fileDate);if(!Number.isNaN(d.getTime())){date.title=d.toLocaleString('fr-CA');text(date,new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'short',year:'numeric'}).format(d));}}
+      const badge=row.querySelector(':scope > .file-today-done-badge'),name=row.querySelector('.file-name');if(badge&&name)name.append(badge);
       installRowActions(row);
     }
     for(const row of all('#filesContainer .folder-header'))installRowActions(row);
     if(menuOwner&&!menuOwner.isConnected)closeMenu();
     filterFiles();
     let account=$('#cdqPcAccount');
-    if(!account){account=document.createElement('div');account.id='cdqPcAccount';account.innerHTML='<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="6"/><path d="M5 29v-5a11 11 0 0 1 22 0v5"/></svg><div><strong></strong><span data-pc-online></span></div>';const nav=$('.bottom-nav');nav?.append(account);const settings=document.createElement('button');settings.id='cdqPcSettings';settings.type='button';settings.setAttribute('aria-label','Réglages de l’application');settings.title='Réglages';settings.textContent='⚙';settings.onclick=()=>{const button=$('#cdqTopDisplayButtonV2204');if(button)button.click();else window.ouvrirReglagesAffichage?.();};account.append(settings);}
+    if(!account){account=document.createElement('div');account.id='cdqPcAccount';account.innerHTML='<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="11" r="6"/><path d="M5 29v-5a11 11 0 0 1 22 0v5"/></svg><div><strong></strong><span data-pc-online></span></div>';const nav=$('.bottom-nav');nav?.append(account);}
     const nav=$('.bottom-nav');if(nav&&account.parentElement!==nav)nav.append(account);
     const user=identity();account.title=(user.name||user.email||'Connexion CDQ')+' · PC '+root.dataset.cdqPcVersion;text(account.querySelector('strong'),user.name||user.email||'Connexion CDQ');text(account.querySelector('[data-pc-online]'),navigator.onLine?'En ligne':'Hors ligne');account.dataset.online=String(navigator.onLine);
     let version=$('#cdqPcVersion');if(!version){version=document.createElement('div');version.id='cdqPcVersion';account.querySelector('div').append(version);}if(version.parentElement!==account.querySelector('div'))account.querySelector('div').append(version);text(version,'PC · '+root.dataset.cdqPcVersion);

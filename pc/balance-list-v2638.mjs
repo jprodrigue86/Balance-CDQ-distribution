@@ -22,7 +22,7 @@ function paintRows(){
     const isList=!!known&&checkbox?.dataset.fileId===String(known);
     let indicator=row.querySelector('[data-balance-list-working]');
     if(!isList||!running||!canRead()){indicator?.remove();row.removeAttribute('data-balance-list-busy');continue;}
-    if(!indicator){indicator=document.createElement('span');indicator.dataset.balanceListWorking='';indicator.className='cdq-balance-list-working';indicator.setAttribute('role','status');const badge=row.querySelector('.file-today-done-badge');row.insertBefore(indicator,badge||null);}
+    if(!indicator){indicator=document.createElement('span');indicator.dataset.balanceListWorking='';indicator.className='cdq-balance-list-working';indicator.setAttribute('role','status');const badge=row.querySelector(':scope > .file-today-done-badge');row.insertBefore(indicator,badge||null);}
     const active=jobs.has(k)&&navigator.onLine!==false;
     const text=navigator.onLine===false?'Liste de balances : actualisation en attente de connexion':active?'Liste de balances : actualisation en cours':waiting(id)?'Liste de balances : sauvegarde du rapport en attente':failed.has(k)?'Liste de balances : actualisation interrompue; réessayez depuis le menu':'Liste de balances : actualisation prévue après le rapport';
     if(indicator.getAttribute('aria-label')!==text){indicator.setAttribute('aria-label',text);indicator.title=text;}

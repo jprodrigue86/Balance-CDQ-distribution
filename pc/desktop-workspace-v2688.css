@@ -143,3 +143,18 @@ html.cdq-desktop-v2676 body #cdqClientActionsV2640>[data-pc-client-title]{grid-c
 html.cdq-desktop-v2676 body #cdqClientActionsV2640>button{width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;position:static!important}
 html.cdq-desktop-v2676 body #cdqClientActionsV2640>:is([data-balance-list-menu],[data-new-report-menu],[data-balance-list-status]){grid-column:1/-1!important;min-width:0!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important}
 html.cdq-desktop-v2676.cdq-mobile-layout body .bottom-nav>.bottom-nav-item[data-workspace-route=home][data-cdq-current]::after{display:none!important;background:none!important;box-shadow:none!important}
+
+/* 27.08: keep file controls on one compact row. */
+html.cdq-desktop-v2676 body #clientInfoBar{display:none!important}
+html.cdq-desktop-v2676 body #cdqPcHomeControls>.top-bar{width:min(100%,580px)!important}
+html.cdq-desktop-v2676 body #cdqPcHomeControls .company-button{font-size:18px!important}
+html.cdq-desktop-v2676 body #cdqPcHomeControls>#cdqTopActionsV2204>button>span{font-size:14px!important}
+html.cdq-desktop-v2676 body #cdqPcHomeControls>#cdqTopActionsV2204>button>svg{width:23px!important;height:23px!important}
+html.cdq-desktop-v2676 body #cdqClientActionsV2640{grid-template-columns:repeat(3,minmax(135px,165px)) minmax(180px,1fr)!important;align-items:center!important;padding:8px 0!important;margin-bottom:8px!important}
+html.cdq-desktop-v2676 body #cdqClientActionsV2640>.cdq-pc-file-search{width:100%;max-width:370px;justify-self:end;height:38px;margin:0;grid-column:4;grid-row:1}
+html.cdq-desktop-v2676 body #cdqClientActionsV2640>:is([data-balance-list-menu],[data-new-report-menu],[data-balance-list-status]){grid-column:1/-1!important}
+html.cdq-desktop-v2676 body #filesContainer .file-name{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important}
+html.cdq-desktop-v2676 body #filesContainer .file-name-text{flex:0 1 auto!important;min-width:0!important}
+html.cdq-desktop-v2676 body #filesContainer .file-name>.file-today-done-badge{position:static!important;flex:0 0 24px!important;width:24px!important;height:24px!important;min-width:24px!important;margin:0!important;font-size:16px!important}
+html.cdq-desktop-v2676 body #filesContainer .file-row:has(.file-name>.file-today-done-badge){grid-template-rows:auto!important}
+@media(max-width:1000px){html.cdq-desktop-v2676 body #cdqClientActionsV2640{grid-template-columns:repeat(3,minmax(0,1fr))!important}html.cdq-desktop-v2676 body #cdqClientActionsV2640>.cdq-pc-file-search{grid-column:1/-1;grid-row:2;max-width:370px}}
