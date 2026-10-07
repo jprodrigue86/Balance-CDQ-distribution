@@ -47,7 +47,7 @@ export async function normalizePrecisionFontsV2700(pdf,L){
   const oldMarker=N(name),oldCaption=page.node.get(oldMarker);
   if(oldCaption){const contents=page.node.Contents();for(let i=contents.size()-1;i>=0;i--)if(String(contents.get(i))===String(oldCaption))contents.remove(i);page.node.delete(oldMarker);changed=true;}
  }
- const lastBacking=()=>{const contents=page.node.Contents(),i=contents.asArray().findIndex(r=>String(r)===String(backing));if(i>=0&&i<contents.size()-1){contents.remove(i);contents.push(backing);changed=true;}};
+ const lastBacking=()=>{if(page.node.has(N('CDQReportLayoutV2704')))return;const contents=page.node.Contents(),i=contents.asArray().findIndex(r=>String(r)===String(backing));if(i>=0&&i<contents.size()-1){contents.remove(i);contents.push(backing);changed=true;}};
  if(page.node.has(marker)){lastBacking();return changed;}
  const encoder=L.StandardFontEmbedder.for(L.StandardFonts.HelveticaBold),widths=bold.lookup(N('Widths'),L.PDFArray),size=precisionCaptionSizeV2700;
  const width=text=>Array.from(encoder.encodeText(text).asBytes()).reduce((n,c)=>n+widths.lookup(c,L.PDFNumber).asNumber(),0)*size/1000;

@@ -8,6 +8,7 @@ export const precisionFirstRowWidthsV2701=[143.8,122.1,82.8,99.8,120.5];
 export const precisionFirstRowLeftV2701=11.5,precisionFirstRowGapV2701=5;
 export function normalizePrecisionWidthsV2701(pdf,L,bold){
  const N=L.PDFName.of,form=pdf.getForm();
+ if(pdf.getPage(0).node.has(N('CDQReportLayoutV2704')))return false;
  if(!form.getFieldMaybe('type_plateau')||!form.getFieldMaybe('resolution')||!form.getFieldMaybe('charge_point_7_charge_utilisee')||form.getFieldMaybe('charge_point_8_charge_utilisee'))return false;
  const page=pdf.getPage(0),encoder=L.StandardFontEmbedder.for(L.StandardFonts.HelveticaBold),widths=bold.lookup(N('Widths'),L.PDFArray),fontRef=pdf.context.getObjectRef(bold)||pdf.context.register(bold);
  const width=(text,size)=>Array.from(encoder.encodeText(text).asBytes()).reduce((n,c)=>n+widths.lookup(c,L.PDFNumber).asNumber(),0)*size/1000;

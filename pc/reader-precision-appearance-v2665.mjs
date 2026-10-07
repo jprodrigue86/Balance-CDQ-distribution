@@ -86,7 +86,8 @@ export function normalizePrecisionAppearanceV2665(pdf,L){
  for(const page of pages){
   page.node.normalize();drawings(page.node.Resources());
   const backing=String(page.node.get(N('CDQPrecisionBackgroundV2670')));
-  for(const ref of page.node.Contents().asArray())if(String(ref)!==backing&&String(ref)!==String(page.node.get(N('CDQReportLayoutV2677'))))streams.set(String(ref),[ref,pdf.context.lookup(ref)]);
+  const currentGrid=String(page.node.lookupMaybe(N('CDQReportLayoutV2704'),PDFDict)?.get(N('Stream')));
+  for(const ref of page.node.Contents().asArray())if(String(ref)!==backing&&String(ref)!==currentGrid&&String(ref)!==String(page.node.get(N('CDQReportLayoutV2677'))))streams.set(String(ref),[ref,pdf.context.lookup(ref)]);
  }
  for(const [ref,stream]of streams.values()){
   if(!(stream instanceof PDFRawStream))continue;
