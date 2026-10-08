@@ -40,6 +40,7 @@ export function createPdfSaveRetirementV2707({owner,guard,get,put,queue,mutateQu
   return retireIds(request?.ids||[],email);
  }
  return {
+  retireAction:id=>run(email=>retireIds([String(id)],email)),
   retire:targetId=>run(async email=>{const q=await queue();guard(email);return retireIds(q.filter(a=>a.kind==='pdf-save-v2520'&&String(a.targetId)===String(targetId)).map(a=>a.id),email)}),
   deleted:targets=>run(async email=>{
    const ids=new Set(targets.map(String)),q=await queue();guard(email);
