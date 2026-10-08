@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="27.13" data-cdq-iphone-release="506d31389ede61d00d93c53cda2aefa42208ac673430b2ade5dc438928fc34ea">
+<html data-cdq-iphone-version="27.14" data-cdq-iphone-release="ff62a43a4698ab1832abdb995fa4703c5af8ed95259b767650b6b2b98fe41c7f">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqNavigationPreloadV2681">(function(){
@@ -837,7 +837,7 @@ for(const name of ["workspace-v2638.mjs","drive-file-icons-v2710.mjs","navigatio
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.08-v27.13-corrections">
+<meta name="cdq-package-build" content="2026.10.08-v27.14-local-report-cleanup">
 
 
 <script id="cdqBridgeV23">
@@ -891,7 +891,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.08-v27.13-corrections'
+    build:'2026.10.08-v27.14-local-report-cleanup'
   });
 }
 
@@ -904,7 +904,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.08-v27.13-corrections'
+        build:'2026.10.08-v27.14-local-report-cleanup'
       });
     }
   } catch(e) {}
@@ -5909,7 +5909,7 @@ html[data-cdq-reduced-motion-v2708=true] *,html[data-cdq-reduced-motion-v2708=tr
 .bottom-nav.cdq-nav-dragging-v2708>.bottom-nav-item{transition:transform .14s ease!important;touch-action:none!important}
 .bottom-nav>.cdq-nav-held-v2708{outline:2px solid var(--cdq-accent);outline-offset:-2px;transform:translateY(-8px) scale(1.07);z-index:3;border-radius:12px;background:var(--cdq-selected)!important}
 .cdq-nav-status-v2708{position:fixed;z-index:100300;left:12px;right:12px;bottom:calc(var(--cdq-workspace-bottom,90px) + 8px);padding:12px;border:1px solid var(--cdq-line);border-radius:10px;background:var(--cdq-surface);color:var(--cdq-ink);text-align:center;pointer-events:none;font:14px Arial,sans-serif}
-.file-pending-v2708{display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;width:24px;height:24px;margin-left:6px;color:#eba93c;border:1px solid currentColor;border-radius:50%;font:700 16px Arial,sans-serif}
+.file-pending-v2708{display:inline-flex;align-items:center;justify-content:center;flex:0 0 24px;width:24px;height:24px;margin-left:6px;color:#eba93c;border:1px solid currentColor;border-radius:50%;font:700 16px Arial,sans-serif;pointer-events:auto!important;cursor:pointer;position:relative;z-index:6}
 html body .file-pending-v2708[hidden]{display:none!important}
 @media(min-width:1000px){html body #cdqSettingsModalV2294#cdqSettingsModalV2294 .cdq-modal-body{padding:18px 24px!important}html body #cdq-settings-panel-sizes .cdq-ui-scale-box{max-width:none!important}html body #cdqSettingsModalV2294#cdqSettingsModalV2294 .cdq-setting-buttons{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
 </style>
@@ -11439,7 +11439,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.08-v27.13-corrections";
+  const CDQ_BUILD = "2026.10.08-v27.14-local-report-cleanup";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -11907,7 +11907,7 @@ function cdqNavigateDesktop(id){
 
   const originalCreerLigne=window.creerLigneFichier;
   window.creerLigneFichier=function(fichier){
-    const row=originalCreerLigne(fichier);if(fichier._cdqLocalReportV2713){row.dataset.cdqLocalReportV2713=fichier._cdqLocalReportV2713;row.querySelectorAll("input[type=checkbox],.file-actions").forEach(n=>{n.hidden=true;n.disabled=true;});return row;}
+    const row=originalCreerLigne(fichier);if(fichier._cdqLocalReportV2713){row.dataset.cdqLocalReportV2713=fichier._cdqLocalReportV2713;row.addEventListener('pointerdown',e=>{if(!e.target.closest('button'))e.stopImmediatePropagation();},true);row.addEventListener('click',e=>{if(e.target.closest('button'))return;e.stopImmediatePropagation();cdqOpenPdf(fichier.id).catch(afficherErreur);},true);const checkbox=row.querySelector('input[type=checkbox]');if(checkbox){checkbox.hidden=true;checkbox.disabled=true;}const actions=row.querySelector('.file-actions');if(actions&&['admin','technicien'].includes(utilisateurCourantRole)){const overlay=document.createElement('div');overlay.className='cdq-swipe-overlay';const b=document.createElement('button');b.type='button';b.textContent='Retirer';b.className='cdq-swipe-action delete';b.setAttribute('aria-label','Retirer le rapport en attente');window.cdqFileActionsV2655?.paint(b,'delete','Retirer');b.onclick=e=>{e.preventDefault();e.stopPropagation();window.cdqRetireLocalReportV2714(fichier.id,String(compagnieSelectionnee||'')).catch(afficherErreur);};if(document.documentElement.classList.contains('cdq-desktop-v2676')){overlay.append(b);row.append(overlay);}else actions.append(b);}return row;}
     cdqEnhanceFileSwipe(row,fichier);
     return row;
   };
@@ -13699,7 +13699,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.08-v27.13-corrections";
+const CDQ_V19_BUILD = "2026.10.08-v27.14-local-report-cleanup";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -14112,6 +14112,7 @@ function createPdfSaveRetirementV2707({owner,guard,get,put,queue,mutateQueue,bus
   return retireIds(request?.ids||[],email);
  }
  return {
+  retireAction:id=>run(email=>retireIds([String(id)],email)),
   retire:targetId=>run(async email=>{const q=await queue();guard(email);return retireIds(q.filter(a=>a.kind==='pdf-save-v2520'&&String(a.targetId)===String(targetId)).map(a=>a.id),email)}),
   deleted:targets=>run(async email=>{
    const ids=new Set(targets.map(String)),q=await queue();guard(email);
@@ -14136,11 +14137,11 @@ async function cdqHoldRetirementV2707(task,waitForIdle=true){
 }
 const cdqRetirementV2707=createPdfSaveRetirementV2707({
  owner:cdqReaderOwnerV2520,guard:cdqReaderGuardV2520,get:cdqV19GetRecord,put:cdqV19PutRecord,queue:cdqV19QueueGet,mutateQueue:cdqV19MutateQueue,busy:()=>cdqV19SyncRunning,
- onRetired:detail=>window.dispatchEvent(new CustomEvent('cdq:pdf-save-retired-v2707',{detail})),
+ onRetired:detail=>{window.dispatchEvent(new CustomEvent('cdq:pdf-save-retired-v2707',{detail}));cdqPostToPwa({type:'CDQ_OFFLINE_REPORT_RETIRE_TARGET_V2714',email:detail.owner,localId:detail.sourceId,expectedUploadId:detail.saveId,requestId:'retired-'+detail.saveId});},
  clearSource:async(id,saveId,client)=>{
   const email=cdqReaderOwnerV2520();
   await cdqPdfSessionV2664.update(cdqV19Key('document-pdf',id),r=>{cdqReaderGuardV2520(email);if(r?.pendingSaveId!==saveId)return r;const {blob,...meta}=r;return {...meta,pendingSaveId:'',offlinePrepared:false}});cdqReaderGuardV2520(email);cdqPdfStorageGenerationV2664++;
-  if(client){window.cdqInstantFiles2530?.forget(client,[id]);const tree=cacheContenuCompagnies[client],row=tree?trouverFichierDansArbre(tree,id):null;if(row?.fichier?._cdqPendingSaveV2660===saveId)delete row.fichier._cdqPendingSaveV2660;}
+  if(client){window.cdqInstantFiles2530?.forget(client,[id]);const tree=cacheContenuCompagnies[client],row=tree?trouverFichierDansArbre(tree,id):null;if(row?.fichier?._cdqPendingSaveV2660===saveId){row.noeud.fichiers.splice(row.index,1);sauvegarderCachePersistantClient(client,tree,cacheDerniereVerificationCompagnies[client]||0);if(String(compagnieSelectionnee)===String(client))afficherContenu(tree);}}
  }
 });
 function cdqCopyButtonV2707(label,fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='padding:12px 18px;margin:6px;border-radius:10px;border:1px solid #91a4b0;background:#24313c;color:white;font:inherit';b.onclick=fn;return b}
@@ -14168,6 +14169,17 @@ window.cdqSaveRetirementV2707={...cdqRetirementV2707,
  deleted:ids=>cdqHoldRetirementV2707(()=>cdqRetirementV2707.deleted(ids),false),
  flushDeleted:()=>cdqHoldRetirementV2707(()=>cdqRetirementV2707.flushDeleted()),
  openCopies:cdqOpenCopiesV2707,ensureSettings:cdqEnsureCopySettingsV2707,download:cdqDownloadCopyV2707};
+let cdqCleaningInvalidPdfsV2714=false;
+async function cdqCleanInvalidPdfsV2714(){
+ if(cdqCleaningInvalidPdfsV2714||cdqV19SyncRunning||cdqAccessState!=='ready')return;
+ cdqCleaningInvalidPdfsV2714=true;const email=cdqReaderOwnerV2520();
+ try{const queue=await cdqV19QueueGet();cdqReaderGuardV2520(email);
+  for(const a of queue){if(cdqV19SyncRunning)return;if(a.owner===email&&a.kind==='pdf-save-v2520'&&invalidRemotePdfV2714(a.lastError))await cdqRetirementV2707.retireAction(a.id);}
+  cdqReaderGuardV2520(email);await cdqV19RefreshSyncPill();
+ }catch(e){if(!cdqV19SyncRunning&&email===String(utilisateurCourantEmail||'')&&cdqAccessState==='ready')afficherErreur(e);}
+ finally{cdqCleaningInvalidPdfsV2714=false;}
+}
+window.addEventListener('cdq:outbox-idle-v2707',()=>{void cdqCleanInvalidPdfsV2714();});
 // Use only IDs explicitly confirmed by Drive as deleted, never a missing row,
 // a failed connection, or a permissions error.
 function cdqWatchDeletedPdfsV2707(){
@@ -14181,8 +14193,10 @@ function cdqWatchDeletedPdfsV2707(){
    return (...args)=>{
     const email=String(utilisateurCourantEmail||'');
     let runner=original().withSuccessHandler((...values)=>{
-     if(name==='supprimerFichiers'&&email===String(utilisateurCourantEmail||'')&&cdqAccessState==='ready'&&Array.isArray(values[0]?.ids)){
-      void window.cdqSaveRetirementV2707.deleted(values[0].ids).then(()=>cdqV19RefreshSyncPill()).catch(afficherErreur);
+     const deletedIds=name==='supprimerFichiers'?values[0]?.ids:name==='supprimerSelectionMultiple'?values[0]?.fichiers:null;
+     if(email===String(utilisateurCourantEmail||'')&&cdqAccessState==='ready'&&Array.isArray(deletedIds)){
+      cdqPostToPwa({type:'CDQ_OFFLINE_REPORT_DELETED_V2714',email,ids:deletedIds});
+      void window.cdqSaveRetirementV2707.deleted(deletedIds).then(()=>cdqV19RefreshSyncPill()).catch(afficherErreur);
      }
      success?.(...values);
     }).withFailureHandler((...values)=>{if(failure)failure(...values);else afficherErreur(values[0])});
@@ -14194,7 +14208,7 @@ function cdqWatchDeletedPdfsV2707(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',cdqWatchDeletedPdfsV2707,{once:true});else cdqWatchDeletedPdfsV2707();
 window.addEventListener('cdq:access-state-v2527',e=>{
- if(e.detail==='ready'){void window.cdqSaveRetirementV2707.flushDeleted().then(()=>cdqV19RefreshSyncPill()).catch(afficherErreur)}
+ if(e.detail==='ready'){void window.cdqSaveRetirementV2707.flushDeleted().then(()=>cdqCleanInvalidPdfsV2714()).then(()=>cdqV19RefreshSyncPill()).catch(afficherErreur)}
  else document.getElementById('cdqPdfCopiesV2707')?.remove();
 });
 
@@ -14395,6 +14409,13 @@ function reportRuntimeV2636(){
     const name=String(data.name||model.name);
     const result=await window.cdqAppelServeur('creerRapportLocalCDQV2642',[data.modeleId,data.folderId,data.clientId,name,'copy-'+hash,payload]);guard(email);
     if(!result?.ok||!result.id||!result.revision||String(result.clientId)!==String(data.clientId))throw Error('La destination du rapport n’a pas été confirmée.');
+    if(window.cdqLocalReportListV2714&&!await window.cdqLocalReportListV2714.canPublish(data.requestId)){
+      guard(email);
+      // Only the exact late creation belonging to the cancelled request is removed.
+      cdqPostToPwa({type:'CDQ_OFFLINE_CANCELLED_CREATION_V2714',email,requestId:data.requestId,driveId:result.id,clientId:data.clientId});
+      throw Error('La création de ce rapport a été annulée. La copie locale est conservée.');
+    }
+    guard(email);
     const finalMeta=result;
     const record={id:result.id,autoReportName:true,nom:name,revision:finalMeta.revision,clientId:data.clientId,type:'PDF',taille:data.blob.size,blob:data.blob};
     await cdqV19PutRecord('document-pdf',result.id,record);guard(email);
@@ -15033,22 +15054,60 @@ async function cdqOpenPdf(id,meta){
  if(!/^[A-Za-z0-9_-]{10,200}$/.test(String(id)))throw new Error('Identifiant PDF invalide.');
  await cdqOpenPdfInternal(id,meta?.forceRefresh?meta:null);return true;
 }
-function installLocalReportListV2713({host=window,fromPwa,owner,allowed,confirm,remove,post,reportError}){
- const seen=new Map();
+// These records are archives, not upload tasks. Retain the exact PDF bytes.
+const localReportVisibleV2714=c=>!!c&&!c.removed&&c.kind!=='prepared'&&c.kind!=='sheet'&&!!c.readerRequestId&&!c.driveId;
+const invalidRemotePdfV2714=error=>/^(?:Error:\s*)?PDF introuvable ou invalide\.$/.test(String(error?.message||error||'').trim());
+function retiredLocalReportV2714(c,reason='user',now=Date.now()){
+ return {...c,removed:true,status:'retired',retiredAt:now,retirementReason:reason,error:''};
+}
+function pruneLocalReportRowsV2714(root,active){
+ const removed=[];
+ function walk(node){if(!node)return;node.fichiers=(node.fichiers||[]).filter(f=>{
+  if(!String(f.id||'').startsWith('cdq-local-')||active.has(String(f.id).slice(10)))return true;
+  removed.push(String(f.id));return false;
+ });for(const folder of node.dossiers||[])walk(folder);}
+ walk(root);return removed;
+}
+function installLocalReportListV2713({host=window,fromPwa,owner,allowed,confirm,remove,post,reportError,reconcile=()=>{},now=Date.now}){
+ const seen=new Map(),requests=new Map();
  host.addEventListener('message',e=>{
   if(!fromPwa(e)||!allowed())return;const d=e.data||{},email=owner();if(d.email!==email)return;
   if(d.type==='CDQ_LOCAL_REPORT_ERROR_V2713'){reportError(d.message);return;}
+  if(d.type==='CDQ_LOCAL_REPORT_SNAPSHOT_V2714'&&Array.isArray(d.localIds)&&d.localIds.every(id=>/^[\w-]{8,100}$/.test(id))){reconcile(new Set(d.localIds));return;}
+  if(d.type==='CDQ_LOCAL_REPORT_RETIRED_V2714'&&/^[\w-]{8,100}$/.test(d.localId)){seen.set(email+'|'+d.localId,{retired:true});remove(d.clientId,'cdq-local-'+d.localId);return;}
+  if(d.type==='CDQ_LOCAL_REPORT_RETIRE_RESULT_V2714'){
+   const request=requests.get(d.requestId);if(!request||request.email!==email||request.id!==d.localId)return;
+   clearTimeout(request.timer);requests.delete(d.requestId);
+   if(d.ok){if(request.local){seen.set(email+'|'+d.localId,{retired:true});remove(request.client,'cdq-local-'+d.localId);}request.resolve(true);}else request.reject(Error(d.message||'La copie reste conservée dans la liste.'));return;
+  }
   if(d.type!=='CDQ_LOCAL_REPORT_UPDATED_V2713'||!/^[\w-]{8,100}$/.test(d.localId)||!d.clientId||!(d.blob instanceof Blob))return;
   const localId='cdq-local-'+d.localId,key=email+'|'+d.localId,old=seen.get(key);if(old&&Number(old.version)>Number(d.editVersion||0))return;
+  if(old?.retired)return;
   if(d.driveId){remove(d.clientId,localId);seen.set(key,{version:Number(d.editVersion||0),driveId:d.driveId});return;}
-  if(old?.driveId)return;seen.set(key,{version:Number(d.editVersion||0),driveId:''});
+  if(old?.driveId||old?.retired)return;seen.set(key,{version:Number(d.editVersion||0),driveId:''});
   confirm({id:localId,nom:String(d.name||'Rapport.pdf'),type:'PDF',_cdqLocalReportV2713:d.localId,_cdqPendingSaveV2660:String(d.uploadId||d.localId)},String(d.clientId),String(d.folderId||d.clientId));
  });
- return {open(id){if(!String(id).startsWith('cdq-local-'))return false;if(!allowed())throw Error('Accès Drive requis.');post({type:'CDQ_LOCAL_REPORT_OPEN_V2713',email:owner(),localId:String(id).slice(10)});return true;},reset(){seen.clear();}};
+ return {open(id){if(!String(id).startsWith('cdq-local-'))return false;if(!allowed())throw Error('Accès Drive requis.');post({type:'CDQ_LOCAL_REPORT_OPEN_V2713',email:owner(),localId:String(id).slice(10)});return true;},
+  retire(id,client){if(!allowed())return Promise.reject(Error('Accès Drive requis.'));const local=String(id).startsWith('cdq-local-');id=String(id).replace(/^cdq-local-/,'');if(!/^[\w-]{8,150}$/.test(id))return Promise.reject(Error('Copie locale invalide.'));
+   const email=owner(),requestId='retire_'+now()+'_'+Math.random().toString(36).slice(2);
+   const promise=new Promise((resolve,reject)=>{const request={id,client,email,local,resolve,reject,timer:setTimeout(()=>{requests.delete(requestId);reject(Error('Le retrait n’a pas été confirmé. La copie reste conservée.'))},15000)};requests.set(requestId,request);post({type:local?'CDQ_OFFLINE_LOCAL_RETIRE_V2714':'CDQ_OFFLINE_REPORT_RETIRE_TARGET_V2714',email,localId:id,requestId});});
+   if(local)seen.set(email+'|'+id,{...seen.get(email+'|'+id),retiring:promise});return promise;
+  },async canPublish(id){const key=owner()+'|'+id;try{await seen.get(key)?.retiring;}catch{}return !seen.get(key)?.retired;},
+  reset(){for(const r of requests.values()){clearTimeout(r.timer);r.reject(Error('Le compte a changé.'));}requests.clear();seen.clear();}};
 }
 
-const cdqLocalReportListV2713=installLocalReportListV2713({fromPwa:e=>cdqFromPwa(e),owner:()=>String(utilisateurCourantEmail||''),allowed:()=>cdqAccessState==='ready'&&!!utilisateurCourantEmail,confirm:(r,c,p)=>window.cdqInstantFiles2530.confirm(r,c,p),remove:(client,id)=>{window.cdqInstantFiles2530.forget(client,[id]);const tree=cacheContenuCompagnies[client],row=tree&&trouverFichierDansArbre(tree,id);if(row)row.noeud.fichiers.splice(row.index,1);if(String(compagnieSelectionnee)===String(client)&&tree)afficherContenu(tree);},post:cdqPostToPwa,reportError:message=>afficherMessage(message,false)});
-window.addEventListener('cdq:drive-cleared-v2632',()=>cdqLocalReportListV2713.reset());
+let cdqActiveLocalReportsV2714=null;
+function cdqPruneLocalRowsV2714(client,tree){if(!cdqActiveLocalReportsV2714||!tree)return;const ids=pruneLocalReportRowsV2714(tree,cdqActiveLocalReportsV2714);if(ids.length){window.cdqInstantFiles2530.forget(client,ids);sauvegarderCachePersistantClient(client,tree,cacheDerniereVerificationCompagnies[client]||0);}}
+const cdqOriginalRenderLocalV2714=afficherContenu;afficherContenu=function(tree,...args){if(cdqAccessState==='ready')cdqPruneLocalRowsV2714(String(compagnieSelectionnee||''),tree);return cdqOriginalRenderLocalV2714(tree,...args);};
+function cdqRemoveLocalRowV2714(client,id){if(String(id).startsWith('cdq-local-'))cdqActiveLocalReportsV2714?.delete(String(id).slice(10));if(client){window.cdqInstantFiles2530.forget(client,[id]);supprimerFichiersDuCache(client,[id]);}}
+const cdqLocalReportListV2713=installLocalReportListV2713({fromPwa:e=>cdqFromPwa(e),owner:()=>String(utilisateurCourantEmail||''),allowed:()=>cdqAccessState==='ready'&&!!utilisateurCourantEmail,confirm:(r,c,p)=>{cdqActiveLocalReportsV2714?.add(r._cdqLocalReportV2713);return window.cdqInstantFiles2530.confirm(r,c,p);},remove:cdqRemoveLocalRowV2714,reconcile:active=>{cdqActiveLocalReportsV2714=active;for(const [client,tree]of Object.entries(cacheContenuCompagnies))cdqPruneLocalRowsV2714(client,tree);if(compagnieSelectionnee&&cacheContenuCompagnies[compagnieSelectionnee])afficherContenu(cacheContenuCompagnies[compagnieSelectionnee]);},post:cdqPostToPwa,reportError:message=>afficherMessage(message,false)});
+window.cdqLocalReportListV2714=cdqLocalReportListV2713;
+window.addEventListener('message',event=>{const d=event.data||{},email=String(utilisateurCourantEmail||'');if(!cdqFromPwa(event)||cdqAccessState!=='ready'||d.type!=='CDQ_OFFLINE_CANCELLED_DELETE_V2714'||!['admin','technicien'].includes(utilisateurCourantRole))return;cdqRunDocumentV2660(email,d.requestId,async()=>{try{cdqReaderGuardV2520(email);const r=await window.cdqAppelServeur('supprimerFichiers',[[d.driveId],d.clientId]);cdqReaderGuardV2520(email);if(!Array.isArray(r?.ids)||!r.ids.includes(d.driveId))throw Error('Suppression non confirmée.');cdqRemoveLocalRowV2714(d.clientId,d.driveId);cdqPostToPwa({type:'CDQ_OFFLINE_CANCELLED_DELETE_V2714_RESULT',email,requestId:d.requestId,driveId:d.driveId,ok:true});}catch(e){if(email===String(utilisateurCourantEmail||'')&&cdqAccessState==='ready')cdqPostToPwa({type:'CDQ_OFFLINE_CANCELLED_DELETE_V2714_RESULT',email,requestId:d.requestId,driveId:d.driveId,ok:false});}});});
+window.cdqRetireLocalReportV2714=async(id,client)=>{if(!['admin','technicien'].includes(utilisateurCourantRole))throw Error('Accès en lecture seule.');if(!window.confirm('Retirer ce rapport en attente ? Une copie du PDF restera récupérable dans Hors ligne.'))return;await cdqLocalReportListV2713.retire(id,client);afficherMessage('Rapport retiré de l’attente. Copie conservée dans Hors ligne.',true);};
+window.cdqRetirePendingReportV2714=async(id,client)=>{if(!['admin','technicien'].includes(utilisateurCourantRole))throw Error('Accès en lecture seule.');if(String(id).startsWith('cdq-local-'))return window.cdqRetireLocalReportV2714(id,client);if(!window.confirm('Retirer cet envoi bloqué de la liste ? Les réponses locales resteront récupérables.'))return;const email=cdqReaderOwnerV2520();await cdqLocalReportListV2713.retire(id,client);cdqReaderGuardV2520(email);await window.cdqSaveRetirementV2707.retire(id);cdqReaderGuardV2520(email);cdqRemoveLocalRowV2714(client,id);afficherMessage('Envoi retiré. Copie locale conservée.',true);};
+for(const type of ['pointerdown','mousedown','touchstart'])window.addEventListener(type,e=>{if(e.target.closest?.('.file-pending-v2708:not([hidden])'))e.stopImmediatePropagation();},true);
+window.addEventListener('click',e=>{const badge=e.target.closest?.('.file-pending-v2708:not([hidden])');if(!badge)return;const row=badge.closest('.file-row'),id=row?.querySelector('.file-checkbox')?.dataset.fileId;if(!id)return;e.preventDefault();e.stopImmediatePropagation();window.cdqRetirePendingReportV2714(id,String(compagnieSelectionnee||'')).catch(afficherErreur);},true);
+window.addEventListener('cdq:drive-cleared-v2632',()=>{cdqActiveLocalReportsV2714=null;cdqLocalReportListV2713.reset();});
 const cdqDrivePdfOpenV2713=cdqOpenPdf;cdqOpenPdf=async(id,...args)=>{if(cdqLocalReportListV2713.open(id))return;return cdqDrivePdfOpenV2713(id,...args);};window.cdqOpenPdfV2520=cdqOpenPdf;
 window.cdqLoadPdfForCalibrationV2668=id=>cdqLoadPdfRecord(String(id));
 
@@ -15998,7 +16057,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.08-v27.13-corrections";
+const CDQ_V20_BUILD = "2026.10.08-v27.14-local-report-cleanup";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16845,7 +16904,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.08-v27.13-corrections";
+const CDQ_V21_BUILD = "2026.10.08-v27.14-local-report-cleanup";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21500,7 +21559,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.08-v27.13-corrections',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.08-v27.14-local-report-cleanup',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -22886,7 +22945,7 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
  document.addEventListener('pointercancel',()=>finish(true),true);addEventListener('blur',()=>finish(true));
  window.addEventListener('click',e=>{const nav=e.target.closest?.('.bottom-nav');if(nav&&Date.now()<Number(nav.dataset.suppressClickUntilV2708)){e.preventDefault();e.stopImmediatePropagation()}},true);
  document.addEventListener('contextmenu',e=>{if(e.target.closest?.('.bottom-nav'))e.preventDefault()},true);
- function rows(){let tree;try{tree=cacheContenuCompagnies[String(compagnieSelectionnee||'')]}catch{}if(!tree)return;for(const row of all('#filesContainer .file-row')){const id=row.querySelector('.file-checkbox')?.dataset.fileId,found=trouverFichierDansArbre(tree,id)?.fichier,pending=!!found?._cdqPendingSaveV2660;let badge=$('.file-pending-v2708',row);if(!badge){badge=document.createElement('span');badge.className='file-pending-v2708';badge.textContent='↥';badge.title='Conservé sur cet appareil — synchronisation en attente';badge.setAttribute('aria-label',badge.title);row.querySelector('.file-name')?.append(badge)}badge.hidden=!pending;const green=$('.file-today-done-badge',row);if(green)green.hidden=pending||!(cdqFichierModifieAujourdhui(found?.dateModification)||cdqFichierModifieAujourdhui(found?._cdqSavedAtV2708));}}
+ function rows(){let tree;try{tree=cacheContenuCompagnies[String(compagnieSelectionnee||'')]}catch{}if(!tree)return;for(const row of all('#filesContainer .file-row')){const id=row.querySelector('.file-checkbox')?.dataset.fileId,found=trouverFichierDansArbre(tree,id)?.fichier,pending=!!found?._cdqPendingSaveV2660;let badge=$('.file-pending-v2708',row);if(!badge){badge=document.createElement('span');badge.className='file-pending-v2708';badge.textContent='↥';badge.title='Conservé sur cet appareil — synchronisation en attente';badge.setAttribute('aria-label',badge.title);row.querySelector('.file-name')?.append(badge)}badge.hidden=!pending;badge.tabIndex=pending?0:-1;badge.setAttribute('role','button');badge.setAttribute('aria-label','Synchronisation en attente — retirer cet envoi');badge.title='Cliquer pour retirer cet envoi bloqué';if(!badge.dataset.cleanupV2714){badge.dataset.cleanupV2714='1';badge.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();badge.click();}});}const green=$('.file-today-done-badge',row);if(green)green.hidden=pending||!(cdqFichierModifieAujourdhui(found?.dateModification)||cdqFichierModifieAujourdhui(found?._cdqSavedAtV2708));}}
  new MutationObserver(records=>{if(!records.some(r=>r.type==='childList'&&[...r.addedNodes].some(n=>n.nodeType===1&&!n.matches('.file-pending-v2708,.cdq-nav-status-v2708'))))return;if(applyQueued)return;applyQueued=true;requestAnimationFrame(()=>{applyQueued=false;applyOrder();rows()})}).observe(document.body,{childList:true,subtree:true});
  addEventListener('cdq:pdf-local-saved',rows);addEventListener('cdq:pdf-saved',rows);addEventListener('cdq:access-state-v2527',()=>{finish(true);applyOrder()});document.addEventListener('cdq:icons-changed',applyOrder);motion();applyOrder();
  window.cdqInterfaceV2708={applyOrder,finish,organize,rows};

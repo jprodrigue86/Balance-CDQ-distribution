@@ -3,6 +3,7 @@ import {openSheet} from './sheet-launcher-v2526.mjs';
 import {REPORT_NAMES,bundledTemplate,bundledCreationTemplate} from './report-templates-v2636.mjs';
 import {fillInFrame} from './pdf-fill-client-v2523.mjs';
 import {sessionCopyStorageV2664} from './pdf-session-storage-v2664.mjs';
+import {localReportVisibleV2714,retiredLocalReportV2714} from './local-report-hygiene-v2714.mjs';
 // Only chosen offline PDFs and unconfirmed work persist; confirmed work stays in RAM.
 const DB_NAME = 'cdq-offline-templates-v1';
 export const MODELS = REPORT_NAMES;
@@ -30,6 +31,8 @@ export function syncRequest(copy) {
     templateId:copy.templateId,modifieLe:copy.modifieLe,...(copy.bundled?{bundled:true,blob:copy.templateBlob,name:copy.creationName||copy.name}: {})};
 }
 export function nextSync(copy,protocol=0) {
+  if(copy.removed&&copy.retirementReason==='user'&&copy.cancelledDriveId&&!copy.cancelledDeleteConfirmed)return {type:'CDQ_OFFLINE_CANCELLED_DELETE_V2714',requestId:copy.id,driveId:copy.cancelledDriveId,clientId:copy.destination.clientId};
+  if(copy.removed)return null;
   if(copy.kind==='sheet')return null;
   if(copy.kind==='prepared')return !copy.removed&&copy.uploadId&&copy.uploadId!==copy.syncedUploadId&&protocol>=38
     ?{type:'CDQ_OFFLINE_SAVE',requestId:copy.id,driveId:copy.driveId,revision:copy.revision,uploadId:copy.uploadId,blob:copy.blob,...(copy.autoReportName?{reportName:copy.name,clientId:copy.destination.clientId}:{})}:null;
@@ -42,7 +45,7 @@ export function nextSync(copy,protocol=0) {
   return null;
 }
 export function applyResult(copy,data) {
-  if(!copy||data.requestId!==copy.id)return copy;
+  if(!copy||copy.removed||data.requestId!==copy.id)return copy;
   const c={...copy};
   if(data.type==='CDQ_OFFLINE_COPY_RESULT') {
     if(!data.ok){c.error=data.message||'La copie reste sur cet appareil.';return c;}
@@ -105,6 +108,14 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   const serialCopy=(id,fn)=>{const key=String(id),previous=copyJobs.get(key)||Promise.resolve();const p=chain.then(()=>previous.catch(()=>{})).then(fn);copyJobs.set(key,p);p.finally(()=>{if(copyJobs.get(key)===p)copyJobs.delete(key);}).catch(()=>{});return p;};
   const allowed=email=>localEmail===email||session?.email===email;
   function notifyLocalReportV2713(c){if(session?.email===c?.email&&c?.kind!=='prepared'&&c?.kind!=='sheet'&&c?.readerRequestId&&!c.removed)send({type:'CDQ_LOCAL_REPORT_UPDATED_V2713',email:c.email,localId:c.id,driveId:c.driveId||'',blob:c.blob,name:c.name,clientId:c.destination.clientId,folderId:c.destination.folderId,uploadId:c.uploadId,editVersion:c.editVersion||0,pending:!c.driveId||c.uploadId!==c.syncedUploadId});}
+  async function notifySnapshotV2714(){const current=session,stamp=epoch;if(!current)return;const copies=await all('copies');if(stamp!==epoch||session!==current)return;send({type:'CDQ_LOCAL_REPORT_SNAPSHOT_V2714',email:current.email,localIds:copies.filter(c=>c.email===current.email&&localReportVisibleV2714(c)).map(c=>c.id)});}
+  async function retireCopyV2714(c,reason){
+    const current=session,stamp=epoch;if(!current?.canWrite||c.email!==current.email)throw Error('Retrait non autorisé.');
+    const archived=retiredLocalReportV2714(c,reason);await put('copies',archived);
+    if(stamp!==epoch||session!==current)return;
+    const job=inflight.get(c.id);if(job){clearTimeout(job.timer);inflight.delete(c.id);}
+    send({type:'CDQ_LOCAL_REPORT_RETIRED_V2714',email:current.email,localId:c.id,clientId:c.destination?.clientId,driveId:c.filledDriveId||c.driveId||''});
+  }
   function notifyDocument(c){notifyLocalReportV2713(c);if(session?.email===c?.email&&c?.driveId&&!c.removed)send({type:'CDQ_OFFLINE_DOCUMENT_UPDATED',email:c.email,fileId:c.driveId,blob:c.blob,revision:c.revision,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId});}
   function button(parent,label,fn) {
     const b=document.createElement('button');b.type='button';b.textContent=label;
@@ -206,6 +217,8 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
     }
     text(content,'Les originaux restent inchangés. Une copie créée ici est conservée sur cet appareil, puis ajoutée au dossier client après reconnexion et déverrouillage.');
     if(session?.canWrite)button(content,'Réessayer la synchronisation',()=>serial(sync));
+    const archived=(await all('copies')).filter(c=>c.email===email&&c.retiredAt&&c.blob);
+    if(archived.length){text(content,'Copies retirées de l’attente');for(const c of archived){const row=document.createElement('div');content.append(row);text(row,c.name);button(row,'Télécharger la copie',()=>{if(!allowed(email))throw Error('Déverrouillez CDQ.');download(c.blob,c.name);});}}
     for(const c of copies.filter(c=>c.kind!=='prepared'&&c.kind!=='sheet')){
       const row=document.createElement('div');row.style.cssText='border-top:1px solid #385360;padding-top:10px;margin-top:18px';content.append(row);
       text(row,c.name);text(row,c.destination.name+' — '+(c.status==='synced'?'Ajouté au dossier client':c.uploadId?'PDF rempli conservé ici — envoi en attente':'Copie conservée ici — envoi en attente'));
@@ -220,7 +233,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
     await verifyPdf(blob);
     return serialCopy(id,async()=>{
       if(stamp!==epoch||!allowed(email)||!profile?.canWrite)throw new Error('Déverrouillez CDQ pour enregistrer.');
-      const c=await get('copies',id);if(!c||c.email!==email)throw new Error('Copie locale introuvable.');
+      const c=await get('copies',id);if(!c||c.removed||c.email!==email)throw new Error('Copie locale retirée ou introuvable.');
       // Repeated reader requests are idempotent. Resolve only after IndexedDB commits.
       if(c.readerRequestId!==readerRequestId){
         const reportName=await nameFromReport(blob,c.name);
@@ -235,8 +248,8 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
     const current=session,stamp=epoch;if(navigator.onLine===false||!current?.canWrite)return;
     const copies=await all('copies');if(stamp!==epoch||session!==current)return;
     for(let c of copies){
-      if(c.email!==current.email||inflight.has(c.id)||readers.get(c.id)?.opening)continue;
-      if(!c.driveId&&c.bundled&&!validPdf(c.templateBlob)&&c.creationAsset){
+      if((c.removed&&!c.cancelledDriveId)||c.email!==current.email||inflight.has(c.id)||readers.get(c.id)?.opening)continue;
+      if(!c.removed&&!c.driveId&&c.bundled&&!validPdf(c.templateBlob)&&c.creationAsset){
         if(!creationDownloads.has(c.id)){
          const id=c.id,job=(async()=>{try{
           const blob=await bundledCreationTemplate(c.creationAsset);
@@ -259,6 +272,12 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       }
       if(c.uploadId&&c.uploadId!==c.syncedUploadId&&!/^[a-zA-Z0-9_-]{8,100}$/.test(c.uploadId)){c={...c,uploadId:'pdf_'+crypto.randomUUID()};await put('copies',c);if(stamp!==epoch||session!==current)return;}
       if(inflight.has(c.id)||readers.get(c.id)?.opening)continue;
+      c=await get('copies',c.id);if(stamp!==epoch||session!==current)return;
+      if(!c||(c.removed&&!c.cancelledDriveId)||inflight.has(c.id))continue;
+      const tombstone=await get('state','deleted:'+current.email+':'+(c.filledDriveId||c.driveId||''));
+      if(stamp!==epoch||session!==current)return;
+      if(tombstone&&!c.removed&&Number(c.createdAt||0)<=Number(tombstone.deletedAt)){await retireCopyV2714(c,'deleted');continue;}
+      c=await get('copies',c.id);if(stamp!==epoch||session!==current)return;if(!c||(c.removed&&!c.cancelledDriveId)||inflight.has(c.id))continue;
       const message=nextSync(c,current.protocol);if(!message)continue;
       const job={type:message.type,uploadId:message.uploadId||'',epoch:stamp};inflight.set(c.id,job);
       job.timer=setTimeout(()=>{if(inflight.get(c.id)===job){inflight.delete(c.id);status.textContent='Réponse non reçue. La copie reste conservée ici. Utilisez « Réessayer la synchronisation ».';}},90000);
@@ -275,9 +294,46 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       session={email:data.email,canWrite:!!data.canWrite,protocol:Number(data.protocol)||0};localEmail=data.email;
       await put('state',{id:'profile',...session});navigator.storage?.persist?.().catch(()=>{});
       if(session.protocol<38)requestModel('camion');
-      await refresh();for(const c of await all('copies'))if(stamp===epoch&&session?.email===data.email&&c.email===data.email)notifyLocalReportV2713(c);await sync();return;
+      await refresh();await notifySnapshotV2714();for(const c of await all('copies'))if(stamp===epoch&&session?.email===data.email&&c.email===data.email){if(c.removed&&c.retiredAt)send({type:'CDQ_LOCAL_REPORT_RETIRED_V2714',email:data.email,localId:c.id,clientId:c.destination?.clientId});else notifyLocalReportV2713(c);}await sync();return;
     }
     const current=session;if(!current||(data.email&&data.email!==current.email))return;
+    if(data.type==='CDQ_OFFLINE_REPORT_RETIRE_TARGET_V2714'){
+      try{
+        if(!current.canWrite||!identifier(data.localId))throw Error('Retrait non autorisé.');
+        for(const c of await all('copies')){if(stamp!==epoch||session!==current)return;if(c.email===current.email&&!c.removed&&c.kind!=='sheet'&&[c.driveId,c.filledDriveId].includes(data.localId))await serialCopy(c.id,async()=>{const latest=await get('copies',c.id);if(stamp===epoch&&session===current&&latest&&!latest.removed&&(!data.expectedUploadId||latest.uploadId===data.expectedUploadId))await retireCopyV2714(latest,'user');});}
+        if(stamp===epoch&&session===current)send({type:'CDQ_LOCAL_REPORT_RETIRE_RESULT_V2714',email:current.email,requestId:data.requestId,localId:data.localId,ok:true});
+      }catch(e){if(stamp===epoch&&session===current)send({type:'CDQ_LOCAL_REPORT_RETIRE_RESULT_V2714',email:current.email,requestId:data.requestId,localId:data.localId,ok:false,message:e.message});}return;
+    }
+    if(data.type==='CDQ_OFFLINE_CANCELLED_CREATION_V2714'){
+      const c=await get('copies',data.requestId);if(stamp!==epoch||current!==session)return;
+      if(!current.canWrite||!c?.removed||c.retirementReason!=='user'||c.email!==current.email||String(c.destination.clientId)!==String(data.clientId)||!identifier(data.driveId))return;
+      if(c.cancelledDriveId&&c.cancelledDriveId!==data.driveId)return;
+      if(c.cancelledDriveId===data.driveId&&c.cancelledDeleteConfirmed)return;
+      await put('copies',{...c,cancelledDriveId:data.driveId,cancelledDeleteConfirmed:false});await sync();return;
+    }
+    if(data.type==='CDQ_OFFLINE_CANCELLED_DELETE_V2714_RESULT'){
+      const job=inflight.get(data.requestId);if(!job||job.epoch!==stamp||job.type+'_RESULT'!==data.type)return;
+      const c=await get('copies',data.requestId);if(stamp!==epoch||current!==session)return;
+      if(!c?.removed||c.email!==current.email||c.cancelledDriveId!==data.driveId)return;
+      clearTimeout(job.timer);inflight.delete(data.requestId);
+      if(data.ok)await put('copies',{...c,cancelledDeleteConfirmed:true});return;
+    }
+    if(data.type==='CDQ_OFFLINE_LOCAL_RETIRE_V2714'){
+      try{
+        if(!current.canWrite||!/^[\w-]{8,100}$/.test(String(data.localId||'')))throw Error('Retrait non autorisé.');
+        const c=await get('copies',data.localId);if(stamp!==epoch||session!==current)return;
+        if(c&&c.email!==current.email)throw Error('Cette copie appartient à un autre compte.');
+        if(c&&!c.removed){if(c.kind==='prepared'||c.kind==='sheet'||c.driveId)throw Error('Ce fichier est déjà dans Drive. Actualisez la liste avant de le supprimer.');await retireCopyV2714(c,'user');}
+        if(stamp===epoch&&session===current){send({type:'CDQ_LOCAL_REPORT_RETIRE_RESULT_V2714',email:current.email,requestId:data.requestId,localId:data.localId,ok:true});await notifySnapshotV2714();}
+      }catch(e){if(stamp===epoch&&session===current)send({type:'CDQ_LOCAL_REPORT_RETIRE_RESULT_V2714',email:current.email,requestId:data.requestId,localId:data.localId,ok:false,message:e.message});}return;
+    }
+    if(data.type==='CDQ_OFFLINE_REPORT_DELETED_V2714'){
+      if(!current.canWrite||!Array.isArray(data.ids)||data.ids.length>500)return;
+      const ids=new Set(data.ids.filter(identifier));
+      for(const id of ids){if(stamp!==epoch||session!==current)return;await put('state',{id:'deleted:'+current.email+':'+id,email:current.email,deletedAt:Date.now()});}
+      for(const c of await all('copies')){if(stamp!==epoch||session!==current)return;if(c.email===current.email&&!c.removed&&[c.driveId,c.filledDriveId].some(id=>ids.has(id)))await serialCopy(c.id,async()=>{const latest=await get('copies',c.id);if(stamp===epoch&&session===current&&latest&&!latest.removed)await retireCopyV2714(latest,'deleted');});}
+      await notifySnapshotV2714();return;
+    }
     if(data.type==='CDQ_LOCAL_REPORT_OPEN_V2713'){
       try{const c=await get('copies',String(data.localId||''));if(stamp!==epoch||current!==session)return;
        if(!c||c.email!==current.email||c.removed||c.kind==='prepared'||c.kind==='sheet')throw Error('Copie locale indisponible.');
@@ -359,7 +415,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
     }
     if(data.type==='CDQ_OFFLINE_PREFILL_V2642'){
       const c=await get('copies',String(data.requestId||''));
-      if(!current.canWrite||!c||c.email!==current.email||stamp!==epoch||current!==session)return;
+      if(!current.canWrite||!c||c.removed||c.email!==current.email||stamp!==epoch||current!==session)return;
       const values=Object.fromEntries(Object.entries(data.values||{}).filter(([k,v])=>/^client_(adresse|ville|code_postal|province|telephone)$/.test(k)&&typeof v==='string'&&v.length<=1000));
       const reader=readers.get(c.id);if(reader?.epoch===stamp){const handle=await reader.handle;if(stamp!==epoch||current!==session||!current.canWrite)return;handle?.prefill?.(values);}
       // Preserve the late coordinates on disk too. Saved answers are never replaced.
@@ -379,6 +435,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         if(!validDestination(d))throw new Error('Dossier client invalide.');
         const t=await loadTemplate(current.email,data.modeleId);if(!validTemplate(t))throw new Error('Préparez ce modèle avec Internet avant de le copier hors ligne.');
         let c=await get('copies',id);
+        if(c?.removed)throw Error('Cette création a été annulée. Créez un nouveau rapport.');
         if(c&&(c.email!==current.email||c.modeleId!==data.modeleId||c.destination.clientId!==d.clientId||c.destination.folderId!==d.folderId))throw new Error('Identifiant déjà utilisé pour une autre copie.');
         if(stamp!==epoch)return;
         if(!c){c=makeCopy(t,d,current.email,id);if(data.prefill&&Object.keys(data.prefill).length){c.blob=await fillInFrame(data.prefill,{blob:c.blob,strict:false});c.uploadId=id+'_prefill';c.editVersion=1;}if(stamp!==epoch||session!==current)return;await put('copies',c);}
@@ -406,7 +463,14 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       const job=inflight.get(data.requestId);
       if(!job||job.epoch!==stamp||job.type+'_RESULT'!==data.type||(job.uploadId&&job.uploadId!==data.uploadId))return;
       clearTimeout(job.timer);inflight.delete(data.requestId);
-      const copy=await get('copies',data.requestId);if(!copy||copy.email!==current.email||stamp!==epoch)return;
+      const copy=await get('copies',data.requestId);if(!copy||copy.removed||copy.email!==current.email||stamp!==epoch)return;
+      // This exact server response confirms the original creation is no longer
+      // at its destination. Network and permission failures remain pending.
+      if(!data.ok&&data.type==='CDQ_OFFLINE_COPY_RESULT'&&String(data.message||'').trim()==='Le rapport a été déplacé ou supprimé.'){
+        await retireCopyV2714(copy,'remote-deleted-or-moved');return;
+      }
+      const deleted=data.ok&&identifier(data.id)?await get('state','deleted:'+current.email+':'+data.id):null;
+      if(deleted&&Number(copy.createdAt||0)<=Number(deleted.deletedAt)){await retireCopyV2714({...copy,driveId:data.id},'deleted');return;}
       const updated=applyResult(copy,data);await put('copies',updated);if(stamp===epoch&&data.ok)notifyDocument(updated);await refresh();if(data.ok)await sync();
     }
   }
@@ -416,6 +480,6 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   document.addEventListener?.('visibilitychange',()=>{if(!document.hidden)resume();});
   window.addEventListener('offline',()=>serial(refresh).catch(()=>{}));
   refresh().catch(()=>{});
-  return {handle(data){const stamp=epoch;const id=data.fileId?'prepared:'+String(session?.email||'')+':'+data.fileId:/^CDQ_OFFLINE_(?:CREATE_LOCAL|PREFILL_V2642|COPY_RESULT|SAVE_RESULT)$/.test(data.type)?data.requestId:'';return (id?serialCopy(id,()=>handleNow(data,stamp)):serial(()=>handleNow(data,stamp))).catch(e=>{status.textContent=e.message||String(e);});},
+  return {handle(data){const stamp=epoch;const id=data.type==='CDQ_OFFLINE_LOCAL_RETIRE_V2714'?data.localId:data.fileId?'prepared:'+String(session?.email||'')+':'+data.fileId:/^CDQ_OFFLINE_(?:CREATE_LOCAL|PREFILL_V2642|COPY_RESULT|SAVE_RESULT|CANCELLED_CREATION_V2714|CANCELLED_DELETE_V2714_RESULT)$/.test(data.type)?data.requestId:'';return (['CDQ_OFFLINE_REPORT_DELETED_V2714','CDQ_OFFLINE_REPORT_RETIRE_TARGET_V2714'].includes(data.type)?handleNow(data,stamp):id?serialCopy(id,()=>handleNow(data,stamp)):serial(()=>handleNow(data,stamp))).catch(e=>{status.textContent=e.message||String(e);});},
     lock(){epoch++;session=null;localEmail='';for(const job of inflight.values())clearTimeout(job.timer);inflight.clear();requested.clear();readers.clear();creationDownloads.clear();sessionStorage.clear();panel.hidden=true;},refresh};
 }
