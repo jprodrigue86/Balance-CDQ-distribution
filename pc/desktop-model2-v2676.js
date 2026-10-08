@@ -123,7 +123,11 @@
   }
   function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;home();layout();});}
   function start(){home();const company=$('#companyMenu');if(company&&window.cdqInstallCompanyChooserV2674&&!window.cdqCompanyChooserV2674)window.cdqCompanyChooserV2674=window.cdqInstallCompanyChooserV2674(company);layout();new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','open','data-cdq-current','data-cdq-palette','data-workspace-route']});addEventListener('resize',()=>{closeMenu();schedule();},{passive:true});addEventListener('online',schedule);addEventListener('offline',schedule);document.addEventListener('cdq:icons-changed',schedule);addEventListener('cdq:drive-cleared-v2632',()=>closeMenu());addEventListener('cdq:access-ready',schedule);document.addEventListener('pointerdown',e=>{if(menu&&!menu.contains(e.target))closeMenu();},true);document.addEventListener('keydown',e=>{if(e.key==='Escape'&&menu)closeMenu(true);});}
-  window.cdqDesktopModel2={layout,layoutCompanyMenu,schedule,installRowActions,closeMenu,version:root.dataset.cdqPcVersion,model:3};
+  function positionReader(frame){
+    const geometry=layout(),top=Math.max(geometry.top,Math.ceil(($('#appHeader')?.getBoundingClientRect().bottom||0)+12));
+    set(frame,{position:'fixed',top:top+'px',left:geometry.left+'px',right:'10px',bottom:'10px',width:Math.max(0,innerWidth-geometry.left-10)+'px',height:Math.max(0,innerHeight-top-10)+'px','z-index':'2800'});
+  }
+  window.cdqDesktopModel2={layout,positionReader,layoutCompanyMenu,schedule,installRowActions,closeMenu,version:root.dataset.cdqPcVersion,model:3};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 

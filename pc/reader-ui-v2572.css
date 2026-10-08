@@ -104,3 +104,10 @@ body.cdq-reader-pc #status{left:50%!important;right:auto!important;bottom:52px!i
 body.cdq-reader-pc #status[data-active=true]{opacity:1}
 .cdq-result-indicator:not(.row-result){justify-content:flex-end;gap:6%;padding:0 3%}
 .cdq-result-indicator:not(.row-result) span{text-align:right;white-space:nowrap}
+
+/* PC: title occupies the space between Back and zoom, with no bottom strip. */
+body.cdq-reader-pc #readerTop{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto auto!important;align-items:center;gap:10px;grid-template-areas:"back name zoom menu"!important}
+body.cdq-reader-pc #readerTop #back{grid-area:back}
+body.cdq-reader-pc #readerTop #name{grid-area:name;position:static!important;left:auto!important;transform:none!important;width:auto!important;min-width:0;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.cdq-reader-pc #readerTop #zoomControls{grid-area:zoom;display:flex!important;margin-left:0!important}
+body.cdq-reader-pc #readerTop #menu{grid-area:menu}

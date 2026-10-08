@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.17" data-cdq-pc-release="e01f937efbe7cd701718e4bc83c639f4fd303f5fa3490c849d8539e4aa9d738b">
+<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.18" data-cdq-pc-release="b8f559efd14ddcf867b3049718c9374856f4e22d583cf5dedd84c14b7eff55fd">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./app-session-v2661.js"></script>
@@ -1601,6 +1601,8 @@ function cdqWarmPdfReaderV2554(){
 
 let cdqPdfV2304Context=null;
 function cdqAfficherPdf(data){
+  const source=document.getElementById('app')?.contentWindow;
+  if(!data.workspaceSource&&source?.document.documentElement.classList.contains('cdq-desktop-v2676'))data={...data,workspaceSource:source};
   return import('./reader-host-v2525.mjs').then(m=>m.openReader(data));
 }
 function cdqAfficherPdfV2304(data,source){

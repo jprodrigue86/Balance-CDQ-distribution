@@ -20,7 +20,7 @@ async function openReaderInternal(data){
     else message=lastWorkspaceLayout;
     try{
       const source=data.workspaceSource,doc=source.document,root=doc.documentElement;
-      if(!root.classList.contains('cdq-mobile-layout'))return;
+      if(!root.classList.contains('cdq-mobile-layout')&&!root.classList.contains('cdq-desktop-v2676'))return;
       workspaceOwner??=root.dataset.cdqWorkspaceOwner||'';
       // Access checks temporarily blank the public identity. Keep the document
       // and its fields alive; genuine loss of access suspends their display.
@@ -88,5 +88,5 @@ async function openReaderInternal(data){
   const timer=setTimeout(()=>{if(!opened){close();data.onError?.(new Error('Le lecteur n’a pas ouvert le PDF. La copie reste conservée; réessayez son ouverture.'));}},30000);
   const resize=()=>layout();
   window.addEventListener('resize',resize);window.addEventListener('cdq:keyboard-insets-v2653',resize);window.visualViewport?.addEventListener('resize',resize);
-  handle={fileId:String(data.fileId||''),requestClose:()=>new Promise((resolve,reject)=>{const waiter={resolve,reject,timer:null};waiter.timer=setTimeout(()=>{closeWaiters=closeWaiters.filter(w=>w!==waiter);reject(Error('Fermez le rapport courant avant d’ouvrir le suivant.'));},30000);closeWaiters.push(waiter);requestClose();}),prefill:values=>{prefillValues={...prefillValues,...values};if(opened)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});}};active=handle;window.addEventListener('message',receive);document.body.append(frame);layout();return handle;
+  handle={fileId:String(data.fileId||''),requestClose:()=>new Promise((resolve,reject)=>{const waiter={resolve,reject,timer:null};waiter.timer=setTimeout(()=>{closeWaiters=closeWaiters.filter(w=>w!==waiter);reject(Error('Fermez le rapport courant avant d’ouvrir le suivant.'));},30000);closeWaiters.push(waiter);requestClose();}),prefill:values=>{prefillValues={...prefillValues,...values};if(opened)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});}};active=handle;window.addEventListener('message',receive);layout();document.body.append(frame);return handle;
 }

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.17" data-cdq-pc-release="e01f937efbe7cd701718e4bc83c639f4fd303f5fa3490c849d8539e4aa9d738b">
+<html data-cdq-pc-version="27.18" data-cdq-pc-release="b8f559efd14ddcf867b3049718c9374856f4e22d583cf5dedd84c14b7eff55fd">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -15054,7 +15054,7 @@ async function cdqOpenPdfInternal(id,preparedRecord){
     const d=event.data||{};
     if(inPwa&&d.type==='CDQ_PDF_CLOSED_V2520'&&d.fileId===id&&d.readerSession===readerSession||!inPwa&&d.type==='CDQ_READER_CLOSE'){if(d.error)afficherErreur(new Error(d.error));close();return;}
     if(d.type==='CDQ_READER_OPENED'||d.type==='CDQ_PDF_OPENED_V2523'&&d.fileId===id)stopLoading();
-    if(d.type==='CDQ_READER_READY'&&!inPwa)frame.contentWindow.postMessage({type:'CDQ_READER_OPEN',blob:rec.blob,name:rec.nom,autoReportName:rec.autoReportName===true,fileId:id,readOnly:utilisateurCourantRole==='lecture'},CDQ_PWA_ORIGIN);
+    if(d.type==='CDQ_READER_READY'&&!inPwa)frame.contentWindow.postMessage({type:'CDQ_READER_OPEN',desktop:true,blob:rec.blob,name:rec.nom,autoReportName:rec.autoReportName===true,fileId:id,readOnly:utilisateurCourantRole==='lecture'},CDQ_PWA_ORIGIN);
     if(d.type===(inPwa?'CDQ_PDF_DISCARD_REQUEST_V2520':'CDQ_READER_DISCARD')){
       if(inPwa&&d.fileId!==id||!/^discard-[\w-]{8,80}$/.test(String(d.requestId||'')))return;
       try{
@@ -15080,7 +15080,7 @@ async function cdqOpenPdfInternal(id,preparedRecord){
     }
     window.addEventListener('message',receive);window.addEventListener('cdq:pdf-save-retired-v2707',retiredV2707);
     if(inPwa){cdqPostToPwa({type:'CDQ_OPEN_PDF_V2304',readerSession,theme:(document.getElementById('cdqPcV16')?.dataset.theme||localStorage.getItem('cdqTheme')||'dark'),readerProtocol:2520,blob:rec.blob,name:rec.nom,autoReportName:rec.autoReportName===true,fileId:id,readOnly:utilisateurCourantRole==='lecture'});}
-    else{frame=document.createElement('iframe');frame.id='cdqReaderFrame';frame.title=rec.nom;frame.referrerPolicy='origin';frame.src=CDQ_PWA_ORIGIN+'/Balance-CDQ-distribution/reader-v2525.html';frame.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000';document.body.append(frame);}
+    else{frame=document.createElement('iframe');frame.id='cdqReaderFrame';frame.title=rec.nom;frame.referrerPolicy='origin';frame.src=CDQ_PWA_ORIGIN+'/Balance-CDQ-distribution/reader-v2525.html';frame.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000';window.cdqDesktopModel2?.positionReader(frame);document.body.append(frame);}
   }catch(e){close();afficherErreur(e);}
 }
 // Every PDF opens in the integrated CDQ reader, including old preferences.

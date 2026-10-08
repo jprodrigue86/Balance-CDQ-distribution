@@ -8,7 +8,8 @@ import {calibrationIdentity,calibrationRpc} from './calibration-feedback-v2566.m
 import {createDriveCache} from './drive-cache-v2677.mjs';
 import {saleTypesV2699,pipelinesV2699,stagesV2699,encodeOpportunityV2699,decodeOpportunityV2699,driveFileKindV2699} from './opportunity-fields-v2699.mjs';
 import {installDriveActionsV2699} from './drive-actions-v2699.mjs';
-import {createDriveTrashClientV2713} from './pc-drive-trash-v2717.mjs';
+import {createDriveTrashClientV2713} from './pc-drive-trash-v2718.mjs';
+import {createDriveTrashClientV2713 as legacyTrashV2717} from './pc-drive-trash-v2717.mjs';
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=v=>Number(v).toLocaleString('fr-CA',{maximumFractionDigits:8});
@@ -184,8 +185,8 @@ function syncHome(){
   if(actions){const hidden=!!active||!companyId()||!canRead();if(actions.hidden!==hidden)actions.hidden=hidden;$('[data-client-folder]',actions).disabled=!canWrite();$('[data-client-report]',actions).disabled=!canWrite();}
 }
 function drivePage(){return page(pageByRoute.dossier,driveState.mode==='favorites'?'Favoris':'Dossiers','Dossiers partagés CDQ');}
-const trashAccount=()=>String(window.cdqGoogleDefaultAccountV2294?.()||localStorage.getItem('cdqDefaultGoogleAccountV2294')||calibrationIdentity().email||'').trim().toLowerCase();
-const trashClient=createDriveTrashClientV2713({identity:trashAccount,allowed:canRead,writable:canWrite,native:()=>window.BalanceCDQNative||window.parent.BalanceCDQNative,oauth:()=>window.google?.accounts?.oauth2||window.parent.google?.accounts?.oauth2,clientId:()=>window.CDQ_GOOGLE_AUTH_CONFIG?.clientId||window.parent.CDQ_GOOGLE_AUTH_CONFIG?.clientId});
+const trashAccount=()=>String(calibrationIdentity().email||'').trim().toLowerCase();
+const trashClient=createDriveTrashClientV2713({identity:trashAccount,allowed:canRead,writable:canWrite,rpc,legacy:legacyTrashV2717({identity:trashAccount,allowed:canRead,writable:canWrite,native:()=>null,oauth:()=>window.google?.accounts?.oauth2||window.parent.google?.accounts?.oauth2,clientId:()=>window.CDQ_GOOGLE_AUTH_CONFIG?.clientId||window.parent.CDQ_GOOGLE_AUTH_CONFIG?.clientId})});
 let trashEpoch=0,trashState={owner:'',items:[],next:'',query:'',loading:false,loaded:false};
 function openTrash(){
  const p=page(pageByRoute.trash,'Corbeille',trashAccount());p.hidden=false;
