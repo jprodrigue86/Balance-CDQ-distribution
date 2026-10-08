@@ -21,22 +21,23 @@ function paintRows(){
     const checkbox=row.querySelector('.file-checkbox[data-file-id]'),known=states.get(k)?.fileId||listFile(id)?.id;
     const isList=!!known&&checkbox?.dataset.fileId===String(known);
     let indicator=row.querySelector('[data-balance-list-working]');
-    if(!isList||!running||!canRead()){indicator?.remove();row.removeAttribute('data-balance-list-busy');continue;}
+    if(!isList||!canRead()){indicator?.remove();row.dataset.balanceListBusy='false';continue;}
     if(!indicator){indicator=document.createElement('span');indicator.dataset.balanceListWorking='';indicator.className='cdq-balance-list-working';indicator.setAttribute('role','status');const badge=row.querySelector(':scope > .file-today-done-badge');row.insertBefore(indicator,badge||null);}
-    const active=jobs.has(k)&&navigator.onLine!==false;
+    const title=row.querySelector('.file-name');if(document.documentElement.classList.contains('cdq-desktop-v2676')&&title&&indicator.parentElement!==title)title.append(indicator);
+    indicator.hidden=!running;const active=jobs.has(k)&&navigator.onLine!==false;
     const text=navigator.onLine===false?'Liste de balances : actualisation en attente de connexion':active?'Liste de balances : actualisation en cours':waiting(id)?'Liste de balances : sauvegarde du rapport en attente':failed.has(k)?'Liste de balances : actualisation interrompue; réessayez depuis le menu':'Liste de balances : actualisation prévue après le rapport';
-    if(indicator.getAttribute('aria-label')!==text){indicator.setAttribute('aria-label',text);indicator.title=text;}
+    if(indicator.getAttribute('aria-label')!==text){indicator.setAttribute('aria-label',text);indicator.title=running?text:'';}
     indicator.classList.toggle('cdq-balance-list-paused',!active);
-    const label=active?'':waiting(id)?'Sauvegarde en attente':failed.has(k)?'À réessayer':'En attente';
+    const label='';
     if(indicator.textContent!==label)indicator.textContent=label;
     row.dataset.balanceListBusy=active?'true':'false';
   }
 }
 function scheduleClient(id){
   const k=key(id);if(clientTimers.has(k))return;
-  const version=epoch;clientTimers.set(k,setTimeout(()=>{clientTimers.delete(k);if(version===epoch&&!waiting(id)&&!readerBusy())refresh(false,true,id).catch(()=>{});},150));
+  const version=epoch;clientTimers.set(k,setTimeout(()=>{clientTimers.delete(k);if(version===epoch&&!waiting(id) )refresh(false,true,id).catch(()=>{});},150));
 }
-function saved(event,local=false){
+async function saved(event,local=false){
   if(owner!==calibrationIdentity().email)reset();
   const d=event.detail||{},id=String(d.clientId||'');if(!id){schedule();return;}
   if(!canWrite()||excluded(d.name||d.nom))return;
@@ -48,7 +49,7 @@ function saved(event,local=false){
     if(matched!==undefined&&token&&pending.get(matched)!==token){equipment.acknowledge(token,d);return;}
     if(matched!==undefined)pending.delete(matched);
   }
-  const decision=equipment.decision(token);
+  const savedOwner=owner,savedEpoch=epoch,review=!local||d.pending===false?equipment.awaitDecision(token):equipment.decision(token);const decision=review&&typeof review.then==='function'?(await review,equipment.decision(token)):review;if(savedOwner!==owner||savedEpoch!==epoch||!canWrite())return;
   if(decision===false){if(!local||d.pending===false)equipment.acknowledge(token,d);paintRows();return;}
   if(local&&d.pending!==false){let pending=saveWaits.get(k);if(!pending)saveWaits.set(k,pending=new Map());pending.set(file,token);paintRows();return;}
   if(!local||d.pending===false)equipment.acknowledge(token,d);
@@ -86,7 +87,7 @@ async function refresh(force=false,verify=false,id=client()){
   const stamp=fingerprint+'|saved:'+(changes.get(k)||0);
   if(!force&&failed.get(k)===stamp)return {status:'retry-manually'};
   if(active){if(fingerprint&&fingerprint!==active.fingerprint)active.dirty=true;if(force)active.forceNext=true;return active.promise;}
-  if((waiting(id)||readerBusy())&&!force){paintRows();return {status:waiting(id)?'waiting-save':'waiting-reader'};}
+  if(waiting(id)&&!force){paintRows();return {status:'waiting-save'};}
   if(!force&&!verify&&remembered(id)?.fingerprint===fingerprint&&(changes.get(k)||0)===(satisfied.get(k)||0))return {status:'cached'};
   // Automatic checks are silent; only an explicit refresh reports progress.
   const progress=(text,error=false)=>{if(force)paint(id,text,error);};

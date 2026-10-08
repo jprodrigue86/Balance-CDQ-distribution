@@ -249,9 +249,9 @@ function renderHome(){
     '<button class="cdq-im-tile inventory" data-view="list"><span class="ico">◇</span><span><strong>Inventaire général</strong><small>Voir tous les articles</small></span></button>'+
     '<button class="cdq-im-tile price" data-view="price"><span class="ico">$</span><span><strong>Liste de prix</strong><small>Prix clients</small></span></button>'+
     '<button class="cdq-im-tile scan" data-view="scanner"><span class="ico">▥</span><span><strong>Scanner</strong><small>Code-barres / QR</small></span></button>'+
+    '<button class="cdq-im-tile history" data-view="history"><span class="ico">◷</span><span><strong>Historique</strong><small>Mouvements récents</small></span></button>'+
     '<button class="cdq-im-tile add" data-move="add"><span class="ico">＋</span><span><strong>Ajouter</strong><small>Entrée de stock</small></span></button>'+
     '<button class="cdq-im-tile remove" data-move="remove"><span class="ico">−</span><span><strong>Retirer</strong><small>Sortie de stock</small></span></button>'+
-    '<button class="cdq-im-tile history" data-view="history"><span class="ico">◷</span><span><strong>Historique</strong><small>Mouvements récents</small></span></button>'+
   '</div>'+
   '<section class="cdq-im-section"><div class="cdq-im-sectionhead"><h3>⌂ Stock par emplacement</h3><button data-view="list">Voir tout</button></div><div class="cdq-im-card">'+
   locs.map(l=>'<button class="cdq-im-location" data-location="'+esc(l.emplacementId)+'"><span class="icon">'+locIcon(l.emplacementId)+'</span><span><strong>'+esc(l.emplacementNom)+'</strong><small>'+((l.emplacementId==='SHOP')?'Stock principal':'Technicien')+'</small></span><span class="count">'+locationTotal(l.emplacementId)+'</span><span class="go">›</span></button>').join('')+

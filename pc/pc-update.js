@@ -50,9 +50,10 @@
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mountFrame,{once:true});else mountFrame();
     return;
   }
-  let reg=null,checking=null,applying=false,latest=null,lastCheck=0,lastActivity=Date.now(),autoTimer=null;
+  let reg=null,checking=null,applying=false,latest=null,lastCheck=0,lastActivity=Date.now(),autoTimer=null,startupWindow=true;
+  setTimeout(()=>{startupWindow=false;},120000);
   function safeIdle(){
-    if(document.visibilityState!=='visible'||Date.now()-lastActivity<15000||pdfOpen())return false;
+    if(document.visibilityState!=='visible'||!startupWindow&&Date.now()-lastActivity<15000||pdfOpen())return false;
     const documents=[document,document.getElementById('app')?.contentDocument].filter(Boolean);
     return documents.every(d=>{
       if(d.querySelector('dialog[open],#legacy-pdf-reader,#cdqReaderFrame,[aria-busy="true"]'))return false;
@@ -63,12 +64,12 @@
       return true;
     });
   }
-  async function transfersIdle(){try{const frame=document.getElementById('app')?.contentWindow;return !frame?.cdqPcUpdateSafetyV2695||await frame.cdqPcUpdateSafetyV2695();}catch{return false;}}
+  async function transfersIdle(){try{const frame=document.getElementById('app')?.contentWindow;return !!frame?.cdqPcUpdateSafetyV2695&&await frame.cdqPcUpdateSafetyV2695();}catch{return false;}}
   function scheduleAutomatic(){
     if(autoTimer||applying||!state.available||legacyPath)return;
     autoTimer=setTimeout(async()=>{autoTimer=null;if(safeIdle()&&await transfersIdle())await apply(true);else scheduleAutomatic();},5000);
   }
-  function activity(){lastActivity=Date.now();}
+  function activity(){lastActivity=Date.now();startupWindow=false;}
   for(const type of ['pointerdown','keydown','input','change'])document.addEventListener(type,activity,true);
   function trackFrame(){const d=document.getElementById('app')?.contentDocument;if(!d||d.__cdqAutoUpdateTrackedV2695)return;d.__cdqAutoUpdateTrackedV2695=true;for(const type of ['pointerdown','keydown','input','change'])d.addEventListener(type,activity,true);}
   function pdfOpen(){if(document.querySelector('#legacy-pdf-reader,#cdqReaderFrame'))return true;try{return !!document.getElementById('app')?.contentDocument?.querySelector('#cdqReaderFrame');}catch{return false;}}

@@ -16,8 +16,6 @@ html.cdq-desktop-v2676 body .bottom-nav{background:var(--cdq-surface)!important;
 html.cdq-desktop-v2676 body .bottom-nav .bottom-nav-item{background:transparent!important;border:1px solid transparent!important;color:var(--cdq-ink)!important;cursor:pointer}
 html.cdq-desktop-v2676 body .bottom-nav .bottom-nav-item:hover{background:var(--cdq-raised)!important;border-color:var(--cdq-line)!important}
 html.cdq-desktop-v2676 body .bottom-nav .bottom-nav-item[data-cdq-current=true]{background:var(--cdq-selected)!important;border-color:var(--cdq-line)!important}
-html.cdq-desktop-v2676 body .bottom-nav .bottom-nav-item[data-workspace-route=home]{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
-html.cdq-desktop-v2676 body .bottom-nav .bottom-nav-item[data-workspace-route=home]::after{display:none!important;background:none!important;box-shadow:none!important}
 html.cdq-desktop-v2676 body .bottom-nav .bottom-nav-item::after{top:8px!important;bottom:8px!important;left:0!important;right:auto!important;width:3px!important;height:auto!important;border-radius:4px!important;box-shadow:none!important}
 html.cdq-desktop-v2676.cdq-mobile-layout body .bottom-nav>.bottom-nav-item[data-workspace-route][data-cdq-current=true]::after{background:var(--cdq-nav-accent)!important;display:block!important}
 html.cdq-desktop-v2676 .bottom-nav .bottom-nav-item:focus-visible{outline:2px solid var(--cdq-nav-accent);outline-offset:-3px}
@@ -36,6 +34,9 @@ html.cdq-desktop-v2676 body .container{background:var(--cdq-surface)!important;c
 #cdqPcHomeHeading [data-pc-home-art] :is(svg,img){width:34px!important;height:34px!important;max-width:none!important;max-height:none!important;object-fit:contain}
 #cdqPcHomeHeading button{width:34px;height:34px;padding:7px;background:var(--cdq-raised);border:1px solid var(--cdq-line);border-radius:7px;color:var(--cdq-ink);cursor:pointer}
 #cdqPcHomeHeading button:disabled{opacity:.35;cursor:default}#cdqPcHomeHeading button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2}
+html.cdq-desktop-v2676 body #cdqPcHomeHeading{grid-template-columns:44px minmax(0,1fr) 44px!important;height:64px!important;min-height:64px!important;margin-left:-16px;margin-right:-16px;padding:10px 14px!important}
+html.cdq-desktop-v2676 body #cdqPcHomeHeading [data-pc-home-art],html.cdq-desktop-v2676 body #cdqPcHomeHeading [data-pc-home-art]>span,html.cdq-desktop-v2676 body #cdqPcHomeHeading [data-pc-home-art] :is(svg,img){width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;max-width:44px!important;max-height:44px!important;object-fit:contain}
+html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675]{grid-column:1!important;grid-row:1!important;position:relative!important;left:auto!important;top:auto!important;transform:none!important;margin:0!important;overflow:hidden!important}
 #cdqPcHomeControls{display:grid;grid-template-columns:minmax(180px,240px) minmax(180px,1fr) auto;align-items:center;gap:10px;margin:0 0 12px}
 html.cdq-desktop-v2676 body .top-bar,html.cdq-desktop-v2676 body #cdqPcHomeControls .top-bar{display:block!important;padding:0!important;width:100%!important;margin:0!important}
 html.cdq-desktop-v2676 body .company-wrapper{display:flex!important;gap:7px!important;align-items:center!important;width:100%!important;margin:0!important}
@@ -89,7 +90,7 @@ html.cdq-desktop-v2676 body :is([data-cdq-heading-back-v2671],[data-cdq-heading-
 html.cdq-desktop-v2676 body :is(.cdq-im-shell,.cdq-invoice-shell,.cdq-cal-shell){width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;display:flex!important;flex-direction:column!important}
 html.cdq-desktop-v2676 body :is(.cdq-im-top,.cdq-invoice-title,.cdq-cal-head){flex:0 0 auto!important;padding:0!important}
 html.cdq-desktop-v2676 body :is(.cdq-im-body,.cdq-cal-body,.cdq-invoice-body){flex:1 1 auto!important;overflow:auto!important;min-height:0!important;max-height:none!important;width:100%!important;max-width:none!important;padding:16px!important;box-sizing:border-box!important}
-html.cdq-desktop-v2676 body .cdq-im-tiles{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))!important;gap:12px!important}
+html.cdq-desktop-v2676 body .cdq-im-tiles{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
 html.cdq-desktop-v2676 body .cdq-im-tile{min-height:88px!important;cursor:pointer}
 html.cdq-desktop-v2676 body .cdq-im-categories{flex-wrap:wrap!important}
 html.cdq-desktop-v2676 body .cdq-im-search{height:40px!important;font-size:14px!important;border-radius:8px!important}
@@ -155,4 +156,6 @@ html.cdq-desktop-v2676 body #filesContainer .file-name-text{flex:0 1 auto!import
 @media(max-width:1000px){html.cdq-desktop-v2676 body #cdqClientActionsV2640{grid-template-columns:repeat(3,minmax(0,1fr))!important}html.cdq-desktop-v2676 body #cdqClientActionsV2640>.cdq-pc-file-search{grid-column:1/-1;grid-row:2;max-width:370px}}
 
 html.cdq-desktop-v2676 body #filesContainer .file-row>.file-today-done-badge{grid-column:5!important;grid-row:1!important;position:static!important;justify-self:center!important;align-self:center!important;width:24px!important;height:24px!important;min-width:24px!important;margin:0!important;font-size:16px!important}
-html.cdq-desktop-v2676 body #filesContainer .file-row>.file-today-done-badge[hidden]{display:none!important}
+html.cdq-desktop-v2676 body #filesContainer .file-row>.file-today-done-badge[hidden]{display:inline-flex!important;visibility:hidden!important}
+
+html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675],html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675]>:is(span,svg,img,div,i){width:44px!important;height:44px!important;min-width:44px!important;max-width:44px!important;min-height:44px!important;max-height:44px!important;object-fit:contain!important}
