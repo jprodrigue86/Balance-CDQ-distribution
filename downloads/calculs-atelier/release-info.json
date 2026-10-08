@@ -1,25 +1,25 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.8.0",
-  "versionCode": 18000,
+  "version": "1.8.1",
+  "versionCode": 18001,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-08T03:09:24.905787+00:00",
+  "releasedAt": "2026-10-08T22:04:34.451555+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "237cceb3e676b8f8062857c2bd3009371fe9a593b38453cea9976c5e8bd08fbb",
-  "htmlSha256": "2a9124fa1ea95602506f5c7655985e50b95d77b57a531d5dc07135ea688f4057",
-  "packageBytes": 16581829,
-  "htmlBytes": 9326541,
+  "packageSha256": "a3750c8a02673de0f31ed27a1a63a44001ab20b6ac8c68d140253dc87329c03a",
+  "htmlSha256": "550236159c43aaaae2985665a3f291282dc7163299ad3f9e2e3b8084d2093e70",
+  "packageBytes": 16616117,
+  "htmlBytes": 9345826,
   "notes": [
-    "Interface modèle 6 avec les couleurs Obsidienne violet : menu latéral PC et barre compacte sur téléphone.",
-    "Icônes en relief embarquées, sans chargement d’images externes; démarrage hors ligne.",
-    "Tous les outils, calculs et saisies existants conservés; résultats ancienne et nouvelle matière clairement identifiés."
+    "Règle de trois : caméra et choix de photo pour remplir Qty planned, Remain Old Qty MapXr et New Mat Qty demand.",
+    "Lecture locale hors ligne; calcul direct pour une ligne lisible, choix du produit si la photo contient plusieurs lignes.",
+    "Chiffres incertains signalés avant calcul, rectangles modifiables et lecture annulable."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.8.0.apk",
+  "androidApk": "Calculs-Atelier-Android-1.8.1.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
     "androidSignature": "APK v2/v3 avec le certificat historique; SDK Android recompilé",
     "physicalDeviceTest": false
   },
   "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée.",
-  "shellVersion": 18000
+  "shellVersion": 18001
 }
