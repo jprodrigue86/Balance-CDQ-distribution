@@ -10,7 +10,7 @@ function role(){try{return String(utilisateurCourantRole||'technicien').toLowerC
 function email(){try{return String(utilisateurCourantEmail||'').trim().toLowerCase()}catch(_){return''}}
 function canWrite(){return role()!=='lecture'}
 function isAdmin(){return role()==='admin'}
-function rpc(name,args){var writeV2631=/^cdqInventory(?:Move|SetPrice|Create|SavePhoto)/.test(name),writeEpochV2631=inventoryEpochV2631,writeOwnerV2631=inventoryScopeV2631();if(writeV2631){inventoryRevisionV2631++;inventoryLoadedAtV2631=0;inventoryPendingV2631=null;historyPendingV2631=null;}return new Promise(function(resolve,reject){try{var r=cdqApiRun().withSuccessHandler(function(result){if(writeV2631){if(writeEpochV2631!==inventoryEpochV2631||writeOwnerV2631!==inventoryScopeV2631()||!inventoryAllowedV2631()){reject(Error('Le compte a changé.'));return;}inventoryRevisionV2631++;inventoryLoadedAtV2631=0;inventoryPendingV2631=null;historyPendingV2631=null;}resolve(result)}).withFailureHandler(reject);var fn=r[name];if(typeof fn!=='function')throw Error('Fonction serveur absente : '+name);fn.apply(r,args||[])}catch(e){reject(e)}})}
+function rpc(name,args){var writeV2631=/^cdqInventory(?:Move|SetPrice|Create|SavePhoto)/.test(name),writeEpochV2631=inventoryEpochV2631,writeOwnerV2631=inventoryScopeV2631();if(writeV2631){inventoryRevisionV2631++;inventoryLoadedAtV2631=0;inventoryPendingV2631=null;historyPendingV2631=null;}return new Promise(function(resolve,reject){try{var r=cdqApiRun().withSuccessHandler(function(result){if(writeV2631){if(writeEpochV2631!==inventoryEpochV2631||writeOwnerV2631!==inventoryScopeV2631()||!inventoryAllowedV2631()){reject(Error('Le compte a changé.'));return;}inventoryRevisionV2631++;inventoryLoadedAtV2631=0;inventoryPendingV2631=null;historyPendingV2631=null;saveInventorySnapshotV2712(result&&result.inventory||result);}resolve(result)}).withFailureHandler(reject);var fn=r[name];if(typeof fn!=='function')throw Error('Fonction serveur absente : '+name);fn.apply(r,args||[])}catch(e){reject(e)}})}
 async function rpcTry(primary,args,fallback,fargs){try{return await rpc(primary,args)}catch(e){if(!fallback)throw e;return rpc(fallback,fargs==null?args:fargs)}}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
 function money(v){var n=Number(v)||0;return n.toLocaleString('fr-CA',{minimumFractionDigits:2,maximumFractionDigits:2})+' $'}
@@ -192,11 +192,31 @@ function back(){if(state.view==='home')return close();if(state.view==='move'&&st
 function searchHome(value){state.query=clean(value);state.category='Tous';state.locationFilter='';state.lowOnly=false;setView('list')}
 var inventoryOwnerV2631='',inventoryEpochV2631=0,inventoryRevisionV2631=0,inventoryLoadedAtV2631=0,inventoryPendingV2631=null,inventoryWarmTimerV2631=0;
 var photoPendingV2631=new Map(),historyPendingV2631=null;
+var inventorySnapshotPendingV2712=null;
+function inventorySnapshotValidV2712(owner,epoch,revision){return owner===inventoryScopeV2631()&&epoch===inventoryEpochV2631&&revision===inventoryRevisionV2631&&inventoryAllowedV2631()}
+function saveInventorySnapshotV2712(inv,owner=inventoryOwnerV2631,epoch=inventoryEpochV2631,revision=inventoryRevisionV2631){
+  if(!Array.isArray(inv&&inv.articles)||!inventorySnapshotValidV2712(owner,epoch,revision)||typeof cdqV19PutRecord!=='function')return;
+  try{Promise.resolve(cdqV19PutRecord('inventory','snapshot-v2712:'+owner,{owner,inventory:inv,savedAt:Date.now()})).catch(()=>{})}catch(_){}
+}
+function restoreInventorySnapshotV2712(){
+  syncInventoryScopeV2631();
+  if(state.inv||!inventoryAllowedV2631()||typeof cdqV19GetRecord!=='function')return Promise.resolve(state.inv);
+  if(inventorySnapshotPendingV2712)return inventorySnapshotPendingV2712;
+  var owner=inventoryOwnerV2631,epoch=inventoryEpochV2631,revision=inventoryRevisionV2631;
+  var pending=Promise.resolve().then(()=>cdqV19GetRecord('inventory','snapshot-v2712:'+owner)).then(record=>{
+    if(!state.inv&&record&&record.owner===owner&&Array.isArray(record.inventory&&record.inventory.articles)&&inventorySnapshotValidV2712(owner,epoch,revision)){
+      state.inv=record.inventory;inventoryLoadedAtV2631=0;
+      if(page&&!page.hidden&&state.view==='home'){render();setStatus(navigator.onLine===false?'Dernière copie disponible hors ligne.':'Actualisation de l’inventaire…')}
+    }
+    return state.inv;
+  }).catch(()=>state.inv).finally(()=>{if(inventorySnapshotPendingV2712===pending)inventorySnapshotPendingV2712=null});
+  inventorySnapshotPendingV2712=pending;return pending;
+}
 function inventoryScopeV2631(){return email()+'|'+String(typeof utilisateurCourantRole==='undefined'?'':utilisateurCourantRole||'')}
 function inventoryAllowedV2631(){return (!window.cdqDriveEntryV2632||window.cdqDriveEntryV2632.canRead())&&!!email()&&(typeof cdqAccessState==='undefined'||cdqAccessState==='ready')}
-function resetInventoryCacheV2631(){inventoryEpochV2631++;inventoryPendingV2631=null;historyPendingV2631=null;inventoryLoadedAtV2631=0;clearTimeout(inventoryWarmTimerV2631);state.inv=null;state.article=null;state.history=[];state.serialServerReady=null;photoCache.clear();photoPendingV2631.clear();inventoryOwnerV2631=inventoryScopeV2631()}
+function resetInventoryCacheV2631(){inventoryEpochV2631++;inventoryPendingV2631=null;inventorySnapshotPendingV2712=null;historyPendingV2631=null;inventoryLoadedAtV2631=0;clearTimeout(inventoryWarmTimerV2631);state.inv=null;state.article=null;state.history=[];state.serialServerReady=null;photoCache.clear();photoPendingV2631.clear();inventoryOwnerV2631=inventoryScopeV2631()}
 function syncInventoryScopeV2631(){if(inventoryOwnerV2631!==inventoryScopeV2631())resetInventoryCacheV2631()}
-function queueInventoryWarmV2631(){clearTimeout(inventoryWarmTimerV2631);var epoch=inventoryEpochV2631;inventoryWarmTimerV2631=setTimeout(()=>{if(epoch===inventoryEpochV2631&&inventoryAllowedV2631()&&navigator.onLine!==false&&page&&!page.hidden)load(false).catch(()=>{})},1800)}
+function queueInventoryWarmV2631(){clearTimeout(inventoryWarmTimerV2631);var epoch=inventoryEpochV2631;inventoryWarmTimerV2631=setTimeout(()=>{if(epoch===inventoryEpochV2631&&inventoryAllowedV2631()&&navigator.onLine!==false&&document.visibilityState!=='hidden')load(false).catch(()=>{})},1800)}
 function load(force){
   syncInventoryScopeV2631();
   if(!inventoryAllowedV2631())return Promise.reject(Error('Connectez-vous avant d’ouvrir Inventaire.'));
@@ -208,6 +228,7 @@ function load(force){
     if(epoch!==inventoryEpochV2631||owner!==inventoryScopeV2631()||!inventoryAllowedV2631()||revision!==inventoryRevisionV2631)return state.inv;
     if(inv&&inv.inventory)inv=inv.inventory;
     state.inv=inv||{articles:[],stocks:[],emplacements:[]};inventoryLoadedAtV2631=Date.now();
+    saveInventorySnapshotV2712(state.inv,owner,epoch,revision);
     if(state.article)state.article=findArticle(state.article.articleId)||state.article;
     if(page&&!page.hidden)setStatus('');return state.inv;
   }).catch(e=>{if(epoch===inventoryEpochV2631&&owner===inventoryScopeV2631()&&page&&!page.hidden)setStatus(e.message||String(e),'error');throw e}).finally(()=>{if(inventoryPendingV2631===pending)inventoryPendingV2631=null});
@@ -461,7 +482,7 @@ function open(){syncInventoryScopeV2631();
       titleEl.textContent='Inventaire';subEl.textContent='Lecture seule';
       body.innerHTML='<section class="cdq-im-card"><h2>Aucune donnée d’inventaire accessible</h2><p>Vous pouvez consulter l’interface. Les articles et les stocks restent masqués sans permission Drive. Aucune modification n’est autorisée.</p></section>';
       setStatus('');position();return;
-    }clearInventoryLabelContext();state.serialServerReady=null;if(typeof cdqAccessState!=='undefined'&&cdqAccessState!=='ready'){if(typeof afficherMessage==='function')afficherMessage('Connectez-vous avant d’ouvrir Inventaire.',false);return}ensurePage();state.view='home';state.query='';state.category='Tous';state.locationFilter='';page.hidden=false;document.documentElement.classList.add('cdq-inventory-modern-open-v2592');position();var displayedV2631=state.inv;if(state.inv)render();else if(body)body.innerHTML='<div class="cdq-im-loader">Chargement de l’inventaire…</div>';load(false).then(()=>{if(page&&!page.hidden&&state.inv!==displayedV2631&&state.view==='home'&&!document.activeElement?.closest('#cdqImBody input'))render()}).catch(()=>{if(page&&!page.hidden&&!state.inv&&state.view==='home')render()})}
+    }clearInventoryLabelContext();state.serialServerReady=null;if(typeof cdqAccessState!=='undefined'&&cdqAccessState!=='ready'){if(typeof afficherMessage==='function')afficherMessage('Connectez-vous avant d’ouvrir Inventaire.',false);return}ensurePage();state.view='home';state.query='';state.category='Tous';state.locationFilter='';page.hidden=false;document.documentElement.classList.add('cdq-inventory-modern-open-v2592');position();var displayedV2631=state.inv;if(state.inv)render();else if(body)body.innerHTML='<div class="cdq-im-loader">Chargement de l’inventaire…</div>';restoreInventorySnapshotV2712();load(false).then(()=>{if(page&&!page.hidden&&state.inv!==displayedV2631&&state.view==='home'&&!document.activeElement?.closest('#cdqImBody input'))render()}).catch(()=>{if(page&&!page.hidden&&!state.inv&&state.view==='home')render()})}
 function close(){if(!page||page.hidden)return;page.hidden=true;document.documentElement.classList.remove('cdq-inventory-modern-open-v2592')}
 function inventoryButton(){var nav=$('.bottom-nav');if(!nav)return null;return $$(':scope > .bottom-nav-item',nav).find(b=>String($('small',b)?.textContent||'').trim()==='Inventaire')||null}
 function install(){

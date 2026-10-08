@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="27.11" data-cdq-iphone-release="824c81a874b99f138c696dbc7e8494d3773affd5c3d9983610b021a07c876f1c">
+<html data-cdq-iphone-version="27.12" data-cdq-iphone-release="cfdb5a6bf0a2a5468123c8b4cb3b2a7dcf608dcebac7d5c3ab4c1ee59128fe64">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqNavigationPreloadV2681">(function(){
@@ -825,7 +825,7 @@ for(const name of ["workspace-v2638.mjs","drive-file-icons-v2710.mjs","navigatio
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.07-v27.11-company-fit">
+<meta name="cdq-package-build" content="2026.10.07-v27.12-menu-inventory">
 
 
 <script id="cdqBridgeV23">
@@ -879,7 +879,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.07-v27.11-company-fit'
+    build:'2026.10.07-v27.12-menu-inventory'
   });
 }
 
@@ -892,7 +892,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.07-v27.11-company-fit'
+        build:'2026.10.07-v27.12-menu-inventory'
       });
     }
   } catch(e) {}
@@ -5911,6 +5911,7 @@ html.cdq-mobile-layout body .container{background:var(--cdq-surface)!important}
 html.cdq-mobile-layout body :is(.cdq-workspace-page,#cdqInvoicePageV2590,#cdqInventoryModernV2592,#cdqCalibrationDialogV2565,#cdqReportOverlayV2578){background:var(--cdq-surface)!important;box-shadow:inset 0 2px 0 var(--cdq-page-accent,var(--cdq-accent))!important}
 #cdqDrivePageV2638{--cdq-page-accent:#ef5a9c}#cdqCalculPageV2638{--cdq-page-accent:#f4a552}#cdqOpportunitiesPageV2638{--cdq-page-accent:#4bdd85}#cdqInventoryModernV2592{--cdq-page-accent:#b878ec}#cdqInvoicePageV2590{--cdq-page-accent:#e9c55d}#cdqCalibrationDialogV2565,#cdqReportOverlayV2578{--cdq-page-accent:#55dbea}
 html.cdq-mobile-layout body [data-cdq-heading-layout-v2675]{background:var(--cdq-surface)!important;border-bottom:1px solid var(--cdq-page-accent,var(--cdq-line))!important}
+html.cdq-mobile-layout body #cdqCalibrationDialogV2565 .cdq-cal-head[data-cdq-heading-layout-v2675]{border-bottom:1px solid #00deee!important}
 html.cdq-desktop-v2676.cdq-mobile-layout body .bottom-nav .bottom-nav-item[data-cdq-current=true]{background:var(--cdq-page)!important;box-shadow:inset 3px 0 var(--cdq-nav-accent)!important;border-color:var(--cdq-line)!important}
 html.cdq-desktop-v2676 body #cdqPcHomeHeading{background:var(--cdq-surface)!important;border-bottom-color:#55caff}
 /* Equal tool slots make the button text and page title share one center. */
@@ -11381,7 +11382,8 @@ function ouvrirCorbeilleDrive(){
   const native=window.BalanceCDQNative||window.parent.BalanceCDQNative;
   let account='';
   try{account=String(typeof window.cdqGoogleDefaultAccountV2294==='function'?window.cdqGoogleDefaultAccountV2294():localStorage.getItem('cdqDefaultGoogleAccountV2294')||'').trim().toLowerCase();}catch(_){}
-  if(native?.openDriveTrash){native.openDriveTrash(account);return;}
+  if(native?.openDriveTrashThemed){native.openDriveTrashThemed(account,window.cdqIconThemesV2514?.getStyle?.()||'current',document.documentElement.dataset.cdqPalette||'dark');return;}
+if(native?.openDriveTrash){native.openDriveTrash(account);return;}
   const trash='https://drive.google.com/drive/trash';
   const url=account?trash+'?authuser='+encodeURIComponent(account):'https://accounts.google.com/AccountChooser?continue='+encodeURIComponent(trash);
   const tab=window.open(url,'_blank');
@@ -11421,7 +11423,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.07-v27.11-company-fit";
+  const CDQ_BUILD = "2026.10.07-v27.12-menu-inventory";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13681,7 +13683,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.07-v27.11-company-fit";
+const CDQ_V19_BUILD = "2026.10.07-v27.12-menu-inventory";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15964,7 +15966,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.07-v27.11-company-fit";
+const CDQ_V20_BUILD = "2026.10.07-v27.12-menu-inventory";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16811,7 +16813,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.07-v27.11-company-fit";
+const CDQ_V21_BUILD = "2026.10.07-v27.12-menu-inventory";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21466,7 +21468,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.07-v27.11-company-fit',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.07-v27.12-menu-inventory',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
