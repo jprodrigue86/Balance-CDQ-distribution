@@ -13,13 +13,16 @@ function resizeTextAppearance(pdf,L,w,old,next){
  ap.set(N('N'),pdf.context.register(stream));
 }
 
+const formHasSecondLoad=f=>!!f.getFieldMaybe('charge_point_1_charge_utilisee_2');
 export function reportGridV2704(pdf){
  const f=pdf.getForm(),r=n=>f.getFieldMaybe(n)?.acroField.getWidgets()[0]?.getRectangle();
  const a=r('charge_point_1_charge_utilisee'),b=r('charge_point_1_charge_contrainte')||r('charge_point_1_tolerance');
  if(!a||!b)return null;
  const floor=a.height<15,pad=floor?1:0;
  const next=r('charge_point_2_charge_utilisee');
- return {gap:Math.max(.8,b.x-a.x-a.width-2*pad),rowGap:Math.max(.8,a.y-next.y-a.height-2*pad),pad};
+ const page=pdf.getPage(0).node,marker=page.entries().find(([k])=>String(k)==='/CDQReportLayoutV2713'),old=page.entries().find(([k])=>String(k)==='/CDQReportLayoutV2704');
+ const meta=marker&&formHasSecondLoad(f)&&old?pdf.context.lookup(old[1]):null,recorded=meta?.entries().find(([k])=>String(k)==='/Gap')?.[1]?.asNumber?.();
+ return {gap:recorded??Math.max(.8,b.x-a.x-a.width-2*pad),rowGap:Math.max(.8,a.y-next.y-a.height-2*pad),pad};
 }
 
 export function sectionCircleV2704(number,x,y,s=1){

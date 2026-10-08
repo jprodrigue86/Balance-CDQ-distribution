@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="27.12" data-cdq-iphone-release="cfdb5a6bf0a2a5468123c8b4cb3b2a7dcf608dcebac7d5c3ab4c1ee59128fe64">
+<html lang="fr" data-cdq-iphone-version="27.13" data-cdq-iphone-release="506d31389ede61d00d93c53cda2aefa42208ac673430b2ade5dc438928fc34ea">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./app-session-v2661.js"></script>
@@ -475,7 +475,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.07-v27.12-menu-inventory';
+const CDQ_PWA_BUILD = '2026.10.08-v27.13-corrections';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1507,7 +1507,7 @@ if(data.type==='CDQ_GOOGLE_AUTH_ERROR'){
   document.getElementById('load-message').textContent=String(data.message||'La connexion Google a échoué. Réessayez.');
 }
 if(data.type==='CDQ_GOOGLE_AUTH_HIDE')masquerConnexionGoogleV42();
-if(String(data.type||'').startsWith('CDQ_OFFLINE_'))cdqOffline.then(controller=>controller.handle(data));
+if(String(data.type||'').startsWith('CDQ_OFFLINE_')||data.type==='CDQ_LOCAL_REPORT_OPEN_V2713')cdqOffline.then(controller=>controller.handle(data));
 if(data.type==='CDQ_ACCESS_STATE' && data.state!=='ready')cdqOffline.then(controller=>controller.lock());
 if((data.type==='CDQ_ACCESS_STATE' && data.state==='ready') || (data.type==='CDQ_SELECTOR_READY' && data.accessState==='ready')){
   replyToSelector(event.source,{type:'CDQ_OFFLINE_PREPARE'});

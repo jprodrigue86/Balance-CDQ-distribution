@@ -8,6 +8,7 @@ import {calibrationIdentity,calibrationRpc} from './calibration-feedback-v2566.m
 import {createDriveCache} from './drive-cache-v2677.mjs';
 import {saleTypesV2699,pipelinesV2699,stagesV2699,encodeOpportunityV2699,decodeOpportunityV2699,driveFileKindV2699} from './opportunity-fields-v2699.mjs';
 import {installDriveActionsV2699} from './drive-actions-v2699.mjs';
+import {createDriveTrashClientV2713} from './drive-trash-v2713.mjs';
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=v=>Number(v).toLocaleString('fr-CA',{maximumFractionDigits:8});
@@ -36,7 +37,7 @@ async function rpc(name,...args){const key=ownerKey();if(!canRead())throw Error(
 const driveCache=createDriveCache({owner:ownerKey,allowed:canRead,fetchFolder:(id,mode)=>rpc(mode==='favorites'?'obtenirFavorisGenerauxCDQV2521':'obtenirDossierGeneralCDQV2521',...(mode==='favorites'?['']:[id,'']))});
 let homeAfterReader=false,homeReaderSource=null,pendingNavigation=null;
 let active='',observedOwner='',queued=false,driveEpoch=0,driveState={mode:'drive',id:GENERAL,lastDriveId:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false},opportunities=[],opportunityEpoch=0;
-const pageByRoute={dossier:'cdqDrivePageV2638',favorites:'cdqDrivePageV2638',calcul:'cdqCalculPageV2638',opportunities:'cdqOpportunitiesPageV2638',report:'cdqReportOverlayV2578',calibration:'cdqCalibrationDialogV2565',inventory:'cdqInventoryModernV2592',invoices:'cdqInvoicePageV2590'};
+const pageByRoute={dossier:'cdqDrivePageV2638',favorites:'cdqDrivePageV2638',calcul:'cdqCalculPageV2638',opportunities:'cdqOpportunitiesPageV2638',report:'cdqReportOverlayV2578',calibration:'cdqCalibrationDialogV2565',inventory:'cdqInventoryModernV2592',invoices:'cdqInvoicePageV2590',trash:'cdqTrashPageV2713'};
 const labels={Accueil:'home',Dossier:'dossier',Dossiers:'dossier',Favoris:'favorites',Rapport:'report',Calibration:'calibration',Calcul:'calcul',Inventaire:'inventory',Factures:'invoices',Opportunités:'opportunities',Corbeille:'trash'};
 const order=[...new Set(Object.values(labels))];
 const navColors={home:'#2466ff',dossier:'#ff49b6',favorites:'#ffd34d',report:'#458fff',calibration:'#00deee',calcul:'#ff8b19',inventory:'#aa4dff',invoices:'#ffd839',opportunities:'#21e966',drive:'#48ceff',trash:'#ff3544'};
@@ -72,7 +73,7 @@ function syncHeadings(){
     $(subtitle,h)?.setAttribute('data-cdq-heading-subtitle-v2671','');
     const layout=$('.cdq-im-head',h)||h;
     layout.setAttribute('data-cdq-heading-layout-v2675','');
-    const key=h.closest('#cdqCalibrationDialogV2565')?'calibration':h.closest('#cdqInventoryModernV2592')?'inventory':h.closest('#cdqInvoicePageV2590')?'invoices':h.closest('#cdqReportOverlayV2578')?'report':h.closest('#cdqCalculPageV2638')?'calcul':h.closest('#cdqOpportunitiesPageV2638')?'opportunities':'dossier';
+    const key=h.closest('#cdqTrashPageV2713')?'trash':h.closest('#cdqCalibrationDialogV2565')?'calibration':h.closest('#cdqInventoryModernV2592')?'inventory':h.closest('#cdqInvoicePageV2590')?'invoices':h.closest('#cdqReportOverlayV2578')?'report':h.closest('#cdqCalculPageV2638')?'calcul':h.closest('#cdqOpportunitiesPageV2638')?'opportunities':'dossier';
     let visual=$(':scope > [data-cdq-heading-icon-v2675]',layout);
     if(!visual){visual=document.createElement('span');visual.dataset.cdqHeadingIconV2675='';visual.setAttribute('aria-hidden','true');layout.prepend(visual);}
     const theme=iconTheme();const source=$('.bottom-nav-item[data-workspace-route="'+key+'"] > :is(span,svg,img,div,i)'),art=source?.outerHTML||workspaceIcon(key,theme);if(visual.dataset.theme!==theme||visual.dataset.art!==art){visual.innerHTML=art;visual.dataset.theme=theme;visual.dataset.art=art;}
@@ -141,9 +142,6 @@ export function navigate(route,{toggle=false,adopt=false,userInitiated=false}={}
   const favorites=route==='favorites';
   if(route==='drive'||favorites)route='dossier';if(route==='home')route='';if(toggle&&active===route)route='';
   if(!calibrationIdentity().email)return;
-  // Trash is a native/external destination, not a page in this workspace.
-  // Keep the current client, folder, form and navigation active on return.
-  if(route==='trash'){try{ouvrirCorbeilleDrive();}catch(e){window.afficherErreur?.(e);}return;}
   const target=$('#'+pageByRoute[route]);
   if(!adopt)hidePages();else if(active&&active!==route){for(const [key,id] of Object.entries(pageByRoute)){const p=$('#'+id);if(p&&p!==target){if(p instanceof HTMLDialogElement&&p.open)p.close();else if(!(p instanceof HTMLDialogElement))p.hidden=true;}}}
   active=route;document.documentElement.classList.toggle('cdq-workspace-open',!!route);document.documentElement.dataset.cdqWorkspace=route;
@@ -156,7 +154,7 @@ export function navigate(route,{toggle=false,adopt=false,userInitiated=false}={}
     else if(route==='calibration')window.cdqCalibrationV2565?.open?.();
     else if(route==='inventory')(window.cdqInventoryModernV2592?.resume||window.cdqInventoryModernV2592?.open)?.();
     else if(route==='invoices')(window.cdqFacturesV2590?.resume||window.cdqFacturesV2590?.open)?.();
-    else if(route==='trash'){try{ouvrirCorbeilleDrive();}catch(e){window.afficherErreur?.(e);}}
+    else if(route==='trash')openTrash();
   }
   measure();syncNav();
   if(route==='report'&&!$('#cdqReportOverlayV2578:not([hidden])')){active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
@@ -186,6 +184,36 @@ function syncHome(){
   if(actions){const hidden=!!active||!companyId()||!canRead();if(actions.hidden!==hidden)actions.hidden=hidden;$('[data-client-folder]',actions).disabled=!canWrite();$('[data-client-report]',actions).disabled=!canWrite();}
 }
 function drivePage(){return page(pageByRoute.dossier,driveState.mode==='favorites'?'Favoris':'Dossiers','Dossiers partagés CDQ');}
+const trashAccount=()=>String(window.cdqGoogleDefaultAccountV2294?.()||localStorage.getItem('cdqDefaultGoogleAccountV2294')||calibrationIdentity().email||'').trim().toLowerCase();
+const trashClient=createDriveTrashClientV2713({identity:trashAccount,allowed:canRead,writable:canWrite,native:()=>window.BalanceCDQNative||window.parent.BalanceCDQNative,oauth:()=>window.google?.accounts?.oauth2||window.parent.google?.accounts?.oauth2,clientId:()=>window.CDQ_GOOGLE_AUTH_CONFIG?.clientId||window.parent.CDQ_GOOGLE_AUTH_CONFIG?.clientId});
+let trashEpoch=0,trashState={owner:'',items:[],next:'',query:'',loading:false,loaded:false};
+function openTrash(){
+ const p=page(pageByRoute.trash,'Corbeille',trashAccount());p.hidden=false;
+ if(!canRead()){status(p,'Accès Drive requis.',true);return;}
+ if(trashState.owner!==trashAccount()){trashClient.reset();trashState={owner:trashAccount(),items:[],next:'',query:'',loading:false,loaded:false};}
+ if(!$('[data-trash-list]',p)){
+  $('.cdq-workspace-body',p).innerHTML='<input class="cdq-workspace-search" data-trash-search type="search" placeholder="Rechercher dans la corbeille" aria-label="Rechercher dans la corbeille"><div class="cdq-workspace-actions"><button type="button" data-trash-refresh>Actualiser</button></div><div class="cdq-workspace-list" data-trash-list></div><div class="cdq-workspace-actions"><button type="button" data-trash-more>Charger la suite</button></div><p data-workspace-status role="status" class="cdq-workspace-status"></p>';
+  $('[data-trash-search]',p).oninput=e=>{trashState.query=e.target.value;renderTrash();};
+  $('[data-trash-refresh]',p).onclick=()=>loadTrash();$('[data-trash-more]',p).onclick=()=>loadTrash(true);
+ }
+ $('.cdq-workspace-head h2 small',p).textContent=trashAccount();renderTrash();if(!trashState.loaded)loadTrash();
+}
+async function loadTrash(append=false){
+ if(trashState.loading)return;const epoch=++trashEpoch,owner=ownerKey(),google=trashAccount(),p=$('#'+pageByRoute.trash);trashState.loading=true;renderTrash();status(p,'Chargement…');
+ try{const r=await trashClient.list(append?trashState.next:'');if(epoch!==trashEpoch||owner!==ownerKey()||google!==trashAccount()||!canRead())return;
+  const seen=new Set();trashState.items=(append?[...trashState.items,...r.files]:r.files).filter(x=>!seen.has(x.id)&&seen.add(x.id));trashState.next=r.next;trashState.loaded=true;status(p,trashState.items.length+' élément(s)'+(r.next?' · autres éléments disponibles':''));
+ }catch(e){if(epoch===trashEpoch&&owner===ownerKey()&&google===trashAccount())status(p,e.message,true);}
+ finally{if(epoch===trashEpoch){trashState.loading=false;renderTrash();}}
+}
+function renderTrash(){
+ const p=$('#'+pageByRoute.trash),list=$('[data-trash-list]',p);if(!list)return;list.replaceChildren();
+ $('[data-trash-refresh]',p).disabled=trashState.loading;$('[data-trash-more]',p).disabled=trashState.loading;$('[data-trash-more]',p).hidden=!trashState.next;
+ const items=trashState.items.filter(x=>x.name.toLocaleLowerCase('fr').includes(trashState.query.toLocaleLowerCase('fr')));
+ for(const item of items){const row=document.createElement('article');row.className='cdq-workspace-row cdq-trash-row-v2713';const kind=driveFileKindV2699({kind:item.folder?'folder':'file',mimeType:item.mimeType,nom:item.name});row.innerHTML='<div class="open">'+driveFileIconV2710(kind.key,kind.label)+'<span><strong>'+esc(item.name)+'</strong><small>'+esc(kind.label)+'</small></span></div><button type="button" data-trash-restore>Restaurer</button>';
+  const b=$('[data-trash-restore]',row);b.disabled=!canWrite()||!item.canRestore;b.onclick=async()=>{if(!canWrite())return;const epoch=trashEpoch,owner=ownerKey(),google=trashAccount();b.disabled=true;status(p,'Restauration…');try{await trashClient.restore(item.id);if(epoch!==trashEpoch||owner!==ownerKey()||google!==trashAccount()||!canRead())return;trashState.items=trashState.items.filter(x=>x.id!==item.id);driveCache.invalidate();renderTrash();status(p,'Élément restauré.');}catch(e){if(epoch===trashEpoch&&owner===ownerKey()&&google===trashAccount()){status(p,e.message,true);b.disabled=!canWrite()||!item.canRestore;}}};list.append(row);
+ }
+ if(!items.length)list.innerHTML='<section class="cdq-workspace-card"><h3>'+esc(trashState.loading?'Chargement…':trashState.query?'Aucun résultat':trashState.loaded?'Corbeille vide':'Corbeille')+'</h3></section>';
+}
 function driveCacheKey(mode,id){return ownerKey()+'|'+mode+'|'+id;}
 function openDrive(mode){
   const p=drivePage();p.hidden=false;if(!canRead()){$('.cdq-workspace-body',p).innerHTML='<section class="cdq-workspace-card"><h3>Lecture seule</h3><p>Les dossiers et favoris restent masqués sans accès Drive.</p></section>';return;}
@@ -275,7 +303,7 @@ function adoptPages(){
   const p=$('#'+pageByRoute[active]);if(p&&(p instanceof HTMLDialogElement?!p.open:p.hidden)){active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
 }
 function restoreDossierControls(){const host=document.querySelector('.desktop-main')||document.body;for(const name of ['selectionBar','filesContainer','sendArea','message']){const el=document.getElementById(name);if(el&&el.closest('#cdqDossierPageV2638'))host.append(el);}}
-function clearPrivate(){pendingNavigation=null;homeAfterReader=false;homeReaderSource=null;driveEpoch++;opportunityEpoch++;driveCache.clear();opportunities=[];driveState={mode:'drive',id:GENERAL,lastDriveId:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false};restoreDossierControls();for(const id of ['cdqDossierPageV2638','cdqDrivePageV2638','cdqOpportunitiesPageV2638'])$('#'+id)?.remove();hidePages();active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
+function clearPrivate(){trashEpoch++;trashClient.reset();trashState={owner:'',items:[],next:'',query:'',loading:false,loaded:false};document.getElementById(pageByRoute.trash)?.remove();pendingNavigation=null;homeAfterReader=false;homeReaderSource=null;driveEpoch++;opportunityEpoch++;driveCache.clear();opportunities=[];driveState={mode:'drive',id:GENERAL,lastDriveId:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false};restoreDossierControls();for(const id of ['cdqDossierPageV2638','cdqDrivePageV2638','cdqOpportunitiesPageV2638'])$('#'+id)?.remove();hidePages();active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
 function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;if(observedOwner!==ownerKey()){observedOwner=ownerKey();clearPrivate();}syncNav();adoptPages();});}
 function returnHome(){
   homeAfterReader=false;homeReaderSource=null;navigate('');
@@ -300,11 +328,11 @@ function back(){
  const calibration=document.querySelector('#cdqCalibrationDialogV2565');
  if(active==='calibration'&&calibration?.open){const b=calibration.querySelector('[data-cal-back]');if(b)b.click();else{calibration.close();navigate('');}return true;}
  if(active==='dossier'){if(driveState.mode==='favorites')openDrive('drive');else if(driveState.crumbs.length>1)loadDrive(false,driveState.crumbs.at(-2).id);else navigate('');return true;}
- if(active==='calcul'||active==='opportunities'){navigate('');return true;}
+ if(active==='calcul'||active==='opportunities'||active==='trash'){navigate('');return true;}
  return false;
 }
 function start(){
-  observedOwner=ownerKey();syncNav();
+  observedOwner=ownerKey();syncNav();window.ouvrirCorbeilleDrive=()=>navigate('trash',{userInitiated:true});
   // Capture at window before legacy navigation handlers. The same route closes,
   // another route switches; unsaved invoice inputs remain in their existing DOM.
   window.addEventListener('click',e=>{const b=e.target.closest?.('.bottom-nav-item');if(!b)return;const route=b.dataset.workspaceRoute||labels[$('small',b)?.textContent.trim()];if(!route)return;e.preventDefault();e.stopImmediatePropagation();if(route==='home'){requestHome();return;}navigate(route,{toggle:true,userInitiated:true});},true);

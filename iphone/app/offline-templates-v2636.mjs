@@ -104,7 +104,8 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   const serial=fn=>{const p=chain.then(fn);chain=p.catch(()=>{});return p;};
   const serialCopy=(id,fn)=>{const key=String(id),previous=copyJobs.get(key)||Promise.resolve();const p=chain.then(()=>previous.catch(()=>{})).then(fn);copyJobs.set(key,p);p.finally(()=>{if(copyJobs.get(key)===p)copyJobs.delete(key);}).catch(()=>{});return p;};
   const allowed=email=>localEmail===email||session?.email===email;
-  function notifyDocument(c){if(session?.email===c?.email&&c?.driveId&&!c.removed)send({type:'CDQ_OFFLINE_DOCUMENT_UPDATED',email:c.email,fileId:c.driveId,blob:c.blob,revision:c.revision,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId});}
+  function notifyLocalReportV2713(c){if(session?.email===c?.email&&c?.kind!=='prepared'&&c?.kind!=='sheet'&&c?.readerRequestId&&!c.removed)send({type:'CDQ_LOCAL_REPORT_UPDATED_V2713',email:c.email,localId:c.id,driveId:c.driveId||'',blob:c.blob,name:c.name,clientId:c.destination.clientId,folderId:c.destination.folderId,uploadId:c.uploadId,editVersion:c.editVersion||0,pending:!c.driveId||c.uploadId!==c.syncedUploadId});}
+  function notifyDocument(c){notifyLocalReportV2713(c);if(session?.email===c?.email&&c?.driveId&&!c.removed)send({type:'CDQ_OFFLINE_DOCUMENT_UPDATED',email:c.email,fileId:c.driveId,blob:c.blob,revision:c.revision,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId});}
   function button(parent,label,fn) {
     const b=document.createElement('button');b.type='button';b.textContent=label;
     b.style.cssText='padding:12px 16px;margin:6px 8px 6px 0;border:1px solid #7896a5;border-radius:9px;background:#193545;color:white;font:inherit';
@@ -274,9 +275,15 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       session={email:data.email,canWrite:!!data.canWrite,protocol:Number(data.protocol)||0};localEmail=data.email;
       await put('state',{id:'profile',...session});navigator.storage?.persist?.().catch(()=>{});
       if(session.protocol<38)requestModel('camion');
-      await refresh();await sync();return;
+      await refresh();for(const c of await all('copies'))if(stamp===epoch&&session?.email===data.email&&c.email===data.email)notifyLocalReportV2713(c);await sync();return;
     }
     const current=session;if(!current||(data.email&&data.email!==current.email))return;
+    if(data.type==='CDQ_LOCAL_REPORT_OPEN_V2713'){
+      try{const c=await get('copies',String(data.localId||''));if(stamp!==epoch||current!==session)return;
+       if(!c||c.email!==current.email||c.removed||c.kind==='prepared'||c.kind==='sheet')throw Error('Copie locale indisponible.');
+       await openPdf({blob:c.blob,name:c.name,fileId:c.id,modeleId:c.modeleId,autoReportName:c.autoReportName===true,readOnly:!current.canWrite,onSave:current.canWrite?(blob,id)=>saveCopy(c.id,current.email,blob,id):null});
+      }catch(e){if(stamp===epoch&&current===session)send({type:'CDQ_LOCAL_REPORT_ERROR_V2713',email:current.email,message:e.message||String(e)});}return;
+    }
     if(['CDQ_OFFLINE_SHEET_LIST','CDQ_OFFLINE_SHEET_STORE','CDQ_OFFLINE_SHEET_REMOVE'].includes(data.type)){
       const reply=payload=>{if(stamp===epoch&&current===session)send({type:'CDQ_OFFLINE_DOCUMENT_RESULT',requestId:data.requestId,...payload});};
       try{

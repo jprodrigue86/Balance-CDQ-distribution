@@ -226,6 +226,10 @@ html.cdq-desktop-v2676.cdq-mobile-layout body #cdqCreateClientV2640 svg{width:20
 html.cdq-mobile-layout body .cdq-workspace-row>.open>.cdq-drive-original-v2710{width:32px!important;height:36px!important}
 
 html.cdq-desktop-v2676 body #cdqPcFileMenu .cdq-action-art-v2655{width:28px!important;height:28px!important;min-width:28px!important}
+
+/* Save indicators keep their space when idle so a file title stays in place. */
+html body #filesContainer .file-pending-v2708[hidden]{display:inline-flex!important;visibility:hidden!important}
+html body #filesContainer .file-row>.file-today-done-badge[hidden]{display:inline-flex!important;visibility:hidden!important}
 </style>
 <script id="cdqReaderArtworkV2710">(function(){
   'use strict';
@@ -265,6 +269,14 @@ html.cdq-desktop-v2676 body #cdqPcFileMenu .cdq-action-art-v2655{width:28px!impo
     login:'<path d="M35 7h20v50H35M7 32h34M29 20l12 12-12 12"/>',
     logout:'<path d="M29 7H9v50h20M23 32h34M45 20l12 12-12 12"/>'
   });
+  Object.assign(colors,{inventory:'#aa4dff',price:'#ffd839',scanner:'#00deee',history:'#b45dff',import:'#48d6ef'});
+  Object.assign(glyphs,{
+   inventory:'<path d="m8 17 24-11 24 11v30L32 59 8 47z"/><path class="detail" d="m8 17 24 12 24-12M32 29v30M20 12l24 11"/>',
+   price:'<path d="M15 10h34v48H15z"/><path class="detail" d="M25 9V5h14v4M32 21v26M39 25c-12-8-23 5-7 9s5 17-7 8"/>',
+   scanner:'<path d="m8 10 38-4 11 23-31 9-7 20H7l9-25z"/><path class="accent" d="m11 14 29-3 4 9-28 7z"/><path class="detail" d="M31 39v19M37 39v19M43 39v19M50 39v19M55 39v19"/>',
+   history:'<circle cx="32" cy="34" r="23"/><path class="detail" d="M32 18v17l12 7M9 14V3M9 14h12"/><path class="light" d="M10 14a26 26 0 0 1 44 6"/>',
+   import:'<path d="M8 41h48v16H8zM20 6h24v30H20z"/><path class="accent" d="M27 20h10v19h9L32 53 18 39h9z"/>'
+  });
   glyphs.share=glyphs.send;
   const tileKeys=['photo','note','rename','copy','move','duplicate','send','favorite','protect','unlock','delete','finish','download','save','cancel','back','settings','search','add','offline'];
   const columns=[18,267,516,765],rows=[100,361,624,896,1168];
@@ -275,7 +287,11 @@ html.cdq-desktop-v2676 body #cdqPcFileMenu .cdq-action-art-v2655{width:28px!impo
     const signature=key+'|'+id+'|'+palette;if(cache.has(signature))return cache.get(signature);
     let result;
     const tile=tileKeys.indexOf(key==='share'?'send':key);
-    if(id==='metal-music'&&tile>=0){
+    const inventoryTile=['inventory','price','scanner','history','import'].indexOf(key);
+    if(id==='metal-music'&&inventoryTile>=0){
+      const asset=new URL('./assets/action-v2713/inventory-metal.png',document.baseURI).href;
+      result='<svg data-action-icon="'+key+'" data-icon-theme="'+id+'" data-artwork-version="2713" data-action-model="metal-cdq-1" viewBox="0 0 512 512" overflow="hidden" aria-hidden="true" focusable="false"><image x="-'+(inventoryTile%3*512)+'" y="-'+(Math.floor(inventoryTile/3)*512)+'" width="1536" height="1024" href="'+asset+'"/></svg>';
+    }else if(id==='metal-music'&&tile>=0){
       const filter='cdq-action-matte-v2710-'+key;
       const asset=new URL('./assets/action-v2710/metal-cdq.png',document.baseURI).href;
       result='<svg data-action-icon="'+key+'" data-icon-theme="'+id+'" data-artwork-version="2710" data-action-model="metal-cdq-1" viewBox="0 0 244 218" overflow="hidden" aria-hidden="true" focusable="false"><defs><filter id="'+filter+'" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 8 8 8 0 -0.9"/></filter></defs><image x="-'+columns[tile%4]+'" y="-'+rows[Math.floor(tile/4)]+'" width="1024" height="1536" href="'+asset+'" filter="url(#'+filter+')"/></svg>';
@@ -307,7 +323,7 @@ html.cdq-desktop-v2676 body #cdqPcFileMenu .cdq-action-art-v2655{width:28px!impo
  const root=document.documentElement;
  const ids={menu:'settings',back:'back',minus:'minus',plus:'add',fit:'expand',quitMenu:'finish',clientNoteButton:'note',clientPhotoButton:'photo',cdqV19OfflineStatus:'offline',cdqTopDisplayButtonV2204:'settings',cdqCreateClientV2640:'rename',cdqPcFileSearch:'search',cdqImClose:'finish',cdqImBack:'back',cdqImRefresh:'refresh',cdqDiagnosticSettingsButton:'settings',cdqAdminSettingsButton:'settings',cdqInstallShareSettingsButton:'share'};
  const attributes={'data-pc-clear-client':'finish','data-cdq-heading-close-v2671':'finish','data-cdq-heading-back-v2671':'back','data-workspace-close':'finish','data-inv-close':'finish','data-report-close':'finish','data-cal-close':'finish','data-report-back':'back','data-cal-back':'back','data-drive-refresh':'refresh','data-drive-back':'back','data-op-save':'save'};
- const rules=[[/déprot|unlock/i,'unlock'],[/protég|protect/i,'protect'],[/hors ligne|offline/i,'offline'],[/photo|camera|gallery/i,'photo'],[/renommer|rename|modifier|éditer|edit/i,'rename'],[/dupliquer|duplicate/i,'duplicate'],[/copier|copy/i,'copy'],[/déplacer|move/i,'move'],[/supprimer|delete|trash/i,'delete'],[/annuler|cancel/i,'cancel'],[/fermer|close|finish/i,'finish'],[/retour|revenir|back/i,'back'],[/télécharger|download|export/i,'download'],[/enregistrer|sauvegarder|save/i,'save'],[/rechercher|search/i,'search'],[/réglages|paramètres|settings|display/i,'settings'],[/actualiser|rafraîchir|refresh|reload/i,'refresh'],[/imprimer|print/i,'print'],[/favori|favorite|\bpin\b/i,'favorite'],[/ajouter|nouveau|nouvelle|add|create/i,'add'],[/envoyer|send/i,'send'],[/partager|share/i,'share'],[/note/i,'note'],[/zoom.*moins|réduire|minus/i,'minus'],[/zoom.*plus|agrandir|plus/i,'add'],[/filtrer|filter/i,'filter'],[/déconnexion|logout/i,'logout'],[/connexion|login/i,'login']];
+ const rules=[[/importer|import/i,'import'],[/scanner|code.barres|barcode/i,'scanner'],[/historique|history/i,'history'],[/liste de prix/i,'price'],[/inventaire général/i,'inventory'],[/déprot|unlock/i,'unlock'],[/protég|protect/i,'protect'],[/hors ligne|offline/i,'offline'],[/photo|camera|gallery/i,'photo'],[/renommer|rename|modifier|éditer|edit/i,'rename'],[/dupliquer|duplicate/i,'duplicate'],[/copier|copy/i,'copy'],[/déplacer|move/i,'move'],[/supprimer|delete|trash/i,'delete'],[/annuler|cancel/i,'cancel'],[/fermer|close|finish/i,'finish'],[/retour|revenir|back/i,'back'],[/télécharger|download|export/i,'download'],[/enregistrer|sauvegarder|save/i,'save'],[/rechercher|search/i,'search'],[/réglages|paramètres|settings|display/i,'settings'],[/actualiser|rafraîchir|refresh|reload/i,'refresh'],[/imprimer|print/i,'print'],[/favori|favorite|\bpin\b/i,'favorite'],[/ajouter|nouveau|nouvelle|add|create/i,'add'],[/envoyer|send/i,'send'],[/partager|share/i,'share'],[/note/i,'note'],[/zoom.*moins|réduire|minus/i,'minus'],[/zoom.*plus|agrandir|plus/i,'add'],[/filtrer|filter/i,'filter'],[/déconnexion|logout/i,'logout'],[/connexion|login/i,'login']];
  function theme(){
   if(window.cdqIconThemesV2514?.getStyle)return window.cdqIconThemesV2514.getStyle();
   try{if(parent!==window&&parent.cdqIconThemesV2514?.getStyle)return parent.cdqIconThemesV2514.getStyle()}catch(_){}
@@ -317,6 +333,7 @@ html.cdq-desktop-v2676 body #cdqPcFileMenu .cdq-action-art-v2655{width:28px!impo
  function palette(){return root.dataset.cdqPalette||root.dataset.readerTheme||'dark'}
  function action(button){
   if(ids[button.id])return ids[button.id];
+  if(button.matches('.cdq-im-tile,.cdq-im-scanmini')){const key={list:'inventory',price:'price',scanner:'scanner',history:'history'}[button.dataset.view];if(key)return key;}
   for(const [attribute,key]of Object.entries(attributes))if(button.hasAttribute(attribute))return key;
   if(button.classList.contains('cdq-settings-close-v2708'))return 'finish';
   const text=(button.getAttribute('aria-label')||button.title||button.textContent||'').trim();
@@ -340,9 +357,10 @@ html.cdq-desktop-v2676 body #cdqPcFileMenu .cdq-action-art-v2655{width:28px!impo
   for(const button of document.querySelectorAll('button,[role="button"]')){
    if(button.closest('.bottom-nav,.cdq-icon-choice-v2514,[data-cdq-heading-icon-v2675],[data-pc-home-art],.cdq-preview-item-v2651')||button.matches('.cdq-swipe-action,[data-file-action]'))continue;
    const key=action(button);if(!key)continue;
-   let icon=button.querySelector(':scope > svg:not([data-file-artwork]),:scope > [data-cdq-home-icon],:scope > .action-icon,:scope > .ico,:scope > .cdq-secondary-icon-v2710');
+   let icon=button.querySelector(':scope > svg:not([data-file-artwork]),:scope > [data-cdq-home-icon],:scope > .action-icon,:scope > .ico,:scope > .icon,:scope > .cdq-secondary-icon-v2710');
    if(!icon&&/^[×✕Xx+−–✎⚙★☆↻←]+$/.test(button.textContent.trim())){icon=document.createElement('span');button.replaceChildren(icon);}
    if(!icon&&button.firstChild?.nodeType===Node.TEXT_NODE&&/^\s*[←↻★☆⚙×✕+−–]\s+/.test(button.firstChild.nodeValue)){const label=button.firstChild;label.nodeValue=' '+label.nodeValue.replace(/^\s*[←↻★☆⚙×✕+−–]\s+/,'');icon=document.createElement('span');button.insertBefore(icon,label);}
+   if(!icon&&['photo','import','scanner','history','inventory','price'].includes(key)){icon=document.createElement('span');if(button.firstChild?.nodeType===Node.TEXT_NODE)button.firstChild.nodeValue=button.firstChild.nodeValue.replace(/^\s*[📷▧▥◇◷]\s*/u,'');button.prepend(icon);}
    if(icon)paintIcon(icon,key);
   }
   for(const icon of document.querySelectorAll('.cdq-pc-file-search > svg'))paintIcon(icon,'search');

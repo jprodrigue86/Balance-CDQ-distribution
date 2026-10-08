@@ -162,3 +162,9 @@ body [data-cdq-heading-back-v2671],body [data-cdq-heading-layout-v2675]>.cdq-cal
 body #cdqInventoryModernV2592 #cdqImBack,body #cdqReportOverlayV2578 [data-cdq-heading-layout-v2675] [data-report-back],body #cdqCalibrationDialogV2565 [data-cdq-heading-layout-v2675] [data-cal-back]{display:none!important}
 body #cdqInvoicePageV2590 .cdq-invoice-tech{margin-top:12px!important}
 .cdq-corners-v2677{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}.cdq-corner-v2677{border:1px solid var(--cdq-line,#586875);border-radius:12px;background:var(--cdq-raised,#17222c);padding:16px;display:grid;gap:9px;min-width:0}.cdq-corner-v2677 input{width:100%;box-sizing:border-box}.cdq-corner-v2677 small{min-height:1.3em}.cdq-corner-v2677[data-corner=rearLeft]{grid-row:1}.cdq-corner-v2677[data-corner=rearRight]{grid-row:1;grid-column:2}
+
+#cdqTrashPageV2713{--cdq-accent:#ff3544}
+#cdqTrashPageV2713 .cdq-workspace-head{border-bottom-color:#ff3544!important}
+.cdq-trash-row-v2713 .open{min-width:0;flex:1;display:flex;align-items:center;gap:12px}
+.cdq-trash-row-v2713 .open span{min-width:0;overflow-wrap:anywhere}
+.cdq-trash-row-v2713 [data-trash-restore]{flex:0 0 auto}

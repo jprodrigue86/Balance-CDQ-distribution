@@ -11,17 +11,19 @@ export async function equipmentSnapshotV2697(blob,L){
  if(!(blob instanceof Blob))throw Error('PDF absent');const pdf=await L.PDFDocument.load(await blob.arrayBuffer(),{updateMetadata:false});return equipmentValuesV2697(pdf.getForm());
 }
 export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,storage=localStorage}){
- let owner='',data={reports:{},saves:{}},scan=null;
+ let owner='',data={reports:{},saves:{}},scan=null;const analyses=new Map();
  const storageKey=()=> 'cdqEquipmentListV2703:'+owner;
  function sync(){const email=identity();if(owner===email)return;owner=email;try{data=JSON.parse(storage.getItem(storageKey())||'null')||{reports:{},saves:{}};}catch{data={reports:{},saves:{}}}data.reports??={};data.saves??={};scan=null;}
  function persist(){try{storage.setItem(storageKey(),JSON.stringify(data));}catch{}}
  const stamp=f=>JSON.stringify([f.modifiedTime||f.dateModification||f.revision||'',String(f.version||''),f.md5Checksum||f.sha256Checksum||'']);
  async function snapshot(blob){return equipmentSnapshotV2697(blob,await library());}
- async function noteSave(rec,blob,saveId){
+ async function analyzeSave(rec,blob,saveId){
   sync();const email=owner,before=await snapshot(rec.blob),after=await snapshot(blob);if(email!==identity())throw Error('Le compte a changé.');
   const prior=data.reports[rec.id],previous=data.saves[saveId],changed=!!(previous?.changed||before!==after||Object.values(data.saves).some(s=>s.fileId===String(rec.id)&&s.changed&&!s.acknowledged&&!s.retired));data.reports[rec.id]={...prior,signature:after,local:true,saveId,confirmedRevision:''};data.saves[saveId]={...previous,changed,fileId:String(rec.id),at:Date.now()};
   const entries=Object.entries(data.saves).sort(([,a],[,b])=>b.at-a.at);data.saves=Object.fromEntries(entries.slice(0,1000));persist();return changed;
  }
+ function noteSave(rec,blob,saveId){const job=analyzeSave(rec,blob,saveId);analyses.set(saveId,job);job.finally(()=>{if(analyses.get(saveId)===job)analyses.delete(saveId);}).catch(()=>{});return job;}
+ function awaitDecision(saveId){const job=analyses.get(saveId);return job?job.catch(()=>{}).then(()=>decision(saveId)):decision(saveId);}
  function decision(saveId){sync();const save=data.saves[saveId];return save?.acknowledged||save?.retired?false:save?.changed;}
  function retire(saveId){sync();const save=data.saves[saveId];if(save){save.retired=true;if(data.reports[save.fileId]?.saveId===saveId)delete data.reports[save.fileId];persist()}}
  function acknowledge(saveId,meta={}){sync();const save=data.saves[saveId];if(save){save.acknowledged=true;const report=data.reports[save.fileId];if(report?.saveId===saveId){report.confirmedRevision=String(meta.modifiedTime||meta.dateModification||meta.revision||'');if(report.confirmedRevision){report.stamp=stamp(meta);report.local=false;}}persist();}}
@@ -43,5 +45,5 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
    }catch{ /* Leave the previous fingerprint intact; the next Drive event can retry. */ }
   }return changed;})();scan=task;try{return await task;}finally{if(scan===task)scan=null;}
  }
- return {noteSave,decision,acknowledge,retire,signature,inspect};
+ return {noteSave,decision,awaitDecision,acknowledge,retire,signature,inspect};
 }

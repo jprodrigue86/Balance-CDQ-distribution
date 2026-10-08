@@ -1,5 +1,5 @@
 // Preserve typed zeros and require the measurement precision shown by e.
-export const isCorrectionReadingV2695=name=>/^(?:charge_point_\d+_(?:avant|apres)_correction|excentricite_(?:avant|apres)_.+|B4_.+_(?:Avant|Apres)Correction)$/.test(name||'');
+export const isCorrectionReadingV2695=name=>/^(?:charge_point_\d+_(?:avant|apres)_correction(?:_2)?|excentricite_(?:avant|apres)_.+|B4_.+_(?:Avant|Apres)Correction)$/.test(name||'');
 export function decimalPrecisionErrorV2695(value,echelon){
  function clean(v){return String(v===null||v===undefined?'':v).replace(/[\s\u00a0\u202f]/g,'').replace(',','.');}
  var e=clean(echelon),v=clean(value),number=/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/;
