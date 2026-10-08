@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.10" data-cdq-pc-release="f9e48690af31bc8b196460b470c7c3c102b41b410dce1e26d2c7d33923fcf385">
+<html data-cdq-pc-version="27.11" data-cdq-pc-release="f36bf95a97db9a1ca34691dc85fcfb9d37554d633dd3799bcbbab82bd4faa5e4">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -829,7 +829,7 @@ for(const name of ["workspace-v2638.mjs","drive-file-icons-v2710.mjs","navigatio
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.07-v27.10-icons-black">
+<meta name="cdq-package-build" content="2026.10.07-v27.11-company-fit">
 
 
 <script id="cdqBridgeV23">
@@ -883,7 +883,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.07-v27.10-icons-black'
+    build:'2026.10.07-v27.11-company-fit'
   });
 }
 
@@ -896,7 +896,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.07-v27.10-icons-black'
+        build:'2026.10.07-v27.11-company-fit'
       });
     }
   } catch(e) {}
@@ -5922,6 +5922,15 @@ html.cdq-mobile-layout body .company-wrapper.company-wrapper{display:grid!import
 html.cdq-mobile-layout body .company-wrapper.company-wrapper::before{content:'';grid-column:1;grid-row:1}
 html.cdq-mobile-layout body .company-wrapper.company-wrapper #companyButton{grid-column:2;grid-row:1;width:100%!important;min-width:0!important;box-sizing:border-box!important;justify-self:stretch}
 html.cdq-mobile-layout body .company-wrapper.company-wrapper #cdqCreateClientV2640{grid-column:3;grid-row:1}
+/* Phones use the entire row; the edit button owns only its actual width. */
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body .company-wrapper.company-wrapper{grid-template-columns:minmax(0,1fr) auto!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body .company-wrapper.company-wrapper::before{content:none}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body .company-wrapper.company-wrapper #companyButton{grid-column:1}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body .company-wrapper.company-wrapper #cdqCreateClientV2640{grid-column:2}
+html.cdq-mobile-layout body #cdqCreateClientV2640{box-sizing:border-box!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important}
+html.cdq-mobile-layout body #cdqCreateClientV2640>span.cdq-secondary-icon-v2710{width:100%!important;height:100%!important;min-width:0!important;min-height:0!important}
+html.cdq-mobile-layout body #cdqCreateClientV2640 svg{width:66%!important;height:66%!important;min-width:0!important;min-height:0!important;max-width:66%!important;max-height:66%!important}
+html.cdq-desktop-v2676.cdq-mobile-layout body #cdqCreateClientV2640 svg{width:20px!important;height:20px!important;min-width:20px!important;min-height:20px!important;max-width:20px!important;max-height:20px!important}
 .cdq-secondary-icon-v2710{display:inline-flex!important;align-items:center;justify-content:center;flex-shrink:0;vertical-align:middle;width:24px;height:24px;line-height:1;background:none!important;text-shadow:none!important;pointer-events:none}
 .cdq-secondary-icon-v2710>svg{display:block!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important}
 .cdq-drive-original-v2710{display:block;flex:0 0 auto;background:none!important;filter:none!important}
@@ -11448,7 +11457,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.07-v27.10-icons-black";
+  const CDQ_BUILD = "2026.10.07-v27.11-company-fit";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13708,7 +13717,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.07-v27.10-icons-black";
+const CDQ_V19_BUILD = "2026.10.07-v27.11-company-fit";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15991,7 +16000,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.07-v27.10-icons-black";
+const CDQ_V20_BUILD = "2026.10.07-v27.11-company-fit";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16838,7 +16847,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.07-v27.10-icons-black";
+const CDQ_V21_BUILD = "2026.10.07-v27.11-company-fit";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -20746,7 +20755,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     each('.company-button', {'font-size':px(17 * unit * textScale),'padding-left':px(12 * unit),'padding-right':px(10 * unit)});
     each('.company-reset-button', {'width':px(29 * unit),'min-width':px(29 * unit),'max-width':px(29 * unit),
       'flex':'0 0 '+px(29 * unit),'font-size':px(top),'padding-left':'0','padding-right':'0'});
-    icon('.company-reset-button svg', top);
+    icon('.company-reset-button svg', Math.min(top,19 * unit));
     each('.app-header', {'height':px(57 * unit),'min-height':'0','padding':'0','margin':px(9 * reference)+' 0 0'});
     each('.header-metal-banner', {'height':'100%','width':'100%','object-fit':'contain'});
     root.style.setProperty('--cdq-file-action-height-v2655',px(Math.max(44*unit,22*unit*iconScale+12*unit*textScale+9*unit)));
@@ -21492,7 +21501,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.07-v27.10-icons-black',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.07-v27.11-company-fit',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
