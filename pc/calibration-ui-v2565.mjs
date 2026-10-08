@@ -54,7 +54,7 @@ function ensureNav(){
     b.dataset.calTheme=selectedTheme;
   }
   const label=$('small',b),color='var(--cdq-nav-accent)' ;
-  if(label){setImportant(label,'color',color);setImportant(label,'-webkit-text-fill-color',color);setImportant(label,'text-shadow',selectedTheme==='minimal'?'none':'0 0 8px #11ac8c');}
+  if(label){setImportant(label,'color','var(--cdq-ink)');setImportant(label,'-webkit-text-fill-color','var(--cdq-ink)');setImportant(label,'text-shadow','none');}
   // Keep all destinations available in clients as well as on the home screen.
   b.hidden=false;
   const order=['Accueil','Dossier','Favoris','Rapport','Calibration','Calcul','Inventaire','Factures','Opportunités','Drive général','Corbeille'];

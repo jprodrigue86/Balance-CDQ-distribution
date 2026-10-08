@@ -159,3 +159,13 @@ html.cdq-desktop-v2676 body #filesContainer .file-row>.file-today-done-badge{gri
 html.cdq-desktop-v2676 body #filesContainer .file-row>.file-today-done-badge[hidden]{display:inline-flex!important;visibility:hidden!important}
 
 html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675],html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675]>:is(span,svg,img,div,i){width:44px!important;height:44px!important;min-width:44px!important;max-width:44px!important;min-height:44px!important;max-height:44px!important;object-fit:contain!important}
+
+/* 27.17: one large header artwork slot; text never inherits the icon glow. */
+html.cdq-desktop-v2676 body #cdqPcHomeHeading{grid-template-columns:56px minmax(0,1fr) 56px!important;height:80px!important;min-height:80px!important}
+html.cdq-desktop-v2676 body #cdqPcHomeHeading [data-pc-home-art],html.cdq-desktop-v2676 body #cdqPcHomeHeading [data-pc-home-art]>span,html.cdq-desktop-v2676 body #cdqPcHomeHeading [data-pc-home-art] :is(svg,img){width:56px!important;height:56px!important;min-width:56px!important;min-height:56px!important;max-width:56px!important;max-height:56px!important;object-fit:contain!important}
+html.cdq-desktop-v2676 body [data-cdq-heading-layout-v2675]{grid-template-columns:56px minmax(0,1fr) 56px!important;min-height:80px!important}
+html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675],html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675]>:is(span,svg,img,div,i){width:56px!important;height:56px!important;min-width:56px!important;min-height:56px!important;max-width:56px!important;max-height:56px!important;object-fit:contain!important}
+html.cdq-desktop-v2676.cdq-mobile-layout body .bottom-nav>.bottom-nav-item[data-workspace-route] small,html.cdq-desktop-v2676.cdq-mobile-layout body .bottom-nav>.bottom-nav-item[data-workspace-route] small *{color:var(--cdq-ink)!important;-webkit-text-fill-color:var(--cdq-ink)!important;text-shadow:none!important;filter:none!important;animation:none!important;transition:none!important;box-shadow:none!important}
+
+html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675] :is(span,svg,img){width:56px!important;height:56px!important;min-width:56px!important;min-height:56px!important;max-width:56px!important;max-height:56px!important}
+html.cdq-desktop-v2676.cdq-mobile-layout body .bottom-nav>.bottom-nav-item[data-workspace-route]{filter:none!important}

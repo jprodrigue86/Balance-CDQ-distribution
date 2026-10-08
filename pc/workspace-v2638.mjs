@@ -8,7 +8,7 @@ import {calibrationIdentity,calibrationRpc} from './calibration-feedback-v2566.m
 import {createDriveCache} from './drive-cache-v2677.mjs';
 import {saleTypesV2699,pipelinesV2699,stagesV2699,encodeOpportunityV2699,decodeOpportunityV2699,driveFileKindV2699} from './opportunity-fields-v2699.mjs';
 import {installDriveActionsV2699} from './drive-actions-v2699.mjs';
-import {createDriveTrashClientV2713} from './drive-trash-v2713.mjs';
+import {createDriveTrashClientV2713} from './pc-drive-trash-v2717.mjs';
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=v=>Number(v).toLocaleString('fr-CA',{maximumFractionDigits:8});
@@ -81,7 +81,7 @@ function syncHeadings(){
     // actual image and tile coordinates into the heading's independent square.
     if(source?.classList.contains('cdq-icon-host-v2514')){
       const sprite=visual.firstElementChild,paint=getComputedStyle(source,'::after');
-      const styles={'background-image':paint.backgroundImage,'background-size':paint.backgroundSize,'background-position':paint.backgroundPosition,'background-repeat':'no-repeat','clip-path':paint.clipPath,filter:paint.filter,'visibility':'visible',width:'44px',height:'44px','min-width':'44px','max-width':'44px','min-height':'44px','max-height':'44px'};
+      const styles={'background-image':paint.backgroundImage,'background-size':paint.backgroundSize,'background-position':paint.backgroundPosition,'background-repeat':'no-repeat','clip-path':paint.clipPath,filter:paint.filter,'visibility':'visible',width:'56px',height:'56px','min-width':'56px','max-width':'56px','min-height':'56px','max-height':'56px'};
       for(const [property,value]of Object.entries(styles))if(sprite.style.getPropertyValue(property)!==value)sprite.style.setProperty(property,value,'important');
     }
     const original=$(':scope > .cdq-calibration-indicator',layout);if(original)original.hidden=true;
@@ -194,7 +194,7 @@ function openTrash(){
  if(!$('[data-trash-list]',p)){
   $('.cdq-workspace-body',p).innerHTML='<input class="cdq-workspace-search" data-trash-search type="search" placeholder="Rechercher dans la corbeille" aria-label="Rechercher dans la corbeille"><div class="cdq-workspace-actions"><button type="button" data-trash-refresh>Actualiser</button></div><div class="cdq-workspace-list" data-trash-list></div><div class="cdq-workspace-actions"><button type="button" data-trash-more>Charger la suite</button></div><p data-workspace-status role="status" class="cdq-workspace-status"></p>';
   $('[data-trash-search]',p).oninput=e=>{trashState.query=e.target.value;renderTrash();};
-  $('[data-trash-refresh]',p).onclick=()=>loadTrash();$('[data-trash-more]',p).onclick=()=>loadTrash(true);
+  $('[data-trash-refresh]',p).onclick=async()=>{try{await trashClient.authorize();await loadTrash();}catch(e){status(p,e.message,true);}};$('[data-trash-more]',p).onclick=()=>loadTrash(true);
  }
  $('.cdq-workspace-head h2 small',p).textContent=trashAccount();renderTrash();if(!trashState.loaded)loadTrash();
 }

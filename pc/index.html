@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-pc-version="27.16" data-cdq-pc-release="f8600024553dae64b2faac17b9b354aa501062ea9b90d4a977858d9d7a54a2c3">
+<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.17" data-cdq-pc-release="e01f937efbe7cd701718e4bc83c639f4fd303f5fa3490c849d8539e4aa9d738b">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./app-session-v2661.js"></script>
@@ -624,7 +624,7 @@ let loadingTimer = null;
 let hideLoadingTimer = null;
 let loadGeneration = 0;
 document.getElementById('open-direct').href = cdqFreshAppUrl('direct');
-if(!cdqDeferReloadV2679())app.src = cdqFreshAppUrl('startup');
+window.cdqPcStartupReady.then(()=>{if(!cdqDeferReloadV2679())app.src=cdqFreshAppUrl('startup');});
 
 let cdqGoogleChallengeV42 = null;
 let cdqGoogleRenderingV42 = false;
@@ -1746,7 +1746,7 @@ document.getElementById('google-connect').addEventListener('click',()=>{
 if (!navigator.onLine) afficherConnexionGoogle(false);
 else {
   afficherMurChargement();
-  armLoadingTimeout();
+  window.cdqPcStartupReady.then(()=>armLoadingTimeout());
 }
 </script>
 </body>

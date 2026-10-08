@@ -50,7 +50,33 @@
     if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mountFrame,{once:true});else mountFrame();
     return;
   }
-  let reg=null,checking=null,applying=false,latest=null,lastCheck=0,lastActivity=Date.now(),autoTimer=null,startupWindow=true;
+  let reg=null,checking=null,applying=false,latest=null,lastCheck=0,lastActivity=Date.now(),autoTimer=null,startupWindow=true,installFailed=false;
+  let startupPending=document.documentElement.dataset.cdqPcBootGateV2717==='1',resolveStartup;
+  window.cdqPcStartupReady=new Promise(resolve=>{resolveStartup=resolve;});
+  function startupLabel(){if(startupPending)text(document.querySelector('#loading .loading-label'),state.message);}
+  document.addEventListener('DOMContentLoaded',startupLabel,{once:true});
+  function finishStartup(){startupPending=false;document.documentElement.dataset.cdqPcStartupV2717='ready';text(document.querySelector('#loading .loading-label'),'Chargement');resolveStartup();}
+  async function startOnLaunch(){
+    document.documentElement.dataset.cdqPcStartupV2717='checking';
+    await check(true);
+    if(!latest||latest.release===current){finishStartup();return;}
+    if(legacyPath){location.replace(canonicalBase.href);return;}
+    document.documentElement.dataset.cdqPcStartupV2717='downloading';
+    status('Téléchargement de la mise à jour PC '+latest.version+'…',false,true);
+    const deadline=Date.now()+180000;
+    while(Date.now()<deadline&&!installFailed){
+      if(await waiting()){
+        if(pdfOpen()){finishStartup();scheduleAutomatic();return;}
+        applying=true;document.documentElement.dataset.cdqPcStartupV2717='activating';
+        status('Installation de la mise à jour PC…',false,true);
+        reg.waiting.postMessage({type:'CDQ_PC_ACTIVATE',release:latest.release});
+        // The verified worker reloads this shell; the old workspace never opens.
+        return;
+      }
+      await new Promise(resolve=>setTimeout(resolve,250));
+    }
+    status('Mise à jour interrompue. La version actuelle reste disponible.');finishStartup();
+  }
   setTimeout(()=>{startupWindow=false;},120000);
   function safeIdle(){
     if(document.visibilityState!=='visible'||!startupWindow&&Date.now()-lastActivity<15000||pdfOpen())return false;
@@ -66,7 +92,7 @@
   }
   async function transfersIdle(){try{const frame=document.getElementById('app')?.contentWindow;return !!frame?.cdqPcUpdateSafetyV2695&&await frame.cdqPcUpdateSafetyV2695();}catch{return false;}}
   function scheduleAutomatic(){
-    if(autoTimer||applying||!state.available||legacyPath)return;
+    if(startupPending||autoTimer||applying||!state.available||legacyPath)return;
     autoTimer=setTimeout(async()=>{autoTimer=null;if(safeIdle()&&await transfersIdle())await apply(true);else scheduleAutomatic();},5000);
   }
   function activity(){lastActivity=Date.now();startupWindow=false;}
@@ -77,7 +103,7 @@
     const frame=document.getElementById('app');
     if(frame?.contentWindow)frame.contentWindow.postMessage({type:'CDQ_PC_STATUS',state},origin);
   }
-  function status(message,available=false,busy=false){state={message,available,checking:busy};post();if(available)scheduleAutomatic();}
+  function status(message,available=false,busy=false){state={message,available,checking:busy};post();startupLabel();if(available)scheduleAutomatic();}
   async function waiting(){
     if(reg?.waiting&&latest&&latest.release!==current){
       const expected=latest.release,worker=reg.waiting;
@@ -90,7 +116,7 @@
     if(checking)return checking;
     if(!force&&Date.now()-lastCheck<30000){post();return;}
     if(navigator.onLine===false){status('Hors ligne : connectez-vous à Internet pour vérifier les mises à jour.');return;}
-    lastCheck=Date.now();status('Vérification de la mise à jour PC…',false,true);
+    installFailed=false;lastCheck=Date.now();status('Vérification de la mise à jour PC…',false,true);
     checking=(async()=>{
       try{
         if(legacyPath){
@@ -108,7 +134,7 @@
             const worker=reg.installing;if(!worker)return;
             worker.addEventListener('statechange',async()=>{
               if(worker.state==='installed'){if(!(await waiting())&&latest?.release===current)status('Version PC '+version+' à jour.');}
-              if(worker.state==='redundant')status('La préparation de la mise à jour a échoué. Votre version actuelle reste disponible. Réessayez.');
+              if(worker.state==='redundant'){installFailed=true;status('La préparation de la mise à jour a échoué. Votre version actuelle reste disponible. Réessayez.');}
             });
           });
         }
@@ -123,7 +149,7 @@
         if(await waiting())return;
         if(latest.release===current)status('Version PC '+version+' à jour.');
         else status('Préparation de la mise à jour PC… Vous pouvez continuer à travailler.');
-      }catch(error){status(error?.message||'Vérification impossible. Réessayez.');}
+      }catch(error){latest=null;installFailed=true;status(error?.message||'Vérification impossible. Réessayez.');}
       finally{checking=null;}
     })();
     return checking;
@@ -148,12 +174,13 @@
     const type=e.data?.type;
     if(['CDQ_PC_CHECK','CDQ_CHECK_UPDATE'].includes(type)){e.stopImmediatePropagation();void check(true);}
     else if(['CDQ_PC_APPLY','CDQ_FORCE_UPDATE','CDQ_OPEN_SCRIPT_MANAGER'].includes(type)){e.stopImmediatePropagation();void apply();}
-    else if(type==='CDQ_SELECTOR_READY'){trackFrame();post();void check();}
+    else if(type==='CDQ_SELECTOR_READY'){trackFrame();post();if(!startupPending)void check();}
   },true);
   if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('controllerchange',()=>{if(applying){if(pdfOpen()){applying=false;status('Mise à jour prête. Fermez le PDF avant de relancer.',true);return;}location.reload();}});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')void check();});
   window.addEventListener('online',()=>{void check(true);});
-  window.addEventListener('load',()=>{void check();},{once:true});
+  window.addEventListener('load',()=>{if(!startupPending)void check();},{once:true});
   setInterval(()=>{trackFrame();if(document.visibilityState==='visible'){void check();scheduleAutomatic();}},60000);
   window.cdqPcUpdates={check:()=>check(true),apply,status:()=>({...state})};
+  if(startupPending)void startOnLaunch();else resolveStartup();
 })();

@@ -62,7 +62,7 @@
       const selected=b.dataset.cdqCurrent==='true';
       set(b,{'background':selected?'var(--cdq-selected)':'transparent','border-color':selected?'var(--cdq-line)':'transparent','box-shadow':selected?'inset 3px 0 var(--cdq-nav-accent)':'none'});
       set(art,{'width':artSize+'px','height':artSize+'px','min-width':artSize+'px','min-height':artSize+'px','max-width':'none','max-height':'none','flex-shrink':'0','display':'inline-flex','align-items':'center','justify-content':'center'});
-      set(label,{'font-size':Math.round(14*textScale)+'px','line-height':'1.2','text-align':'left','white-space':'nowrap','margin':'0','padding':'0','font-weight':'600','color':'var(--cdq-ink)','-webkit-text-fill-color':'var(--cdq-ink)','text-shadow':'none'});
+      set(label,{'font-size':Math.round(14*textScale)+'px','line-height':'1.2','text-align':'left','white-space':'nowrap','margin':'0','padding':'0','font-weight':'600','color':'var(--cdq-ink)','-webkit-text-fill-color':'var(--cdq-ink)','text-shadow':'none','filter':'none','animation':'none','transition':'none'});
       b.title=label?.textContent?.trim()||'';b.setAttribute('aria-label',b.title);b.style.order=String(order.indexOf(b.dataset.workspaceRoute));
     }
     const geometry={'position':'fixed','top':top+'px','left':left+'px','right':'10px','bottom':'10px','width':(innerWidth-left-10)+'px','max-width':'none','height':(innerHeight-top-10)+'px','max-height':(innerHeight-top-10)+'px','min-height':'0','margin':'0','transform':'none','zoom':'1','box-sizing':'border-box'};
@@ -71,12 +71,13 @@
     // Shared phone rules hide Back and enlarge controls using ID selectors.
     // Desktop keeps visible Back controls for mouse and keyboard navigation.
     for(const b of all('[data-cdq-heading-back-v2671],[data-cdq-heading-close-v2671]'))set(b,{'display':b.hidden?'none':'grid','width':'34px','height':'34px','min-width':'34px','min-height':'34px','max-width':'34px','max-height':'34px','flex':'0 0 34px','padding':'6px'});
+    for(const art of all('#cdqPcHomeHeading [data-pc-home-art],#cdqPcHomeHeading [data-pc-home-art] span,#cdqPcHomeHeading [data-pc-home-art] svg,#cdqPcHomeHeading [data-pc-home-art] img'))set(art,{'width':'56px','height':'56px','min-width':'56px','min-height':'56px','max-width':'56px','max-height':'56px'});
     for(const art of all('[data-cdq-heading-icon-v2675]')){
       const back=art.parentElement.querySelector('[data-cdq-heading-back-v2671]');
-      set(art,{'display':back&&!back.hidden?'none':'flex','position':'relative','left':'auto','right':'auto','top':'auto','transform':'none','margin':'0','grid-column':'1','grid-row':'1','width':'44px','height':'44px','min-width':'44px','min-height':'44px','overflow':'hidden'});
-      set(art.firstElementChild,{'width':'44px','height':'44px','min-width':'44px','min-height':'44px','max-width':'44px','max-height':'44px','margin':'0','object-fit':'contain'});
+      set(art,{'display':back&&!back.hidden?'none':'flex','position':'relative','left':'auto','right':'auto','top':'auto','transform':'none','margin':'0','grid-column':'1','grid-row':'1','width':'56px','height':'56px','min-width':'56px','min-height':'56px','overflow':'hidden'});
+      for(const drawing of art.querySelectorAll('span,img,svg'))set(drawing,{'width':'56px','height':'56px','min-width':'56px','min-height':'56px','max-width':'56px','max-height':'56px','margin':'0','object-fit':'contain'});
     }
-    for(const h of all('[data-cdq-heading-layout-v2675]'))set(h,{'grid-template-columns':'44px minmax(0,1fr) 44px','padding':'10px 14px','min-height':'64px'});
+    for(const h of all('[data-cdq-heading-layout-v2675]'))set(h,{'grid-template-columns':'56px minmax(0,1fr) 56px','padding':'10px 14px','min-height':'80px'});
     for(const h of all('[data-cdq-heading-close-v2671]'))set(h,{'grid-column':'3','grid-row':'1','justify-self':'end'});
     for(const p of all('.modal-overlay:not(#accessOverlay):not(#googleAuthOverlay),#cdqSettingsModalV2294'))if(!/access|auth|bio|music/i.test(p.id))set(p,{...geometry,'z-index':'5000'});
     const company=$('#companyMenu');if(company?.style.display!=='none'&&company?.classList.contains('show'))window.cdqCompanyChooserV2674?.layout();
