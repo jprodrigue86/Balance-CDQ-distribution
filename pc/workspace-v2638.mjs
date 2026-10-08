@@ -1,4 +1,5 @@
 import {sharedNavigationIconV2685} from './navigation-art-v2685.mjs';
+import {driveFileIconV2710} from './drive-file-icons-v2710.mjs';
 import {navigationStyleV2708} from './navigation-style-v2708.mjs';
 import {compareCornerSignals,cornerNames,wirePairLabel} from './corner-signals-v2677.mjs';
 import {divisions,convertMass,analyzeBridge,bridgePairs} from './weighing-calculations-v2638.mjs';
@@ -212,7 +213,7 @@ function renderDrive(){
 }
 function renderDriveRows(p){
   const list=$('[data-drive-list]',p);list.replaceChildren();const q=driveState.query.toLocaleLowerCase('fr'),items=driveState.items.filter(x=>(x.nom+' '+(x.path||'')).toLocaleLowerCase('fr').includes(q));
-  for(const item of items){const row=document.createElement('article');row.className='cdq-workspace-row';const kind=driveFileKindV2699(item);row.dataset.driveKind=kind.key;row.innerHTML='<button type="button" class="open">'+workspaceIcon(kind.key)+'<span><strong>'+esc(item.nom)+'</strong><small>'+esc(item.path||kind.label)+'</small></span></button><button type="button" class="pin" aria-label="'+esc(item.favori?'Retirer des favoris':'Ajouter aux favoris')+'" aria-pressed="'+!!item.favori+'">'+(item.favori?'★':'☆')+'</button>';
+  for(const item of items){const row=document.createElement('article');row.className='cdq-workspace-row';const kind=driveFileKindV2699(item);row.dataset.driveKind=kind.key;row.innerHTML='<button type="button" class="open">'+driveFileIconV2710(kind.key,kind.label)+'<span><strong>'+esc(item.nom)+'</strong><small>'+esc(item.path||kind.label)+'</small></span></button><button type="button" class="pin" aria-label="'+esc(item.favori?'Retirer des favoris':'Ajouter aux favoris')+'" aria-pressed="'+!!item.favori+'">'+(item.favori?'★':'☆')+'</button>';
     if(item.kind==='folder')$('.open',row).onpointerenter=()=>driveCache.request(item.id).catch(()=>{});
     $('.open',row).onclick=async()=>{if(item.kind==='folder'){driveState.mode='drive';active='dossier';document.documentElement.dataset.cdqWorkspace=active;syncNav();await loadDrive(false,item.id);}else try{if(item.mimeType==='application/pdf')await window.cdqOpenPdfV2520?.(item.id,{nom:item.nom});else if(item.mimeType==='application/vnd.google-apps.spreadsheet')await window.cdqOpenSheetV2526?.(item.id);else window.open('https://drive.google.com/file/d/'+encodeURIComponent(item.id)+'/view','_blank','noopener');}catch(e){status(p,e.message,true);}};
     const pin=$('.pin',row);pin.onclick=async()=>{pin.disabled=true;try{const r=await rpc('definirFavoriGeneralCDQV2521',item.id,!item.favori);item.favori=r.favori;driveCache.invalidate();if(driveState.mode==='favorites')driveState.items=driveState.items.filter(x=>x.id!==item.id||item.favori);if(!p.hidden)renderDriveRows(p);}catch(e){status(p,e.message,true);}finally{pin.disabled=false;}};

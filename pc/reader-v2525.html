@@ -193,10 +193,163 @@ header{background:#161a20;border-color:#3d4652}header button,#more button{backgr
 
 /* Reveal the fully composed first page in one frame. Preserve layout while it paints. */
 #viewer:not([data-ready="true"]){opacity:0;pointer-events:none}
-</style><link rel="stylesheet" href="./reader-ui-v2572.css"></head><body>
+</style><link rel="stylesheet" href="./reader-ui-v2572.css"><style id="cdqInterfaceCssV2710">/* Rich black pages; borders, bright artwork and accent lines carry contrast. */
+html.cdq-mobile-layout[data-cdq-palette]:not([data-cdq-palette=light]){--cdq-page:#030508;--cdq-surface:#030508;--cdq-raised:#10151c;--cdq-selected:#0b1b27;--cdq-line:#294352}
+html.cdq-mobile-layout.cdq-mobile-layout[data-cdq-palette=metal]{--cdq-line:#35434c;--cdq-selected:#111c24}
+html.cdq-mobile-layout.cdq-mobile-layout[data-cdq-palette=violet]{--cdq-line:#49345e;--cdq-selected:#191020}
+html.cdq-mobile-layout.cdq-mobile-layout[data-cdq-palette=electric]{--cdq-line:#244b6c;--cdq-selected:#081b2b}
+html.cdq-mobile-layout.cdq-mobile-layout[data-cdq-palette=steel]{--cdq-line:#354958;--cdq-selected:#101a22}
+html.cdq-mobile-layout body .container{background:var(--cdq-surface)!important}
+html.cdq-mobile-layout body :is(.cdq-workspace-page,#cdqInvoicePageV2590,#cdqInventoryModernV2592,#cdqCalibrationDialogV2565,#cdqReportOverlayV2578){background:var(--cdq-surface)!important;box-shadow:inset 0 2px 0 var(--cdq-page-accent,var(--cdq-accent))!important}
+#cdqDrivePageV2638{--cdq-page-accent:#ef5a9c}#cdqCalculPageV2638{--cdq-page-accent:#f4a552}#cdqOpportunitiesPageV2638{--cdq-page-accent:#4bdd85}#cdqInventoryModernV2592{--cdq-page-accent:#b878ec}#cdqInvoicePageV2590{--cdq-page-accent:#e9c55d}#cdqCalibrationDialogV2565,#cdqReportOverlayV2578{--cdq-page-accent:#55dbea}
+html.cdq-mobile-layout body [data-cdq-heading-layout-v2675]{background:var(--cdq-surface)!important;border-bottom:1px solid var(--cdq-page-accent,var(--cdq-line))!important}
+html.cdq-desktop-v2676.cdq-mobile-layout body .bottom-nav .bottom-nav-item[data-cdq-current=true]{background:var(--cdq-page)!important;box-shadow:inset 3px 0 var(--cdq-nav-accent)!important;border-color:var(--cdq-line)!important}
+html.cdq-desktop-v2676 body #cdqPcHomeHeading{background:var(--cdq-surface)!important;border-bottom-color:#55caff}
+/* Equal tool slots make the button text and page title share one center. */
+html.cdq-mobile-layout body .company-wrapper.company-wrapper{display:grid!important;grid-template-columns:var(--cdq-chooser-tool-width,40px) minmax(0,1fr) var(--cdq-chooser-tool-width,40px)!important;gap:7px!important;align-items:center!important}
+html.cdq-mobile-layout body .company-wrapper.company-wrapper::before{content:'';grid-column:1;grid-row:1}
+html.cdq-mobile-layout body .company-wrapper.company-wrapper #companyButton{grid-column:2;grid-row:1;width:100%!important;min-width:0!important;box-sizing:border-box!important;justify-self:stretch}
+html.cdq-mobile-layout body .company-wrapper.company-wrapper #cdqCreateClientV2640{grid-column:3;grid-row:1}
+.cdq-secondary-icon-v2710{display:inline-flex!important;align-items:center;justify-content:center;flex-shrink:0;vertical-align:middle;width:24px;height:24px;line-height:1;background:none!important;text-shadow:none!important;pointer-events:none}
+.cdq-secondary-icon-v2710>svg{display:block!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important}
+.cdq-drive-original-v2710{display:block;flex:0 0 auto;background:none!important;filter:none!important}
+html.cdq-mobile-layout body .cdq-workspace-row>.open>.cdq-drive-original-v2710{width:32px!important;height:36px!important}
+
+html.cdq-desktop-v2676 body #cdqPcFileMenu .cdq-action-art-v2655{width:28px!important;height:28px!important;min-width:28px!important}
+</style>
+<script id="cdqReaderArtworkV2710">(function(){
+  'use strict';
+  const colors={move:'#5ccfa2',copy:'#54b8ec',duplicate:'#eb648a',favorite:'#efb937',send:'#449cef',note:'#f4c448',photo:'#48d6ef',rename:'#e7a349',delete:'#db4656',protect:'#a18ae4',unlock:'#a18ae4',finish:'#b9c4cf'};
+  // Standalone silhouettes: no common chip frame and no scaled inner groups.
+  const glyphs={
+    move:'<path d="M6 18V9h19l7 9h24v35H6z"/><path class="detail" d="M9 23h30M27 37h22M41 29l8 8-8 8"/><path class="light" d="M9 14h14M10 28v20"/>',
+    copy:'<path d="M12 8h25l8 8v34H12z"/><path d="M23 18h24l8 8v31H23z"/><path class="detail" d="M47 18v9h8M29 34h17M29 41h17M29 48h12"/>',
+    duplicate:'<path d="M12 8h25l8 8v34H12z"/><path d="M23 18h24l8 8v31H23z"/><path class="detail" d="M47 18v9h8"/><circle cx="39" cy="43" r="10" class="accent"/><path class="light" d="M39 37v12M33 43h12"/>',
+    favorite:'<path class="accent" d="M32 7 39.5 23 57 25.5 44.5 37.5 47.5 55 32 47 16.5 55 19.5 37.5 7 25.5 24.5 23z"/><path class="light" d="m32 14 5.5 12 13 2-9.5 9"/><path class="detail" d="m32 24-4 12 4 11 12.5-9.5"/>',
+    send:'<path class="accent" d="M7 27 57 7 40 57 29 37z"/><path class="detail" d="M29 37 57 7 21 31M29 37l-3 15 8-9"/><path class="light" d="m11 26 39-14M40 49l12-32"/>',
+    note:'<path d="M16 7h25l11 11v40H16z"/><path class="detail" d="M41 7v12h11M23 29h21M23 37h21M23 45h16"/><path class="light" d="M20 11h17M20 22v29"/>',
+    photo:'<path d="M7 21h12l5-10h16l5 10h12v32H7z"/><circle cx="32" cy="36" r="13" class="detail-fill"/><circle cx="32" cy="36" r="9" class="accent"/><circle cx="32" cy="36" r="5" class="detail-fill"/><path class="light" d="M48 27h4M24 31a9 9 0 0 1 10-4"/>',
+    rename:'<path d="m13 40-4 16 16-4L56 21 43 8z"/><path class="accent" d="m36 15 13 13 7-7L43 8z"/><path class="detail" d="m13 40 12 12M19 44l26-26M9 56l9-2-7-7"/><path class="light" d="m16 38 22-22"/>',
+    delete:'<path d="M18 21h29l-4 36H22z"/><path d="M12 15h40v7H12zM25 8h14v7H25z"/><path class="detail" d="m25 28 2 23M32 28v23M39 28l-2 23M22 35h22M23 44h20"/><path class="light" d="M16 18h31M21 26l2 26"/>',
+    protect:'<path d="m32 6 23 8v17c0 12-10 21-23 28C19 52 9 43 9 31V14z"/><rect x="21" y="29" width="22" height="19" rx="3" class="accent"/><path class="detail" d="M25 29v-7a7 7 0 0 1 14 0v7M32 36v6"/><path class="light" d="m14 18 18-6 18 6"/>',
+    unlock:'<path d="m32 6 23 8v17c0 12-10 21-23 28C19 52 9 43 9 31V14z"/><rect x="21" y="29" width="22" height="19" rx="3" class="accent"/><path class="detail" d="M25 29v-7a7 7 0 0 1 14 0M32 36v6"/><path class="light" d="m14 18 18-6 18 6"/>',
+    finish:'<path d="m14 8 18 18L50 8l6 6-18 18 18 18-6 6-18-18-18 18-6-6 18-18L8 14z"/><path class="light" d="m14 14 18 18 18-18M14 50l13-13"/>'
+  };
+  Object.assign(colors,{download:'#48d6ef',save:'#69e654',cancel:'#f35065',back:'#fa57c4',settings:'#c574f5',search:'#59aaff',add:'#69e654',offline:'#ffad43',refresh:'#55d6ed',print:'#65a9ed',share:'#48d6ef',minus:'#f35065',check:'#69e654',expand:'#59aaff',collapse:'#59aaff',login:'#69e654',logout:'#f35065',filter:'#c574f5'});
+  Object.assign(glyphs,{
+    download:'<path d="M24 7h16v23h13L32 51 11 30h13z"/><path class="detail" d="M9 46v12h46V46"/>',
+    save:'<path d="M9 7h39l8 8v42H9z"/><path class="detail" d="M19 7v19h26V7M19 57V35h28v22"/><path class="light" d="M36 11v11"/>',
+    cancel:'<circle cx="32" cy="32" r="24"/><path class="detail" d="m15 15 34 34"/>',
+    back:'<path d="M28 9 7 29l21 20V36h8c13 0 19 7 21 17V32c0-12-9-17-29-17z"/>',
+    settings:'<path d="m27 6 10 0 2 8 7 3 8-3 5 9-6 6v7l6 6-5 9-8-3-7 3-2 8H27l-2-8-7-3-8 3-5-9 6-6v-7l-6-6 5-9 8 3 7-3z"/><circle cx="32" cy="32" r="10" class="detail"/>',
+    search:'<circle cx="27" cy="27" r="19"/><path d="m41 41 16 16-5 5-16-16"/><circle cx="27" cy="27" r="13" class="detail"/>',
+    add:'<path d="M24 7h16v17h17v16H40v17H24V40H7V24h17z"/>',
+    minus:'<path d="M7 24h50v16H7z"/>',
+    offline:'<path d="M10 47c-12-8-2-24 10-21C16 6 45 6 47 24c19 0 21 26 2 26H16"/><path class="detail" d="m7 7 50 50"/>',
+    refresh:'<path d="M52 26a22 22 0 1 0-2 22M52 8v18H34"/>',
+    print:'<path d="M18 21V7h28v14M16 44H7V22h50v22H48M18 36h28v21H18z"/><path class="detail" d="M22 43h20M22 49h20M46 28h5"/>',
+    check:'<path d="m8 32 14 14 33-33 7 7-40 40L1 39z"/>',
+    expand:'<path d="M7 25V7h18M39 7h18v18M57 39v18H39M25 57H7V39"/>',
+    collapse:'<path d="M25 7v18H7M57 25H39V7M39 57V39h18M7 39h18v18"/>',
+    filter:'<path d="M7 9h50L39 31v23L25 47V31z"/>',
+    login:'<path d="M35 7h20v50H35M7 32h34M29 20l12 12-12 12"/>',
+    logout:'<path d="M29 7H9v50h20M23 32h34M45 20l12 12-12 12"/>'
+  });
+  glyphs.share=glyphs.send;
+  const tileKeys=['photo','note','rename','copy','move','duplicate','send','favorite','protect','unlock','delete','finish','download','save','cancel','back','settings','search','add','offline'];
+  const columns=[18,267,516,765],rows=[100,361,624,896,1168];
+  const cache=new Map();
+  window.cdqActionArtworkV2657=function(key,id='current',palette='dark'){
+    if(!glyphs[key])key='note';
+    if(!['current','minimal','dark-pro','metal-music','isometric'].includes(id))id='current';
+    const signature=key+'|'+id+'|'+palette;if(cache.has(signature))return cache.get(signature);
+    let result;
+    const tile=tileKeys.indexOf(key==='share'?'send':key);
+    if(id==='metal-music'&&tile>=0){
+      const filter='cdq-action-matte-v2710-'+key;
+      const asset=new URL('./assets/action-v2710/metal-cdq.png',document.baseURI).href;
+      result='<svg data-action-icon="'+key+'" data-icon-theme="'+id+'" data-artwork-version="2710" data-action-model="metal-cdq-1" viewBox="0 0 244 218" overflow="hidden" aria-hidden="true" focusable="false"><defs><filter id="'+filter+'" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 8 8 8 0 -0.9"/></filter></defs><image x="-'+columns[tile%4]+'" y="-'+rows[Math.floor(tile/4)]+'" width="1024" height="1536" href="'+asset+'" filter="url(#'+filter+')"/></svg>';
+    }else{
+      const color=colors[key]||colors.note,light=palette==='light',ink=light?'#203141':'#0b1724';
+      const defs='<defs><linearGradient id="face" x2=".3" y2="1"><stop stop-color="'+(['dark-pro','metal-music'].includes(id)?'#effaff':color)+'"/><stop offset=".42" stop-color="'+(['dark-pro','metal-music'].includes(id)?'#a0bcd1':color)+'"/><stop offset="1" stop-color="'+(['dark-pro','metal-music'].includes(id)?'#415a70':ink)+'"/></linearGradient><radialGradient id="disc"><stop stop-color="#172c3d"/><stop offset="1" stop-color="#03070d"/></radialGradient></defs>';
+      const minimal=id==='minimal',face=minimal?'none':'url(#face)',rim=minimal?(light?'#233849':'#f4f9ff'):id==='dark-pro'?'#d4edff':color;
+      const body=glyphs[key];
+      const disc=id==='dark-pro'?'<circle cx="32" cy="32" r="30" fill="url(#disc)" stroke="#93bedb" stroke-width="1.8"/><circle cx="32" cy="32" r="26.5" fill="none" stroke="'+color+'" stroke-opacity=".55"/>':'';
+      const base=id==='isometric'?'<ellipse cx="32" cy="53" rx="29" ry="8" fill="#06111e" stroke="'+color+'" stroke-width="2"/><ellipse cx="32" cy="51" rx="24" ry="5" fill="none" stroke="'+color+'" stroke-opacity=".65"/>':'';
+      const transform=id==='dark-pro'?'translate(9 9) scale(.72)':id==='isometric'?'matrix(.78,-.07,.04,.78,4,2)':'translate(2 2) scale(.94)';
+      const style='<style>.drawing path,.drawing rect,.drawing circle{fill:'+face+';stroke:'+rim+';stroke-width:'+(minimal?'2.8':'1.7')+';stroke-linejoin:round;stroke-linecap:round}.drawing .detail{fill:none;stroke:'+(minimal?rim:ink)+';stroke-width:2.5}.drawing .detail-fill{fill:'+ink+';stroke:'+rim+'}.drawing .accent{fill:'+(minimal?'none':color)+';stroke:'+rim+'}.drawing .light{fill:none;stroke:'+(minimal?rim:'#f6fbff')+';stroke-width:1.3;opacity:.8}</style>';
+      const extrusion=id==='isometric'?'<g transform="translate(2 4)" opacity=".55">'+body+'</g>':'';
+      const vector='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'+defs+style+disc+base+'<g class="drawing" transform="'+transform+'">'+extrusion+body+'</g></svg>';
+      result='<svg data-action-icon="'+key+'" data-icon-theme="'+id+'" data-artwork-version="2710" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><image width="64" height="64" href="data:image/svg+xml,'+encodeURIComponent(vector)+'"/></svg>';
+    }
+    cache.set(signature,result);return result;
+  };
+})();
+</script>
+</head><body>
 <header id="readerTop"><button id="back" aria-label="Retour dans CDQ"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg><span>Retour</span></button><div id="zoomControls" aria-label="Zoom du PDF"><button id="minus" class="zoom-button" aria-label="Réduire"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><span id="zoom">100 %</span><button id="plus" class="zoom-button" aria-label="Agrandir"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button></div><button id="menu" aria-label="Options du PDF" aria-expanded="false"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></header>
 <div id="more" role="menu" hidden><button id="fit" role="menuitem">Ajuster à la largeur</button><button id="download" role="menuitem">Télécharger</button><button id="save" role="menuitem" class="primary" disabled>Enregistrer</button><button id="cancelMenu" role="menuitem" title="Fermer le menu et continuer la saisie">Annuler</button><button id="quitMenu" role="menuitem">Quitter</button></div><footer id="readerNameBar" aria-label="Nom du rapport"><span id="name">PDF</span></footer>
 <div id="container"><div id="viewer" class="pdfViewer"></div><div id="empty"><label class="action" for="file">Ouvrir un PDF</label></div></div><input id="file" type="file" accept="application/pdf,.pdf"><div id="status" role="status">Chargement du lecteur…</div>
 <nav id="formNav" aria-label="Saisie du formulaire" hidden><button id="previousField">↑ Précédent</button><button id="nextField">Suivant ↓</button><button id="dismissKeyboard" aria-label="Fermer le clavier et regarder le PDF">OK</button><button id="doneFields">Terminer</button></nav>
 <div id="savingMask" hidden></div><dialog id="closeDialog" aria-labelledby="closeTitle"><h2 id="closeTitle">Terminer ce PDF ?</h2><p>Que voulez-vous faire avec les modifications ?</p><p id="closeError" role="status"></p><button id="saveClose" class="primary">✓ Enregistrer les modifications</button><button id="discard">Fermer sans enregistrer</button><button id="keepEditing">Annuler</button></dialog>
-<script type="module" src="reader-v2525.mjs"></script></body></html>
+<script type="module" src="reader-v2525.mjs"></script><script id="cdqInterfaceV2710">(() => {
+ 'use strict';
+ const root=document.documentElement;
+ const ids={menu:'settings',back:'back',minus:'minus',plus:'add',fit:'expand',quitMenu:'finish',clientNoteButton:'note',clientPhotoButton:'photo',cdqV19OfflineStatus:'offline',cdqTopDisplayButtonV2204:'settings',cdqCreateClientV2640:'rename',cdqPcFileSearch:'search',cdqImClose:'finish',cdqImBack:'back',cdqImRefresh:'refresh',cdqDiagnosticSettingsButton:'settings',cdqAdminSettingsButton:'settings',cdqInstallShareSettingsButton:'share'};
+ const attributes={'data-pc-clear-client':'finish','data-cdq-heading-close-v2671':'finish','data-cdq-heading-back-v2671':'back','data-workspace-close':'finish','data-inv-close':'finish','data-report-close':'finish','data-cal-close':'finish','data-report-back':'back','data-cal-back':'back','data-drive-refresh':'refresh','data-drive-back':'back','data-op-save':'save'};
+ const rules=[[/déprot|unlock/i,'unlock'],[/protég|protect/i,'protect'],[/hors ligne|offline/i,'offline'],[/photo|camera|gallery/i,'photo'],[/renommer|rename|modifier|éditer|edit/i,'rename'],[/dupliquer|duplicate/i,'duplicate'],[/copier|copy/i,'copy'],[/déplacer|move/i,'move'],[/supprimer|delete|trash/i,'delete'],[/annuler|cancel/i,'cancel'],[/fermer|close|finish/i,'finish'],[/retour|revenir|back/i,'back'],[/télécharger|download|export/i,'download'],[/enregistrer|sauvegarder|save/i,'save'],[/rechercher|search/i,'search'],[/réglages|paramètres|settings|display/i,'settings'],[/actualiser|rafraîchir|refresh|reload/i,'refresh'],[/imprimer|print/i,'print'],[/ajouter|nouveau|nouvelle|add|create/i,'add'],[/favori|favorite|\bpin\b/i,'favorite'],[/envoyer|send/i,'send'],[/partager|share/i,'share'],[/note/i,'note'],[/zoom.*moins|réduire|minus/i,'minus'],[/zoom.*plus|agrandir|plus/i,'add'],[/filtrer|filter/i,'filter'],[/déconnexion|logout/i,'logout'],[/connexion|login/i,'login']];
+ function theme(){
+  if(window.cdqIconThemesV2514?.getStyle)return window.cdqIconThemesV2514.getStyle();
+  try{if(parent!==window&&parent.cdqIconThemesV2514?.getStyle)return parent.cdqIconThemesV2514.getStyle()}catch(_){}
+  try{const owner=localStorage.getItem('cdqLastUnlockEmailV2511')||'',saved=JSON.parse(localStorage.getItem('cdqIconThemeV2514:'+owner.trim().toLowerCase())||'null');if(['current','minimal','dark-pro','metal-music','isometric'].includes(saved?.style))return saved.style}catch(_){}
+  return 'current';
+ }
+ function palette(){return root.dataset.cdqPalette||root.dataset.readerTheme||'dark'}
+ function action(button){
+  if(ids[button.id])return ids[button.id];
+  for(const [attribute,key]of Object.entries(attributes))if(button.hasAttribute(attribute))return key;
+  if(button.classList.contains('cdq-settings-close-v2708'))return 'finish';
+  const text=(button.getAttribute('aria-label')||button.title||button.textContent||'').trim();
+  for(const [pattern,key]of rules)if(pattern.test(text))return key;
+  for(const [pattern,key]of rules)if(pattern.test(button.id+' '+button.className))return key;
+  return '';
+ }
+ function paintIcon(icon,key){
+  const signature=theme()+'|'+key+'|'+palette();
+  if(icon.dataset.secondaryDrawing===signature&&icon.querySelector('image'))return;
+  const source=window.cdqActionArtworkV2657?.(key,theme(),palette());if(!source)return;
+  if(icon.tagName.toLowerCase()==='svg'){
+   const host=document.createElement('div');host.innerHTML=source;const svg=host.firstElementChild;
+   icon.setAttribute('viewBox',svg.getAttribute('viewBox'));icon.innerHTML=svg.innerHTML;
+   for(const a of svg.attributes)if(a.name.startsWith('data-'))icon.setAttribute(a.name,a.value);
+  }else icon.innerHTML=source;
+  icon.classList.add('cdq-secondary-icon-v2710');icon.setAttribute('aria-hidden','true');icon.dataset.secondaryDrawing=signature;
+ }
+ function paint(){
+  if(!window.cdqActionArtworkV2657)return;
+  for(const button of document.querySelectorAll('button,[role="button"]')){
+   if(button.closest('.bottom-nav,.cdq-icon-choice-v2514,[data-cdq-heading-icon-v2675],[data-pc-home-art],.cdq-preview-item-v2651')||button.matches('.cdq-swipe-action,[data-file-action]'))continue;
+   const key=action(button);if(!key)continue;
+   let icon=button.querySelector(':scope > svg:not([data-file-artwork]),:scope > [data-cdq-home-icon],:scope > .action-icon,:scope > .ico,:scope > .cdq-secondary-icon-v2710');
+   if(!icon&&/^[×✕Xx+−–✎⚙★☆↻←]+$/.test(button.textContent.trim())){icon=document.createElement('span');button.replaceChildren(icon);}
+   if(icon)paintIcon(icon,key);
+  }
+  for(const icon of document.querySelectorAll('.cdq-pc-file-search > svg'))paintIcon(icon,'search');
+  for(const wrapper of document.querySelectorAll('.company-wrapper')){
+   const button=wrapper.querySelector('#cdqCreateClientV2640'),width=button?.getBoundingClientRect().width||0,value=width+'px';
+   if(wrapper.style.getPropertyValue('--cdq-chooser-tool-width')!==value)wrapper.style.setProperty('--cdq-chooser-tool-width',value);
+  }
+ }
+ let queued=false;
+ function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;paint()})}
+ function start(){
+  paint();
+  new MutationObserver(records=>{if(records.some(r=>r.type==='attributes'||r.type==='characterData'||r.addedNodes.length))schedule()}).observe(document.body,{subtree:true,childList:true,characterData:true});
+  new MutationObserver(schedule).observe(root,{attributes:true,attributeFilter:['data-cdq-palette','data-cdq-icon-style','data-reader-theme']});
+  document.addEventListener('cdq:icons-changed',schedule);document.addEventListener('input',schedule);window.addEventListener('resize',schedule);window.addEventListener('storage',schedule);
+ }
+ window.cdqInterfaceV2710={paint,schedule,theme};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
+</body></html>
