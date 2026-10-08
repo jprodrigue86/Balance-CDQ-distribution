@@ -210,6 +210,15 @@ html.cdq-mobile-layout body .company-wrapper.company-wrapper{display:grid!import
 html.cdq-mobile-layout body .company-wrapper.company-wrapper::before{content:'';grid-column:1;grid-row:1}
 html.cdq-mobile-layout body .company-wrapper.company-wrapper #companyButton{grid-column:2;grid-row:1;width:100%!important;min-width:0!important;box-sizing:border-box!important;justify-self:stretch}
 html.cdq-mobile-layout body .company-wrapper.company-wrapper #cdqCreateClientV2640{grid-column:3;grid-row:1}
+/* Phones use the entire row; the edit button owns only its actual width. */
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body .company-wrapper.company-wrapper{grid-template-columns:minmax(0,1fr) auto!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body .company-wrapper.company-wrapper::before{content:none}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body .company-wrapper.company-wrapper #companyButton{grid-column:1}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body .company-wrapper.company-wrapper #cdqCreateClientV2640{grid-column:2}
+html.cdq-mobile-layout body #cdqCreateClientV2640{box-sizing:border-box!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important}
+html.cdq-mobile-layout body #cdqCreateClientV2640>span.cdq-secondary-icon-v2710{width:100%!important;height:100%!important;min-width:0!important;min-height:0!important}
+html.cdq-mobile-layout body #cdqCreateClientV2640 svg{width:66%!important;height:66%!important;min-width:0!important;min-height:0!important;max-width:66%!important;max-height:66%!important}
+html.cdq-desktop-v2676.cdq-mobile-layout body #cdqCreateClientV2640 svg{width:20px!important;height:20px!important;min-width:20px!important;min-height:20px!important;max-width:20px!important;max-height:20px!important}
 .cdq-secondary-icon-v2710{display:inline-flex!important;align-items:center;justify-content:center;flex-shrink:0;vertical-align:middle;width:24px;height:24px;line-height:1;background:none!important;text-shadow:none!important;pointer-events:none}
 .cdq-secondary-icon-v2710>svg{display:block!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important}
 .cdq-drive-original-v2710{display:block;flex:0 0 auto;background:none!important;filter:none!important}
