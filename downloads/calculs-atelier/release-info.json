@@ -1,25 +1,25 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.7.7",
-  "versionCode": 17007,
+  "version": "1.7.8",
+  "versionCode": 17008,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-07T23:32:25.420592+00:00",
+  "releasedAt": "2026-10-08T00:03:10.217026+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "57aa1644f9d4f0314a291fb90552f5f0dce79afb61bd082e978fd8d20c722080",
-  "htmlSha256": "696d4aaf28ab6f731e549b29e4b6fa8092c909eb214e3b3e6e9e86cd2a719aa3",
-  "packageBytes": 16502393,
-  "htmlBytes": 9281825,
+  "packageSha256": "ae371091fe3be843ba8fca5e0efeed8d24f2a01f1bc413f1c191c296ffa0bd8b",
+  "htmlSha256": "4cf466fc66d7fb7c0becc94336d47d08886f0a49ec2924d373872d24508ee047",
+  "packageBytes": 16537033,
+  "htmlBytes": 9301328,
   "notes": [
-    "Titres des cases correspondant aux colonnes de la feuille : Qty planned, Remain Old Qty MapXr et New Mat Qty demand.",
-    "Règle de trois en X : demande en haut à gauche, stock ancien en haut à droite, quantité planifiée en bas à gauche et CS with Old Mat en bas à droite.",
-    "Explications françaises sous chaque titre et titres harmonisés dans Material Conversions."
+    "Adding Production : article ou base SAP, heures ajoutées et caisses supplémentaires via TRPs/HR.",
+    "Les 246 références (244 articles) du fichier SAP disponible sont intégrées, avec choix de ligne lorsque plusieurs cadences existent.",
+    "Quantité théorique, caisses entières et calcul inverse TRP vers heures; saisies conservées hors ligne."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.7.7.apk",
+  "androidApk": "Calculs-Atelier-Android-1.7.8.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
     "androidSignature": "APK v2/v3 avec le certificat historique; SDK Android recompilé",
     "physicalDeviceTest": false
   },
   "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée.",
-  "shellVersion": 17007
+  "shellVersion": 17008
 }
