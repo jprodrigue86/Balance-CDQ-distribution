@@ -1,25 +1,25 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.7.8",
-  "versionCode": 17008,
+  "version": "1.7.9",
+  "versionCode": 17009,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-08T00:03:10.217026+00:00",
+  "releasedAt": "2026-10-08T02:13:23.258345+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "ae371091fe3be843ba8fca5e0efeed8d24f2a01f1bc413f1c191c296ffa0bd8b",
-  "htmlSha256": "4cf466fc66d7fb7c0becc94336d47d08886f0a49ec2924d373872d24508ee047",
-  "packageBytes": 16537033,
-  "htmlBytes": 9301328,
+  "packageSha256": "ebe7deacdb6c6831794adb501eb3c07071bb891a29d0a1d83b73132376f4d1a2",
+  "htmlSha256": "176e9c20a23937ca5399c60da3fdb9d6a0ac50dad766afbc581ca22dfe562124",
+  "packageBytes": 16541305,
+  "htmlBytes": 9303746,
   "notes": [
-    "Adding Production : article ou base SAP, heures ajoutées et caisses supplémentaires via TRPs/HR.",
-    "Les 246 références (244 articles) du fichier SAP disponible sont intégrées, avec choix de ligne lorsque plusieurs cadences existent.",
-    "Quantité théorique, caisses entières et calcul inverse TRP vers heures; saisies conservées hors ligne."
+    "Règle de trois : caisses avec l’ancienne matière en bleu et caisses avec la nouvelle matière en fuchsia.",
+    "Titres explicites au-dessus de chaque chiffre; quantités entières totalisant l’ordre planifié.",
+    "Le split et la règle de trois partagent les mêmes résultats, avec l’ancienne matière arrondie vers le bas."
   ],
-  "androidApk": "Calculs-Atelier-Android-1.7.8.apk",
+  "androidApk": "Calculs-Atelier-Android-1.7.9.apk",
   "verification": {
     "signature": "RSA-SHA256 avec la clé historique",
     "androidSignature": "APK v2/v3 avec le certificat historique; SDK Android recompilé",
     "physicalDeviceTest": false
   },
   "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée.",
-  "shellVersion": 17008
+  "shellVersion": 17009
 }
