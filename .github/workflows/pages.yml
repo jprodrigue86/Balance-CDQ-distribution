@@ -68,9 +68,20 @@ jobs:
             const artifactId = Number(process.env.PAGES_ARTIFACT_ID);
             if (!Number.isSafeInteger(artifactId) || artifactId <= 0) throw Error('Missing uploaded Pages artifact ID');
             const {owner, repo} = context.repo;
-            const artifact = (await github.request('GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}', {
-              owner, repo, artifact_id: artifactId
-            })).data;
+            // The upload service can finish before the REST artifact index is ready.
+            // Wait for this run's exact returned ID, never select an older artifact.
+            let artifact;
+            const artifactDeadline = Date.now() + 300000;
+            while (Date.now() < artifactDeadline) {
+              const listing = (await github.request('GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts', {
+                owner, repo, run_id: context.runId, per_page: 100
+              })).data;
+              artifact = listing.artifacts.find(item => Number(item.id) === artifactId);
+              if (artifact) break;
+              core.info('Waiting for the exact uploaded artifact to become available.');
+              await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+            if (!artifact) throw Error('Uploaded Pages artifact did not become available');
             const expectedName = 'github-pages-' + process.env.GITHUB_RUN_ATTEMPT;
             if (artifact.name !== expectedName || artifact.expired ||
                 Number(artifact.workflow_run?.id) !== Number(process.env.GITHUB_RUN_ID)) {
