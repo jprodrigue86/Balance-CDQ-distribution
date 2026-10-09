@@ -9,6 +9,7 @@ import {installReaderTheme,applyReaderTheme} from './reader-theme-v2572.mjs';
 import {saveEditableFormAppearance,normalizeEditableFormOnOpen} from './reader-choice-appearance-v2572.mjs';
 import {centerFieldGlyphs} from './reader-layout-v2653.mjs';
 import {downloadPdf} from './pdf-download-v2657.mjs';
+import {readReaderMetadataV2724} from './pdf-metadata-v2724.mjs';
 installReaderTheme();
 const assets=new URL('./vendor/pdfjs-6.3.289/',import.meta.url).href;
 const $=id=>document.getElementById(id),hosted=parent!==window;
@@ -251,19 +252,10 @@ async function open(data){
   $('save').hidden=readOnly;$('saveClose').hidden=readOnly;
   // Scripting can initialise fields after the first canvas appears. User input is
   // tracked independently and is never cleared by a delayed render or rotation.
-  await viewer.firstPagePromise;
-  const fields=fieldDefinitions=await doc.getFieldObjects(),actions=await doc.getJSActions();
+  const [metadata]=await Promise.all([readReaderMetadataV2724(doc),viewer.firstPagePromise]);
+  const {fields,actions,typography,firstPageHasAnnotations}=metadata;fieldDefinitions=fields;
   if(fields?.get?.('identification_balance')||fields?.identification_balance)autoReportName=true;
-  let firstPageHasAnnotations=false;
-  for(let p=1;p<=doc.numPages;p++){
-    const page=await doc.getPage(p),annotations=await page.getAnnotations({intent:'display'});
-    if(p===1)firstPageHasAnnotations=annotations.length>0;
-    for(const annotation of annotations){
-      if(!annotation.fieldName||!annotation.defaultAppearanceData||!['Tx','Ch'].includes(annotation.fieldType))continue;
-      let size=Number(annotation.defaultAppearanceData.fontSize)||11.25;
-      fieldTypography.set(annotation.fieldName,size);
-    }
-  }
+  for(const [field,size] of typography)fieldTypography.set(field,size);
   applyFieldTypography();
   cdqApplyConstraintDefaultsV2583();
   readerCalibration=installReaderCalibration({surface:$('viewer'),doc,fields,tell});
@@ -409,3 +401,4 @@ try{
   if(hosted){$('empty').style.display='none';status('Ouverture…');}else status('Choisissez un PDF.');
   tell({type:'CDQ_READER_READY'});
 }catch(e){fail(e);$('empty').textContent='Le lecteur n’a pas pu démarrer. Fermez puis mettez à jour l’application.';}
+

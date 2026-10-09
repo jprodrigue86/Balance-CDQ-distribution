@@ -18,7 +18,9 @@
   let bootstrapV2687=null,bootstrapFallbackV2687;
   let batchTimerV2687;
   const batchedReadsV2687=new Set(['obtenirPreferencesUtilisateurCDQV72','obtenirStyleIconesCDQV2514','obtenirListeTechniciensRapports']);
-  const batchUntilV2687=Date.now()+15000;
+  // Authentication may take longer than the shell launch. The short read
+  // window starts only after this epoch has a server-confirmed session.
+  let batchUntilV2687=0;
   const unavailable='La connexion CDQ ne répond pas. Vérifiez Internet et réessayez. Si CDQ est déjà installé, actualisez l’application PC.';
   function settle(id,ok,value){
     const job=pending.get(id);if(!job)return;
@@ -135,12 +137,12 @@
       const id=String(data.id),job=pending.get(id);
       if(data.ok===true&&data.value&&typeof data.value==='object'){
         const token=String(data.value.jetonSession||'').trim();
-        if(data.value.autorise===true&&token&&job?.authEpoch===authEpoch){sessionToken=token;}
+        if(data.value.autorise===true&&token&&job?.authEpoch===authEpoch){sessionToken=token;batchUntilV2687=Date.now()+15000;}
         else if(data.value.autorise===false&&job&&(
           job.name==='restaurerSessionApresBiometrie'||
           job.name==='reprendreSessionCourteCDQV2524'||
           job.name==='obtenirEtatAcces'
-        ))sessionToken='';
+        )){sessionToken='';batchUntilV2687=0;clearTimeout(batchTimerV2687);batchTimerV2687=null;}
       }
       settle(id,data.ok===true,data.ok?data.value:data.error);
     }
@@ -154,7 +156,8 @@
   window.google={script:{run:runner()}};
   window.cdqEmbeddedRpcV2529={run:window.google.script.run,
     resetSession(){
-      ++authEpoch;sessionToken='';
+      ++authEpoch;sessionToken='';batchUntilV2687=0;
+      clearTimeout(batchTimerV2687);batchTimerV2687=null;
       bootstrapV2687=null;
       for(const [id,job] of [...pending.entries()]){
         if(job.name==='cdqRpc'&&job.args[0]==='deconnecterAppareil')continue;
@@ -172,7 +175,7 @@
     if(!matches)return false;
     boot.consumed=true;job.sent=true;
     const response=boot.response,state=response.value;
-    if(response.ok===true&&state?.autorise===true&&String(state.email||'').toLowerCase()===boot.email&&state.jetonSession)sessionToken=String(state.jetonSession);
+    if(response.ok===true&&state?.autorise===true&&String(state.email||'').toLowerCase()===boot.email&&state.jetonSession){sessionToken=String(state.jetonSession);batchUntilV2687=Date.now()+15000;}
     const wrongAccount=response.ok===true&&state?.autorise===true&&String(state.email||'').toLowerCase()!==boot.email;
     setTimeout(()=>settle(job.id,!wrongAccount&&response.ok===true,wrongAccount?'Le serveur a retourné un autre compte CDQ.':response.ok?state:response.error),0);
     return true;

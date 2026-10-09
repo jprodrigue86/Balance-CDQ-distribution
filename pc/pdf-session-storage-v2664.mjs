@@ -52,13 +52,15 @@ export function createPdfSessionStoreV2664({read,write,remove,list,keyOf,session
     return r;
   }
   async function commit(key,value){
-    const stamp=generation,record=await independent(value);
+    // Read each Blob once. Decode the encoded bytes into detached RAM Blobs,
+    // and reuse those same bytes for durable WebKit-compatible storage.
+    const stamp=generation,encoded=await encodePdfRecordV2664(value),record=decodePdfRecordV2664(encoded);
     if(sessionOnly(value)){
       // Confirmed bytes can leave disk only after the full record is available in RAM.
       if(stamp===generation)remember(key,record);await remove(key,record);
     }else{
       // ArrayBuffer storage also works in WebKit environments rejecting IDB Blobs.
-      await write(key,await encodePdfRecordV2664(record));if(stamp===generation)forget(key);
+      await write(key,encoded);if(stamp===generation)forget(key);
     }
     return record;
   }
@@ -89,3 +91,4 @@ export function sessionCopyStorageV2664(storage,keep) {
     clear:cache.clear
   };
 }
+

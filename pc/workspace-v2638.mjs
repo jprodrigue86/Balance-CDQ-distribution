@@ -314,6 +314,26 @@ function adoptPages(){
 }
 function restoreDossierControls(){const host=document.querySelector('.desktop-main')||document.body;for(const name of ['selectionBar','filesContainer','sendArea','message']){const el=document.getElementById(name);if(el&&el.closest('#cdqDossierPageV2638'))host.append(el);}}
 function clearPrivate(){commercial.reset();trashEpoch++;trashClient.reset();trashState={owner:'',items:[],next:'',query:'',loading:false,loaded:false};document.getElementById(pageByRoute.trash)?.remove();pendingNavigation=null;homeAfterReader=false;homeReaderSource=null;driveEpoch++;opportunityEpoch++;driveCache.clear();opportunities=[];driveState={mode:'drive',id:GENERAL,lastDriveId:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false};restoreDossierControls();for(const id of ['cdqDossierPageV2638','cdqDrivePageV2638','cdqOpportunitiesPageV2638'])$('#'+id)?.remove();hidePages();active='';document.documentElement.classList.remove('cdq-workspace-open');syncNav();}
+const workspaceChromeV2724='.bottom-nav,#appHeader,.company-wrapper,#companyMenu,.top-bar,#cdqTopActionsV2204,#cdqClientActionsV2640,#selectionBar,#sendArea,#message';
+const workspacePagesV2724='.cdq-workspace-page,#cdqInventoryModernV2592,#cdqInvoicePageV2590,#cdqCalibrationDialogV2565,#cdqReportOverlayV2578,#cdqReaderFrame,dialog,.modal-overlay';
+const workspaceHeadingsV2724='.cdq-im-top,.cdq-workspace-head,.cdq-invoice-title,.cdq-cal-head,#cdqReportOverlayV2578 header';
+const workspaceDecorationV2724='.cdq-workspace-icon,.cdq-icon-host-v2514,[data-cdq-heading-icon-v2675],[data-cdq-heading-close-v2671],[data-cdq-heading-back-v2671]';
+function workspaceStructureV2724(node){return node.nodeType===1&&(node.matches(workspaceChromeV2724+','+workspacePagesV2724+','+workspaceHeadingsV2724)||!!node.querySelector(workspaceChromeV2724+','+workspacePagesV2724+','+workspaceHeadingsV2724));}
+function workspaceMutationV2724(record){
+  const target=record.target;
+  if(record.type==='attributes')return record.oldValue!==target.getAttribute(record.attributeName)&&(target===document.documentElement||target.matches(workspaceChromeV2724+','+workspacePagesV2724+','+workspaceHeadingsV2724+',.bottom-nav-item,[data-cdq-heading-back-v2671]'));
+  const nodes=[...record.addedNodes,...record.removedNodes];
+  if(nodes.some(workspaceStructureV2724))return true;
+  if(target.nodeType===1&&target.closest('.bottom-nav'))return true;
+  if(target.nodeType!==1||target.closest(workspaceDecorationV2724))return false;
+  return !!target.closest(workspaceChromeV2724+','+workspaceHeadingsV2724);
+}
+function observeWorkspaceV2724(){
+  new MutationObserver(records=>{
+    if(records.some(r=>[...r.removedNodes].some(n=>n.nodeType===1&&(n.id==='cdqReaderFrame'||n.querySelector('#cdqReaderFrame'))))&&!document.getElementById('cdqReaderFrame'))document.documentElement.classList.remove('cdq-workspace-reader-open');
+    if(records.some(workspaceMutationV2724))schedule();
+  }).observe(document.documentElement,{subtree:true,childList:true,attributes:true,attributeOldValue:true,attributeFilter:['hidden','open','class','data-workspace-route','data-cdq-current','data-cdq-palette','data-cdq-workspace']});
+}
 function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;if(observedOwner!==ownerKey()){observedOwner=ownerKey();clearPrivate();}syncNav();adoptPages();});}
 function returnHome(){
   homeAfterReader=false;homeReaderSource=null;navigate('');
@@ -351,7 +371,7 @@ function start(){
   if(window.cdqDriveV2521){window.cdqDriveV2521.open=()=>navigate('dossier');window.cdqDriveV2521.openFavorites=()=>navigate('favorites');window.cdqDriveV2521.close=()=>{if(['dossier','favorites'].includes(active))navigate('');};}
   window.addEventListener('resize',measure,{passive:true});window.visualViewport?.addEventListener('resize',measure,{passive:true});
   if(window.ResizeObserver){const ro=new ResizeObserver(measure);for(const el of [$('#appHeader'),$('.bottom-nav')])if(el)ro.observe(el);}
-  new MutationObserver(records=>{if(records.some(r=>[...r.removedNodes].some(n=>n.id==='cdqReaderFrame')))document.documentElement.classList.remove('cdq-workspace-reader-open');if(records.some(r=>r.type==='childList'||r.attributeName==='hidden'||r.attributeName==='open'))schedule();}).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','open']});
+  observeWorkspaceV2724();
   document.addEventListener('cdq:icons-changed',schedule);window.addEventListener('storage',schedule);window.addEventListener('cdq:access-ready',schedule);window.addEventListener('cdq:drive-cleared-v2632',clearPrivate);window.addEventListener('cdq:access-state-v2527',e=>{if(e.detail!=='ready')clearPrivate();});
   // Existing data modules are bundled and may be warmed only after both checks.
   window.addEventListener('cdq:drive-ready-v2632',()=>{if(!canRead())return;setTimeout(()=>{if(canRead())driveCache.request(GENERAL).then(r=>driveCache.prefetch(r.items)).catch(()=>{});},250);});
@@ -359,4 +379,5 @@ function start(){
 }
 window.cdqWorkspaceV2638={prepareNavigation:syncNav,navigate,back,driveCache,measure,readerClosed,readerCancelled,active:()=>active,version:'26.77'};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+
 

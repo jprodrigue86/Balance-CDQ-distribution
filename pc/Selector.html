@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.23" data-cdq-pc-release="f8506d8d2035c66787db9bf8e8d2a78a858a138c8bdc1736955743431c16b653">
+<html data-cdq-pc-version="27.24" data-cdq-pc-release="b5ee6a6698b6c7194f094696c11708da07460e24f6ed119b89ba39e4a0be6059">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -853,7 +853,7 @@ for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.09-v27.23-opportunites-integrees">
+<meta name="cdq-package-build" content="2026.10.09-v27.24-performance">
 
 
 <script id="cdqBridgeV23">
@@ -907,7 +907,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.09-v27.23-opportunites-integrees'
+    build:'2026.10.09-v27.24-performance'
   });
 }
 
@@ -920,7 +920,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.09-v27.23-opportunites-integrees'
+        build:'2026.10.09-v27.24-performance'
       });
     }
   } catch(e) {}
@@ -11488,7 +11488,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.09-v27.23-opportunites-integrees";
+  const CDQ_BUILD = "2026.10.09-v27.24-performance";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13748,7 +13748,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.09-v27.23-opportunites-integrees";
+const CDQ_V19_BUILD = "2026.10.09-v27.24-performance";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -13836,13 +13836,15 @@ function createPdfSessionStoreV2664({read,write,remove,list,keyOf,sessionOnly,ke
     return r;
   }
   async function commit(key,value){
-    const stamp=generation,record=await independent(value);
+    // Read each Blob once. Decode the encoded bytes into detached RAM Blobs,
+    // and reuse those same bytes for durable WebKit-compatible storage.
+    const stamp=generation,encoded=await encodePdfRecordV2664(value),record=decodePdfRecordV2664(encoded);
     if(sessionOnly(value)){
       // Confirmed bytes can leave disk only after the full record is available in RAM.
       if(stamp===generation)remember(key,record);await remove(key,record);
     }else{
       // ArrayBuffer storage also works in WebKit environments rejecting IDB Blobs.
-      await write(key,await encodePdfRecordV2664(record));if(stamp===generation)forget(key);
+      await write(key,encoded);if(stamp===generation)forget(key);
     }
     return record;
   }
@@ -13873,6 +13875,7 @@ function sessionCopyStorageV2664(storage,keep) {
     clear:cache.clear
   };
 }
+
 
 async function cdqPdfDiskRecordsV2664(){
  const email=cdqReaderOwnerV2520(),prefix=cdqV19Key('document-pdf',''),db=await ouvrirBaseCache();cdqReaderGuardV2520(email);
@@ -16106,7 +16109,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.09-v27.23-opportunites-integrees";
+const CDQ_V20_BUILD = "2026.10.09-v27.24-performance";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16953,7 +16956,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.09-v27.23-opportunites-integrees";
+const CDQ_V21_BUILD = "2026.10.09-v27.24-performance";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -20920,7 +20923,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
   function start() {
     apply();
     installCompanyMenu();
-    new MutationObserver(schedule).observe(document.body, {attributes:true,attributeFilter:['class']});
+
     const nav = document.querySelector('.bottom-nav');
     if (nav && window.ResizeObserver) new ResizeObserver(measureNavigation).observe(nav);
     installSwipeReturn();
@@ -20928,15 +20931,26 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     new MutationObserver(records => {
       // Updating a date, a status label or a STYLE text node is not a geometry change.
       let chromeChanged=false;
-      for(const record of records)for(const node of record.addedNodes){
-        if(node.nodeType!==1 || /^(STYLE|SCRIPT)$/.test(node.tagName))continue;
-        if(node.closest('#companyMenu'))continue;
-        if(node.closest('#filesContainer')){applyRowsV2631(node);continue;}
-        if(node.closest('#cdqInventoryModernV2592,#cdqInvoicePageV2590'))continue;
-        chromeChanged=true;
+      const chromeV2724='.bottom-nav,#appHeader,.company-wrapper,#companyMenu,.top-bar,#cdqTopActionsV2204,#cdqClientActionsV2640,#filesContainer,#selectionBar,#sendArea,#message';
+      const pagesV2724='.cdq-workspace-page,#cdqInventoryModernV2592,#cdqInvoicePageV2590,#cdqCalibrationDialogV2565,#cdqReportOverlayV2578,#cdqReaderFrame,dialog,.modal-overlay';
+      const headingsV2724='.cdq-im-top,.cdq-workspace-head,.cdq-invoice-title,.cdq-cal-head,#cdqReportOverlayV2578 header';
+      const decorationV2724='.cdq-workspace-icon,.cdq-icon-host-v2514,[data-cdq-heading-icon-v2675],[data-cdq-heading-close-v2671],[data-cdq-heading-back-v2671]';
+      const structuralV2724=node=>node.nodeType===1&&(node.matches(chromeV2724+','+pagesV2724+','+headingsV2724)||!!node.querySelector(chromeV2724+','+pagesV2724+','+headingsV2724));
+      for(const record of records){
+        if(record.type==='attributes'){
+          if(record.oldValue!==record.target.getAttribute(record.attributeName)&&(record.target===root||record.target===document.body||record.target.matches(chromeV2724+','+pagesV2724+','+headingsV2724+',.bottom-nav-item,[data-cdq-heading-back-v2671]')))chromeChanged=true;
+          continue;
+        }
+        if(record.target.nodeType===1&&record.target.closest('#companyMenu'))continue;
+        if([...record.addedNodes,...record.removedNodes].some(structuralV2724))chromeChanged=true;
+        if(record.target.nodeType===1&&(record.target.closest('.bottom-nav')||!record.target.closest('#filesContainer')&&!record.target.closest(decorationV2724)&&record.target.closest(chromeV2724+','+headingsV2724)))chromeChanged=true;
+        for(const node of record.addedNodes){
+          if(node.nodeType!==1||/^(STYLE|SCRIPT)$/.test(node.tagName))continue;
+          if(node.closest('#filesContainer'))applyRowsV2631(node);
+        }
       }
       if(chromeChanged)schedule();
-    }).observe(document.body, {subtree: true, childList: true});
+    }).observe(root, {subtree:true,childList:true,attributes:true,attributeOldValue:true,attributeFilter:['class','hidden','open','data-cdq-palette','data-cdq-current','data-workspace-route','data-cdq-workspace']});
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once: true});
   else start();
@@ -21607,7 +21621,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.09-v27.23-opportunites-integrees',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.09-v27.24-performance',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -22996,11 +23010,25 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
  document.addEventListener('pointercancel',e=>{if(dragging?.pointer===e.pointerId)finish(true)},true);addEventListener('blur',()=>finish(true));
  window.addEventListener('click',e=>{const nav=e.target.closest?.('.bottom-nav');if(nav&&Date.now()<Number(nav.dataset.suppressClickUntilV2708)){e.preventDefault();e.stopImmediatePropagation()}},true);
  document.addEventListener('contextmenu',e=>{if(e.target.closest?.('.bottom-nav'))e.preventDefault()},true);
- function rows(){let tree;try{tree=cacheContenuCompagnies[String(compagnieSelectionnee||'')]}catch{}if(!tree)return;for(const row of all('#filesContainer .file-row')){const id=row.querySelector('.file-checkbox')?.dataset.fileId,found=trouverFichierDansArbre(tree,id)?.fichier,pending=!!found?._cdqPendingSaveV2660;let badge=$('.file-pending-v2708',row);if(!badge){badge=document.createElement('span');badge.className='file-pending-v2708';badge.textContent='↥';badge.title='Conservé sur cet appareil — synchronisation en attente';badge.setAttribute('aria-label',badge.title);row.querySelector('.file-name')?.append(badge)}badge.hidden=!pending;badge.tabIndex=pending?0:-1;badge.setAttribute('role','button');badge.setAttribute('aria-label','Synchronisation en attente — retirer cet envoi');badge.title='Cliquer pour retirer cet envoi bloqué';if(!badge.dataset.cleanupV2714){badge.dataset.cleanupV2714='1';badge.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();badge.click();}});}const green=$('.file-today-done-badge',row);if(green)green.hidden=pending||!(cdqFichierModifieAujourdhui(found?.dateModification)||cdqFichierModifieAujourdhui(found?._cdqSavedAtV2708));}}
- new MutationObserver(records=>{if(!records.some(r=>r.type==='childList'&&[...r.addedNodes].some(n=>n.nodeType===1&&!n.matches('.file-pending-v2708,.cdq-nav-status-v2708'))))return;if(applyQueued)return;applyQueued=true;requestAnimationFrame(()=>{applyQueued=false;applyOrder();rows()})}).observe(document.body,{childList:true,subtree:true});
+ function rows(scope){let tree;try{tree=cacheContenuCompagnies[String(compagnieSelectionnee||'')]}catch{}if(!tree)return;const scoped=scope?.nodeType===1&&scope.closest('#filesContainer'),list=scoped?[...(scope.matches('.file-row')?[scope]:[]),...all('.file-row',scope)]:all('#filesContainer .file-row');for(const row of list){const id=row.querySelector('.file-checkbox')?.dataset.fileId,found=trouverFichierDansArbre(tree,id)?.fichier,pending=!!found?._cdqPendingSaveV2660;let badge=$('.file-pending-v2708',row);if(!badge){badge=document.createElement('span');badge.className='file-pending-v2708';badge.textContent='↥';badge.title='Conservé sur cet appareil — synchronisation en attente';badge.setAttribute('aria-label',badge.title);row.querySelector('.file-name')?.append(badge)}badge.hidden=!pending;badge.tabIndex=pending?0:-1;badge.setAttribute('role','button');badge.setAttribute('aria-label','Synchronisation en attente — retirer cet envoi');badge.title='Cliquer pour retirer cet envoi bloqué';if(!badge.dataset.cleanupV2714){badge.dataset.cleanupV2714='1';badge.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();badge.click();}});}const green=$('.file-today-done-badge',row);if(green)green.hidden=pending||!(cdqFichierModifieAujourdhui(found?.dateModification)||cdqFichierModifieAujourdhui(found?._cdqSavedAtV2708));}}
+ let navChangedV2724=false;const fileRootsV2724=new Set();
+ new MutationObserver(records=>{
+   if(!document?.body)return;
+   for(const record of records){
+     const nodes=[...record.addedNodes,...record.removedNodes];
+     if(nodes.some(n=>n.nodeType===1&&(n.matches('.bottom-nav,.bottom-nav-item')||n.querySelector('.bottom-nav,.bottom-nav-item')))||record.target.matches?.('.bottom-nav-item small'))navChangedV2724=true;
+     for(const node of record.addedNodes){
+       if(node.nodeType!==1||node.matches('.file-pending-v2708,.cdq-nav-status-v2708')||node.closest('.file-pending-v2708'))continue;
+       if(node.closest('#filesContainer')){const scope=node.closest('.file-row')||node;if(scope.matches('.file-row')||scope.querySelector('.file-row'))fileRootsV2724.add(scope);}
+     }
+   }
+   if(!navChangedV2724&&!fileRootsV2724.size||applyQueued)return;applyQueued=true;
+   requestAnimationFrame(()=>{applyQueued=false;if(navChangedV2724){navChangedV2724=false;applyOrder();}const scopes=[...fileRootsV2724].filter(n=>n.isConnected);fileRootsV2724.clear();for(const scope of scopes)if(!scopes.some(parent=>parent!==scope&&parent.contains(scope)))rows(scope);});
+ }).observe(document.body,{childList:true,subtree:true});
  addEventListener('cdq:pdf-local-saved',rows);addEventListener('cdq:pdf-saved',rows);addEventListener('cdq:access-state-v2527',()=>{finish(true);applyOrder()});document.addEventListener('cdq:icons-changed',applyOrder);motion();applyOrder();
  window.cdqInterfaceV2708={applyOrder,finish,organize,rows};
 })();
+
 
 </script>
 <script id="cdqInterfaceV2710">(() => {
