@@ -216,7 +216,7 @@ function inventoryScopeV2631(){return email()+'|'+String(typeof utilisateurCoura
 function inventoryAllowedV2631(){return (!window.cdqDriveEntryV2632||window.cdqDriveEntryV2632.canRead())&&!!email()&&(typeof cdqAccessState==='undefined'||cdqAccessState==='ready')}
 function resetInventoryCacheV2631(){inventoryEpochV2631++;inventoryPendingV2631=null;inventorySnapshotPendingV2712=null;historyPendingV2631=null;inventoryLoadedAtV2631=0;clearTimeout(inventoryWarmTimerV2631);state.inv=null;state.article=null;state.history=[];state.serialServerReady=null;photoCache.clear();photoPendingV2631.clear();inventoryOwnerV2631=inventoryScopeV2631()}
 function syncInventoryScopeV2631(){if(inventoryOwnerV2631!==inventoryScopeV2631())resetInventoryCacheV2631()}
-function queueInventoryWarmV2631(){clearTimeout(inventoryWarmTimerV2631);var epoch=inventoryEpochV2631;inventoryWarmTimerV2631=setTimeout(()=>{if(epoch===inventoryEpochV2631&&inventoryAllowedV2631()&&navigator.onLine!==false&&document.visibilityState!=='hidden')load(false).catch(()=>{})},1800)}
+function queueInventoryWarmV2631(){clearTimeout(inventoryWarmTimerV2631);var epoch=inventoryEpochV2631;inventoryWarmTimerV2631=setTimeout(()=>{if(epoch===inventoryEpochV2631&&inventoryAllowedV2631()&&document.visibilityState!=='hidden')restoreInventorySnapshotV2712().catch(()=>{})},1800)}
 function load(force){
   syncInventoryScopeV2631();
   if(!inventoryAllowedV2631())return Promise.reject(Error('Connectez-vous avant d’ouvrir Inventaire.'));
@@ -234,6 +234,7 @@ function load(force){
   }).catch(e=>{if(epoch===inventoryEpochV2631&&owner===inventoryScopeV2631()&&page&&!page.hidden)setStatus(e.message||String(e),'error');throw e}).finally(()=>{if(inventoryPendingV2631===pending)inventoryPendingV2631=null});
   inventoryPendingV2631=pending;return pending;
 }
+
 
 function homeAlertRows(){
   var rows=currentArticles().filter(isLow).slice(0,4);
@@ -487,7 +488,18 @@ function open(){syncInventoryScopeV2631();
 function close(){if(!page||page.hidden)return;page.hidden=true;document.documentElement.classList.remove('cdq-inventory-modern-open-v2592')}
 function inventoryButton(){var nav=$('.bottom-nav');if(!nav)return null;return $$(':scope > .bottom-nav-item',nav).find(b=>String($('small',b)?.textContent||'').trim()==='Inventaire')||null}
 function install(){
-  window.cdqInventoryModernV2592={open,close,snapshot:()=>inventoryAllowedV2631()&&inventoryOwnerV2631===inventoryScopeV2631()?state.inv:null,openArticle:async id=>{if(!page||page.hidden)open();await load(false);if(!inventoryAllowedV2631()||inventoryOwnerV2631!==inventoryScopeV2631())throw Error('Accès à l’inventaire requis.');const a=findArticle(id);if(!a)throw Error('Article introuvable.');setView('detail',{article:a});},resume:()=>{if(!page||!inventoryAllowedV2631()||inventoryOwnerV2631!==inventoryScopeV2631()||!state.inv)return open();page.hidden=false;document.documentElement.classList.add('cdq-inventory-modern-open-v2592');position();},refresh:()=>load(true).then(render),refreshQuiet:async safe=>{const view=state.view,article=state.article?.articleId;await load(true);if(state.view!==view||state.article?.articleId!==article||!safe())return false;if(article)state.article=findArticle(article)||state.article;render();return true;},applyZohoMeta:(rows,safe)=>{const meta=new Map(rows.map(r=>[String(r.articleId),r]));for(const a of state.inv?.articles||[])Object.assign(a,meta.get(String(a.articleId))||{});if(state.article)Object.assign(state.article,meta.get(String(state.article.articleId))||{});if(state.view==='detail'&&safe?.())renderDetail();}};
+  async function readInventoryCachedV2723(force=false){
+  syncInventoryScopeV2631();
+  if(!inventoryAllowedV2631())throw Error('Accès à l’inventaire requis.');
+  const owner=inventoryOwnerV2631,epoch=inventoryEpochV2631;
+  // Disk restoration and the fresh read run independently. A slow saved copy
+  // must never delay a current stock read or replace its confirmed result.
+  restoreInventorySnapshotV2712().catch(()=>{});
+  await load(!!force);
+  if(epoch!==inventoryEpochV2631||owner!==inventoryScopeV2631()||!inventoryAllowedV2631())throw Error('Le compte a changé.');
+  return state.inv;
+}
+window.cdqInventoryModernV2592={open,close,cachedRead:readInventoryCachedV2723,snapshot:()=>inventoryAllowedV2631()&&inventoryOwnerV2631===inventoryScopeV2631()?state.inv:null,openArticle:async id=>{if(!page||page.hidden)open();await load(false);if(!inventoryAllowedV2631()||inventoryOwnerV2631!==inventoryScopeV2631())throw Error('Accès à l’inventaire requis.');const a=findArticle(id);if(!a)throw Error('Article introuvable.');setView('detail',{article:a});},resume:()=>{if(!page||!inventoryAllowedV2631()||inventoryOwnerV2631!==inventoryScopeV2631()||!state.inv)return open();page.hidden=false;document.documentElement.classList.add('cdq-inventory-modern-open-v2592');position();},refresh:()=>load(true).then(render),refreshQuiet:async safe=>{const view=state.view,article=state.article?.articleId;await load(true);if(state.view!==view||state.article?.articleId!==article||!safe())return false;if(article)state.article=findArticle(article)||state.article;render();return true;},applyZohoMeta:(rows,safe)=>{const meta=new Map(rows.map(r=>[String(r.articleId),r]));for(const a of state.inv?.articles||[])Object.assign(a,meta.get(String(a.articleId))||{});if(state.article)Object.assign(state.article,meta.get(String(state.article.articleId))||{});if(state.view==='detail'&&safe?.())renderDetail();}};
   window.ouvrirInventaireCDQ=open;
   document.addEventListener('click',function(e){var nav=$('.bottom-nav');if(!nav)return;var b=e.target.closest('.bottom-nav-item');if(!b)return;var label=String($('small',b)?.textContent||'').trim();if(label==='Inventaire'){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();if(page&&!page.hidden)close();else open();return}if(page&&!page.hidden)close()},true);
   addEventListener('resize',()=>{if(!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;position()})}},{passive:true});

@@ -5,8 +5,8 @@
   'use strict';
   if(window.top===window)return;
   const ARM='CDQ_FIRST_FRAME_ARM_V2543',READY='CDQ_FIRST_FRAME_STABLE_V2543';
-  const routes=['home','dossier','calibration','calcul','inventory','catalog','invoices','opportunities','opportunityBoard','trash'];
-  const labels=['Accueil','Dossier','Calibration','Calcul','Inventaire','Catalogue','Factures','Opportunités','Gestion des opportunités','Corbeille'];
+  const routes=['home','dossier','calibration','calcul','inventory','catalog','invoices','opportunities','trash'];
+  const labels=['Accueil','Dossier','Calibration','Calcul','Inventaire','Catalogue','Factures','Opportunités','Corbeille'];
   const paints=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   const domReady=document.readyState==='loading'?new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true})):Promise.resolve();
   const decoded=new Map();let preparing,completedGeneration;

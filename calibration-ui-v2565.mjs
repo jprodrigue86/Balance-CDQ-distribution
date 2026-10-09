@@ -60,7 +60,7 @@ function ensureNav(){
   // The workspace owns the shared rail once installed. Competing reorders
   // detach live touch targets and interrupt native scrolling.
   if(window.cdqWorkspaceV2638)return;
-  const order=['Accueil','Dossier','Favoris','Rapport','Calibration','Calcul','Inventaire','Catalogue','Factures','Opportunités','Gestion des opportunités','Drive général','Corbeille'];
+  const order=['Accueil','Dossier','Favoris','Rapport','Calibration','Calcul','Inventaire','Catalogue','Factures','Opportunités','Drive général','Corbeille'];
   const items=$$(':scope > .bottom-nav-item',nav);
   const sorted=items.slice().sort((a,b)=>order.indexOf($('small',a)?.textContent.trim())-order.indexOf($('small',b)?.textContent.trim()));
   // Move only newly inserted/out-of-order buttons. Never rebuild the rail or

@@ -12,3 +12,5 @@ html.cdq-desktop-v2676.cdq-mobile-layout .bottom-nav>.bottom-nav-item[data-works
 @media(max-width:599px){.cdq-workspace-page .cdq-commercial-toolbar>select{max-width:100%;flex:1 1 140px}.cdq-workspace-page .cdq-commercial-toolbar>input{flex-basis:100%}}
 
 .cdq-commercial-toolbar [hidden]{display:none!important}
+
+.cdq-opportunity-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:18px}.cdq-opportunity-tabs button{min-height:48px;padding:10px 12px;border:1px solid var(--cdq-line,#506077);border-radius:9px;background:var(--cdq-panel,#182235);color:var(--cdq-ink,#e9f2ff);font:inherit;line-height:1.2;overflow-wrap:break-word;cursor:pointer}.cdq-opportunity-tabs [aria-pressed=true]{background:var(--cdq-selected,var(--cdq-panel,#182235));border-color:#22d17a;box-shadow:inset 0 -3px #22d17a}.cdq-opportunity-tabs button:focus-visible{outline:2px solid var(--cdq-link,#43cfff);outline-offset:2px}

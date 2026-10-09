@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="27.22" data-cdq-iphone-release="ca63e5e8b49b2fb82f3cae66201bbc2c03d338e360391e1b96fda0501f5dfd58">
+<html data-cdq-iphone-version="27.23" data-cdq-iphone-release="fce5217149fefa924fe248f4ef35c82614f3023c615eac3acb610eb7c8b7eff5">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqNavigationPreloadV2681">(function(){
@@ -573,10 +573,7 @@ for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2
       const sizes = items.map(button => {
         const text = button.querySelector('small');
         if (text) {
-          // This new destination must not widen every existing navigation tile.
-          const lines = compact && button.dataset.workspaceRoute === 'opportunityBoard'
-            ? ['Gestion des', 'opportunités'] : [normalize(text.textContent)];
-          normalizeLabel(text,lines); set(text,{'font-size':px(label)});
+          normalizeLabel(text,[normalize(text.textContent)]); set(text,{'font-size':px(label)});
         }
         return Math.max(text?width(text):0,iconWidth(button,':scope > span'))+tilePadding(button)+1;
       });
@@ -852,7 +849,7 @@ for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.09-v27.22-navigation-compacte">
+<meta name="cdq-package-build" content="2026.10.09-v27.23-opportunites-integrees">
 
 
 <script id="cdqBridgeV23">
@@ -906,7 +903,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.09-v27.22-navigation-compacte'
+    build:'2026.10.09-v27.23-opportunites-integrees'
   });
 }
 
@@ -919,7 +916,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.09-v27.22-navigation-compacte'
+        build:'2026.10.09-v27.23-opportunites-integrees'
       });
     }
   } catch(e) {}
@@ -11455,7 +11452,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.09-v27.22-navigation-compacte";
+  const CDQ_BUILD = "2026.10.09-v27.23-opportunites-integrees";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13715,7 +13712,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.09-v27.22-navigation-compacte";
+const CDQ_V19_BUILD = "2026.10.09-v27.23-opportunites-integrees";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -16073,7 +16070,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.09-v27.22-navigation-compacte";
+const CDQ_V20_BUILD = "2026.10.09-v27.23-opportunites-integrees";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16920,7 +16917,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.09-v27.22-navigation-compacte";
+const CDQ_V21_BUILD = "2026.10.09-v27.23-opportunites-integrees";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21575,7 +21572,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.09-v27.22-navigation-compacte',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.09-v27.23-opportunites-integrees',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -22921,9 +22918,9 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
  const root=document.documentElement,$=(s,r=document)=>r.querySelector(s),all=(s,r=document)=>[...r.querySelectorAll(s)];
  const get=(k,f)=>{try{return localStorage.getItem(k)??f}catch{return f}},put=(k,v)=>{try{localStorage.setItem(k,v)}catch{}};
  const owner=()=>{try{return String(utilisateurCourantEmail||'').toLowerCase()}catch{return ''}};
- const initial=['home','dossier','calibration','calcul','inventory','catalog','invoices','opportunities','opportunityBoard','trash'];
+ const initial=['home','dossier','calibration','calcul','inventory','catalog','invoices','opportunities','trash'];
  const orderKey=()=> 'cdqNavOrderV2708:'+owner();
- function savedOrder(){let a=[];try{a=JSON.parse(get(orderKey(),'[]'))}catch{}if(!Array.isArray(a))a=[];a=[...new Set(a.filter(k=>initial.includes(k)))];for(const [key,after]of [['catalog','inventory'],['opportunityBoard','opportunities']])if(!a.includes(key)&&a.includes(after))a.splice(a.indexOf(after)+1,0,key);return [...new Set([...a,...initial])];}
+ function savedOrder(){let a=[];try{a=JSON.parse(get(orderKey(),'[]'))}catch{}if(!Array.isArray(a))a=[];const retired=a.includes('opportunityBoard');a=[...new Set(a.filter(k=>initial.includes(k)))];for(const [key,after]of [['catalog','inventory']])if(!a.includes(key)&&a.includes(after))a.splice(a.indexOf(after)+1,0,key);const order=[...new Set([...a,...initial])];if(retired)put(orderKey(),JSON.stringify(order));return order;}
  function motion(){root.dataset.cdqReducedMotionV2708=get('cdqReducedMotionV2708','false');}
  function button(text,fn){const b=document.createElement('button');b.type='button';b.textContent=text;b.onclick=fn;return b;}
  function section(title,help){const s=document.createElement('section'),h=document.createElement('h3');h.textContent=title;s.append(h);if(help){const p=document.createElement('p');p.textContent=help;s.append(p)}return s;}
