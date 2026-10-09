@@ -137,7 +137,7 @@ jobs:
             if(!actual)throw Error('Live release differs from Git: '+platform);
             if(platform!=='android'){
               const base=platform==='pc'?'pc/':'iphone/app/';
-              for(const name of ['index.html','commercial-v2721.mjs','catalog-data-v2721.mjs','cursor-v2721.mjs','reader-report-layout-v2721.mjs']){
+              for(const name of ['index.html','Selector.html','commercial-v2721.mjs','catalog-data-v2721.mjs','cursor-v2721.mjs','reader-report-layout-v2721.mjs']){
                 const response=await fetch(root+base+name+'?verify='+Date.now(),{cache:'no-store'});
                 if(!response.ok)throw Error('Live file unavailable: '+base+name);
                 const live=Buffer.from(await response.arrayBuffer());
