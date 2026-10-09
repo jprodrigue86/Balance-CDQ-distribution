@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="27.21" data-cdq-iphone-release="bdf84c19a084b2df9187b5dacbdd64ba8a0b9aea8c2b1cb90e463b01c9b5268f">
+<html data-cdq-iphone-version="27.22" data-cdq-iphone-release="ca63e5e8b49b2fb82f3cae66201bbc2c03d338e360391e1b96fda0501f5dfd58">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqNavigationPreloadV2681">(function(){
@@ -569,11 +569,25 @@ for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2
     const nav = document.querySelector('.bottom-nav');
     if (nav && usable(nav) > 0) {
       const items = [...nav.querySelectorAll(':scope > .bottom-nav-item')].filter(el => getComputedStyle(el).display !== 'none');
+      const compact = nav.dataset.cdqSlidingNav === 'true' && !document.documentElement.classList.contains('cdq-desktop-v2676');
       const sizes = items.map(button => {
         const text = button.querySelector('small');
-        if (text) {normalizeLabel(text,[normalize(text.textContent)]); set(text,{'font-size':px(label)});}
+        if (text) {
+          // This new destination must not widen every existing navigation tile.
+          const lines = compact && button.dataset.workspaceRoute === 'opportunityBoard'
+            ? ['Gestion des', 'opportunités'] : [normalize(text.textContent)];
+          normalizeLabel(text,lines); set(text,{'font-size':px(label)});
+        }
         return Math.max(text?width(text):0,iconWidth(button,':scope > span'))+tilePadding(button)+1;
       });
+      if (compact) {
+        // Reserve the same label height so the drawings and label tops stay aligned.
+        const lines = Math.max(1,...items.map(button => button.querySelector('small')?.children.length || 1));
+        for (const button of items) {
+          const text = button.querySelector('small');
+          if (text) set(text,{'min-height':lines > 1 ? px(label * 1.15 * lines) : '0px'});
+        }
+      }
       if (nav.dataset.cdqSlidingNav === 'true') {
         // One row at every text/icon size. Grow its cells instead of wrapping
         // destinations, and leave the user's horizontal position untouched.
@@ -602,6 +616,7 @@ for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2
   };
   document.fonts?.ready.then(() => window.cdqMobileLayout?.schedule());
 })();
+
 
 </script>
 <script id="cdqPersonalSizingV2533">
@@ -837,7 +852,7 @@ for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.09-v27.21-catalogue-opportunites">
+<meta name="cdq-package-build" content="2026.10.09-v27.22-navigation-compacte">
 
 
 <script id="cdqBridgeV23">
@@ -891,7 +906,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.09-v27.21-catalogue-opportunites'
+    build:'2026.10.09-v27.22-navigation-compacte'
   });
 }
 
@@ -904,7 +919,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.09-v27.21-catalogue-opportunites'
+        build:'2026.10.09-v27.22-navigation-compacte'
       });
     }
   } catch(e) {}
@@ -11440,7 +11455,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.09-v27.21-catalogue-opportunites";
+  const CDQ_BUILD = "2026.10.09-v27.22-navigation-compacte";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13700,7 +13715,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.09-v27.21-catalogue-opportunites";
+const CDQ_V19_BUILD = "2026.10.09-v27.22-navigation-compacte";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -16058,7 +16073,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.09-v27.21-catalogue-opportunites";
+const CDQ_V20_BUILD = "2026.10.09-v27.22-navigation-compacte";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16905,7 +16920,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.09-v27.21-catalogue-opportunites";
+const CDQ_V21_BUILD = "2026.10.09-v27.22-navigation-compacte";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21560,7 +21575,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.09-v27.21-catalogue-opportunites',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.09-v27.22-navigation-compacte',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
