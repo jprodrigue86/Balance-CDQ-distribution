@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.19" data-cdq-pc-release="ea59aa091a24279f813656071d7f85a60a5bde8b422b802bcb13e6ac0c42c91f">
+<html data-cdq-pc-version="27.20" data-cdq-pc-release="6e10a88d796773be9642f7a565c19366697acbc49bbd6d5a72b9a304c077f0c9">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -841,7 +841,7 @@ for(const name of ["workspace-v2638.mjs","drive-file-icons-v2710.mjs","navigatio
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.09-v27.19-pdf-typography">
+<meta name="cdq-package-build" content="2026.10.09-v27.20-navigation-fluide">
 
 
 <script id="cdqBridgeV23">
@@ -895,7 +895,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.09-v27.19-pdf-typography'
+    build:'2026.10.09-v27.20-navigation-fluide'
   });
 }
 
@@ -908,7 +908,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.09-v27.19-pdf-typography'
+        build:'2026.10.09-v27.20-navigation-fluide'
       });
     }
   } catch(e) {}
@@ -5908,7 +5908,8 @@ html body #cdqSettingsModalV2294#cdqSettingsModalV2294 .cdq-ui-scale-box{padding
 html body #cdqSettingsModalV2294#cdqSettingsModalV2294 :is(.cdq-settings-panel button,.cdq-settings-email-v2294){padding:10px 14px!important;border:1px solid var(--cdq-line)!important;border-radius:9px!important;box-sizing:border-box!important}
 .cdq-gesture-demo-v2708{height:64px;margin-top:14px;padding:12px;display:flex;align-items:center;justify-content:center;touch-action:pan-y;border:1px dashed var(--cdq-accent);border-radius:10px;background:var(--cdq-surface);color:var(--cdq-ink);user-select:none}
 html[data-cdq-reduced-motion-v2708=true] *,html[data-cdq-reduced-motion-v2708=true] *::before,html[data-cdq-reduced-motion-v2708=true] *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
-.bottom-nav>.bottom-nav-item{touch-action:none;user-select:none;-webkit-user-select:none}
+.bottom-nav{touch-action:pan-x;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.bottom-nav>.bottom-nav-item{touch-action:pan-x;user-select:none;-webkit-user-select:none}
 .bottom-nav.cdq-nav-dragging-v2708{touch-action:none!important}
 .bottom-nav.cdq-nav-dragging-v2708>.bottom-nav-item{transition:transform .14s ease!important;touch-action:none!important}
 .bottom-nav>.cdq-nav-held-v2708{outline:2px solid var(--cdq-accent);outline-offset:-2px;transform:translateY(-8px) scale(1.07);z-index:3;border-radius:12px;background:var(--cdq-selected)!important}
@@ -11475,7 +11476,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.09-v27.19-pdf-typography";
+  const CDQ_BUILD = "2026.10.09-v27.20-navigation-fluide";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13735,7 +13736,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.09-v27.19-pdf-typography";
+const CDQ_V19_BUILD = "2026.10.09-v27.20-navigation-fluide";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -16093,7 +16094,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.09-v27.19-pdf-typography";
+const CDQ_V20_BUILD = "2026.10.09-v27.20-navigation-fluide";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16940,7 +16941,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.09-v27.19-pdf-typography";
+const CDQ_V21_BUILD = "2026.10.09-v27.20-navigation-fluide";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21594,7 +21595,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.09-v27.19-pdf-typography',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.09-v27.20-navigation-fluide',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -22972,12 +22973,13 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
  const previous=window.cdqOrganizeSettings;window.cdqOrganizeSettings=function(modal){previous(modal);organize(modal)};
  let dragging=null,statusTimer,applyQueued=false;
  function announce(text){let status=$('.cdq-nav-status-v2708');if(!status){status=document.createElement('div');status.className='cdq-nav-status-v2708';status.setAttribute('role','status');document.body.append(status)}status.textContent=text;clearTimeout(statusTimer);statusTimer=setTimeout(()=>status.remove(),2200);}
- function applyOrder(){if(root.classList.contains('cdq-desktop-v2676')||dragging)return;const order=savedOrder();for(const b of all('.bottom-nav>.bottom-nav-item')){const i=order.indexOf(b.dataset.workspaceRoute);if(i>=0)b.style.setProperty('order',String(i),'important')}}
- function finish(cancel=false){if(!dragging)return;clearTimeout(dragging.timer);cancelAnimationFrame(dragging.scrollFrame);const {nav,button:b,original,active,pointer}=dragging;if(active){if(cancel)put(dragging.key,JSON.stringify(original));else put(dragging.key,JSON.stringify(all('.bottom-nav-item',nav).sort((a,b)=>Number(a.style.order)-Number(b.style.order)).map(x=>x.dataset.workspaceRoute)));nav.classList.remove('cdq-nav-dragging-v2708');b.classList.remove('cdq-nav-held-v2708');b.setAttribute('aria-grabbed','false');try{nav.releasePointerCapture(pointer)}catch{};nav.dataset.suppressClickUntilV2708=String(Date.now()+800);announce(cancel?'Déplacement annulé.':'Ordre des icônes enregistré.')}dragging=null;applyOrder();}
+ const touchGuards=new WeakSet();
+ function applyOrder(){if(root.classList.contains('cdq-desktop-v2676')||dragging)return;const order=savedOrder();for(const nav of all('.bottom-nav'))if(!touchGuards.has(nav)){touchGuards.add(nav);nav.addEventListener('touchmove',e=>{if(dragging?.nav===nav&&dragging.active)e.preventDefault()},{passive:false})}for(const b of all('.bottom-nav>.bottom-nav-item')){const i=order.indexOf(b.dataset.workspaceRoute);if(i>=0&&b.style.order!==String(i))b.style.setProperty('order',String(i),'important')}}
+ function finish(cancel=false){if(!dragging)return;clearTimeout(dragging.timer);cancelAnimationFrame(dragging.scrollFrame);const {nav,button:b,original,active,pointer,scrolling}=dragging;if(active){if(cancel)put(dragging.key,JSON.stringify(original));else put(dragging.key,JSON.stringify(all('.bottom-nav-item',nav).sort((a,b)=>Number(a.style.order)-Number(b.style.order)).map(x=>x.dataset.workspaceRoute)));nav.classList.remove('cdq-nav-dragging-v2708');b.classList.remove('cdq-nav-held-v2708');b.setAttribute('aria-grabbed','false');try{nav.releasePointerCapture(pointer)}catch{};announce(cancel?'Déplacement annulé.':'Ordre des icônes enregistré.')}if(active||scrolling)nav.dataset.suppressClickUntilV2708=String(Date.now()+800);dragging=null;if(active)applyOrder();}
  document.addEventListener('pointerdown',e=>{const b=e.target.closest?.('.bottom-nav>.bottom-nav-item');if(!b||root.classList.contains('cdq-desktop-v2676')||e.button>0)return;const nav=b.parentElement;dragging={button:b,nav,pointer:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,active:false,scroll:nav.scrollLeft,key:orderKey(),original:savedOrder()};const current=dragging;current.timer=setTimeout(()=>{if(dragging!==current)return;current.active=true;nav.classList.add('cdq-nav-dragging-v2708');b.classList.add('cdq-nav-held-v2708');b.setAttribute('aria-grabbed','true');try{nav.setPointerCapture(e.pointerId)}catch{};const scroll=()=>{if(dragging!==current||!current.active)return;const rect=nav.getBoundingClientRect();if(current.lastX<rect.left+24)nav.scrollLeft-=4;else if(current.lastX>rect.right-24)nav.scrollLeft+=4;current.scrollFrame=requestAnimationFrame(scroll)};current.scrollFrame=requestAnimationFrame(scroll);navigator.vibrate?.(30);announce('Glissez l’icône à la place voulue.');},Number(get('cdqNavHoldMsV2708','700')))},true);
- document.addEventListener('pointermove',e=>{const d=dragging;if(!d||e.pointerId!==d.pointer)return;d.lastX=e.clientX;if(!d.active){if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>10){clearTimeout(d.timer);d.scrolling=true;d.nav.scrollLeft=d.scroll-(e.clientX-d.x);e.preventDefault()}return}e.preventDefault();const buttons=all('.bottom-nav-item',d.nav).sort((a,b)=>Number(a.style.order)-Number(b.style.order)),nearest=buttons.reduce((a,b)=>Math.abs(b.getBoundingClientRect().left+b.getBoundingClientRect().width/2-e.clientX)<Math.abs(a.getBoundingClientRect().left+a.getBoundingClientRect().width/2-e.clientX)?b:a);if(nearest===d.button)return;const from=buttons.indexOf(d.button),to=buttons.indexOf(nearest);buttons.splice(from,1);buttons.splice(to,0,d.button);buttons.forEach((b,i)=>b.style.setProperty('order',String(i),'important'));},{capture:true,passive:false});
+ document.addEventListener('pointermove',e=>{const d=dragging;if(!d||e.pointerId!==d.pointer)return;d.lastX=e.clientX;if(!d.active){if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>10){clearTimeout(d.timer);d.scrolling=true;if(e.pointerType==='mouse'){d.nav.scrollLeft=d.scroll-(e.clientX-d.x);e.preventDefault()}}return}e.preventDefault();const buttons=all('.bottom-nav-item',d.nav).sort((a,b)=>Number(a.style.order)-Number(b.style.order)),nearest=buttons.reduce((a,b)=>Math.abs(b.getBoundingClientRect().left+b.getBoundingClientRect().width/2-e.clientX)<Math.abs(a.getBoundingClientRect().left+a.getBoundingClientRect().width/2-e.clientX)?b:a);if(nearest===d.button)return;const from=buttons.indexOf(d.button),to=buttons.indexOf(nearest);buttons.splice(from,1);buttons.splice(to,0,d.button);buttons.forEach((b,i)=>b.style.setProperty('order',String(i),'important'));},{capture:true,passive:false});
  document.addEventListener('pointerup',e=>{if(dragging?.pointer===e.pointerId){if(dragging.active||dragging.scrolling){e.preventDefault();e.stopImmediatePropagation();dragging.nav.dataset.suppressClickUntilV2708=String(Date.now()+800)}finish()}},true);
- document.addEventListener('pointercancel',()=>finish(true),true);addEventListener('blur',()=>finish(true));
+ document.addEventListener('pointercancel',e=>{if(dragging?.pointer===e.pointerId)finish(true)},true);addEventListener('blur',()=>finish(true));
  window.addEventListener('click',e=>{const nav=e.target.closest?.('.bottom-nav');if(nav&&Date.now()<Number(nav.dataset.suppressClickUntilV2708)){e.preventDefault();e.stopImmediatePropagation()}},true);
  document.addEventListener('contextmenu',e=>{if(e.target.closest?.('.bottom-nav'))e.preventDefault()},true);
  function rows(){let tree;try{tree=cacheContenuCompagnies[String(compagnieSelectionnee||'')]}catch{}if(!tree)return;for(const row of all('#filesContainer .file-row')){const id=row.querySelector('.file-checkbox')?.dataset.fileId,found=trouverFichierDansArbre(tree,id)?.fichier,pending=!!found?._cdqPendingSaveV2660;let badge=$('.file-pending-v2708',row);if(!badge){badge=document.createElement('span');badge.className='file-pending-v2708';badge.textContent='↥';badge.title='Conservé sur cet appareil — synchronisation en attente';badge.setAttribute('aria-label',badge.title);row.querySelector('.file-name')?.append(badge)}badge.hidden=!pending;badge.tabIndex=pending?0:-1;badge.setAttribute('role','button');badge.setAttribute('aria-label','Synchronisation en attente — retirer cet envoi');badge.title='Cliquer pour retirer cet envoi bloqué';if(!badge.dataset.cleanupV2714){badge.dataset.cleanupV2714='1';badge.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();badge.click();}});}const green=$('.file-today-done-badge',row);if(green)green.hidden=pending||!(cdqFichierModifieAujourdhui(found?.dateModification)||cdqFichierModifieAujourdhui(found?._cdqSavedAtV2708));}}
@@ -23000,6 +23002,7 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
  }
  function palette(){return root.dataset.cdqPalette||root.dataset.readerTheme||'dark'}
  function action(button){
+  if(button.id==='cdqCreateClientV2640')return button.dataset.companyAction==='rename'?'rename':'add';
   if(ids[button.id])return ids[button.id];
   if(button.matches('.cdq-im-tile,.cdq-im-scanmini')){const key={list:'inventory',price:'price',scanner:'scanner',history:'history'}[button.dataset.view];if(key)return key;}
   for(const [attribute,key]of Object.entries(attributes))if(button.hasAttribute(attribute))return key;

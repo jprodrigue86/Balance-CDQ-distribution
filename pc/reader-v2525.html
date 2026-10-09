@@ -332,6 +332,7 @@ html body #filesContainer .file-row>.file-today-done-badge[hidden]{display:inlin
  }
  function palette(){return root.dataset.cdqPalette||root.dataset.readerTheme||'dark'}
  function action(button){
+  if(button.id==='cdqCreateClientV2640')return button.dataset.companyAction==='rename'?'rename':'add';
   if(ids[button.id])return ids[button.id];
   if(button.matches('.cdq-im-tile,.cdq-im-scanmini')){const key={list:'inventory',price:'price',scanner:'scanner',history:'history'}[button.dataset.view];if(key)return key;}
   for(const [attribute,key]of Object.entries(attributes))if(button.hasAttribute(attribute))return key;
