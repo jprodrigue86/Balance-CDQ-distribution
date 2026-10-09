@@ -3,7 +3,7 @@
   const root=document.documentElement;
   if(!root.classList.contains('cdq-desktop-v2676'))return;
   const $=s=>document.querySelector(s),all=s=>[...document.querySelectorAll(s)];
-  const order=['home','dossier','calibration','calcul','inventory','catalog','invoices','opportunities','opportunityBoard','trash'];
+  const order=['home','dossier','calibration','calcul','inventory','catalog','invoices','opportunities','trash'];
   let queued=false,menu=null,menuOwner=null,menuButtons=[];
   function closeMenu(focus=false){if(!menu)return;const owner=menuOwner;for(const [button,parent]of menuButtons){button.removeAttribute('role');if(parent.isConnected)parent.append(button);}menuButtons=[];menu.remove();menu=null;menuOwner=null;if(focus&&owner?.isConnected)owner.focus();}
   function showRowMenu(row,point){
