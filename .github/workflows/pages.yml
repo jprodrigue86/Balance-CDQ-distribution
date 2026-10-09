@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -50,12 +51,99 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload distribution
+        id: uploaded
         uses: actions/upload-pages-artifact@v4
         with:
           path: .
           name: github-pages-${{ github.run_attempt }}
-      - name: Deploy
+      # Use the ID returned by upload-pages-artifact. Artifact-name discovery
+      # can temporarily return an older list immediately after a successful upload.
+      - name: Deploy the exact uploaded artifact
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/github-script@v8
+        env:
+          PAGES_ARTIFACT_ID: ${{ steps.uploaded.outputs.artifact_id }}
         with:
-          artifact_name: github-pages-${{ github.run_attempt }}
+          script: |
+            const artifactId = Number(process.env.PAGES_ARTIFACT_ID);
+            if (!Number.isSafeInteger(artifactId) || artifactId <= 0) throw Error('Missing uploaded Pages artifact ID');
+            const {owner, repo} = context.repo;
+            const artifact = (await github.request('GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}', {
+              owner, repo, artifact_id: artifactId
+            })).data;
+            const expectedName = 'github-pages-' + process.env.GITHUB_RUN_ATTEMPT;
+            if (artifact.name !== expectedName || artifact.expired ||
+                Number(artifact.workflow_run?.id) !== Number(process.env.GITHUB_RUN_ID)) {
+              throw Error('Uploaded Pages artifact identity does not match this workflow attempt');
+            }
+            const oidcToken = await core.getIDToken();
+            core.setSecret(oidcToken);
+            const deployment = (await github.request('POST /repos/{owner}/{repo}/pages/deployments', {
+              owner, repo, artifact_id: artifactId, pages_build_version: context.sha, oidc_token: oidcToken
+            })).data;
+            const deploymentId = deployment.id || deployment.status_url?.split('/').pop();
+            if (!deploymentId) throw Error('Pages did not return a deployment ID');
+            const failed = new Set(['deployment_failed', 'deployment_perms_error', 'deployment_content_failed',
+              'deployment_cancelled', 'deployment_lost']);
+            const deadline = Date.now() + 600000;
+            while (Date.now() < deadline) {
+              const state = (await github.request('GET /repos/{owner}/{repo}/pages/deployments/{deployment_id}', {
+                owner, repo, deployment_id: deploymentId
+              })).data;
+              if (state.status === 'succeed') {
+                core.setOutput('page_url', deployment.page_url);
+                core.setOutput('status', 'succeed');
+                core.info('Exact uploaded Pages artifact deployed successfully.');
+                return;
+              }
+              if (failed.has(state.status)) throw Error('Pages deployment: ' + state.status);
+              core.info('Pages deployment: ' + state.status);
+              await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+            throw Error('Pages deployment timed out');
+      - name: Verify live PC, iPhone and Android releases
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import crypto from 'node:crypto';
+          const root='https://jprodrigue86.github.io/Balance-CDQ-distribution/';
+          const releases=[['pc','pc/release.json'],['iphone','iphone/app/release.json'],['android','android-release-update.json']];
+          const results=[];
+          for(const [platform,path] of releases){
+            const expected=JSON.parse(fs.readFileSync(path,'utf8'));
+            let actual;
+            for(let attempt=0;attempt<60;attempt++){
+              const response=await fetch(root+path+'?verify='+Date.now(),{cache:'no-store'});
+              if(response.ok){
+                actual=await response.json();
+                const keys=platform==='android'?['versionName','versionCode','sha256','signingCertificateSha256']:['version','release','androidSelectorSha256'];
+                if(keys.every(key=>actual[key]===expected[key]))break;
+              }
+              actual=null;
+              await new Promise(resolve=>setTimeout(resolve,5000));
+            }
+            if(!actual)throw Error('Live release differs from Git: '+platform);
+            if(platform!=='android'){
+              const base=platform==='pc'?'pc/':'iphone/app/';
+              for(const name of ['index.html','commercial-v2721.mjs','catalog-data-v2721.mjs','cursor-v2721.mjs','reader-report-layout-v2721.mjs']){
+                const response=await fetch(root+base+name+'?verify='+Date.now(),{cache:'no-store'});
+                if(!response.ok)throw Error('Live file unavailable: '+base+name);
+                const live=Buffer.from(await response.arrayBuffer());
+                const expectedBytes=fs.readFileSync(base+name);
+                const hash=bytes=>crypto.createHash('sha256').update(bytes).digest('hex');
+                if(hash(live)!==hash(expectedBytes))throw Error('Live file differs from Git: '+base+name);
+              }
+            }
+            results.push({platform,version:actual.version||actual.versionName,release:actual.release||actual.sha256,verified:true});
+          }
+          fs.mkdirSync('qa-pages',{recursive:true});
+          fs.writeFileSync('qa-pages/releases.json',JSON.stringify({source:process.env.GITHUB_SHA,results},null,2));
+          console.log(JSON.stringify(results));
+          JS
+      - name: Keep compact live release verification
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages-live-release-${{ github.run_attempt }}
+          path: qa-pages/releases.json
+          retention-days: 7
