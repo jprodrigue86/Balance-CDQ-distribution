@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.20" data-cdq-pc-release="6e10a88d796773be9642f7a565c19366697acbc49bbd6d5a72b9a304c077f0c9">
+<html data-cdq-pc-version="27.21" data-cdq-pc-release="eeaf333ea7f63d21b0fb19e7d3658cfbb74f7c4a8179fbc29e3085fa76073c4f">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
 <script id="cdqNavigationPreloadV2681">(function(){
 if(/BalanceCDQAndroid\//.test(navigator.userAgent))return;
-for(const name of ["workspace-v2638.mjs","drive-file-icons-v2710.mjs","navigation-style-v2708.mjs","corner-signals-v2677.mjs","weighing-calculations-v2638.mjs","bridge-six-v2658.mjs","calibration-feedback-v2566.mjs","drive-cache-v2677.mjs","opportunity-fields-v2699.mjs","drive-actions-v2699.mjs","drive-trash-v2713.mjs","calibration-ui-v2565.mjs","calibration-scan-v2668.mjs","calibration-icon-v2566.mjs","calibration-db-v2565.mjs","calibration-methods-v2566.mjs","calibration-models-v2668.mjs","calibration-notes-v2658.mjs","file-copy-move-v2677.mjs"]){const link=document.createElement('link');link.rel='modulepreload';link.href='./'+name;link.dataset.cdqStartupV2681='';document.head.appendChild(link);}
+for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2721.mjs","opportunity-fields-v2699.mjs","drive-file-icons-v2710.mjs","navigation-style-v2708.mjs","corner-signals-v2677.mjs","weighing-calculations-v2638.mjs","bridge-six-v2658.mjs","calibration-feedback-v2566.mjs","drive-cache-v2677.mjs","drive-actions-v2699.mjs","drive-trash-v2713.mjs","calibration-ui-v2565.mjs","calibration-scan-v2668.mjs","calibration-icon-v2566.mjs","calibration-db-v2565.mjs","calibration-methods-v2566.mjs","calibration-models-v2668.mjs","calibration-notes-v2658.mjs","file-copy-move-v2677.mjs"]){const link=document.createElement('link');link.rel='modulepreload';link.href='./'+name;link.dataset.cdqStartupV2681='';document.head.appendChild(link);}
 })();</script>
 <script>/* One synchronous layout for the company chooser; background refreshes never
  * replace a row while the technician is choosing it. */
@@ -841,7 +841,7 @@ for(const name of ["workspace-v2638.mjs","drive-file-icons-v2710.mjs","navigatio
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.09-v27.20-navigation-fluide">
+<meta name="cdq-package-build" content="2026.10.09-v27.21-catalogue-opportunites">
 
 
 <script id="cdqBridgeV23">
@@ -895,7 +895,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.09-v27.20-navigation-fluide'
+    build:'2026.10.09-v27.21-catalogue-opportunites'
   });
 }
 
@@ -908,7 +908,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.09-v27.20-navigation-fluide'
+        build:'2026.10.09-v27.21-catalogue-opportunites'
       });
     }
   } catch(e) {}
@@ -11476,7 +11476,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.09-v27.20-navigation-fluide";
+  const CDQ_BUILD = "2026.10.09-v27.21-catalogue-opportunites";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13736,7 +13736,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.09-v27.20-navigation-fluide";
+const CDQ_V19_BUILD = "2026.10.09-v27.21-catalogue-opportunites";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -16094,7 +16094,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.09-v27.20-navigation-fluide";
+const CDQ_V20_BUILD = "2026.10.09-v27.21-catalogue-opportunites";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16941,7 +16941,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.09-v27.20-navigation-fluide";
+const CDQ_V21_BUILD = "2026.10.09-v27.21-catalogue-opportunites";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21595,7 +21595,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.09-v27.20-navigation-fluide',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.09-v27.21-catalogue-opportunites',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -22789,6 +22789,8 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
   });
 })();
 </script>
+<link rel="stylesheet" href="./commercial-v2721.css">
+<script type="module" src="./cursor-v2721.mjs"></script>
 <link rel="stylesheet" href="./workspace-v2638.css">
 <script type="module" src="./workspace-v2638.mjs"></script>
 <script type="module" src="./balance-list-v2638.mjs"></script>
@@ -22939,9 +22941,9 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
  const root=document.documentElement,$=(s,r=document)=>r.querySelector(s),all=(s,r=document)=>[...r.querySelectorAll(s)];
  const get=(k,f)=>{try{return localStorage.getItem(k)??f}catch{return f}},put=(k,v)=>{try{localStorage.setItem(k,v)}catch{}};
  const owner=()=>{try{return String(utilisateurCourantEmail||'').toLowerCase()}catch{return ''}};
- const initial=['home','dossier','calibration','calcul','inventory','invoices','opportunities','trash'];
+ const initial=['home','dossier','calibration','calcul','inventory','catalog','invoices','opportunities','opportunityBoard','trash'];
  const orderKey=()=> 'cdqNavOrderV2708:'+owner();
- function savedOrder(){let a=[];try{a=JSON.parse(get(orderKey(),'[]'))}catch{}if(!Array.isArray(a))a=[];return [...new Set([...a.filter(k=>initial.includes(k)),...initial])];}
+ function savedOrder(){let a=[];try{a=JSON.parse(get(orderKey(),'[]'))}catch{}if(!Array.isArray(a))a=[];a=[...new Set(a.filter(k=>initial.includes(k)))];for(const [key,after]of [['catalog','inventory'],['opportunityBoard','opportunities']])if(!a.includes(key)&&a.includes(after))a.splice(a.indexOf(after)+1,0,key);return [...new Set([...a,...initial])];}
  function motion(){root.dataset.cdqReducedMotionV2708=get('cdqReducedMotionV2708','false');}
  function button(text,fn){const b=document.createElement('button');b.type='button';b.textContent=text;b.onclick=fn;return b;}
  function section(title,help){const s=document.createElement('section'),h=document.createElement('h3');h.textContent=title;s.append(h);if(help){const p=document.createElement('p');p.textContent=help;s.append(p)}return s;}
@@ -22987,6 +22989,7 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
  addEventListener('cdq:pdf-local-saved',rows);addEventListener('cdq:pdf-saved',rows);addEventListener('cdq:access-state-v2527',()=>{finish(true);applyOrder()});document.addEventListener('cdq:icons-changed',applyOrder);motion();applyOrder();
  window.cdqInterfaceV2708={applyOrder,finish,organize,rows};
 })();
+
 </script>
 <script id="cdqInterfaceV2710">(() => {
  'use strict';

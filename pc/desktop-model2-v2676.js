@@ -3,7 +3,7 @@
   const root=document.documentElement;
   if(!root.classList.contains('cdq-desktop-v2676'))return;
   const $=s=>document.querySelector(s),all=s=>[...document.querySelectorAll(s)];
-  const order=['home','dossier','calibration','calcul','inventory','invoices','opportunities','trash'];
+  const order=['home','dossier','calibration','calcul','inventory','catalog','invoices','opportunities','opportunityBoard','trash'];
   let queued=false,menu=null,menuOwner=null,menuButtons=[];
   function closeMenu(focus=false){if(!menu)return;const owner=menuOwner;for(const [button,parent]of menuButtons){button.removeAttribute('role');if(parent.isConnected)parent.append(button);}menuButtons=[];menu.remove();menu=null;menuOwner=null;if(focus&&owner?.isConnected)owner.focus();}
   function showRowMenu(row,point){
@@ -62,7 +62,8 @@
       const selected=b.dataset.cdqCurrent==='true';
       set(b,{'background':selected?'var(--cdq-selected)':'transparent','border-color':selected?'var(--cdq-line)':'transparent','box-shadow':selected?'inset 3px 0 var(--cdq-nav-accent)':'none'});
       set(art,{'width':artSize+'px','height':artSize+'px','min-width':artSize+'px','min-height':artSize+'px','max-width':'none','max-height':'none','flex-shrink':'0','display':'inline-flex','align-items':'center','justify-content':'center'});
-      set(label,{'font-size':Math.round(14*textScale)+'px','line-height':'1.2','text-align':'left','white-space':'nowrap','margin':'0','padding':'0','font-weight':'600','color':'var(--cdq-ink)','-webkit-text-fill-color':'var(--cdq-ink)','text-shadow':'none','filter':'none','animation':'none','transition':'none'});
+      const longLabel=b.dataset.workspaceRoute==='opportunityBoard';
+      set(label,{'font-size':Math.round((longLabel?12:14)*textScale)+'px','line-height':'1.2','text-align':'left','white-space':longLabel?'normal':'nowrap','margin':'0','padding':'0','font-weight':'600','color':'var(--cdq-ink)','-webkit-text-fill-color':'var(--cdq-ink)','text-shadow':'none','filter':'none','animation':'none','transition':'none'});
       b.title=label?.textContent?.trim()||'';b.setAttribute('aria-label',b.title);b.style.order=String(order.indexOf(b.dataset.workspaceRoute));
     }
     const geometry={'position':'fixed','top':top+'px','left':left+'px','right':'10px','bottom':'10px','width':(innerWidth-left-10)+'px','max-width':'none','height':(innerHeight-top-10)+'px','max-height':(innerHeight-top-10)+'px','min-height':'0','margin':'0','transform':'none','zoom':'1','box-sizing':'border-box'};
@@ -130,6 +131,7 @@
   window.cdqDesktopModel2={layout,positionReader,layoutCompanyMenu,schedule,installRowActions,closeMenu,version:root.dataset.cdqPcVersion,model:3};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
+
 
 
 

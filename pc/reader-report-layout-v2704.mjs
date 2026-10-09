@@ -22,7 +22,8 @@ export function reportGridV2704(pdf){
  const next=r('charge_point_2_charge_utilisee');
  const page=pdf.getPage(0).node,marker=page.entries().find(([k])=>String(k)==='/CDQReportLayoutV2713'),old=page.entries().find(([k])=>String(k)==='/CDQReportLayoutV2704');
  const meta=marker&&formHasSecondLoad(f)&&old?pdf.context.lookup(old[1]):null,recorded=meta?.entries().find(([k])=>String(k)==='/Gap')?.[1]?.asNumber?.();
- return {gap:recorded??Math.max(.8,b.x-a.x-a.width-2*pad),rowGap:Math.max(.8,a.y-next.y-a.height-2*pad),pad};
+ const requested=page.entries().some(([k])=>String(k)==='/CDQReportLayoutV2721'),grid=requested&&old?pdf.context.lookup(old[1]):null,originalGap=grid?.entries().find(([k])=>String(k)==='/Gap')?.[1]?.asNumber?.(),originalRowGap=grid?.entries().find(([k])=>String(k)==='/RowGap')?.[1]?.asNumber?.();
+ return {gap:originalGap??recorded??Math.max(.8,b.x-a.x-a.width-2*pad),rowGap:originalRowGap??Math.max(.8,a.y-next.y-a.height-2*pad),pad};
 }
 
 export function sectionCircleV2704(number,x,y,s=1){
@@ -135,3 +136,4 @@ export async function normalizeReportLayoutV2704(pdf,L){
  restoreTruckDoorV2704(pdf,L,boldRef);
  return true;
 }
+

@@ -57,7 +57,10 @@ function ensureNav(){
   if(label){setImportant(label,'color','var(--cdq-ink)');setImportant(label,'-webkit-text-fill-color','var(--cdq-ink)');setImportant(label,'text-shadow','none');}
   // Keep all destinations available in clients as well as on the home screen.
   b.hidden=false;
-  const order=['Accueil','Dossier','Favoris','Rapport','Calibration','Calcul','Inventaire','Factures','Opportunités','Drive général','Corbeille'];
+  // The workspace owns the shared rail once installed. Competing reorders
+  // detach live touch targets and interrupt native scrolling.
+  if(window.cdqWorkspaceV2638)return;
+  const order=['Accueil','Dossier','Favoris','Rapport','Calibration','Calcul','Inventaire','Catalogue','Factures','Opportunités','Gestion des opportunités','Drive général','Corbeille'];
   const items=$$(':scope > .bottom-nav-item',nav);
   const sorted=items.slice().sort((a,b)=>order.indexOf($('small',a)?.textContent.trim())-order.indexOf($('small',b)?.textContent.trim()));
   // Move only newly inserted/out-of-order buttons. Never rebuild the rail or
@@ -217,3 +220,4 @@ function start(){
 }
 window.cdqCalibrationV2565={prepareNavigation:()=>{installStyles();ensureNav();},open:openLibrary,openFor,find:findCalibration,refresh:schedule,indicatorSvg};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+

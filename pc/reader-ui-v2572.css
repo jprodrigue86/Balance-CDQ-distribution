@@ -105,6 +105,16 @@ body.cdq-reader-pc #status[data-active=true]{opacity:1}
 .cdq-result-indicator:not(.row-result){justify-content:flex-end;gap:6%;padding:0 3%}
 .cdq-result-indicator:not(.row-result) span{text-align:right;white-space:nowrap}
 
+
+/* Autofill must keep the printed cyan cell, including focus and hover. */
+#viewer .annotationLayer :is(.textWidgetAnnotation,.choiceWidgetAnnotation) :is(input,textarea,select):-webkit-autofill,
+#viewer .annotationLayer :is(.textWidgetAnnotation,.choiceWidgetAnnotation) :is(input,textarea,select):-webkit-autofill:hover,
+#viewer .annotationLayer :is(.textWidgetAnnotation,.choiceWidgetAnnotation) :is(input,textarea,select):-webkit-autofill:focus {
+ -webkit-box-shadow:0 0 0 1000px #99fdfd inset!important;box-shadow:0 0 0 1000px #99fdfd inset!important;
+ -webkit-text-fill-color:#000!important;caret-color:#000!important;background-color:#99fdfd!important;
+}
+#viewer .annotationLayer :is(input,textarea,select):autofill{background-color:#99fdfd!important;box-shadow:0 0 0 1000px #99fdfd inset!important;color:#000!important}
+
 /* PC: title occupies the space between Back and zoom, with no bottom strip. */
 body.cdq-reader-pc #readerTop{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto auto!important;align-items:center;gap:10px;grid-template-areas:"back name zoom menu"!important}
 body.cdq-reader-pc #readerTop #back{grid-area:back}
