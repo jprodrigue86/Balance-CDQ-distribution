@@ -31,9 +31,10 @@ for(const entry of interchange){const [brand,model]=entry.split('|');families.pu
 export const catalogProducts=Object.freeze(families.flatMap(f=>f.variants.map((v,index)=>Object.freeze({...f,variants:undefined,...v,id:f.id+'-'+index,familyId:f.id,reviewedAt}))));
 export const categories=Object.freeze(['Cellules de charge','Indicateurs','Balances de plancher','Balances de table','Balances de précision']);
 export function normalized(v){return String(v??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');}
-export function filterProducts(products,criteria={}){return products.filter(p=>Object.entries(criteria).every(([k,v])=>{
- if(v===''||v==null)return true;
- if(k==='query')return normalized([p.brand,p.model,p.summary,p.type,p.category,p.material,p.capacity,p.unit].join(' ')).includes(normalized(v));
+const catalogIndexV2724=new WeakMap(),catalogReferencesV2724=new Map();
+for(const p of catalogProducts){catalogIndexV2724.set(p,{search:normalized([p.brand,p.model,p.summary,p.type,p.category,p.material,p.capacity,p.unit].join(' ')),brand:normalized(p.brand),model:normalized(p.model)});const key=p.brand+'|'+p.model;let rows=catalogReferencesV2724.get(key);if(!rows){rows=[];catalogReferencesV2724.set(key,rows);}rows.push(p);}
+export function filterProducts(products,criteria={}){const entries=Object.entries(criteria).filter(([,v])=>v!==''&&v!=null),query=entries.some(([k])=>k==='query')?normalized(criteria.query):'';return products.filter(p=>entries.every(([k,v])=>{
+ if(k==='query')return (catalogIndexV2724.get(p)?.search??normalized([p.brand,p.model,p.summary,p.type,p.category,p.material,p.capacity,p.unit].join(' '))).includes(query);
  if(k==='divisions'){const n=p[criteria.application==='single'?'ntepSingle':'ntepMultiple'];return n!=null&&n>=Number(v);}
  if(k==='application')return true;
  if(k==='capacity')return p.capacity!=null&&p.capacity+' '+p.unit===v;
@@ -41,5 +42,6 @@ export function filterProducts(products,criteria={}){return products.filter(p=>O
  return String(p[k]??'')===String(v);
  }));}
 export function minimumInterval(p){if(p.ntepVmin!=null)return {value:p.ntepVmin,unit:p.unit,method:'vmin NTEP — plusieurs cellules'};return p.y&&p.capacity?{value:p.capacity/p.y,unit:p.unit,method:'Calculé : Emax / Y (OIML)'}:null;}
-export function familyMatches(article){const maker=normalized(article.fabricant),model=normalized(article.modele||article.numero);if(!model)return [];const matches=catalogProducts.filter(p=>(!maker||maker.includes(normalized(p.brand))||normalized(p.brand).includes(maker))&&(model===normalized(p.model)||model.startsWith(normalized(p.model))&&/^[0-9]/.test(model.slice(normalized(p.model).length))));const longest=Math.max(0,...matches.map(p=>normalized(p.model).length));return matches.filter(p=>normalized(p.model).length===longest);}
-export function equivalentReferences(p){return (p.interchange||[]).map(entry=>{const [brand,model]=entry.split('|');return {brand,model,products:catalogProducts.filter(q=>q.brand===brand&&q.model===model),source:p.datasheet||p.source};});}
+export function familyMatches(article){const maker=normalized(article.fabricant),model=normalized(article.modele||article.numero);if(!model)return [];const matches=catalogProducts.filter(p=>{const value=catalogIndexV2724.get(p);return (!maker||maker.includes(value.brand)||value.brand.includes(maker))&&(model===value.model||model.startsWith(value.model)&&/^[0-9]/.test(model.slice(value.model.length)));});const longest=Math.max(0,...matches.map(p=>catalogIndexV2724.get(p).model.length));return matches.filter(p=>catalogIndexV2724.get(p).model.length===longest);}
+export function equivalentReferences(p){return (p.interchange||[]).map(entry=>{const [brand,model]=entry.split('|');return {brand,model,products:(catalogReferencesV2724.get(brand+'|'+model)||[]).slice(),source:p.datasheet||p.source};});}
+

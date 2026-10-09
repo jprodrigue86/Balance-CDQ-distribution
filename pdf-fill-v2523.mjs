@@ -2,6 +2,7 @@ import {normalizeFloorStatusV2691} from './reader-floor-status-v2691.mjs';
 // Fill raw inputs, then run the approved PDF's own JavaScript calculations.
 import {floorTemplate} from './floor-template-v2519.mjs';
 import {compactToleranceActions,centerSingleLineAppearances} from './reader-layout-v2653.mjs';
+import {readCalculationMetadataV2724} from './pdf-metadata-v2724.mjs';
 const assets=new URL('./vendor/pdfjs-6.3.289/',import.meta.url).href;
 export const rawField=/^(client_(nom|telephone|technicien|adresse|ville|province|code_postal)|(?:prochain_etalonnage|date_etalonnage)_[123]|frequence_etalonnage|(?:indicateur|base_balance)_(fabricant|modele|numero_serie|numero_am)|imprimante_(fabricant|modele|numero_serie)|identification_balance|etendue_verifiee|legal_pour_commerce|capacite_maximale|unite_mesure|echelon|etalon_utilise|charge_point_[1-6]_(charge_utilisee|avant_correction|apres_correction)|charge_excentricite|excentricite_(avant|apres)_(arriere_gauche|avant_gauche|arriere_droit|avant_droit))$/;
 let engine;
@@ -53,12 +54,12 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false}={}){
   let sandbox;const valid=new Map(),errors=[];
   const update=e=>{const {id,siblings,...detail}=e.detail||{};if(detail.command==='error'){errors.push(detail.value);console.error(detail.value);return;}for(const key of [id,...(siblings||[])])if(valid.has(key)){const value={...detail},def=valid.get(key);if(def.type==='text'&&typeof value.value==='number')value.value=String(value.value);if(def.type==='checkbox'&&typeof value.value==='string')value.value=value.value!=='Off'&&value.value===def.exportValues;doc.annotationStorage.setValue(key,value);}};
   try{
-    const objects=await doc.getFieldObjects();if(!objects)throw Error('Ce PDF ne contient pas de formulaire.');
+    const {objects,calculationOrder,metadata,actions}=await readCalculationMetadataV2724(doc);if(!objects)throw Error('Ce PDF ne contient pas de formulaire.');
     const fields=objects instanceof Map?objects:new Map(Object.entries(objects));
     for(const defs of fields.values())for(const def of defs)valid.set(def.id,def);
     window.addEventListener('updatefromsandbox',update);
     const {QuickJSSandbox}=await import(assets+'build/pdf.sandbox.mjs');sandbox=await QuickJSSandbox(assets+'wasm/');
-    sandbox.create({objects,calculationOrder:await doc.getCalculationOrderIds(),appInfo:{platform:navigator.platform,language:'fr-CA'},docInfo:{...(await doc.getMetadata()).info,numPages:doc.numPages,actions:await doc.getJSActions()}});
+    sandbox.create({objects,calculationOrder,appInfo:{platform:navigator.platform,language:'fr-CA'},docInfo:{...metadata.info,numPages:doc.numPages,actions}});
     sandbox.dispatchEvent({id:'doc',name:'Open'});
     for(const [name,raw] of entries){
       const defs=fields.get(name);if(!defs?.length){if(strict)throw Error('Champ absent : '+name);continue;}
@@ -74,3 +75,4 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false}={}){
     return output;
   }finally{window.removeEventListener('updatefromsandbox',update);sandbox?.nukeSandbox();await task.destroy();}
 }
+
