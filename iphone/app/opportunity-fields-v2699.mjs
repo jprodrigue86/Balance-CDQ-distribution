@@ -8,7 +8,7 @@ const marker='\n\n[CDQ-OPPORTUNITE-V26.99]\n';
 function validDate(v){if(!v)return true;if(!/^20\d{2}-\d{2}-\d{2}$/.test(v))return false;const d=new Date(v+'T12:00:00Z');return !Number.isNaN(d.getTime())&&d.toISOString().slice(0,10)===v;}
 export function decodeOpportunityV2699(item){
  const result={...item};const raw=String(item.notes||''),at=raw.lastIndexOf(marker);
- if(at>=0)try{const extra=JSON.parse(raw.slice(at+marker.length));if(extra.schema===1&&stagesV2699.includes(extra.etape)&&(!extra.pipeline||pipelinesV2699.includes(extra.pipeline))&&(!extra.typeVente||saleTypesV2699.includes(extra.typeVente))&&validDate(extra.dateReception)&&validDate(extra.dateCloture)){Object.assign(result,{typeVente:extra.typeVente||'',pipeline:extra.pipeline||'',etape:extra.etape,dateReception:extra.dateReception||'',dateCloture:extra.dateCloture||'',notes:raw.slice(0,at)});}}catch{}
+ if(at>=0)try{const extra=JSON.parse(raw.slice(at+marker.length));if(extra.schema===1&&stagesV2699.includes(extra.etape)&&(!extra.pipeline||pipelinesV2699.includes(extra.pipeline))&&(!extra.typeVente||saleTypesV2699.includes(extra.typeVente))&&validDate(extra.dateReception)&&validDate(extra.dateCloture)){Object.assign(result,{typeVente:extra.typeVente||'',pipeline:extra.pipeline||'',etape:extra.etape,dateReception:extra.dateReception||'',dateCloture:extra.dateCloture||'',boardOrder:Number.isFinite(extra.boardOrder)?extra.boardOrder:undefined,notes:raw.slice(0,at)});}}catch{}
  if(!stagesV2699.includes(result.etape))result.etape=previous[result.etape]||stagesV2699[0];
  return result;
 }
@@ -19,6 +19,7 @@ export function encodeOpportunityV2699(item,{existing=false}={}){
  if((!existing||p.typeVente)&&!saleTypesV2699.includes(p.typeVente)||(!existing||p.pipeline)&&!pipelinesV2699.includes(p.pipeline))throw Error('Choisissez le type de vente et le pipeline.');
  if(!existing&&!p.dateReception||!validDate(p.dateReception||'')||!validDate(p.dateCloture||''))throw Error('La date de réception ou de clôture est invalide.');
  const extra={schema:1,typeVente:p.typeVente||'',pipeline:p.pipeline||'',etape:p.etape,dateReception:p.dateReception||'',dateCloture:p.dateCloture||''};
+ if(Number.isFinite(p.boardOrder))extra.boardOrder=p.boardOrder;
  const notes=String(p.notes||'')+marker+JSON.stringify(extra);if(notes.length>2000)throw Error('Les notes sont trop longues. Réduisez-les pour enregistrer les choix de l’opportunité.');
  return {...p,etape:legacy[stage],notes};
 }
@@ -32,3 +33,4 @@ export function driveFileKindV2699(item){
  if(mime.startsWith('image/')||/\.(png|jpe?g|webp|heic)$/i.test(name))return {key:'gallery',label:'Photo'};
  return {key:'file',label:'Fichier'};
 }
+

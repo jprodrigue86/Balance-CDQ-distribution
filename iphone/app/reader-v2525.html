@@ -318,7 +318,8 @@ html body #filesContainer .file-row>.file-today-done-badge[hidden]{display:inlin
 <div id="container"><div id="viewer" class="pdfViewer"></div><div id="empty"><label class="action" for="file">Ouvrir un PDF</label></div></div><input id="file" type="file" accept="application/pdf,.pdf"><div id="status" role="status">Chargement du lecteur…</div>
 <nav id="formNav" aria-label="Saisie du formulaire" hidden><button id="previousField">↑ Précédent</button><button id="nextField">Suivant ↓</button><button id="dismissKeyboard" aria-label="Fermer le clavier et regarder le PDF">OK</button><button id="doneFields">Terminer</button></nav>
 <div id="savingMask" hidden></div><dialog id="closeDialog" aria-labelledby="closeTitle"><h2 id="closeTitle">Terminer ce PDF ?</h2><p>Que voulez-vous faire avec les modifications ?</p><p id="closeError" role="status"></p><button id="saveClose" class="primary">✓ Enregistrer les modifications</button><button id="discard">Fermer sans enregistrer</button><button id="keepEditing">Annuler</button></dialog>
-<script type="module" src="reader-v2525.mjs"></script><script id="cdqInterfaceV2710">(() => {
+<script type="module" src="reader-v2525.mjs"></script><script type="module" src="./cursor-v2721.mjs"></script>
+<script id="cdqInterfaceV2710">(() => {
  'use strict';
  const root=document.documentElement;
  const ids={menu:'settings',back:'back',minus:'minus',plus:'add',fit:'expand',quitMenu:'finish',clientNoteButton:'note',clientPhotoButton:'photo',cdqV19OfflineStatus:'offline',cdqTopDisplayButtonV2204:'settings',cdqCreateClientV2640:'rename',cdqPcFileSearch:'search',cdqImClose:'finish',cdqImBack:'back',cdqImRefresh:'refresh',cdqDiagnosticSettingsButton:'settings',cdqAdminSettingsButton:'settings',cdqInstallShareSettingsButton:'share'};
@@ -383,3 +384,4 @@ html body #filesContainer .file-row>.file-today-done-badge[hidden]{display:inlin
 })();
 </script>
 </body></html>
+

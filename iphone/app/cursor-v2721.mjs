@@ -1,0 +1,33 @@
+const root=globalThis.document?.documentElement;
+const owners=()=>{try{return String(utilisateurCourantEmail||'').toLowerCase();}catch{}try{return String(root?.dataset.cdqWorkspaceOwner?.split('|')[0]||localStorage.getItem('cdqLastUnlockEmailV2511')||'').toLowerCase();}catch{return '';}};
+const key=()=> 'cdqCursorV2721:'+owners();
+export const cursorChoices=Object.freeze([['theme','Selon le thème'],['system','Système'],['gauntlet','Gant de fer bleu'],['chrome','Flèche chrome'],['neon','Flèche néon'],['minimal','Flèche fine'],['dark','Flèche sombre'],['isometric','Flèche 3D'],['crosshair','Mire de précision'],['diamond','Diamant cyan']]);
+export function cursorSvg(kind,color='#35c9ff',pointer=false){
+ const defs='<defs><linearGradient id="steel" x2=".3" y2="1"><stop stop-color="#f4fbff"/><stop offset=".32" stop-color="#9cabbc"/><stop offset=".53" stop-color="#33465b"/><stop offset=".8" stop-color="#d8e3ed"/><stop offset="1" stop-color="#56677c"/></linearGradient></defs>';
+ const arrow='<path d="M5 3v26l7-7 5 12 5-2-5-11h11z"/>';
+ const hand='<path d="M15 31 8 22c-3-4 1-7 4-3l2 2V6c0-5 6-5 6 0v9c2-4 6-2 6 1 3-2 6 0 5 3 4-1 6 2 4 6l-4 11H18z"/>';
+ let body;
+ if(kind==='gauntlet')body='<g fill="url(#steel)" stroke="'+color+'" stroke-width="1.7" stroke-linejoin="round">'+hand+'<path d="m16 9 3 1m-3 4 3 1m1 5 5 1m-4 4 5 1m-9 3 13 1M18 32l13 1M24 17v10M29 20v8" fill="none" stroke="#253b51" stroke-width="1"/><path d="m18 32 13 1-1 4H19z"/></g>';
+ else if(kind==='crosshair')body='<g stroke="'+color+'" stroke-width="2" fill="none"><circle cx="20" cy="20" r="9"/><path d="M20 3v10m0 14v10M3 20h10m14 0h10"/><circle cx="20" cy="20" r="1.5" fill="#fff"/></g>';
+ else if(kind==='diamond')body='<path d="m5 3 25 15-13 4-5 12z" fill="#0b4966" stroke="'+color+'" stroke-width="1.8"/><path d="m5 3 12 19 13-4M17 22l-5 12" fill="none" stroke="#c6faff"/>';
+ else {const handMode=pointer,shape=handMode?hand:arrow;body='<g fill="'+(kind==='chrome'?'url(#steel)':kind==='dark'?'#111d2b':kind==='minimal'?'#fff':kind==='isometric'?'#19516c':'#082b3f')+'" stroke="'+(kind==='minimal'?'#172233':kind==='chrome'?'#4c728e':color)+'" stroke-width="'+(kind==='minimal'?1.2:1.8)+'" stroke-linejoin="round">'+shape+'</g>'+(kind==='isometric'&&!handMode?'<path d="m5 3 12 18 11 0M17 21l5 11" fill="none" stroke="#c7f8ff"/>':'');}
+ return '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40">'+defs+body+'</svg>';
+}
+function selection(){try{const v=localStorage.getItem(key());return cursorChoices.some(([k])=>k===v)?v:'theme';}catch{return 'theme';}}
+function theme(){if(window.cdqIconThemesV2514?.getStyle)return window.cdqIconThemesV2514.getStyle();try{return JSON.parse(localStorage.getItem('cdqIconThemeV2514:'+owners())||'null')?.style||root.dataset.cdqIconStyle||'current';}catch{return root.dataset.cdqIconStyle||'current';}}
+function resolved(v){return v==='theme'?({current:'neon',minimal:'minimal','dark-pro':'dark','metal-music':'gauntlet',isometric:'isometric'}[theme()]||'neon'):v;}
+const uri=s=>'data:image/svg+xml,'+encodeURIComponent(s);
+let style,last='';
+function apply(){const v=selection(),kind=resolved(v),enabled=root.classList.contains('cdq-desktop-v2676')||matchMedia('(pointer:fine)').matches,signature=[owners(),v,theme(),enabled].join('|');if(signature===last)return;last=signature;if(!style){style=document.createElement('style');style.id='cdq-cursor-v2721';document.head.append(style);}root.dataset.cdqCursorV2721=v;
+ if(!enabled||kind==='system'){style.textContent='';return;}
+ const normal=uri(cursorSvg(kind)),pointer=uri(cursorSvg(kind,'#35c9ff',true)),hot=kind==='crosshair'?'20 20':kind==='gauntlet'?'17 3':'5 3',pointerHot=kind==='crosshair'?'20 20':kind==='gauntlet'?'17 3':['diamond','crosshair'].includes(kind)?hot:'17 3';
+ style.textContent='html,body,body *{cursor:url("'+normal+'") '+hot+',auto!important}button,a,summary,select,[role=button],.bottom-nav-item{cursor:url("'+pointer+'") '+pointerHot+',pointer!important}input,textarea,[contenteditable=true]{cursor:text!important}[disabled]{cursor:not-allowed!important}[draggable=true]{cursor:grab!important}[draggable=true]:active{cursor:grabbing!important}.cdq-gantt-bar{cursor:grab!important}.cdq-gantt-bar [data-gantt-resize]{cursor:ew-resize!important}';
+}
+function organize(){const panel=document.getElementById('cdq-settings-panel-appearance');if(!panel||panel.querySelector('[data-cursor-options]'))return;const section=document.createElement('section');section.dataset.cursorOptions='';section.innerHTML='<h3>Curseur de souris — PC</h3><p>Le choix « Selon le thème » suit vos icônes. Votre préférence est conservée pour ce compte sur cet appareil.</p><div class="cdq-cursor-choices"></div><p role="status" data-cursor-status></p>';const choices=section.querySelector('.cdq-cursor-choices');for(const [kind,label]of cursorChoices){const b=document.createElement('button');b.type='button';b.dataset.cursorChoice=kind;b.innerHTML='<img alt="" width="40" height="40" src="'+uri(cursorSvg(kind==='system'?'minimal':resolved(kind)))+'"><span>'+label+'</span>';b.setAttribute('aria-pressed',String(selection()===kind));b.onclick=()=>{try{localStorage.setItem(key(),kind);}catch{}apply();for(const x of choices.children)x.setAttribute('aria-pressed',String(x===b));section.querySelector('[data-cursor-status]').textContent='Curseur sélectionné : '+label;};choices.append(b);}panel.append(section);}
+function sync(){apply();organize();for(const b of document.querySelectorAll('[data-cursor-choice]')){b.setAttribute('aria-pressed',String(selection()===b.dataset.cursorChoice));const img=b.querySelector('img');img.src=uri(cursorSvg(b.dataset.cursorChoice==='system'?'minimal':resolved(b.dataset.cursorChoice)));}}
+if(root){
+const choicesStyle=document.createElement('style');choicesStyle.textContent='.cdq-cursor-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.cdq-cursor-choices button{display:flex;align-items:center;gap:8px;min-height:58px;text-align:left}.cdq-cursor-choices button[aria-pressed=true]{outline:2px solid var(--cdq-accent,#35c9ff);outline-offset:1px}';document.head.append(choicesStyle);
+let queued=false;const schedule=()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;sync();});};
+new MutationObserver(schedule).observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:['class','data-cdq-icon-style','data-cdq-workspace-owner']});
+for(const e of ['cdq:icons-changed','cdq:access-ready','cdq:access-state-v2527','storage'])window.addEventListener(e,schedule);document.addEventListener('cdq:icons-changed',schedule);sync();
+}

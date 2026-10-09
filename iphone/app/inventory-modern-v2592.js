@@ -306,6 +306,7 @@ function renderDetail(){
   bindCommon();loadPhoto(a,$('[data-photo]',body));
   $$('[data-detailmove]',body).forEach(b=>b.onclick=()=>{if(state.labelInfo&&String(state.labelArticleId||'')===String(a.articleId))state.labelPendingKind=b.dataset.detailmove;else clearInventoryLabelContext();state.article=a;state.preferredLocation='';setView('move',{kind:b.dataset.detailmove,article:a})});
   $$('[data-transferloc]',body).forEach(b=>b.onclick=()=>{state.article=a;setView('move',{kind:'transfer',article:a,location:b.dataset.transferloc})});
+  window.cdqCatalogV2721?.enrichArticle(a,body);
   var pq=$('[data-pricequery]',body);if(pq)pq.onclick=()=>{state.query=pq.dataset.pricequery||'';state.category='Tous';state.locationFilter='';setView('price')};
 }
 async function editPrice(id){
@@ -486,7 +487,7 @@ function open(){syncInventoryScopeV2631();
 function close(){if(!page||page.hidden)return;page.hidden=true;document.documentElement.classList.remove('cdq-inventory-modern-open-v2592')}
 function inventoryButton(){var nav=$('.bottom-nav');if(!nav)return null;return $$(':scope > .bottom-nav-item',nav).find(b=>String($('small',b)?.textContent||'').trim()==='Inventaire')||null}
 function install(){
-  window.cdqInventoryModernV2592={open,close,resume:()=>{if(!page||!inventoryAllowedV2631()||inventoryOwnerV2631!==inventoryScopeV2631()||!state.inv)return open();page.hidden=false;document.documentElement.classList.add('cdq-inventory-modern-open-v2592');position();},refresh:()=>load(true).then(render),refreshQuiet:async safe=>{const view=state.view,article=state.article?.articleId;await load(true);if(state.view!==view||state.article?.articleId!==article||!safe())return false;if(article)state.article=findArticle(article)||state.article;render();return true;},applyZohoMeta:(rows,safe)=>{const meta=new Map(rows.map(r=>[String(r.articleId),r]));for(const a of state.inv?.articles||[])Object.assign(a,meta.get(String(a.articleId))||{});if(state.article)Object.assign(state.article,meta.get(String(state.article.articleId))||{});if(state.view==='detail'&&safe?.())renderDetail();}};
+  window.cdqInventoryModernV2592={open,close,snapshot:()=>inventoryAllowedV2631()&&inventoryOwnerV2631===inventoryScopeV2631()?state.inv:null,openArticle:async id=>{if(!page||page.hidden)open();await load(false);if(!inventoryAllowedV2631()||inventoryOwnerV2631!==inventoryScopeV2631())throw Error('Accès à l’inventaire requis.');const a=findArticle(id);if(!a)throw Error('Article introuvable.');setView('detail',{article:a});},resume:()=>{if(!page||!inventoryAllowedV2631()||inventoryOwnerV2631!==inventoryScopeV2631()||!state.inv)return open();page.hidden=false;document.documentElement.classList.add('cdq-inventory-modern-open-v2592');position();},refresh:()=>load(true).then(render),refreshQuiet:async safe=>{const view=state.view,article=state.article?.articleId;await load(true);if(state.view!==view||state.article?.articleId!==article||!safe())return false;if(article)state.article=findArticle(article)||state.article;render();return true;},applyZohoMeta:(rows,safe)=>{const meta=new Map(rows.map(r=>[String(r.articleId),r]));for(const a of state.inv?.articles||[])Object.assign(a,meta.get(String(a.articleId))||{});if(state.article)Object.assign(state.article,meta.get(String(state.article.articleId))||{});if(state.view==='detail'&&safe?.())renderDetail();}};
   window.ouvrirInventaireCDQ=open;
   document.addEventListener('click',function(e){var nav=$('.bottom-nav');if(!nav)return;var b=e.target.closest('.bottom-nav-item');if(!b)return;var label=String($('small',b)?.textContent||'').trim();if(label==='Inventaire'){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();if(page&&!page.hidden)close();else open();return}if(page&&!page.hidden)close()},true);
   addEventListener('resize',()=>{if(!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;position()})}},{passive:true});
@@ -496,3 +497,4 @@ function install(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 })();
+
