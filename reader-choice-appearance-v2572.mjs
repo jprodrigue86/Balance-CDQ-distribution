@@ -1,5 +1,6 @@
 import {normalizeReportLayoutV2721} from './reader-report-layout-v2721.mjs';
 import {normalizeReportMicroV2725} from './reader-report-micro-v2725.mjs';
+import {normalizeReportCorrectionsV2728} from './reader-report-corrections-v2728.mjs';
 import {normalizeReportTypographyV2719} from './reader-report-typography-v2719.mjs';
 import {normalizeReportMicroV2716} from './reader-report-micro-v2716.mjs';
 import {normalizeReportLayoutV2713} from './reader-report-layout-v2713.mjs';
@@ -50,7 +51,7 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const calculationsChanged=normalizeCalculationsV2694(pdf,L);
   if(compactReportReadyV2682(pdf,L)){
     const fontsChanged=await normalizePrecisionFontsV2700(pdf,L);
-    const layoutChanged=(await normalizeReportLayoutV2704(pdf,L))|(await normalizeReportLayoutV2713(pdf,L))|(await normalizeReportMicroV2716(pdf,L))|(await normalizeReportTypographyV2719(pdf,L))|(await normalizeReportLayoutV2721(pdf,L))|(await normalizeReportMicroV2725(pdf,L));
+    const layoutChanged=(await normalizeReportLayoutV2704(pdf,L))|(await normalizeReportLayoutV2713(pdf,L))|(await normalizeReportMicroV2716(pdf,L))|(await normalizeReportTypographyV2719(pdf,L))|(await normalizeReportLayoutV2721(pdf,L))|(await normalizeReportMicroV2725(pdf,L))|(await normalizeReportCorrectionsV2728(pdf,L));
     return floorChanged||precisionChanged||calculationsChanged||decimalsChanged||presentationChanged||fontsChanged||layoutChanged?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;
   }
   normalizeReportLayoutV2677(pdf,L);
@@ -61,7 +62,7 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const finalCalculationsChanged=normalizeCalculationsV2694(pdf,L);
   const finalPresentationChanged=await normalizeReportPresentationV2695(pdf,L);
   const fontsChanged=await normalizePrecisionFontsV2700(pdf,L);
-  const layoutChanged=(await normalizeReportLayoutV2704(pdf,L))|(await normalizeReportLayoutV2713(pdf,L))|(await normalizeReportMicroV2716(pdf,L))|(await normalizeReportTypographyV2719(pdf,L))|(await normalizeReportLayoutV2721(pdf,L))|(await normalizeReportMicroV2725(pdf,L));
+  const layoutChanged=(await normalizeReportLayoutV2704(pdf,L))|(await normalizeReportLayoutV2713(pdf,L))|(await normalizeReportMicroV2716(pdf,L))|(await normalizeReportTypographyV2719(pdf,L))|(await normalizeReportLayoutV2721(pdf,L))|(await normalizeReportMicroV2725(pdf,L))|(await normalizeReportCorrectionsV2728(pdf,L));
   if(!changed&&!vesselChanged&&!floorChanged&&!precisionChanged&&!equipmentChanged&&!calculationsChanged&&!finalCalculationsChanged&&!decimalsChanged&&!presentationChanged&&!finalPresentationChanged&&!fontsChanged&&!layoutChanged&&!rawNeedsAppearanceRepair(data))return data;
   form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
   compactReportV2682(pdf,L);
@@ -149,6 +150,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
   await normalizeReportTypographyV2719(pdf,L);
   await normalizeReportLayoutV2721(pdf,L);
   await normalizeReportMicroV2725(pdf,L);
+  await normalizeReportCorrectionsV2728(pdf,L);
   return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
 }
 

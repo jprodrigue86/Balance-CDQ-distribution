@@ -1,0 +1,13 @@
+#filesContainer .file-name .cdq-report-nonconforming-v2727 {
+ display:inline-block;
+ width:8px;
+ height:8px;
+ min-width:8px;
+ margin-inline-start:0;
+ margin-inline-end:7px;
+ border-radius:50%;
+ background:#ef333f;
+ vertical-align:middle;
+ pointer-events:none;
+ flex-shrink:0;
+}

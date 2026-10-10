@@ -1,0 +1,12 @@
+{
+  "model": "Ohaus Valor 7000",
+  "officialProductUrl": "https://mec.ohaus.com/en-eu/valor7000-12",
+  "officialProductPhotoUrl": "https://japan.ohaus.com/Ohaus/media/Products/Balances%20and%20Scales/Bench%20Scales/Valor%207000/Large/Valor7000-01-01.jpg?ext=.jpg",
+  "retrievedPhotoUrl": "https://www.scanvaegt.com/Files/Uploads/bench-valor-7000-left.png",
+  "sourcePhotoSha256": "65419005e9a23baf7d9f0436414865c1eec79a4992e5705ac5cd367d851f6aa6",
+  "asset": "table-ohaus-off.png",
+  "assetSha256": "2150a0776b95d371dc30c5514994ab183355be9390690c7353c846c329ef0353",
+  "editing": "Built-in imagegen: remove brand and model inscriptions; switch LCD off; transparent background; preserve real photographed product geometry, housing, platform and perspective.",
+  "prompt": "Use case: precise-object-edit. Asset type: real product photograph for a calibration PDF eccentricity diagram. Edit the attached actual Ohaus Valor 7000 product photograph. Preserve the exact physical scale, exact photograph, exact perspective, stainless platform, housing, buttons, feet, lens, natural reflections and lighting. Remove ONLY the OHAUS brand/logo on the left front panel, VALOR 7000 model text, and all model/brand/serial/certification text on the right-side sticker; replace those printed areas with the same natural surrounding material. The front LCD must be fully switched off: neutral dark empty display, no digits or illuminated indicators. Preserve the five real button shapes and their locations, do not add blue buttons or modify the product. Isolate the product with genuine transparent background. Crop tightly around the scale with modest transparent padding, all four platform corners, housing, and feet fully visible. No arrows, no labels, no added logos, no scenery, no stylization. Do not invent a different scale, do not change perspective or proportions.",
+  "scope": "Only the table report's existing shared eccentricity photograph and eight existing vector arrow paths. Fields, values, formulas, actions, borders and other report layout are preserved."
+}
