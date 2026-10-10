@@ -13,6 +13,28 @@ const metadata=file=>Object.fromEntries(['modifiedTime','dateModification','revi
 const key=(clientId,fileId)=>JSON.stringify([text(clientId),text(fileId)]);
 const kind=file=>['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].includes(file?.mimeType||file?.type)?'sheet':['PDF','application/pdf'].includes(file?.mimeType||file?.type)?'pdf':'';
 
+// A folder revision describes the bytes to inspect, not merely the moment of
+// inspection. Never promote an older shared download to that newer revision.
+export function validateReportReadV2729(record,file,{owner='',clientId='',sheet=false}={}){
+ if(!record||typeof record!=='object')throw Error('Rapport absent.');
+ const expected=text(file?.modifiedTime||file?.dateModification||file?.revision),actual=text(record.revision||record.modifiedTime||record.dateModification);
+ if(expected&&actual!==expected)throw Error('La révision du rapport a changé.');
+ const id=text(file?.id);if(sheet&&!text(record.id||record.fileId)||['id','fileId'].some(name=>text(record[name])&&text(record[name])!==id))throw Error('Le rapport ne correspond pas au fichier demandé.');
+ if(owner&&record.owner&&email(record.owner)!==email(owner)||clientId&&text(record.clientId)&&text(record.clientId)!==text(clientId))throw Error('Le compte ou le client du rapport a changé.');
+ if(text(file?.version)&&text(record.version)&&text(file.version)!==text(record.version))throw Error('La version du rapport a changé.');
+ for(const name of ['md5Checksum','sha256Checksum'])if(text(file?.[name])&&text(record[name])&&text(file[name])!==text(record[name]))throw Error('Le contenu du rapport a changé.');
+ if(sheet){
+  const partial=value=>value?.charge===false||value?.complete===false||value?.tronque===true||value?.truncated===true||value?.incomplete===true||value?.partial===true||!!text(value?.nextPageToken);
+  if(partial(record)||!Array.isArray(record.onglets)||!record.onglets.length)throw Error('Snapshot de feuille incomplet.');
+  // The legacy endpoint silently stops after twenty tabs. At that boundary,
+  // only an explicit matching total proves that no later conclusion is missing.
+  const total=record.totalOnglets;
+  if(Object.prototype.hasOwnProperty.call(record,'totalOnglets')?!Number.isSafeInteger(total)||total<0||total!==record.onglets.length:record.onglets.length>=20)throw Error('Nombre d’onglets de la feuille non confirmé.');
+  for(const tab of record.onglets){const rows=tab?.valeurs;if(partial(tab)||!Array.isArray(rows)||rows.some(row=>!Array.isArray(row)))throw Error('Snapshot de feuille incomplet.');const columns=rows.reduce((max,row)=>Math.max(max,row.length),0),expectedColumns=Math.max(Number(tab.colonnesOriginales)||0,Number(tab.colonnes)||0);if(Number(tab.lignesOriginales)>rows.length||Number(tab.colonnesOriginales)>columns||Number(tab.lignes)>rows.length||Number(tab.colonnes)>columns||rows.some(row=>row.length<expectedColumns))throw Error('Snapshot de feuille tronqué.');}
+ }
+ return record;
+}
+
 // Only visit folder contents already supplied by the authorised Drive listing.
 export function reportConformitySourcesV2727(tree){
  const files=new Map(),seen=new Set();
@@ -32,6 +54,7 @@ export function createReportConformityTrackerV2727({identity,library,loadPdf,loa
  function currentRecord(record,file){
   if(!record)return false;
   if(record.local)return !data.saves[record.saveId]?.retired;
+  if(!record.verifiedReadV2729)return false;
   const version=reportConformityStampV2727(file);if(record.stamp===version||record.confirmed&&(record.sourceStamp===version||Array.isArray(record.sourceStamps)&&record.sourceStamps.includes(version)))return true;
   const listed=Date.parse(file?.modifiedTime||file?.dateModification||''),confirmed=Date.parse(record.metadata?.modifiedTime||record.metadata?.dateModification||'');
   return !!record.confirmed&&Number.isFinite(listed)&&Number.isFinite(confirmed)&&listed<confirmed;
@@ -44,7 +67,7 @@ export function createReportConformityTrackerV2727({identity,library,loadPdf,loa
   const sourceKey=key(save.clientId,save.sourceId),source=data.reports[sourceKey],targetId=text(save.ack.id||save.ack.fileId||save.sourceId),targetKey=key(save.clientId,targetId);
   const newer=data.reports[targetKey];if(targetId!==save.sourceId&&newer?.sequence>save.sequence)return;
   const meta={...source.metadata,...metadata(save.ack)};
-  const record={...source,metadata:meta,stamp:reportConformityStampV2727(meta),sourceStamp:targetId===save.sourceId?source.sourceStamp:'',sourceStamps:targetId===save.sourceId?source.sourceStamps||[]:[],confirmed:true,local:false,at:now()};
+  const record={...source,metadata:meta,stamp:reportConformityStampV2727(meta),sourceStamp:targetId===save.sourceId?source.sourceStamp:'',sourceStamps:targetId===save.sourceId?source.sourceStamps||[]:[],confirmed:true,local:false,verifiedReadV2729:true,at:now()};
   if(targetId!==save.sourceId)restore(save);
   data.reports[targetKey]=record;save.targetId=targetId;
  }
@@ -73,9 +96,9 @@ export function createReportConformityTrackerV2727({identity,library,loadPdf,loa
   const worker=async()=>{while(cursor<list.length&&current()){
    const file=list[cursor++],k=key(client,file.id),old=data.reports[k],version=reportConformityStampV2727(file),failed=failures.get(k);
    if(file._cdqPendingSaveV2660||currentRecord(old,file)||failed?.stamp===version&&now()-failed.at<retryMs)continue;
-   try{let result;if(kind(file)==='sheet'){const sheet=await loadSheet(file.id,client);if(!current())break;result=await snapshotSheet(sheet);}else{const rec=await loadPdf(file.id,client);if(!current())break;result=await snapshotPdf(rec?.blob||rec,await library());}
+   try{let result;const expected=text(file.modifiedTime||file.dateModification||file.revision);if(kind(file)==='sheet'){const sheet=await loadSheet(file.id,client,expected);if(!current())break;validateReportReadV2729(sheet,file,{owner:account,clientId:client,sheet:true});result=await snapshotSheet(sheet);}else{const rec=await loadPdf(file.id,client,expected);if(!current())break;validateReportReadV2729(rec,file,{owner:account,clientId:client});result=await snapshotPdf(rec?.blob||rec,await library());}
     if(!current())break;if(version!==reportConformityStampV2727(file)||data.reports[k]!==old)continue;
-    failures.delete(k);data.reports[k]={state:statuses.has(result)?result:'unknown',stamp:version,metadata:metadata(file),at:now()};count++;changed();
+    failures.delete(k);data.reports[k]={state:statuses.has(result)?result:'unknown',stamp:version,metadata:metadata(file),verifiedReadV2729:true,at:now()};count++;changed();
    }catch{if(current()&&version===reportConformityStampV2727(file)&&data.reports[k]===old)failures.set(k,{stamp:version,at:now()});}
   }};
   const task=Promise.all([worker(),worker()]).then(()=>count);scan=task;try{return await task;}finally{if(scan===task)scan=null;}

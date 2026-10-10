@@ -1,3 +1,4 @@
+import {pdfWorkV2729} from './pdf-work-v2729.mjs';
 // Read the saved CDQ conclusion only. Opening a folder must not run the
 // report's JavaScript, recalculate readings or modify the source PDF.
 const normalize=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[-_\s]+/g,' ').trim();
@@ -18,6 +19,7 @@ export function pdfReportConformityV2727(form){
 
 export async function pdfReportConformitySnapshotV2727(blob,L){
  if(!(blob instanceof Blob))throw Error('PDF absent');
+ const worker=pdfWorkV2729();if(worker)return (await worker.inspect(blob)).conformity;
  const pdf=await L.PDFDocument.load(await blob.arrayBuffer(),{updateMetadata:false});
  return pdfReportConformityV2727(pdf.getForm());
 }

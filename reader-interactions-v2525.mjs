@@ -336,6 +336,55 @@ export function installFormNavigation({surface, toolbar, previous, next, done, o
 export function installNativeTextInput(surface){
   const composing=new WeakSet();
   const editable=e=>e.target?.matches?.('.textWidgetAnnotation input,.textWidgetAnnotation textarea');
+  const commitOnlyCache=new Map();
+  const commitOnly=code=>{
+    if(commitOnlyCache.has(code))return commitOnlyCache.get(code);
+    const result=scanCommitOnly(code);commitOnlyCache.set(code,result);return result;
+  };
+  // Accept only one complete outer willCommit block for capacity. Its validation still runs
+  // on blur; PDF.js need not postpone the native insertion to run an empty
+  // per-character action. Unknown regex/template syntax stays in the sandbox.
+  function scanCommitOnly(code){
+    const start=/^\s*if\s*\(\s*event\.willCommit\s*\)\s*\{/.exec(code);
+    if(!start)return false;
+    const regexes=[String.raw`/[\s\u00a0\u202f]/g`,String.raw`/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/`,String.raw`/\s/g`];
+    let depth=1;
+    for(let i=start[0].length;i<code.length;i++){
+      const char=code[i];
+      if(char==='`')return false;
+      if(code.startsWith('<!--',i)||code.startsWith('-->',i))return false;
+      if(char==='"'||char==="'"){
+        const quote=char;let closed=false;
+        while(++i<code.length){
+          if(code[i]==='\\'){i++;continue;}
+          if(/[\n\r\u2028\u2029]/.test(code[i]))return false;
+          if(code[i]===quote){closed=true;break;}
+        }
+        if(!closed)return false;
+      }else if(char==='/'){
+        if(code[i+1]==='/'){
+          while(i+1<code.length&&!/[\n\r\u2028\u2029]/.test(code[i+1]))i++;
+        }else if(code[i+1]==='*'){
+          const end=code.indexOf('*/',i+2);if(end<0)return false;i=end+1;
+        }else{
+          // These approved numeric patterns contain no quotes or braces, so
+          // they cannot conceal the end of the outer guard. Reject every other
+          // regex rather than guessing whether its braces are JavaScript.
+          const regex=regexes.find(value=>code.startsWith(value,i));
+          // Only the approved capacity/4 statement is needed. A general
+          // numeric-division guess could mistake a regex for division and
+          // count braces inside that regex as part of the outer guard.
+          const division=/\bcapacity[ \t]*$/.test(code.slice(0,i))&&/^\/[ \t]*4(?=[ \t]*;)/.exec(code.slice(i));
+          if(regex)i+=regex.length-1;else if(division)i+=division[0].length-1;else return false;
+        }
+      }else if(char==='{')depth++;
+      else if(char==='}'&&--depth===0)return code.slice(i+1).trim()==='';
+    }
+    return false;
+  }
+  // The approved Precision charge field uses this compact, commit-only
+  // navigation action. It never validates individual typed characters.
+  const precisionNavigation=code=>{const guard='if(event.willCommit&&event.rc!==false&&(event.commitKey===2||event.commitKey===3)){';return code.startsWith(guard)&&code.trimEnd().endsWith('})(this);\n}')&&!/\bevent\.(?:willCommit|rc|value|change|selStart|selEnd)\b/.test(code.slice(guard.length));};
   surface.addEventListener('compositionstart',e=>{if(editable(e))composing.add(e.target)},{capture:true});
   surface.addEventListener('compositionend',e=>{composing.delete(e.target)},{capture:true});
   surface.addEventListener('beforeinput',e=>{
@@ -345,7 +394,11 @@ export function installNativeTextInput(surface){
   return {configure(fields){
     for(const input of surface.querySelectorAll('.textWidgetAnnotation input,.textWidgetAnnotation textarea')){
       const fieldActions=(fields?.get?.(input.name)||fields?.[input.name])?.[0]?.actions;const actions=fieldActions?.get?.('Keystroke')||fieldActions?.Keystroke;
-      if(actions?.length&&actions.every(code=>code.includes('CDQDecimalPrecisionV2695')||/^\s*if\(event\.willCommit && (?:event\.commitKey===2|\(event\.commitKey===2 \|\| event\.commitKey===3\))/.test(code)&&code.includes('_cdqNavigationTimer')))input.dataset.cdqNativeInput='true';
+      delete input.dataset.cdqNativeInput;
+      // A guarded capacity validation cannot borrow a decimal/navigation
+      // marker from another action or from unguarded prefix/suffix code.
+      const guardedCapacity=input.name==='capacite_maximale'&&actions?.some(code=>/\bif\s*\(\s*event\.willCommit\s*\)\s*\{/.test(code));
+      if(actions?.length&&actions.every(code=>guardedCapacity?commitOnly(code):code.includes('CDQDecimalPrecisionV2695')||(/^\s*if\(event\.willCommit && (?:event\.commitKey===2|\(event\.commitKey===2 \|\| event\.commitKey===3\))/.test(code)||precisionNavigation(code))&&code.includes('_cdqNavigationTimer')))input.dataset.cdqNativeInput='true';
     }
   }};
 }

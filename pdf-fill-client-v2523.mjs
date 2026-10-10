@@ -1,4 +1,7 @@
+import {pdfWorkV2729} from './pdf-work-v2729.mjs';
 export function fillInFrame(values,options={}){
+  const worker=pdfWorkV2729();
+  if(worker&&options.blob&&Object.keys(values||{}).every(name=>/^client_/.test(name)))return worker.requestBlob('prefill',options.blob,{values,strict:options.strict!==false,onlyEmpty:options.onlyEmpty===true}).then(result=>new Blob([result.bytes],{type:'application/pdf'}));
   return new Promise((resolve,reject)=>{
     const frame=document.createElement('iframe'),url=new URL('./pdf-fill-v2523.html',import.meta.url),requestId=crypto.randomUUID();
     frame.hidden=true;frame.title='Préparation du PDF';frame.src=url.href;
