@@ -10,6 +10,7 @@ import {saveEditableFormAppearance,normalizeEditableFormOnOpen} from './reader-c
 import {centerFieldGlyphs} from './reader-layout-v2653.mjs';
 import {downloadPdf} from './pdf-download-v2657.mjs';
 import {readReaderMetadataV2724} from './pdf-metadata-v2724.mjs';
+import {precisionToleranceDisplayV2726} from './reader-precision-excentricity-v2726.mjs';
 installReaderTheme();
 const assets=new URL('./vendor/pdfjs-6.3.289/',import.meta.url).href;
 const $=id=>document.getElementById(id),hosted=parent!==window;
@@ -79,7 +80,23 @@ function cdqStoredFieldStateV2581(name){
     const locked=definition?.editable===false||Boolean(stored?.readOnly??definition?.readOnly) || !!(flags&1);
     if(!locked)pdfReadOnly=false;
   }
-  return {value:hasValue?value:'',formattedValue,readOnly:pdfReadOnly};
+  const state={value:hasValue?value:'',formattedValue,readOnly:pdfReadOnly};
+  const precision=name==='tolerance_excentricite'&&cdqFieldDefinitionsV2581('type_plateau').length>0&&cdqFieldDefinitionsV2581('charge_point_7_charge_utilisee').length>0;
+  const display=precisionToleranceDisplayV2726(name,state,precision);
+  if(display!==state)for(const definition of definitions)if(definition?.id){
+    // Persist the repaired format too: PDF.js uses it for the saved AP stream.
+    doc.annotationStorage.setValue(definition.id,{formattedValue:display.formattedValue});
+    formattedFields.set(definition.id,display.formattedValue);
+  }
+  return display;
+}
+function cdqRestorePrecisionToleranceV2726(){
+  if(!doc||!fieldDefinitions||!cdqFieldDefinitionsV2581('type_plateau').length)return;
+  const state=cdqStoredFieldStateV2581('tolerance_excentricite');
+  for(const field of $('viewer').querySelectorAll('[name="tolerance_excentricite"]'))if(document.activeElement!==field){
+    const wanted=state.formattedValue??String(state.value??'');
+    if(field.value!==wanted)field.value=wanted;
+  }
 }
 function cdqApplyConstraintDefaultsV2583(){
   if(!doc||!fieldDefinitions)return;
@@ -378,7 +395,7 @@ try{
   eventBus.on('updatefromsandbox',event=>{
     const detail=event.detail||{};
     if(detail.id&&Object.hasOwn(detail,'formattedValue'))formattedFields.set(detail.id,detail.formattedValue??'');
-    setTimeout(()=>{refreshResults();applyFieldTypography();},0);
+    setTimeout(()=>{cdqRestorePrecisionToleranceV2726();refreshResults();applyFieldTypography();},0);
   });
   // A technician can stop at the last reading without moving to another field.
   // Commit only complete numeric inputs, so partial decimals stay editable.
