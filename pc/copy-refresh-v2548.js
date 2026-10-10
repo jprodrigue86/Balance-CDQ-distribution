@@ -28,15 +28,25 @@
     return /\.pdf$/i.test(label) ? label : label + '.pdf';
   }
 
-  function fileMeta(result, fallback = {}) {
+  function fileMeta(result, fallback = {}, existing = {}) {
+    const supplied = result?.meta || result?.fichier || result || {};
+    // A server revision describes the PDF bytes. The local confirmation time
+    // remains an ordering hint and must never replace that Drive identity.
+    const serverIdentity = supplied.revision || supplied.modifiedTime || supplied.dateModification ||
+      result?.revision || result?.modifiedTime || result?.dateModification || '';
+    const dateModification = serverIdentity || existing.dateModification || existing.modifiedTime || existing.revision ||
+      fallback.dateModification || fallback.modifiedTime || fallback.revision || '';
     return {
       ...fallback,
-      ...(result?.meta || result?.fichier || result || {}),
+      ...supplied,
       id: String(result?.id || ''),
       nom: inferredName(result),
       type: 'PDF',
       mimeType: 'application/pdf',
-      dateModification: result?.dateModification || result?.modifiedTime || new Date().toISOString(),
+      dateModification,
+      // Partial acknowledgements must also supersede older aliases retained
+      // by the row merge; every reader compares the same confirmed identity.
+      ...(serverIdentity ? {revision:serverIdentity, modifiedTime:serverIdentity} : {}),
       favori: !!(result?.favori || result?.starred),
       notePresente: !!result?.notePresente,
       photoPresente: !!result?.photoPresente,
@@ -85,9 +95,9 @@
     const parent = findFolder(root, parentId) || (String(root.id || '') === clientId ? root : null);
     if (!parent) return false;
 
-    const meta = fileMeta(result, fallback);
     parent.fichiers ||= [];
     const existing = parent.fichiers.findIndex(f => String(f.id || '') === id);
+    const meta = fileMeta(result, fallback, existing >= 0 ? parent.fichiers[existing] : {});
     if (existing >= 0) parent.fichiers[existing] = { ...parent.fichiers[existing], ...meta };
     else parent.fichiers.unshift(meta);
 

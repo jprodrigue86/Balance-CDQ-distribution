@@ -1,5 +1,6 @@
 import {calibrationIdentity,calibrationRpc} from './calibration-feedback-v2566.mjs';
 import {createReportConformityTrackerV2727,reportConformitySourcesV2727} from './report-conformity-cache-v2727.mjs';
+import './field-work-v2729.mjs';
 
 const canRead=()=>!!window.cdqDriveEntryV2632?.canRead()&&!!calibrationIdentity().email;
 const client=()=>{try{return String(compagnieSelectionnee||'');}catch{return '';}};
@@ -9,7 +10,7 @@ let timer=0,scan=null,scanTimer=0,scope='',pendingRescan=false;
 const tracker=createReportConformityTrackerV2727({
  identity:()=>canRead()?calibrationIdentity().email:'',
  library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},
- loadPdf:id=>window.cdqLoadPdfForCalibrationV2668(id),
+ loadPdf:(id,client,revision)=>window.cdqLoadPdfForCalibrationV2668(id,revision),
  loadSheet:async(id,clientId)=>{const owner=calibrationIdentity().email;if(!canRead())throw Error('Accès Drive requis.');const snapshot=await calibrationRpc('obtenirSnapshotGoogleSheetHorsLigne',id,clientId);if(!canRead()||owner!==calibrationIdentity().email)throw Error('Le compte a changé.');return snapshot;},
  onChange:()=>paintRows()
 });
@@ -24,7 +25,7 @@ function paintRows(){
   else if(name.firstChild!==dot)name.prepend(dot);
  }
 }
-function allowedScan(){return canRead()&&!readerBusy()&&!document.hidden&&navigator.onLine!==false;}
+function allowedScan(){return canRead()&&!readerBusy()&&!document.hidden&&navigator.onLine!==false&&window.cdqFieldWorkV2729?.available()!==false;}
 function inspect(){
  paintRows();const id=client(),owner=calibrationIdentity().email,currentScope=owner+'|'+id;scope=currentScope;
  // A folder may finish loading during this scan without adding any red dot.
@@ -45,6 +46,7 @@ window.addEventListener('cdq:pdf-local-saved',event=>saved(event,true));
 window.addEventListener('cdq:pdf-saved',event=>saved(event));
 window.addEventListener('cdq:pdf-save-retired-v2707',event=>{const d=event.detail||{};tracker.retire(d.saveId,d);paintRows();schedule();});
 for(const event of ['cdq:access-ready','cdq:access-state-v2527','cdq:drive-ready-v2632','cdq:drive-cleared-v2632','cdq:copied','cdq:deleted','cdq:moved','cdq:renamed','cdq:reader-closed-v2703','online'])window.addEventListener(event,schedule);
+window.addEventListener('cdq:field-idle-v2729',schedule);
 window.addEventListener('offline',paintRows);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
 document.addEventListener('click',event=>{if(event.target.closest?.('.folder-header,.bottom-nav-item,.company-item'))schedule();},true);

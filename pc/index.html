@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.28" data-cdq-pc-release="0381f6417b6b1b44000c86cb6e3397bb9eb75232798060952aaaac2aa413b595">
+<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.29" data-cdq-pc-release="bf988f75539096f4a00f27e3b56bfb95ba7e7b5e6ee94e737cb02039a9b2d64c">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./app-session-v2661.js"></script>
@@ -414,6 +414,7 @@ moins de groupes mais des noms plus lisibles.
 @media(min-width:900px){#loading .music-wall-image{background-size:cover!important}}
 </style>
 <style id="cdqStartup25">#loading .box{background:transparent!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important}#loading .loading-title{display:none!important}#loading .loading-label{text-shadow:0 1px 4px #000;font-size:14px!important}#loading .loading-bar{background:#ffffff30!important}</style>
+<script type="module" src="./field-work-v2729.mjs"></script>
 <script type="module" src="./navigation-v2677.mjs"></script>
 <style id="cdq-music-wall-v2689">
  #loading{padding:0!important;inset:0!important;width:100%!important;height:100dvh!important;background:#000!important}
@@ -474,7 +475,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.10-v27.28-client-list-pdf-catalogue';
+const CDQ_PWA_BUILD = '2026.10.10-v27.29-field-performance';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1571,6 +1572,7 @@ window.addEventListener('focus',function(){
 let cdqReaderPrewarmV2554=null;
 let cdqReaderPrewarmDoneV2554=false;
 function cdqWarmPdfReaderV2554(){
+  window.cdqPdfWorkV2729?.warm().catch(()=>{});
   if(cdqReaderPrewarmDoneV2554)return Promise.resolve(true);
   if(cdqReaderPrewarmV2554)return cdqReaderPrewarmV2554;
   cdqReaderPrewarmV2554=import('./reader-host-v2525.mjs').then(()=>new Promise(resolve=>{
@@ -1581,17 +1583,13 @@ function cdqWarmPdfReaderV2554(){
     frame.setAttribute('aria-hidden','true');
     frame.style.cssText='position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0';
     let finished=false;
-    const done=()=>{
-      if(finished)return;
-      finished=true;
-      clearTimeout(timeout);
-      window.removeEventListener('message',onMessage);
-      frame.remove();
-      cdqReaderPrewarmDoneV2554=true;
-      resolve(true);
+    const done=(ready=false)=>{
+      if(finished)return;finished=true;clearTimeout(timeout);window.removeEventListener('message',onMessage);
+      if(ready)window.cdqPreparedReaderV2729={frame,ready:true};else frame.remove();
+      cdqReaderPrewarmDoneV2554=ready;resolve(ready);
     };
     const onMessage=event=>{
-      if(event.source===frame.contentWindow&&event.data?.type==='CDQ_READER_READY')done();
+      if(event.source===frame.contentWindow&&event.origin===location.origin&&event.data?.type==='CDQ_READER_READY')done(true);
     };
     const timeout=setTimeout(done,8000);
     window.addEventListener('message',onMessage);

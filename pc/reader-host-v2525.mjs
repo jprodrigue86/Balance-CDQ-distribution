@@ -9,8 +9,10 @@ async function openReaderInternal(data){
     await active.requestClose();
   }
   if(!(data.blob instanceof Blob)||data.blob.type!=='application/pdf'||!data.blob.size||data.blob.size>32*1024*1024)throw Error('PDF invalide.');
-  const frame=document.createElement('iframe');frame.id='legacy-pdf-reader';frame.title='Lecteur PDF CDQ';
-  frame.src=new URL('./reader-v2525.html',import.meta.url).href;frame.referrerPolicy='origin';
+  const prepared=window.cdqPreparedReaderV2729;window.cdqPreparedReaderV2729=null;
+  const reused=!!prepared?.ready&&prepared.frame?.isConnected;
+  const frame=reused?prepared.frame:document.createElement('iframe');frame.id='legacy-pdf-reader';frame.title='Lecteur PDF CDQ';
+  if(!reused)frame.src=new URL('./reader-v2525.html',import.meta.url).href;frame.referrerPolicy='origin';frame.removeAttribute('aria-hidden');
   frame.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:#101820';
   const origin=new URL(frame.src).origin,saves=new Map();let closed=false,guard=false,ready=false,opened=false,prefillValues=null,closeWaiters=[],pendingClose=false,handle=null;
   let workspaceOwner=null,lastWorkspaceLayout=null;
@@ -88,5 +90,5 @@ async function openReaderInternal(data){
   const timer=setTimeout(()=>{if(!opened){close();data.onError?.(new Error('Le lecteur n’a pas ouvert le PDF. La copie reste conservée; réessayez son ouverture.'));}},30000);
   const resize=()=>layout();
   window.addEventListener('resize',resize);window.addEventListener('cdq:keyboard-insets-v2653',resize);window.visualViewport?.addEventListener('resize',resize);
-  handle={fileId:String(data.fileId||''),requestClose:()=>new Promise((resolve,reject)=>{const waiter={resolve,reject,timer:null};waiter.timer=setTimeout(()=>{closeWaiters=closeWaiters.filter(w=>w!==waiter);reject(Error('Fermez le rapport courant avant d’ouvrir le suivant.'));},30000);closeWaiters.push(waiter);requestClose();}),prefill:values=>{prefillValues={...prefillValues,...values};if(opened)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});}};active=handle;window.addEventListener('message',receive);layout();document.body.append(frame);return handle;
+  handle={fileId:String(data.fileId||''),requestClose:()=>new Promise((resolve,reject)=>{const waiter={resolve,reject,timer:null};waiter.timer=setTimeout(()=>{closeWaiters=closeWaiters.filter(w=>w!==waiter);reject(Error('Fermez le rapport courant avant d’ouvrir le suivant.'));},30000);closeWaiters.push(waiter);requestClose();}),prefill:values=>{prefillValues={...prefillValues,...values};if(opened)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});}};active=handle;window.addEventListener('message',receive);layout();if(!reused)document.body.append(frame);if(reused)queueMicrotask(()=>receive({source:frame.contentWindow,origin,data:{type:'CDQ_READER_READY'}}));return handle;
 }

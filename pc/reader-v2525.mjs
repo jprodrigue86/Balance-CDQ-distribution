@@ -6,7 +6,7 @@ import {installTouchNavigation,installFormNavigation,installNativeTextInput} fro
 import {installReaderCalibration} from './reader-calibration-v2565.mjs';
 import {installReaderChoices} from './reader-choices-v2572.mjs';
 import {installReaderTheme,applyReaderTheme} from './reader-theme-v2572.mjs';
-import {saveEditableFormAppearance,normalizeEditableFormOnOpen} from './reader-choice-appearance-v2572.mjs';
+import {pdfWorkV2729} from './pdf-work-v2729.mjs';
 import {centerFieldGlyphs} from './reader-layout-v2653.mjs';
 import {downloadPdf} from './pdf-download-v2657.mjs';
 import {readReaderMetadataV2724} from './pdf-metadata-v2724.mjs';
@@ -225,11 +225,12 @@ async function requestClose(){
   $('keepEditing').focus();
 }
 async function output(){
+  const work=pdfWorkV2729(),workEpoch=work.stats().epoch;
   if(decimalGuard&&!decimalGuard.validateAll())throw Error("Corrigez les décimales de la mesure avant d’enregistrer.");
   commitActive();await new Promise(r=>setTimeout(r,120));
   await scripting.dispatchWillSave();await new Promise(r=>setTimeout(r,0));
   let bytes=await doc.saveDocument();
-  bytes=await saveEditableFormAppearance(bytes);
+  bytes=(await work.request('save',{bytes},{epoch:workEpoch})).bytes;
   return new Blob([bytes],{type:'application/pdf'});
 }
 async function finishDocument(){
@@ -255,6 +256,7 @@ async function save(external=false){
   }catch(e){fail(e);}
 }
 async function open(data){
+  const work=pdfWorkV2729(),workEpoch=work.stats().epoch;
   applyReaderTheme(data.theme);
   if(data.desktop===true){document.body.classList.add('cdq-reader-pc');$('readerTop').append($('name'));$('readerNameBar')?.remove();}
   const blob=data.blob;
@@ -262,7 +264,7 @@ async function open(data){
   if(doc)return; // A repeated READY/OPEN exchange must never erase current answers.
   opening=true;autoReportName=data.autoReportName===true;$('viewer').inert=true;name=String(data.name||name);fileId=String(data.fileId||'');readOnly=!!data.readOnly;
   $('name').textContent=name;$('empty').style.display='none';status('Ouverture du PDF…');
-  const sourceBytes=await normalizeEditableFormOnOpen(new Uint8Array(await blob.arrayBuffer()));
+  const sourceBytes=(await work.requestBlob('open',blob,{},{epoch:workEpoch})).bytes;
   const task=api.getDocument({data:sourceBytes,standardFontDataUrl:assets+'standard_fonts/',cMapUrl:assets+'cmaps/',cMapPacked:true,wasmUrl:assets+'wasm/',isEvalSupported:false,enableXfa:false,enableHWA:true});
   doc=await task.promise;const firstPaint=firstReaderPaintV2682(viewer.eventBus);viewer.setDocument(doc);viewer.linkService.setDocument(doc);
   doc.annotationStorage.onSetModified=()=>{if(!readOnly&&!opening){dirty=true;status('');}};
