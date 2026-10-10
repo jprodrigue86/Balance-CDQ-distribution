@@ -1,11 +1,14 @@
 import {sheetBalanceValuesV2703} from './balance-data-v2703.mjs';
+import {pdfReportConformityV2727} from './report-conformity-v2727.mjs';
+import {sheetReportConformityV2727} from './sheet-report-conformity-v2727.mjs';
 const clean=v=>{const t=String(v??'').normalize('NFC').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,160);return /^(?:[-–—]+|n\/?a|non renseign[eé]|true|false|vrai|faux)$/i.test(t)?'':t;};
 export function equipmentValuesV2697(form){
  const fields=new Map(form.getFields().map(f=>[f.getName(),f]));
  if(!fields.has('identification_balance')&&!(fields.has('capacite_maximale')&&(fields.has('base_balance_fabricant')||fields.has('indicateur_fabricant'))))return 'null';
  const value=n=>{const f=fields.get(n);return clean(f?.getText?.()??f?.getSelected?.().join(', ')??'');},unit=value('unite_mesure'),cap=value('capacite_maximale'),inc=value('echelon');
- // Match the five populated columns of the server's generated list exactly.
- return JSON.stringify([value('base_balance_fabricant')||value('indicateur_fabricant'),value('base_balance_modele')||value('indicateur_modele'),cap+(cap&&unit?' '+unit:''),inc+(inc&&unit?' '+unit:''),value('identification_balance')]);
+ // Match the populated columns, including the saved final conclusion. Reading
+ // changes alone still do not rebuild the list when its final status is stable.
+ return JSON.stringify([value('base_balance_fabricant')||value('indicateur_fabricant'),value('base_balance_modele')||value('indicateur_modele'),cap+(cap&&unit?' '+unit:''),inc+(inc&&unit?' '+unit:''),value('identification_balance'),pdfReportConformityV2727(form)]);
 }
 export async function equipmentSnapshotV2697(blob,L){
  if(!(blob instanceof Blob))throw Error('PDF absent');const pdf=await L.PDFDocument.load(await blob.arrayBuffer(),{updateMetadata:false});return equipmentValuesV2697(pdf.getForm());
@@ -16,6 +19,7 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
  function sync(){const email=identity();if(owner===email)return;owner=email;try{data=JSON.parse(storage.getItem(storageKey())||'null')||{reports:{},saves:{}};}catch{data={reports:{},saves:{}}}data.reports??={};data.saves??={};scan=null;}
  function persist(){try{storage.setItem(storageKey(),JSON.stringify(data));}catch{}}
  const stamp=f=>JSON.stringify([f.modifiedTime||f.dateModification||f.revision||'',String(f.version||''),f.md5Checksum||f.sha256Checksum||'']);
+ const completeSignature=s=>{try{const value=JSON.parse(s);return value===null||Array.isArray(value)&&value.length===6;}catch{return false;}};
  async function snapshot(blob){return equipmentSnapshotV2697(blob,await library());}
  async function analyzeSave(rec,blob,saveId){
   sync();const email=owner,before=await snapshot(rec.blob),after=await snapshot(blob);if(email!==identity())throw Error('Le compte a changé.');
@@ -38,12 +42,13 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
    // A stale folder response must not reread a version older than our upload.
    const listed=Date.parse(file.modifiedTime||file.dateModification||file.revision||''),confirmed=Date.parse(old?.confirmedRevision||'');
    if(confirmed&&listed&&listed<confirmed)continue;
-   if(old?.stamp===version)continue;
-   try{let next;if(['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].includes(file.mimeType||file.type)){const sheet=await loadSheet(file.id);if(email!==identity()||!stillCurrent())break;next=sheetBalanceValuesV2703(sheet?.onglets?.[0]?.valeurs||[]);}else{const rec=await loadPdf(file.id);if(email!==identity()||!stillCurrent())break;next=await snapshot(rec.blob);}if(email!==identity()||!stillCurrent())break;
+   if(old?.stamp===version&&completeSignature(old.signature))continue;
+   try{let next;if(['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].includes(file.mimeType||file.type)){const sheet=await loadSheet(file.id);if(email!==identity()||!stillCurrent())break;const values=sheetBalanceValuesV2703(sheet?.onglets?.[0]?.valeurs||[]);next=values==='null'?values:JSON.stringify([...JSON.parse(values),sheetReportConformityV2727(sheet)]);}else{const rec=await loadPdf(file.id);if(email!==identity()||!stillCurrent())break;next=await snapshot(rec.blob);}if(email!==identity()||!stillCurrent())break;
     if(data.reports[file.id]!==old)continue; // A newer local edit wins a delayed Drive read.
     if(old&&old.signature!==next)changed=true;data.reports[file.id]={signature:next,stamp:version};persist();
    }catch{ /* Leave the previous fingerprint intact; the next Drive event can retry. */ }
   }return changed;})();scan=task;try{return await task;}finally{if(scan===task)scan=null;}
  }
- return {noteSave,decision,awaitDecision,acknowledge,retire,signature,inspect};
+ function confirmedSignature(file){sync();const report=data.reports[file.id];return report&&!report.local&&report.stamp===stamp(file)&&completeSignature(report.signature)?report.signature:null;}
+ return {noteSave,decision,awaitDecision,acknowledge,retire,signature,confirmedSignature,inspect};
 }

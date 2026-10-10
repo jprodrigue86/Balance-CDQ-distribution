@@ -1,7 +1,9 @@
 // General Drive actions use an empty client context and the same authenticated
 // server functions as the client file menu. Drive access and roles remain checked.
+import {beginOptimisticDeletionV2727,confirmedDeletionV2727} from './file-operations-v2727.mjs';
 export function installDriveActionsV2699(row,item,{favorite,rpc,canWrite}){
  const desktop=window.cdqDesktopModel2;if(!desktop)return;
+ row.dataset[item.kind==='folder'?'folderId':'fileId']=String(item.id);
  const actions=document.createElement('div');actions.className='cdq-swipe-overlay';actions.hidden=true;
  function add(key,label,handler,write=false){const b=document.createElement('button');b.type='button';b.className='cdq-swipe-action '+key;b.disabled=write&&!canWrite();window.cdqFileActionsV2655.paint(b,key,label);b.onclick=e=>{e.preventDefault();e.stopPropagation();if(write&&!canWrite())return;Promise.resolve().then(handler).catch(error=>window.afficherErreur?.(error));};actions.append(b);return b;}
  const folder=item.kind==='folder';
@@ -22,8 +24,14 @@ export function installDriveActionsV2699(row,item,{favorite,rpc,canWrite}){
   cancel.type='button';cancel.textContent='Annuler';cancel.onclick=()=>dialog.close();confirm.type='submit';confirm.textContent=mode==='rename'?'Enregistrer':'Supprimer';footer.append(cancel,confirm);form.append(footer);dialog.append(form);document.body.append(dialog);
   let busy=false;dialog.addEventListener('cancel',e=>{if(busy)e.preventDefault();});dialog.addEventListener('close',()=>dialog.remove());
   form.onsubmit=async e=>{e.preventDefault();if(busy||!canWrite())return;if(mode==='rename'&&!input.value.trim()){input.reportValidity();return;}busy=true;confirm.disabled=cancel.disabled=true;status.textContent='Enregistrement…';
-   try{await rpc(mode==='rename'?(folder?'renommerDossier':'renommerFichier'):(folder?'supprimerDossier':'supprimerFichiers'),...(mode==='rename'?[item.id,input.value.trim(),'']:folder?[item.id,'']:[[item.id],'']));dialog.close();window.dispatchEvent(new CustomEvent(mode==='rename'?'cdq:renamed':'cdq:deleted',{detail:{id:item.id}}));}
-   catch(error){status.textContent=error.message||String(error);}finally{busy=false;confirm.disabled=cancel.disabled=false;}
+   const identity=()=>String(typeof utilisateurCourantEmail==='undefined'?'':utilisateurCourantEmail||'').toLowerCase(),owner=identity();
+   const selection=folder?{folderIds:[String(item.id)],fileIds:[]}:{fileIds:[String(item.id)],folderIds:[]};
+   const deletion=mode==='delete'?beginOptimisticDeletionV2727({...selection,identity}):null;if(deletion)dialog.close();
+   try{const result=await rpc(mode==='rename'?(folder?'renommerDossier':'renommerFichier'):(folder?'supprimerDossier':'supprimerFichiers'),...(mode==='rename'?[item.id,input.value.trim(),'']:folder?[item.id,'']:[[item.id],'']));
+    if(identity()!==owner)throw Error('Le compte a changé.');
+    if(deletion){const confirmed=confirmedDeletionV2727(result,selection);deletion.finish(confirmed);if(confirmed.fileIds.length+confirmed.folderIds.length!==1)throw Error('La suppression n’a pas été confirmée. L’élément reste affiché.');}
+    else dialog.close();window.dispatchEvent(new CustomEvent(mode==='rename'?'cdq:renamed':'cdq:deleted',{detail:{id:item.id}}));}
+   catch(error){deletion?.rollback();if(identity()===owner){if(deletion)window.afficherErreur?.(error);else status.textContent=error.message||String(error);}}finally{busy=false;confirm.disabled=cancel.disabled=false;}
   };dialog.showModal();if(mode==='rename'){input.focus();input.select();}else cancel.focus();
  }
 }

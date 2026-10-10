@@ -1,5 +1,6 @@
-// Manufacturer facts reviewed 2026-10-09. Missing approval data stays unknown.
-export const reviewedAt='2026-10-09';
+// Manufacturer facts reviewed 2026-10-10. Missing approval data stays unknown.
+import {expandedFamiliesV2728} from './catalog-expanded-v2728.mjs';
+export const reviewedAt='2026-10-10';
 const any='https://www.anyload.com/';
 const sheet=any+'wp-content/uploads/2014/03/ANYLOAD-563YS563YS30-load-cell-transducer.pdf';
 const interchange30=['Rice Lake|RL35083','Rice Lake|RL35023S','Rice Lake|RL39123','Mettler Toledo|0793','HBM|B35','HBM|H35','Vishay Celtron|SQB-HSS','Vishay Sensortronics|65083','Vishay Sensortronics|65023S','Vishay Revere|9123','Vishay Tedea-Huntleigh|3510-lbs'];
@@ -28,8 +29,15 @@ for(const [model,capacity,readability,source]of [
 ])families.push({id:'mt-'+model.toLowerCase().replace(/\W/g,''),brand:'Mettler Toledo',model,category:'Balances de précision',summary:'Balance de précision de la gamme MA; capacité et échelon selon cette référence.',source,variants:[{capacity,unit:'g',readability}]});
 // Reference-only models are navigable, without copying another model's ratings.
 for(const entry of interchange){const [brand,model]=entry.split('|');families.push({id:'ref-'+brand.toLowerCase().replace(/\W/g,'')+'-'+model.toLowerCase().replace(/\W/g,''),brand,model,category:'Cellules de charge',referenceOnly:true,summary:'Référence d’interchangeabilité publiée par ANYLOAD. Vérifier capacité, dimensions, montage, signal et certificat de cette référence.',source:sheet,interchangeSource:sheet,variants:[{}]});}
+// Retain audited capacity variants and interchange identifiers when a newly
+// captured index contains the same model. Add its photo and source title only.
+for(const entry of expandedFamiliesV2728){
+ const existing=families.find(f=>normalized(f.brand)===normalized(entry.brand)&&normalized(f.model)===normalized(entry.model));
+ if(existing){for(const key of ['image','photoSource','titleSource','indexSource','distributor'])if(entry[key])existing[key]=entry[key];if(existing.referenceOnly){existing.summary=entry.summary;existing.type=entry.type;existing.source=entry.source;delete existing.referenceOnly;}continue;}
+ families.push(entry);
+}
 export const catalogProducts=Object.freeze(families.flatMap(f=>f.variants.map((v,index)=>Object.freeze({...f,variants:undefined,...v,id:f.id+'-'+index,familyId:f.id,reviewedAt}))));
-export const categories=Object.freeze(['Cellules de charge','Indicateurs','Balances de plancher','Balances de table','Balances de précision']);
+export const categories=Object.freeze([...new Set(['Cellules de charge','Indicateurs','Balances de plancher','Balances de table','Balances de précision',...families.map(f=>f.category)])]);
 export function normalized(v){return String(v??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');}
 const catalogIndexV2724=new WeakMap(),catalogReferencesV2724=new Map();
 for(const p of catalogProducts){catalogIndexV2724.set(p,{search:normalized([p.brand,p.model,p.summary,p.type,p.category,p.material,p.capacity,p.unit].join(' ')),brand:normalized(p.brand),model:normalized(p.model)});const key=p.brand+'|'+p.model;let rows=catalogReferencesV2724.get(key);if(!rows){rows=[];catalogReferencesV2724.set(key,rows);}rows.push(p);}

@@ -1,5 +1,6 @@
 import {calibrationIdentity,calibrationRpc} from './calibration-feedback-v2566.mjs';
 import {createEquipmentTrackerV2697} from './equipment-list-v2697.mjs';
+import './balance-list-conformity-v2728.mjs';
 const equipment=createEquipmentTrackerV2697({identity:()=>calibrationIdentity().email,library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},loadPdf:id=>window.cdqLoadPdfForCalibrationV2668(id),loadSheet:id=>call('obtenirSnapshotGoogleSheetHorsLigne',id,client())});
 window.cdqEquipmentListV2697=equipment;
 const canRead=()=>!!window.cdqDriveEntryV2632?.canRead()&&!!calibrationIdentity().email;
@@ -60,7 +61,7 @@ function root(id){try{return cacheContenuCompagnies[id]||null;}catch{return null
 function listFile(id){return (root(id)?.fichiers||[]).find(f=>norm(f.nom||f.name)==='liste de balance.pdf');}
 export function sourceFingerprint(tree){
   if(!tree)return '';
-  const rows=[['client',String(tree.id||''),tree.nom||tree.name||'']],take=(node,pdf)=>{for(const f of node.fichiers||[]){if(excluded(f.nom||f.name))continue;const type=f.mimeType||f.type;if(type==='application/vnd.google-apps.spreadsheet'||type==='GOOGLE_SHEETS'||pdf&&(type==='application/pdf'||type==='PDF'))rows.push([String(f.id),type==='application/pdf'?'PDF':type==='application/vnd.google-apps.spreadsheet'?'GOOGLE_SHEETS':type]);}};
+  const rows=[['schema','v2727-equipment-conformity'],['client',String(tree.id||''),tree.nom||tree.name||'']],take=(node,pdf)=>{for(const f of node.fichiers||[]){if(excluded(f.nom||f.name))continue;const type=f.mimeType||f.type;if(type==='application/vnd.google-apps.spreadsheet'||type==='GOOGLE_SHEETS'||pdf&&(type==='application/pdf'||type==='PDF'))rows.push([String(f.id),type==='application/pdf'?'PDF':type==='application/vnd.google-apps.spreadsheet'?'GOOGLE_SHEETS':type]);}};
   take(tree,true);
   for(const d of tree.dossiers||[])if(/^rapports? (?:d ?)?etalonnages?$/.test(norm(d.nom||d.name))){rows.push(['folder',String(d.id)]);take(d,false);}
   return JSON.stringify(rows.sort((a,b)=>a[0].localeCompare(b[0])));
@@ -97,7 +98,10 @@ async function refresh(force=false,verify=false,id=client()){
     progress('Actualisation de la liste…');
     const deadline=Date.now()+180000;
     while(version===epoch&&canRead()&&Date.now()<deadline){
-      if(result.status==='ready'){failed.delete(k);if(!waiting(id)&&change===(changes.get(k)||0)){remember(id,fingerprint);satisfied.set(k,change);}ready(id,result,force);return result;}
+      if(result.status==='ready'){
+        if(window.cdqEnsureListConformityV2728)result=await window.cdqEnsureListConformityV2728({result,clientId:id,clientName:root(id)?.nom||root(id)?.name||'',files:sources(root(id)||{}),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},loadPdf:file=>window.cdqLoadPdfForCalibrationV2668(file),loadSheet:file=>call('obtenirSnapshotGoogleSheetHorsLigne',file,id),rpc:(name,...args)=>call(name,...args),cachedSignature:file=>equipment.confirmedSignature?.(file),stillCurrent:()=>version===epoch&&canWrite()&&!waiting(id)&&change===(changes.get(k)||0)&&fingerprint===sourceFingerprint(root(id))});
+        failed.delete(k);if(!waiting(id)&&change===(changes.get(k)||0)){remember(id,fingerprint);satisfied.set(k,change);}ready(id,result,force);return result;
+      }
       if(result.status==='error')throw Error(result.message||'Actualisation impossible.');
       if(!['busy','pending','working'].includes(result.status))throw Error('Réponse d’actualisation non confirmée.');
       await new Promise(resolve=>setTimeout(resolve,1000));

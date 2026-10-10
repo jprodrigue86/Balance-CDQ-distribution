@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.26" data-cdq-pc-release="f88bc6f19d2a80684637981bc7e43b96810b91a51ac32e285d203eb54e5f8c11">
+<html data-cdq-pc-version="27.28" data-cdq-pc-release="0381f6417b6b1b44000c86cb6e3397bb9eb75232798060952aaaac2aa413b595">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
 <script id="cdqNavigationPreloadV2681">(function(){
 if(/BalanceCDQAndroid\//.test(navigator.userAgent))return;
-for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2721.mjs","opportunity-fields-v2699.mjs","drive-file-icons-v2710.mjs","navigation-style-v2708.mjs","corner-signals-v2677.mjs","weighing-calculations-v2638.mjs","bridge-six-v2658.mjs","calibration-feedback-v2566.mjs","drive-cache-v2677.mjs","drive-actions-v2699.mjs","drive-trash-v2713.mjs","calibration-ui-v2565.mjs","calibration-scan-v2668.mjs","calibration-icon-v2566.mjs","calibration-db-v2565.mjs","calibration-methods-v2566.mjs","calibration-models-v2668.mjs","calibration-notes-v2658.mjs","file-copy-move-v2677.mjs"]){const link=document.createElement('link');link.rel='modulepreload';link.href='./'+name;link.dataset.cdqStartupV2681='';document.head.appendChild(link);}
+for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2721.mjs","catalog-expanded-v2728.mjs","opportunity-fields-v2699.mjs","catalog-media-v2728.mjs","drive-file-icons-v2710.mjs","navigation-style-v2708.mjs","corner-signals-v2677.mjs","weighing-calculations-v2638.mjs","bridge-six-v2658.mjs","calibration-feedback-v2566.mjs","drive-cache-v2677.mjs","drive-actions-v2699.mjs","file-operations-v2727.mjs","drive-trash-v2713.mjs","calibration-ui-v2565.mjs","calibration-scan-v2668.mjs","calibration-icon-v2566.mjs","calibration-db-v2565.mjs","calibration-methods-v2566.mjs","calibration-models-v2668.mjs","calibration-notes-v2658.mjs","file-copy-move-v2677.mjs"]){const link=document.createElement('link');link.rel='modulepreload';link.href='./'+name;link.dataset.cdqStartupV2681='';document.head.appendChild(link);}
 })();</script>
 <script>/* One synchronous layout for the company chooser; background refreshes never
  * replace a row while the technician is choosing it. */
@@ -853,7 +853,7 @@ for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.09-v27.26-precision-excentricity">
+<meta name="cdq-package-build" content="2026.10.10-v27.28-client-list-pdf-catalogue">
 
 
 <script id="cdqBridgeV23">
@@ -907,7 +907,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.09-v27.26-precision-excentricity'
+    build:'2026.10.10-v27.28-client-list-pdf-catalogue'
   });
 }
 
@@ -920,7 +920,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.09-v27.26-precision-excentricity'
+        build:'2026.10.10-v27.28-client-list-pdf-catalogue'
       });
     }
   } catch(e) {}
@@ -11514,7 +11514,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.09-v27.26-precision-excentricity";
+  const CDQ_BUILD = "2026.10.10-v27.28-client-list-pdf-catalogue";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13774,7 +13774,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.09-v27.26-precision-excentricity";
+const CDQ_V19_BUILD = "2026.10.10-v27.28-client-list-pdf-catalogue";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15071,6 +15071,7 @@ async function cdqOpenPdfInternal(id,preparedRecord){
   function close(){if(disposed)return;disposed=true;stopLoading();window.removeEventListener('message',receive);window.removeEventListener('cdq:pdf-save-retired-v2707',retiredV2707);frame?.remove();cdqReaderOpeningV2520=false;}
   async function save(d){
     valid();if(d.name&&String(d.name)!==String(rec.nom))rec.autoReportName=true;if(remoteRevisionV2553&&String(remoteRevisionV2553)!==String(rec.revision||''))throw new Error('Une version plus récente de ce PDF existe dans le dossier client. Fermez puis rouvrez le rapport avant de l’enregistrer.');
+    window.cdqReportConformityV2727?.noteSave(rec,d.blob,d.requestId).catch(()=>{});
     window.cdqEquipmentListV2697.noteSave(rec,d.blob,d.requestId).catch(()=>{});valid();
     if(rec.offlinePrepared&&rec.offlineVersion!==undefined)return cdqOffline24.save(rec,d.blob,d.requestId,d.name);
     valid();if(!['admin','technicien'].includes(utilisateurCourantRole))throw new Error('Accès en lecture seule.');
@@ -15163,6 +15164,7 @@ function installLocalReportListV2713({host=window,fromPwa,owner,allowed,confirm,
   if(old?.retired)return;
   if(d.driveId){remove(d.clientId,localId);seen.set(key,{version:Number(d.editVersion||0),driveId:d.driveId});return;}
   if(old?.driveId||old?.retired)return;seen.set(key,{version:Number(d.editVersion||0),driveId:''});
+  window.cdqReportConformityV2727?.noteSave({id:localId,clientId:d.clientId,owner:email},d.blob,String(d.uploadId||d.localId)).catch(()=>{});
   confirm({id:localId,nom:String(d.name||'Rapport.pdf'),type:'PDF',_cdqLocalReportV2713:d.localId,_cdqPendingSaveV2660:String(d.uploadId||d.localId)},String(d.clientId),String(d.folderId||d.clientId));
  });
  return {open(id){if(!String(id).startsWith('cdq-local-'))return false;if(!allowed())throw Error('Accès Drive requis.');post({type:'CDQ_LOCAL_REPORT_OPEN_V2713',email:owner(),localId:String(id).slice(10)});return true;},
@@ -15404,6 +15406,9 @@ const cdqOffline24 = (() => {
         if(q.some(a=>String(a.targetId)===String(d.fileId)&&/pdf/.test(a.kind)))return;
         const prior=await cdqV19GetRecord('document-pdf',d.fileId);valid(email);
         if(Number(prior?.localEditVersionV2660||0)>Number(d.editVersion||0))return;
+        const conformitySaveIdV2727=String(d.uploadId||('offline-'+d.fileId+'-'+Number(d.editVersion||0)));
+        window.cdqReportConformityV2727?.noteSave({id:d.fileId,clientId:d.clientId,revision:d.revision,owner:email},d.blob,conformitySaveIdV2727).catch(()=>{});
+        if(!d.pending)window.cdqReportConformityV2727?.tracker.acknowledge(conformitySaveIdV2727,{id:d.fileId,clientId:d.clientId,owner:email,revision:d.revision});
         await cdqV19PutRecord('document-pdf',d.fileId,{id:d.fileId,nom:d.name,autoReportName:d.autoReportName===true,clientId:d.clientId,clientName:d.clientName,revision:d.revision,taille:d.blob.size,blob:d.blob,offlineSelected:d.offlineSelected===true,offlinePrepared:d.offlineSelected===true,pendingSaveId:d.pending?d.uploadId:'',localEditVersionV2660:d.editVersion});valid(email);
         window.cdqInstantFiles2530.confirm({id:d.fileId,nom:d.name,type:'PDF',_cdqPendingSaveV2660:d.pending?d.uploadId:'',_cdqCommittedUploadV2660:d.pending?'':d.uploadId},d.clientId,d.folderId||d.clientId);
         window.dispatchEvent(new CustomEvent('cdq:pdf-local-saved',{detail:{id:d.fileId,clientId:d.clientId,name:d.name,saveId:d.uploadId,pending:!!d.pending}}));await refresh();
@@ -16135,7 +16140,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.09-v27.26-precision-excentricity";
+const CDQ_V20_BUILD = "2026.10.10-v27.28-client-list-pdf-catalogue";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16982,7 +16987,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.09-v27.26-precision-excentricity";
+const CDQ_V21_BUILD = "2026.10.10-v27.28-client-list-pdf-catalogue";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21647,7 +21652,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.09-v27.26-precision-excentricity',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.10-v27.28-client-list-pdf-catalogue',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23121,6 +23126,8 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
+<link rel="stylesheet" href="./report-conformity-v2727.css">
+<script type="module" src="./report-conformity-ui-v2727.mjs"></script>
 <script src="./icon-background-v2697.js"></script>
 <link rel="stylesheet" href="./desktop-workspace-v2688.css">
 <script src="./desktop-model2-v2676.js"></script>
