@@ -1,0 +1,282 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V27.18",
+  "build": "2026.10.08-v27.18-cdq-trash-session",
+  "title": "Balance CDQ V27.18 — corbeille avec la connexion CDQ",
+  "requiresBuild": [
+    "2026.10.02-v26.38-workspace-drive-security",
+    "2026.10.02-v26.45-direct-access",
+    "2026.10.02-v26.46-active-balance-lists",
+    "2026.10.03-v26.48-approved-reader-templates",
+    "2026.10.03-v26.49-approved-reader-templates",
+    "2026.10.03-v26.50-approved-reader-templates",
+    "2026.10.03-v26.54-nonblocking-balance-list",
+    "2026.10.03-v26.58-complete-workspace",
+    "2026.10.03-v26.60-document-workflow",
+    "2026.10.04-v26.65-client-workflow",
+    "2026.10.04-v26.68-interface-calibration",
+    "2026.10.05-v26.77-fluidity-reports",
+    "2026.10.06-v26.86-startup-resume",
+    "2026.10.06-v26.87-single-request-startup",
+    "2026.10.08-v27.18-cdq-trash-session"
+  ],
+  "patches": [
+    {
+      "id": "application-build-v2718",
+      "file": "Code.gs",
+      "op": "replace_build_any",
+      "from": [
+        "2026.10.02-v26.38-workspace-drive-security",
+        "2026.10.02-v26.45-direct-access",
+        "2026.10.02-v26.46-active-balance-lists",
+        "2026.10.03-v26.48-approved-reader-templates",
+        "2026.10.03-v26.49-approved-reader-templates",
+        "2026.10.03-v26.50-approved-reader-templates",
+        "2026.10.03-v26.54-nonblocking-balance-list",
+        "2026.10.03-v26.58-complete-workspace",
+        "2026.10.03-v26.60-document-workflow",
+        "2026.10.04-v26.65-client-workflow",
+        "2026.10.04-v26.68-interface-calibration",
+        "2026.10.05-v26.77-fluidity-reports",
+        "2026.10.06-v26.86-startup-resume",
+        "2026.10.06-v26.87-single-request-startup",
+        "2026.10.08-v27.18-cdq-trash-session"
+      ],
+      "to": "2026.10.08-v27.18-cdq-trash-session"
+    },
+    {
+      "id": "obtenirEtatAcces-direct-v2645",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "function obtenirEtatAcces(jetonAppareil, ticketGoogle) {\n  try {\n    nettoyerSessionsExpireesCDQ_();\n\n    const admin = obtenirAdministrateurPrincipal_();\n\n    // Chaque ouverture repart verrouillée. Le jeton appareil ou une identité\n    // Google vérifiée détermine seulement QUEL écran de sécurité afficher.\n    effacerSessionTemporaireCouranteCDQ_();\n\n    const jeton = String(jetonAppareil || '').trim();\n    const uAppareil = lireUtilisateurDepuisJetonAppareilCDQ_(jeton);\n\n    // Appareil déjà activé : aucune nouvelle connexion Google.\n    if (uAppareil) {\n      if (nip4DefiniUtilisateurCDQ_(uAppareil)) {\n        return {\n          versionBackend: CDQ_BACKEND_BUILD_,\n          autorise:false,\n          appareilConnu:true,\n          doitDeverrouiller:true,\n          typeConnexion:'nip4',\n          email:uAppareil.email,\n          role:uAppareil.role,\n          biometriePermise:true,\n          createur:uAppareil.email === admin,\n          message:'Déverrouillez l’application.'\n        };\n      }\n\n      if (uAppareil.email === admin) {\n        return {\n          versionBackend:CDQ_BACKEND_BUILD_, autorise:false,\n          activationValidee:true, doitCreerNip:true,\n          email:admin, role:'admin', createur:true,\n          jetonActivation:creerJetonActivationCDQ_(uAppareil),\n          message:'Choisissez votre NIP de créateur.'\n        };\n      }\n\n      return {\n        versionBackend: CDQ_BACKEND_BUILD_,\n        autorise:false,\n        appareilConnu:true,\n        doitActiverNip:true,\n        typeConnexion:'activation6',\n        email:uAppareil.email,\n        role:uAppareil.role,\n        message:'Entrez votre clé d’activation à usage unique, puis choisissez votre NIP.'\n      };\n    }\n\n    // V26.19 : aucun appareil connu. On affiche directement le formulaire\n    // CDQ (courriel autorisé + code d’activation). Le compte Google sera choisi\n    // séparément seulement lorsqu’un fichier Drive/Sheets/PDF en aura besoin.\n    return {\n      versionBackend: CDQ_BACKEND_BUILD_,\n      autorise:false,\n      connexionRequise:true,\n      oublierJeton: !!jeton,\n      typeConnexion:'activation6',\n      emailSuggere:'',\n      message:'Entrez votre adresse courriel autorisée et votre code d’activation à 6 chiffres.'\n    };\n\n    // Aucun appareil connu : l'identité vient UNIQUEMENT de Google Identity\n    // Services. On ne dépend plus de Session.getActiveUser() ni de la page\n    // de connexion Apps Script.\n    const identiteGoogle = lireTicketGoogleCDQ_(ticketGoogle);\n    if (!identiteGoogle) {\n      return {\n        versionBackend: CDQ_BACKEND_BUILD_,\n        autorise:false,\n        connexionGoogleRequise:true,\n        oublierJeton: !!jeton,\n        typeConnexion:'google',\n        message:'Connectez votre compte Google pour continuer.'\n      };\n    }\n\n    const uGoogle = trouverUtilisateurAutoriseParEmail_(identiteGoogle.email);\n    if (!uGoogle) {\n      supprimerTicketGoogleCDQ_(ticketGoogle);\n      return {\n        versionBackend: CDQ_BACKEND_BUILD_,\n        autorise:false,\n        connexionGoogleRequise:true,\n        oublierJeton: !!jeton,\n        typeConnexion:'google',\n        message:'Ce compte Google n’est plus autorisé.'\n      };\n    }\n\n    // Un utilisateur déjà inscrit qui change de téléphone n'a PAS besoin d'une\n    // nouvelle clé d'activation : Google + son NIP recréent seulement le jeton\n    // local du nouvel appareil.\n    if (nip4DefiniUtilisateurCDQ_(uGoogle)) {\n      const nouveauJeton = creerJetonAppareilCDQ_(uGoogle);\n      supprimerTicketGoogleCDQ_(ticketGoogle);\n      return {\n        versionBackend: CDQ_BACKEND_BUILD_,\n        autorise:false,\n        appareilConnu:true,\n        doitDeverrouiller:true,\n        typeConnexion:'nip4',\n        email:uGoogle.email,\n        role:uGoogle.role,\n        biometriePermise:true,\n        createur:uGoogle.email === admin,\n        jetonAppareil:nouveauJeton,\n        message:'Entrez votre NIP à 4 chiffres.'\n      };\n    }\n\n    if (uGoogle.email === admin) {\n      supprimerTicketGoogleCDQ_(ticketGoogle);\n      return {\n        versionBackend:CDQ_BACKEND_BUILD_, autorise:false,\n        activationValidee:true, doitCreerNip:true,\n        email:admin, role:'admin', createur:true,\n        jetonActivation:creerJetonActivationCDQ_(uGoogle),\n        message:'Choisissez votre NIP à 4 chiffres.'\n      };\n    }\n\n    // Première inscription d'un technicien : Google est déjà confirmé.\n    // La clé à 6 chiffres est demandée une seule fois, puis elle est consommée.\n    return {\n      versionBackend: CDQ_BACKEND_BUILD_,\n      autorise:false,\n      doitActiverNip:true,\n      connexionGoogleValidee:true,\n      typeConnexion:'activation6',\n      email:uGoogle.email,\n      role:uGoogle.role,\n      message:'Compte Google confirmé. Entrez maintenant votre clé d’activation à usage unique.'\n    };\n  } catch(e) {\n    return {\n      versionBackend: CDQ_BACKEND_BUILD_,\n      autorise:false,\n      connexionGoogleRequise:true,\n      typeConnexion:'google',\n      message:e && e.message ? e.message : String(e)\n    };\n  }\n}",
+      "replacement": "function obtenirEtatAcces(jetonAppareil, ticketGoogle) {\n  return cdqDirectAccessV2645_(jetonAppareil,ticketGoogle);\n}",
+      "expected": 1
+    },
+    {
+      "id": "connecterAvecCodeAccesVerrouille_-direct-v2645",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "function connecterAvecCodeAccesVerrouille_(email, code, ticketGoogle, jetonAppareil) {\n  email = normaliserEmailCDQ_(email);\n  code = String(code || '').trim();\n\n  if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) throw new Error('Adresse courriel invalide.');\n  if (!codeAccesValideCDQ_(code)) throw new Error('Le code d’activation doit contenir 6 chiffres.');\n\n  const identiteActivation = verifierIdentiteActivationCDQ_(email, ticketGoogle, jetonAppareil);\n\n  const blocage = verifierBlocageConnexionCDQ_(email);\n  if (blocage.bloque) {\n    throw new Error('Trop de tentatives. Attendez 10 minutes avant de réessayer.');\n  }\n\n  const u = trouverUtilisateurAutoriseParEmail_(email);\n  if (!u || !codeDefiniUtilisateurCDQ_(u) || !verifierCodeUtilisateurCDQ_(u, code)) {\n    const echec = enregistrerEchecConnexionCDQ_(email);\n    if (echec.bloque) throw new Error('Trop de tentatives. Accès temporairement bloqué pendant 10 minutes.');\n    if (u && !codeDefiniUtilisateurCDQ_(u)) {\n      if (nip4DefiniUtilisateurCDQ_(u)) {\n        throw new Error('Ce code à 6 chiffres a déjà été utilisé. Déverrouillez plutôt avec votre NIP à 4 chiffres.');\n      }\n      throw new Error('Aucun code d’activation valide. Demandez à l’administrateur de générer un nouveau code.');\n    }\n    throw new Error('Adresse courriel ou code d’activation incorrect.');\n  }\n\n  effacerEchecsConnexionCDQ_(email);\n\n  // Le code 6 chiffres est consommé IMMÉDIATEMENT.\n  revoquerSessionsUtilisateur_(email);\n  const jetonActivation = creerJetonActivationCDQ_(u);\n  consommerCodeActivationCDQ_(email);\n  if (identiteActivation.type === 'google') supprimerTicketGoogleCDQ_(ticketGoogle);\n\n  return {\n    autorise: false,\n    activationValidee: true,\n    doitCreerNip: true,\n    email: u.email,\n    role: u.role,\n    jetonActivation: jetonActivation,\n    message: 'Code accepté. Choisissez maintenant votre NIP à 4 chiffres.'\n  };\n}",
+      "replacement": "function connecterAvecCodeAccesVerrouille_(email, code, ticketGoogle, jetonAppareil) {\n  return cdqDirectActivateV2645_(email,code,ticketGoogle,jetonAppareil);\n}",
+      "expected": 1
+    },
+    {
+      "id": "reprendreActivationCDQ-direct-v2645",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "function reprendreActivationCDQ(jetonActivation) {\n  const a = lireJetonActivationCDQ_(jetonActivation);\n  if (!a) throw new Error('Cette activation a expiré. Demandez un nouveau code à 6 chiffres à l’administrateur.');\n  const u = trouverUtilisateurAutoriseParEmail_(a.email);\n  if (!u) throw new Error('Accès retiré par l’administrateur.');\n  return {autorise:false, activationValidee:true, doitCreerNip:true,\n    email:u.email, role:u.role, jetonActivation:String(jetonActivation),\n    expirationActivation:a.expiresAt};\n}",
+      "replacement": "function reprendreActivationCDQ(jetonActivation) {\n  return cdqDirectFinishActivationV2645_(jetonActivation);\n}",
+      "expected": 1
+    },
+    {
+      "id": "restaurerSessionApresBiometrie-direct-v2645",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "function restaurerSessionApresBiometrie(jetonAppareil) {\n  jetonAppareil = String(jetonAppareil || '').trim();\n  if (!jetonAppareil) throw new Error('Cet appareil n’est pas enregistré.');\n\n  const u = lireUtilisateurDepuisJetonAppareilCDQ_(jetonAppareil);\n  if (!u) throw new Error('Cet appareil n’est plus autorisé.');\n  if (!nip4DefiniUtilisateurCDQ_(u)) throw new Error('Configurez d’abord votre NIP à 4 chiffres.');\n\n  lierCleTemporaireCDQ_(u); // compatibilité seulement\n  const jetonSession = creerSessionRpcCDQ_(u);\n  return cdqStartupCachedV2527_({ autorise:true, email:u.email, role:u.role, jetonSession:jetonSession });\n}",
+      "replacement": "// Compatibility endpoint; no local biometric or PIN verification.\nfunction restaurerSessionApresBiometrie(jetonAppareil) {\n  return cdqDirectAccessV2645_(jetonAppareil,'');\n}",
+      "expected": 1
+    },
+    {
+      "id": "rpc-current-user-without-pin-v2645",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "if (!u || !nip4DefiniUtilisateurCDQ_(u)) {",
+      "replacement": "if (!u) {",
+      "expected": 1
+    },
+    {
+      "id": "expired-session-message-v2645",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "throw new Error('SESSION VERROUILLÉE : déverrouillez l’application avec votre NIP ou la biométrie.');",
+      "replacement": "throw new Error('SESSION EXPIRÉE : reconnectez votre compte CDQ autorisé.');",
+      "expected": 2
+    },
+    {
+      "id": "definirNip4ApresActivation-direct-v2645",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "function definirNip4ApresActivation(email, jetonActivation, nip, confirmation) {\n  const lock = LockService.getScriptLock();\n  if (!lock.tryLock(15000)) throw new Error('Une vérification est déjà en cours. Réessayez dans un instant.');\n  try { return definirNip4ApresActivationVerrouille_(email, jetonActivation, nip, confirmation); }\n  finally { lock.releaseLock(); }\n}",
+      "replacement": "",
+      "expected": 1
+    },
+    {
+      "id": "definirNip4ApresActivationVerrouille_-direct-v2645",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "function definirNip4ApresActivationVerrouille_(email, jetonActivation, nip, confirmation) {\n  email = normaliserEmailCDQ_(email);\n  nip = String(nip || '').trim();\n  confirmation = String(confirmation || '').trim();\n\n  if (!nip4ValideCDQ_(nip)) throw new Error('Le NIP doit contenir exactement 4 chiffres.');\n  if (nip !== confirmation) throw new Error('Les deux NIP ne correspondent pas.');\n\n  const activation = lireJetonActivationCDQ_(jetonActivation);\n  if (!activation || activation.email !== email) {\n    throw new Error('Activation expirée. Demandez un nouveau code à 6 chiffres à l’administrateur.');\n  }\n\n  const uAvant = trouverUtilisateurAutoriseParEmail_(email);\n  if (!uAvant) throw new Error('Utilisateur introuvable.');\n\n  sauvegarderNip4UtilisateurCDQ_(email, nip);\n\n  const u = trouverUtilisateurAutoriseParEmail_(email);\n  const jetonAppareil = creerJetonAppareilCDQ_(u);\n\n  // La clé temporaire Apps Script est facultative depuis V21.58. Elle est\n  // conservée comme compatibilité lorsqu'elle existe, mais les techniciens\n  // connectés par Google Identity Services utilisent la session RPC.\n  lierCleTemporaireCDQ_(u);\n  const jetonSession = creerSessionRpcCDQ_(u);\n\n  PropertiesService.getScriptProperties().deleteProperty(activation.cle);\n\n  return {\n    autorise:true,\n    email:u.email,\n    role:u.role,\n    jetonAppareil:jetonAppareil,\n    jetonSession:jetonSession,\n    nipConfigure:true\n  };\n}",
+      "replacement": "",
+      "expected": 1
+    },
+    {
+      "id": "deverrouillerAvecNip-direct-v2645",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "function deverrouillerAvecNip(jetonAppareil, nip) {\n  jetonAppareil = String(jetonAppareil || '').trim();\n  nip = String(nip || '').trim();\n\n  if (!jetonAppareil) throw new Error('Cet appareil n’est pas encore enregistré.');\n  if (!nip4ValideCDQ_(nip)) throw new Error('Entrez votre NIP à 4 chiffres.');\n\n  const u = lireUtilisateurDepuisJetonAppareilCDQ_(jetonAppareil);\n  if (!u) throw new Error('Cet appareil n’est plus autorisé. Reconnectez-vous avec un nouveau code à 6 chiffres.');\n\n  const blocage = verifierBlocageConnexionCDQ_(u.email);\n  if (blocage.bloque) throw new Error('Trop de tentatives. Attendez 10 minutes avant de réessayer.');\n\n  if (!nip4DefiniUtilisateurCDQ_(u) || !verifierNip4UtilisateurCDQ_(u, nip)) {\n    const echec = enregistrerEchecConnexionCDQ_(u.email);\n    if (echec.bloque) throw new Error('Trop de tentatives. NIP temporairement bloqué pendant 10 minutes.');\n    throw new Error('NIP incorrect.');\n  }\n\n  effacerEchecsConnexionCDQ_(u.email);\n  lierCleTemporaireCDQ_(u); // compatibilité seulement\n  const jetonSession = creerSessionRpcCDQ_(u);\n\n  return cdqStartupCachedV2527_({ autorise:true, email:u.email, role:u.role, jetonSession:jetonSession });\n}",
+      "replacement": "",
+      "expected": 1
+    },
+    {
+      "id": "user-save-device-registration-v2645",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "if(nouveau||(!nip4DefiniUtilisateurCDQ_(u)&&!codeDefiniUtilisateurCDQ_(u)))",
+      "replacement": "if(nouveau||(!cdqDeviceRegisteredV2645_(u)&&!codeDefiniUtilisateurCDQ_(u)))",
+      "expected": 1
+    },
+    {
+      "id": "missing-codes-preserve-registered-device-v2645",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "if (u.email !== admin && !nip4DefiniUtilisateurCDQ_(u) && !codeDefiniUtilisateurCDQ_(u))",
+      "replacement": "if (u.email !== admin && !cdqDeviceRegisteredV2645_(u) && !codeDefiniUtilisateurCDQ_(u))",
+      "expected": 1
+    },
+    {
+      "id": "special-icon-styles-v2658",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "expected": 2,
+      "search": "['current', 'minimal', 'dark-pro', 'metal-music', 'isometric']",
+      "replacement": "['current', 'minimal', 'dark-pro', 'metal-music', 'isometric', 'aurora', 'obsidian', 'titanium', 'solar', 'cyberwave']"
+    },
+    {
+      "id": "reuse-request-user-v2686",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "CDQ_ACCES_RPC_COURANT_ = { email:u.email, role:u.role };",
+      "replacement": "CDQ_ACCES_RPC_COURANT_ = { email:u.email, role:u.role, verifiedUserV2686:u };",
+      "expected": 1
+    },
+    {
+      "id": "avoid-repeated-user-read-v2686",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "const uRpc = trouverUtilisateurAutoriseParEmail_(CDQ_ACCES_RPC_COURANT_.email);",
+      "replacement": "const uRpc = CDQ_ACCES_RPC_COURANT_.verifiedUserV2686 || trouverUtilisateurAutoriseParEmail_(CDQ_ACCES_RPC_COURANT_.email);",
+      "expected": 1
+    },
+    {
+      "id": "account-read-v2687",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "function trouverUtilisateurAutoriseParEmail_(email) {\n  email = normaliserEmailCDQ_(email);\n  if (!email) return null;\n  const u = obtenirUtilisateursAutorises_().find(function(x){ return x.email === email; });\n  return u || null;\n}",
+      "replacement": "function trouverUtilisateurAutoriseParEmail_(email) {\n  email = normaliserEmailCDQ_(email);\n  if (!email) return null;\n  cdqEnsureWorkspaceAdminV2626_();\n  // Read only the record needed for this account; no cross-request role cache.\n  if(email===obtenirAdministrateurPrincipal_())return Object.assign({email:email,role:'admin'},obtenirSecuriteAdminCDQ_());\n  return lireUtilisateursStockesCDQ_().find(function(x){return x.email===email;})||null;\n}",
+      "expected": 1
+    },
+    {
+      "id": "rpc-trace-route-v2687",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "function cdqRpc(nomFonction, args, jetonSession) {",
+      "replacement": "function cdqRpcLegacyV2687_(nomFonction, args, jetonSession) {",
+      "expected": 1
+    },
+    {
+      "id": "rpc-drive-stage-v2687",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "  const drivePermission = cdqWsRpcPermissionV2638_(nomFonction, u.email);",
+      "replacement": "  cdqTraceStageV2687_('drive');\n  const drivePermission = cdqWsRpcPermissionV2638_(nomFonction, u.email);",
+      "expected": 1
+    },
+    {
+      "id": "rpc-function-stage-v2687",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "    return fn.apply(null, Array.isArray(args) ? args : []);",
+      "replacement": "    cdqTraceStageV2687_('function');\n    return fn.apply(null, Array.isArray(args) ? args : []);",
+      "expected": 1
+    },
+    {
+      "id": "throttle-lastseen-v2687",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "    session.lastSeen = Date.now();\n    props.setProperty(cle, JSON.stringify(session));",
+      "replacement": "    const seenNowV2687=Date.now();\n    if(seenNowV2687-Number(session.lastSeen||0)>=15*60*1000){\n      session.lastSeen=seenNowV2687;props.setProperty(cle,JSON.stringify(session));\n    }",
+      "expected": 2
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQBootstrapV2687.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.87/files/CDQBootstrapV2687.gs",
+      "sha256": "484cba74d13a6b3282232656d4991267a2246cc7bed850076cea8c35a46bdecd"
+    },
+    {
+      "name": "CDQCalibrationIndexV2658.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.87/files/CDQCalibrationIndexV2658.gs",
+      "sha256": "e854b5ad81dfd61e91eff0e2cc8187e799c1287c6dfaa250f1e0561890fa9f72"
+    },
+    {
+      "name": "CDQCalibrationV2566.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.87/files/CDQCalibrationV2566.gs",
+      "sha256": "f5c9150d0a2d846dbc9dccf6b505629a8fd2b58361b74423d0167bcb41877fcb"
+    },
+    {
+      "name": "CDQDirectAccessV2645.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.87/files/CDQDirectAccessV2645.gs",
+      "sha256": "f77794ff1ae7d051ed615a42e867b20a5b8d98d0983b918274725a0ed56e89bb"
+    },
+    {
+      "name": "CDQDriveGateV2620.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.87/files/CDQDriveGateV2620.gs",
+      "sha256": "cd8a261c5289132c5663bca7c248374a05f9010db1a9daa6e6486615bcbb818d"
+    },
+    {
+      "name": "CDQEmbedded.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.87/files/CDQEmbedded.gs",
+      "sha256": "c8863bb7311b372b92489a9f93a6d6f180e752de13a5ef4cdb5ae733a1a7c344"
+    },
+    {
+      "name": "CDQFileMoveV2677.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.87/files/CDQFileMoveV2677.gs",
+      "sha256": "42aea740135acd08b06dd8627822b3d0d2adbbdd2a87f4d8f58f50cb2bf0d62a"
+    },
+    {
+      "name": "CDQInvoicesV2590.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.87/files/CDQInvoicesV2590.gs",
+      "sha256": "be75fe5fce4918df491907d65a06064a671dcb8c9c7ebba709d6e2c8ffe60ee2"
+    },
+    {
+      "name": "CDQPerformance.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.87/files/CDQPerformance.gs",
+      "sha256": "4d09de73694f0ff21f8f43f3a5777edb073e1e01f18300380a6ba458c91c8dc5"
+    },
+    {
+      "name": "CDQReportFastV2642.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.87/files/CDQReportFastV2642.gs",
+      "sha256": "31ee0a4c50040d0973fa17f322923fe8cb8d230e38d56225a9507d5c53292b08"
+    },
+    {
+      "name": "CDQSessionResume.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.87/files/CDQSessionResume.gs",
+      "sha256": "9a255b2c1ab8cf0df1d902f5813526440832bd03a6ecbe5f84b0565d1449c576"
+    },
+    {
+      "name": "CDQStartupV2686.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.87/files/CDQStartupV2686.gs",
+      "sha256": "1dad6fbdaad58b9e0e9968ce0d4296114cf02db3ec434986cc4f08aa7a2a2b71"
+    },
+    {
+      "name": "CDQWorkspaceV2638.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v26.87/files/CDQWorkspaceV2638.gs",
+      "sha256": "4242ff83e3685823787b7edb15bc7ecc3d621dc342b15d5bfaf95334fd3e3c49"
+    },
+    {
+      "name": "CDQTrashV2718.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.18/files/CDQTrashV2718.gs",
+      "sha256": "6369b55e53dc0b52742ae80dcdf1e7f8ea20813558cbc91df7201213b5aaaa11"
+    }
+  ],
+  "removeFiles": [],
+  "audit": {
+    "androidAppRecommended": "26.87",
+    "calibration": "Lecture paginée des feuilles et PDF des clients, dossiers actifs inclus. Position confirmée par lot, reprise après erreur et redémarrage à zéro; accès et portée des dossiers contrôlés. Aucun PDF conservé automatiquement hors ligne.",
+    "catalogue": "55 modèles, dont 35 procédures documentées; les références incertaines restent à confirmer.",
+    "interface": "Passerelle et validation du compte réunies dans le POST initial; lectures secondaires regroupées.",
+    "preservation": "Session CDQ, rôles et permission Drive vérifiés; seuls les éléments des dossiers CDQ autorisés sont exposés. PDF et calculs inchangés.",
+    "install": "ÉCRIRE + DÉPLOYER le serveur V27.18 dans Script Manager pour activer la corbeille par la session CDQ."
+  }
+}

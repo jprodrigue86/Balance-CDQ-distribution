@@ -230,6 +230,32 @@ html.cdq-desktop-v2676 body #cdqPcFileMenu .cdq-action-art-v2655{width:28px!impo
 /* Save indicators keep their space when idle so a file title stays in place. */
 html body #filesContainer .file-pending-v2708[hidden]{display:inline-flex!important;visibility:hidden!important}
 html body #filesContainer .file-row>.file-today-done-badge[hidden]{display:inline-flex!important;visibility:hidden!important}
+
+/* A touched selected file keeps the same marker during the PDF handoff freeze.
+   The separator keeps its original width so selection never moves another row.
+   Desktop focus and keyboard styling stay outside this phone-only override. */
+html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) body #filesContainer .file-row.selected{
+  --cdq-phone-selection-outline:#28b7ff;
+  --cdq-phone-selection-halo:rgba(40,183,255,.14);
+  --cdq-phone-selection-bar:#ffd23f;
+  background:var(--cdq-selected,#123b59)!important;
+  border:0!important;
+  border-bottom:1px solid var(--cdq-row-border,var(--cdq-line,#1d3b52))!important;
+  outline:2px solid var(--cdq-phone-selection-outline)!important;
+  outline-offset:-2px!important;
+  box-shadow:0 0 0 2px var(--cdq-phone-selection-halo),inset 5px 0 0 var(--cdq-phone-selection-bar)!important;
+}
+html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) body.light #filesContainer .file-row.selected{
+  --cdq-phone-selection-outline:#008bd4;
+  --cdq-phone-selection-halo:rgba(0,139,212,.12);
+  --cdq-phone-selection-bar:#e6a900;
+}
+html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) body.cdq-theme-violet #filesContainer .file-row.selected{
+  --cdq-phone-selection-outline:#d264ff;
+  --cdq-phone-selection-halo:rgba(210,100,255,.15);
+}
+html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) body #filesContainer .file-row.selected:last-child{border-bottom-width:0!important}
+
 </style>
 <script id="cdqReaderArtworkV2710">(function(){
   'use strict';

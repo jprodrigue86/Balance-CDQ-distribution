@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.24" data-cdq-pc-release="b5ee6a6698b6c7194f094696c11708da07460e24f6ed119b89ba39e4a0be6059">
+<html data-cdq-pc-version="27.25" data-cdq-pc-release="4638a01650367ab02a93ca0431de05d59ed060bcfa9bc11072bf8e98b6f1f677">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -853,7 +853,7 @@ for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.09-v27.24-performance">
+<meta name="cdq-package-build" content="2026.10.09-v27.25-micro-corrections">
 
 
 <script id="cdqBridgeV23">
@@ -907,7 +907,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.09-v27.24-performance'
+    build:'2026.10.09-v27.25-micro-corrections'
   });
 }
 
@@ -920,7 +920,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.09-v27.24-performance'
+        build:'2026.10.09-v27.25-micro-corrections'
       });
     }
   } catch(e) {}
@@ -5967,6 +5967,32 @@ html.cdq-desktop-v2676 body #cdqPcFileMenu .cdq-action-art-v2655{width:28px!impo
 /* Save indicators keep their space when idle so a file title stays in place. */
 html body #filesContainer .file-pending-v2708[hidden]{display:inline-flex!important;visibility:hidden!important}
 html body #filesContainer .file-row>.file-today-done-badge[hidden]{display:inline-flex!important;visibility:hidden!important}
+
+/* A touched selected file keeps the same marker during the PDF handoff freeze.
+   The separator keeps its original width so selection never moves another row.
+   Desktop focus and keyboard styling stay outside this phone-only override. */
+html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) body #filesContainer .file-row.selected{
+  --cdq-phone-selection-outline:#28b7ff;
+  --cdq-phone-selection-halo:rgba(40,183,255,.14);
+  --cdq-phone-selection-bar:#ffd23f;
+  background:var(--cdq-selected,#123b59)!important;
+  border:0!important;
+  border-bottom:1px solid var(--cdq-row-border,var(--cdq-line,#1d3b52))!important;
+  outline:2px solid var(--cdq-phone-selection-outline)!important;
+  outline-offset:-2px!important;
+  box-shadow:0 0 0 2px var(--cdq-phone-selection-halo),inset 5px 0 0 var(--cdq-phone-selection-bar)!important;
+}
+html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) body.light #filesContainer .file-row.selected{
+  --cdq-phone-selection-outline:#008bd4;
+  --cdq-phone-selection-halo:rgba(0,139,212,.12);
+  --cdq-phone-selection-bar:#e6a900;
+}
+html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) body.cdq-theme-violet #filesContainer .file-row.selected{
+  --cdq-phone-selection-outline:#d264ff;
+  --cdq-phone-selection-halo:rgba(210,100,255,.15);
+}
+html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) body #filesContainer .file-row.selected:last-child{border-bottom-width:0!important}
+
 </style>
 </head>
 
@@ -11488,7 +11514,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.09-v27.24-performance";
+  const CDQ_BUILD = "2026.10.09-v27.25-micro-corrections";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13748,7 +13774,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.09-v27.24-performance";
+const CDQ_V19_BUILD = "2026.10.09-v27.25-micro-corrections";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -16109,7 +16135,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.09-v27.24-performance";
+const CDQ_V20_BUILD = "2026.10.09-v27.25-micro-corrections";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -16956,7 +16982,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.09-v27.24-performance";
+const CDQ_V21_BUILD = "2026.10.09-v27.25-micro-corrections";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21621,7 +21647,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.09-v27.24-performance',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.09-v27.25-micro-corrections',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;

@@ -1,11 +1,11 @@
 {
   "platform": "pc-pwa",
-  "version": "27.24",
-  "release": "b5ee6a6698b6c7194f094696c11708da07460e24f6ed119b89ba39e4a0be6059",
+  "version": "27.25",
+  "release": "4638a01650367ab02a93ca0431de05d59ed060bcfa9bc11072bf8e98b6f1f677",
   "desktopModel": 3,
-  "androidSourceBuild": "2026.10.09-v27.24-performance",
-  "androidSelectorSha256": "7127672a482f62d66e46124f4ab072f51e0894f430fd81662cf6d0c50c350a1d",
+  "androidSourceBuild": "2026.10.09-v27.25-micro-corrections",
+  "androidSelectorSha256": "ec9b0968ce089c9c683f862fcbebb86e7ddec1ca9dfc31c662caf3afe005c505",
   "generatedFrom": "scripts/build-pc-v2676.mjs",
-  "files": 510,
-  "build": "2026.10.09-v27.24-pc-workspace"
+  "files": 513,
+  "build": "2026.10.09-v27.25-pc-workspace"
 }
