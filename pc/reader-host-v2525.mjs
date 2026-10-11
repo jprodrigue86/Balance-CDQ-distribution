@@ -1,19 +1,98 @@
+import {recognizeBundledReaderSourceV2730} from './reader-bundled-source-v2730.mjs';
+
 let active=null;
 export const currentReader=()=>active;
 let openQueue=Promise.resolve();
-export function openReader(data){const result=openQueue.then(()=>openReaderInternal(data));openQueue=result.catch(()=>{});return result;}
-async function openReaderInternal(data){
+let parkedReaderV2730=null,pendingReaderV2730=null,poolEpochV2730=0;
+let preparedReaderV2730=window.cdqPreparedReaderV2729||null;
+function retireReaderSlotV2730(prepared){prepared?.cancel?.();prepared?.frame?.remove();}
+// The legacy menu prewarm writes this public slot directly. Adopt that write
+// before its append, retiring the idle LRU so an active reader cannot gain a
+// third iframe even when the initial prewarm is retried after a failure.
+Object.defineProperty(window,'cdqPreparedReaderV2729',{configurable:true,get:()=>preparedReaderV2730,set:prepared=>{
+  if(prepared===preparedReaderV2730)return;
+  const prior=preparedReaderV2730;preparedReaderV2730=prepared;
+  if(!prepared)return;
+  if(prior){
+    if(active||pendingReaderV2730)retireReaderSlotV2730(prior);
+    else{retireReaderSlotV2730(parkedReaderV2730);parkedReaderV2730=prior;prior.frame.id='cdq-reader-parked-v2730';}
+  }
+  if(active||pendingReaderV2730){retireReaderSlotV2730(parkedReaderV2730);parkedReaderV2730=null;}
+}});
+function retirePreparedReaderV2730(){
+  poolEpochV2730++;
+  const retained=new Set([preparedReaderV2730,parkedReaderV2730,pendingReaderV2730]);
+  preparedReaderV2730=parkedReaderV2730=pendingReaderV2730=null;
+  // Access checks may temporarily suspend the workspace. Retire every idle
+  // cache, but keep the active form and its unsaved answers under its existing
+  // layout/access contract. The epoch still fences queued replacement opens.
+  for(const prepared of retained)retireReaderSlotV2730(prepared);
+}
+for(const type of ['pagehide','cdq:drive-cleared-v2632'])window.addEventListener(type,retirePreparedReaderV2730);
+window.addEventListener('cdq:access-state-v2527',event=>{if(event.detail!=='ready')retirePreparedReaderV2730();});
+function readerRouteV2730(data,sourceBlob){
+  if(data.readerPreparedVersion===2730&&data.initialValues&&Object.values(data.initialValues).some(value=>String(value??'').trim()))return 'draft:'+sourceBlob.size;
+  return data.fileId?'file:'+String(data.fileId):null;
+}
+function prepareClosedReaderV2730(frame,route){
+  if(preparedReaderV2730){retireReaderSlotV2730(parkedReaderV2730);parkedReaderV2730=preparedReaderV2730;parkedReaderV2730.frame.id='cdq-reader-parked-v2730';}
+  frame.hidden=true;frame.id='cdq-reader-prewarm-v2554';frame.setAttribute('aria-hidden','true');
+  frame.style.cssText='position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0';
+  let settle,timer,finished=false;const prepared={frame,route,ready:false,readyPromise:new Promise(resolve=>{settle=resolve;})};
+  const done=ready=>{if(finished)return;finished=true;clearTimeout(timer);window.removeEventListener('message',receive);prepared.ready=ready;settle(ready);if(!ready){if(preparedReaderV2730===prepared)preparedReaderV2730=null;if(parkedReaderV2730===prepared)parkedReaderV2730=null;frame.remove();}};
+  const receive=event=>{if(event.source!==frame.contentWindow||event.origin!==location.origin)return;if(event.data?.type==='CDQ_READER_READY')done(true);if(event.data?.type==='CDQ_READER_RESET_FAILED_V2730')done(false);};
+  prepared.cancel=()=>done(false);timer=setTimeout(()=>done(false),8000);window.addEventListener('message',receive);preparedReaderV2730=prepared;
+}
+export function openReader(data){
+  // Bind provenance, access mode and the flat identity sidecar to the same
+  // immutable Blob before queuing or hashing. The caller may refresh its record.
+  const request={...data};
+  if(request.initialValues&&typeof request.initialValues==='object')request.initialValues={...request.initialValues};
+  const work=window.cdqPdfWorkV2729,context={sourceBlob:request.blob,poolEpoch:poolEpochV2730,work,workEpoch:work?.stats().epoch};
+  const result=openQueue.then(()=>openReaderInternal(request,context));openQueue=result.catch(()=>{});return result;
+}
+async function openReaderInternal(data,context){
+  const valid=()=>context.poolEpoch===poolEpochV2730&&(!context.work||(window.cdqPdfWorkV2729===context.work&&context.work.stats().epoch===context.workEpoch));
+  const guardContext=()=>{if(!valid())throw Error('Le compte ou l’accès Drive a changé.');};
+  guardContext();
   // Metadata refreshes and duplicate open messages must not replace this form.
   if(data.fileId&&active&&active.fileId===String(data.fileId))return active;
   if(active){
     await active.requestClose();
+    guardContext();
   }
-  if(!(data.blob instanceof Blob)||data.blob.type!=='application/pdf'||!data.blob.size||data.blob.size>32*1024*1024)throw Error('PDF invalide.');
-  const prepared=window.cdqPreparedReaderV2729;window.cdqPreparedReaderV2729=null;
+  const {sourceBlob}=context;
+  if(!(sourceBlob instanceof Blob)||sourceBlob.type!=='application/pdf'||!sourceBlob.size||sourceBlob.size>32*1024*1024)throw Error('PDF invalide.');
+  // Prepare the PDF while the retained viewer/worker/sandbox is becoming ready,
+  // rather than starting this only after the iframe's READY round trip.
+  const {work,workEpoch}=context,route=readerRouteV2730(data,sourceBlob);
+  const pdfPreparation=data.readerPreparedVersion===2730?Promise.resolve({blob:sourceBlob,preparedVersion:2730}):(async()=>{
+    // Only the packaged catalog can establish missing local provenance. A
+    // remote name, revision or metadata flag never substitutes for these bytes.
+    const {REPORT_TEMPLATES}=await import('./report-templates-v2636.mjs');guardContext();
+    const canonical=await recognizeBundledReaderSourceV2730(sourceBlob,REPORT_TEMPLATES);guardContext();
+    if(canonical)return {blob:sourceBlob,preparedVersion:2730};
+    if(!work)return null;
+    const result=await work.requestBlob('open',sourceBlob,{summary:false},{epoch:workEpoch,valid});guardContext();
+    return {blob:new Blob([result.bytes],{type:'application/pdf'}),normalized:true};
+  })().catch(error=>({error}));
+  let prepared=null;
+  if(route&&preparedReaderV2730?.route===route){prepared=preparedReaderV2730;preparedReaderV2730=null;}
+  else if(route&&parkedReaderV2730?.route===route){prepared=parkedReaderV2730;parkedReaderV2730=null;}
+  else if(preparedReaderV2730&&!Object.hasOwn(preparedReaderV2730,'route')){prepared=preparedReaderV2730;preparedReaderV2730=null;}
+  else if(parkedReaderV2730){prepared=parkedReaderV2730;parkedReaderV2730=null;}
+  // With only a different MRU retained, create the second frame. Once both
+  // slots exist, the parked LRU above is recycled instead of allocating more.
+  pendingReaderV2730=prepared;
+  if(prepared?.readyPromise&&!prepared.ready)await prepared.readyPromise;
+  if(!valid()){if(pendingReaderV2730===prepared)pendingReaderV2730=null;retireReaderSlotV2730(prepared);guardContext();}
   const reused=!!prepared?.ready&&prepared.frame?.isConnected;
+  if(prepared&&!reused)retireReaderSlotV2730(prepared);
   const frame=reused?prepared.frame:document.createElement('iframe');frame.id='legacy-pdf-reader';frame.title='Lecteur PDF CDQ';
+  pendingReaderV2730={frame};
   if(!reused)frame.src=new URL('./reader-v2525.html',import.meta.url).href;frame.referrerPolicy='origin';frame.removeAttribute('aria-hidden');
   frame.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:#101820';
+  frame.hidden=false;
   const origin=new URL(frame.src).origin,saves=new Map();let closed=false,guard=false,ready=false,opened=false,prefillValues=null,closeWaiters=[],pendingClose=false,handle=null;
   let workspaceOwner=null,lastWorkspaceLayout=null;
   function layout(message){
@@ -51,9 +130,9 @@ async function openReaderInternal(data){
   const tell=message=>{if(!closed)frame.contentWindow?.postMessage(message,origin)};
   function requestClose(){if(opened)tell({type:'CDQ_READER_REQUEST_CLOSE'});else pendingClose=true;}
   function pop(){if(closed)return;history.pushState({cdqReader:marker},'',location.href);tell({type:'CDQ_READER_REQUEST_CLOSE'});}
-  function close(){
+  function close(reusable=false){
     if(closed)return;closed=true;if(active===handle)active=null;clearTimeout(timer);
-    window.removeEventListener('message',receive);window.removeEventListener('popstate',pop);window.removeEventListener('resize',resize);window.removeEventListener('cdq:keyboard-insets-v2653',resize);window.visualViewport?.removeEventListener('resize',resize);frame.remove();
+    window.removeEventListener('message',receive);window.removeEventListener('popstate',pop);window.removeEventListener('resize',resize);window.removeEventListener('cdq:keyboard-insets-v2653',resize);window.visualViewport?.removeEventListener('resize',resize);if(reusable&&opened&&valid())prepareClosedReaderV2730(frame,route);else frame.remove();
     try{const root=data.workspaceSource?.document.documentElement;if(root?.dataset.cdqReaderSessionV2679===marker)delete root.dataset.cdqReaderSessionV2679;root?.classList.remove('cdq-workspace-reader-open');data.workspaceSource?.cdqWorkspaceV2638?.readerClosed();data.workspaceSource?.cdqWorkspaceV2638?.measure();}catch{}
     // A delayed history.back() could otherwise reach and close the next PDF.
     if(guard&&history.state?.cdqReader===marker)history.replaceState(null,'',location.href);
@@ -69,12 +148,15 @@ async function openReaderInternal(data){
     if(closed||event.source!==frame.contentWindow||event.origin!==origin)return;
     const m=event.data||{};
     if(m.type==='CDQ_READER_READY'){
+      if(ready)return;
       ready=true;
       if(!guard&&!window.BalanceCDQNative&&!/BalanceCDQAndroid\//i.test(navigator.userAgent)){history.pushState({cdqReader:marker},'',location.href);guard=true;window.addEventListener('popstate',pop);}
-      tell({type:'CDQ_READER_OPEN',blob:data.blob,name:data.name,theme:data.theme,fileId:data.onSave?String(data.fileId||'local-copy'):'',readOnly:!!data.readOnly,autoReportName:data.autoReportName===true,desktop:!!data.workspaceSource?.document.documentElement.classList.contains('cdq-desktop-v2676')});
+      const result=pdfPreparation?await pdfPreparation:null;if(closed)return;if(result?.error){close();data.onError?.(result.error);return;}
+      if(!valid()){close();data.onError?.(Error('Le compte ou l’accès Drive a changé.'));return;}
+      tell({type:'CDQ_READER_OPEN',blob:sourceBlob,preparedBlob:result?.blob,readerPreparedVersion:result?.preparedVersion===2730?2730:undefined,readerNormalizedV2730:result?.normalized===true,preparedEpoch:workEpoch,initialValues:data.initialValues,name:data.name,theme:data.theme,fileId:data.onSave?String(data.fileId||'local-copy'):'',readOnly:!!data.readOnly,autoReportName:data.autoReportName===true,desktop:!!data.workspaceSource?.document.documentElement.classList.contains('cdq-desktop-v2676')});
     }
     if(m.type==='CDQ_READER_OPENED'){opened=true;clearTimeout(timer);data.onOpened?.();if(prefillValues)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});if(pendingClose)requestClose();}
-    if(m.type==='CDQ_READER_CLOSE')close();
+    if(m.type==='CDQ_READER_CLOSE')close(m.reusable===true);
     if(m.type==='CDQ_READER_CLOSE_CANCELLED_V2640'){data.workspaceSource?.cdqWorkspaceV2638?.readerCancelled();for(const waiter of closeWaiters){clearTimeout(waiter.timer);waiter.reject(Error('Le rapport courant reste ouvert. Enregistrez-le ou fermez-le avant d’ouvrir le suivant.'));}closeWaiters=[];}
     if(m.type==='CDQ_READER_DISCARD'&&/^discard-[\w-]{8,80}$/.test(String(m.requestId||''))){
       try{await data.onDiscard?.();tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:true});}
@@ -82,7 +164,7 @@ async function openReaderInternal(data){
     }
     if(m.type==='CDQ_READER_SAVE'&&data.onSave&&!data.readOnly){
       if(!/^save-[\w-]{8,80}$/.test(String(m.requestId||''))||!(m.blob instanceof Blob)||m.blob.type!=='application/pdf'||m.blob.size<8||m.blob.size>32*1024*1024)return;
-      if(!saves.has(m.requestId))saves.set(m.requestId,Promise.resolve().then(()=>data.onSave(m.blob,m.requestId,m.name)));
+      if(!saves.has(m.requestId))saves.set(m.requestId,Promise.resolve().then(()=>data.onSave(m.blob,m.requestId,m.name,{readerPreparedVersion:m.readerPreparedVersion===2730?2730:undefined})));
       try{const result=await saves.get(m.requestId);tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:true,queued:!!result?.queued});}
       catch(e){saves.delete(m.requestId);tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:false,error:e.message||String(e)});}
     }
@@ -90,5 +172,5 @@ async function openReaderInternal(data){
   const timer=setTimeout(()=>{if(!opened){close();data.onError?.(new Error('Le lecteur n’a pas ouvert le PDF. La copie reste conservée; réessayez son ouverture.'));}},30000);
   const resize=()=>layout();
   window.addEventListener('resize',resize);window.addEventListener('cdq:keyboard-insets-v2653',resize);window.visualViewport?.addEventListener('resize',resize);
-  handle={fileId:String(data.fileId||''),requestClose:()=>new Promise((resolve,reject)=>{const waiter={resolve,reject,timer:null};waiter.timer=setTimeout(()=>{closeWaiters=closeWaiters.filter(w=>w!==waiter);reject(Error('Fermez le rapport courant avant d’ouvrir le suivant.'));},30000);closeWaiters.push(waiter);requestClose();}),prefill:values=>{prefillValues={...prefillValues,...values};if(opened)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});}};active=handle;window.addEventListener('message',receive);layout();if(!reused)document.body.append(frame);if(reused)queueMicrotask(()=>receive({source:frame.contentWindow,origin,data:{type:'CDQ_READER_READY'}}));return handle;
+  handle={fileId:String(data.fileId||''),requestClose:()=>closed?Promise.resolve():new Promise((resolve,reject)=>{const waiter={resolve,reject,timer:null};waiter.timer=setTimeout(()=>{closeWaiters=closeWaiters.filter(w=>w!==waiter);reject(Error('Fermez le rapport courant avant d’ouvrir le suivant.'));},30000);closeWaiters.push(waiter);requestClose();}),prefill:values=>{prefillValues={...prefillValues,...values};if(opened)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});}};active=handle;pendingReaderV2730=null;window.addEventListener('message',receive);layout();if(!reused)document.body.append(frame);if(reused)queueMicrotask(()=>receive({source:frame.contentWindow,origin,data:{type:'CDQ_READER_READY'}}));return handle;
 }

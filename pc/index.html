@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.29" data-cdq-pc-release="bf988f75539096f4a00f27e3b56bfb95ba7e7b5e6ee94e737cb02039a9b2d64c">
+<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.30" data-cdq-pc-release="56d7e69e2c9cd8d6508fca3d7753df73b6c5bcb10a0f91e9d0d10f1fc1cf6210">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./app-session-v2661.js"></script>
@@ -475,7 +475,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.10-v27.29-field-performance';
+const CDQ_PWA_BUILD = '2026.10.10-v27.30-instant-reports';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1510,6 +1510,7 @@ if(data.type==='CDQ_GOOGLE_AUTH_HIDE')masquerConnexionGoogleV42();
 if(String(data.type||'').startsWith('CDQ_OFFLINE_')||data.type==='CDQ_LOCAL_REPORT_OPEN_V2713')cdqOffline.then(controller=>controller.handle(data));
 if(data.type==='CDQ_ACCESS_STATE' && data.state!=='ready')cdqOffline.then(controller=>controller.lock());
 if((data.type==='CDQ_ACCESS_STATE' && data.state==='ready') || (data.type==='CDQ_SELECTOR_READY' && data.accessState==='ready')){
+  cdqWarmPdfReaderV2554();
   replyToSelector(event.source,{type:'CDQ_OFFLINE_PREPARE'});
   replyToSelector(event.source,{type:'CDQ_FIRST_FRAME_ARM_V2543',generation:loadGeneration});
 }
@@ -1582,10 +1583,13 @@ function cdqWarmPdfReaderV2554(){
     frame.src='./reader-v2525.html';
     frame.setAttribute('aria-hidden','true');
     frame.style.cssText='position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0';
-    let finished=false;
+    let finished=false,settlePrepared;
+    const prepared={frame,ready:false,readyPromise:new Promise(resolve=>{settlePrepared=resolve;}),cancel:()=>done(false)};
+    window.cdqPreparedReaderV2729=prepared;
     const done=(ready=false)=>{
       if(finished)return;finished=true;clearTimeout(timeout);window.removeEventListener('message',onMessage);
-      if(ready)window.cdqPreparedReaderV2729={frame,ready:true};else frame.remove();
+      prepared.ready=ready;settlePrepared(ready);
+      if(!ready){if(window.cdqPreparedReaderV2729===prepared)window.cdqPreparedReaderV2729=null;frame.remove();}
       cdqReaderPrewarmDoneV2554=ready;resolve(ready);
     };
     const onMessage=event=>{
@@ -1615,10 +1619,10 @@ function cdqAfficherPdfV2304(data,source){
       const requestId='discard-'+crypto.randomUUID(),timer=setTimeout(()=>{ctx.pending.delete(requestId);reject(new Error('La fermeture n’a pas été confirmée.'));},12000);
       ctx.pending.set(requestId,{resolve,reject,timer});replyToSelector(source,{type:'CDQ_PDF_DISCARD_REQUEST_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession,requestId});
     }):null,
-    onSave:data.readOnly?null:(blob,requestId,name)=>new Promise((resolve,reject)=>{
+    onSave:data.readOnly?null:(blob,requestId,name,provenance)=>new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>{ctx.pending.delete(requestId);reject(new Error('La sauvegarde n’a pas été confirmée.'));},85000);
       ctx.pending.set(requestId,{resolve,reject,timer});
-      replyToSelector(source,{type:'CDQ_PDF_SAVE_REQUEST_V2304',fileId:ctx.fileId,readerSession:ctx.readerSession,requestId,blob,name});
+      replyToSelector(source,{type:'CDQ_PDF_SAVE_REQUEST_V2304',fileId:ctx.fileId,readerSession:ctx.readerSession,requestId,blob,name,readerPreparedVersion:provenance?.readerPreparedVersion});
     })
   }).catch(error=>{if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession,error:error.message});});
   return true;
