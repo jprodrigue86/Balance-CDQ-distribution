@@ -10,6 +10,11 @@ export function repairReportFormV2676(pdf,L,key){
  if(key&&!repairedReportKeysV2676.includes(key)||form.getFieldMaybe('resolution')||/plancher/i.test(label))return false;
  if(!key&&!marked&&(!form.getFieldMaybe('Bouton_ACompleter')||!owner.includes('function cdqResults(d)')))return false;
  if(!owner.includes('function cdqResults(d)'))return false;
+ // The Table 4 pt revision places these client/date borders on the page.
+ // Recreating an inset widget border would thicken that existing outline.
+ const tableLayoutV2735=/^Balance de table$/i.test(label.trim())?pdf.getPage(0).node.lookupMaybe(N('CDQReportLayoutV2704'),PDFDict):null;
+ const tablePageFramesV2735=tableLayoutV2735?.lookupMaybe(N('Gap'),L.PDFNumber)?.asNumber()===4&&tableLayoutV2735?.lookupMaybe(N('RowGap'),L.PDFNumber)?.asNumber()===4;
+ const tablePageFieldV2735=name=>tablePageFramesV2735&&/^(?:client_(?:nom|telephone|technicien|adresse|ville|province|code_postal)|date_etalonnage_[123]|frequence_etalonnage|prochain_etalonnage_[123])$/.test(name);
  const mass=/"mass":\s*true/.test(owner),font=pdf.embedStandardFont(StandardFonts.HelveticaBold);
  // Keep each model's tolerance, row count, mass units and corner configuration.
  // As on Plancher, a started but incomplete correction cannot erase a red result.
@@ -68,15 +73,16 @@ export function repairReportFormV2676(pdf,L,key){
   }
   for(const widget of field.acroField.getWidgets()){
    const {width:w,height:h}=widget.getRectangle();if(w<3||h<3)continue;
-   const mk=widget.dict.lookupMaybe(N('MK'),PDFDict)||pdf.context.obj({});mk.set(N('BG'),pdf.context.obj([.6,.992157,.992157]));mk.set(N('BC'),pdf.context.obj([.02,.85,.94]));widget.dict.set(N('MK'),mk);
-   widget.dict.set(N('BS'),pdf.context.obj({W:.6,S:'S'}));widget.dict.set(N('Border'),pdf.context.obj([0,0,.6]));
+   const pageFrame=tablePageFieldV2735(name),mk=widget.dict.lookupMaybe(N('MK'),PDFDict)||pdf.context.obj({});
+   if(pageFrame){mk.delete(N('BG'));mk.delete(N('BC'));}else{mk.set(N('BG'),pdf.context.obj([.6,.992157,.992157]));mk.set(N('BC'),pdf.context.obj([.02,.85,.94]));}widget.dict.set(N('MK'),mk);
+   widget.dict.set(N('BS'),pdf.context.obj({W:pageFrame?0:.6,S:'S'}));widget.dict.set(N('Border'),pdf.context.obj([0,0,pageFrame?0:.6]));
    const nominal=Math.min(name==='resume_commentaires'?10:11.25,h*.74);
    let size=nominal,lines=[];
    const wrap=s=>{const result=[];for(const para of text.split('\n')){let line='';for(const word of para.split(' ')){const next=line?line+' '+word:word;if(line&&font.widthOfTextAtSize(next,s)>w-4){result.push(line);line=word;}else line=next;}result.push(line);}return result;};
    if(h>20&&(field.isMultiline?.()||selections)){
     for(;size>3.5;size-=.25){lines=wrap(size);if(lines.length*size*1.15<=h-2&&lines.every(t=>font.widthOfTextAtSize(t,size)<=w-4))break;}
    }else{size=text?Math.min(size,(w-4)*size/Math.max(1,font.widthOfTextAtSize(text,size))):size;lines=[text];}
-   let src='% CDQ cyan input V2676\nq '+cyan+' rg .02 .85 .94 RG .6 w .3 .3 '+(w-.6)+' '+(h-.6)+' re B 1 1 '+(w-2)+' '+(h-2)+' re W n BT 0 Tc 0 Tw 100 Tz 0 Tr /CDQ76 '+size+' Tf 0 g\n';
+   let src=(pageFrame?'% CDQ Table page-owned frame V2735':'% CDQ cyan input V2676')+'\nq '+(pageFrame?'':cyan+' rg .02 .85 .94 RG .6 w .3 .3 '+(w-.6)+' '+(h-.6)+' re B ')+'1 1 '+(w-2)+' '+(h-2)+' re W n BT 0 Tc 0 Tw 100 Tz 0 Tr /CDQ76 '+size+' Tf 0 g\n';
    const top=(h-size*.718)/2+(lines.length-1)*size*1.15/2;
    for(let i=0;i<lines.length;i++)src+='1 0 0 1 '+Math.max(1,(w-font.widthOfTextAtSize(lines[i],size))/2)+' '+(top-i*size*1.15)+' Tm '+font.encodeText(lines[i])+' Tj\n';
    src+='ET Q';widget.dict.set(N('AP'),pdf.context.obj({N:stream(src,w,h)}));
