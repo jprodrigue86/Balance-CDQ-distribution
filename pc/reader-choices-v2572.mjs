@@ -135,6 +135,13 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     return {button,label};
   }
   function refreshNativeSelects(){
+    // The annotation layer can be reconstructed between refreshes. Keep this
+    // exact-name index local to this pass, never retain replaced mirror nodes.
+    const mirrors=new Map();
+    for(const mirror of surface.querySelectorAll('[name^="_cdq_affichage_"]')){
+      const name=mirror.getAttribute('name');let matches=mirrors.get(name);
+      if(!matches)mirrors.set(name,matches=[]);matches.push(mirror);
+    }
     for(const select of surface.querySelectorAll('.choiceWidgetAnnotation select')){
       if(select.closest('[hidden]')||select.getAttribute('aria-hidden')==='true'&&!select.dataset.cdqChoiceSource)continue;
       let entry=entries.get(select.name);
@@ -147,7 +154,7 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
       paint(entry);
       // The dialog button paints the value once. PDF mirror text must not
       // remain underneath it now that the interaction layer is transparent.
-      for(const mirror of surface.querySelectorAll('[name="_cdq_affichage_'+select.name+'"]'))mirror.closest('section')?.classList.add('cdq-choice-mirror');
+      for(const mirror of mirrors.get('_cdq_affichage_'+select.name)||[])mirror.closest('section')?.classList.add('cdq-choice-mirror');
     }
   }
   function refreshKitText(){

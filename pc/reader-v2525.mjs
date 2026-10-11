@@ -1,3 +1,5 @@
+import {installFirstPageRenderLeaseV2731} from './reader-first-paint-scheduler-v2731.mjs';
+let qaFirstPageLeaseCleanupV2731=()=>{},qaFirstPaintOwnerV2731=null;
 import {installDecimalPrecisionV2695,decimalPrecisionErrorV2695,isCorrectionReadingV2695} from './reader-decimals-v2695.mjs';
 import {firstReaderPaintV2682} from './reader-first-paint-v2682.mjs';
 import {paintReaderResults} from './reader-results-v2648.mjs';
@@ -12,6 +14,7 @@ import {downloadPdf} from './pdf-download-v2657.mjs';
 import {readReaderMetadataV2724} from './pdf-metadata-v2724.mjs';
 import {precisionToleranceDisplayV2726} from './reader-precision-excentricity-v2726.mjs';
 import {createReaderVisualRefreshV2730} from './reader-visual-refresh-v2730.mjs';
+import {dispatchReaderSandboxEventV2731,awaitReaderPageActionsV2731} from './reader-scripting-fence-v2731.mjs';
 import {isCacheableReaderDraftV2730,isCacheableReaderDocumentV2730,hasPristineIdentityV2730,readerSourceKeyV2730,protectReaderSnapshotsV2730,readerViewportV2730,sameReaderViewportV2730,readerOpeningLeaseIsCurrentV2730,readerCanvasGeometryMatchesV2730,serializeReaderScriptingV2730,cancellableReaderPaintV2730,
   captureReaderCanvasesV2730,canRetainReaderCanvasV2730,canReuseReaderCanvasV2730,clearReaderAnnotationStorageV2730,rebuildReaderAnnotationsV2730} from './reader-canvas-cache-v2730.mjs';
 installReaderTheme();
@@ -31,7 +34,8 @@ function applyFieldTypography(){
   for(const field of $('viewer').querySelectorAll('input,textarea,select,button.cdq-choice-field')){
     if(!fieldTypography.has(field.name)||field.name.startsWith('_')||/statut/i.test(field.name))continue;
     const size=fieldTypography.get(field.name);
-    field.style.setProperty('font-size','calc('+size+'px * var(--total-scale-factor))','important');
+    const desired='calc('+size+'px * var(--total-scale-factor))';
+    if(field.style.getPropertyValue('font-size')!==desired||field.style.getPropertyPriority('font-size')!=='important')field.style.setProperty('font-size',desired,'important');
     fields.push(field);
   }
   centerFieldsGlyphs(fields);
@@ -49,7 +53,7 @@ let lastAttempt=null,fieldDefinitions=null,nativeInput,readerCalibration=null,ch
 const visualRefreshV2730=createReaderVisualRefreshV2730(()=>{
   if(!doc||closed)return;
   cdqRestorePrecisionToleranceV2726();refreshResults();applyFieldTypography();
-});
+},{defer:()=>opening});
 const touchedIdentity=new Set();let lateIdentity=null;
 let initialValuesV2730=null,initialAppliedV2730=false,initialUpdatesV2730=[],initialPreparedDraftV2730=false;
 function initializeSandboxIdentityV2730(data,values,document,locked,preparedDraft=false){
@@ -267,7 +271,7 @@ const status=value=>{const el=$('status');el.textContent=value;el.dataset.active
 function busy(value){saving=value;$('viewer').inert=value;$('savingMask').hidden=!value;for(const id of ['save','saveClose','doneFields','dismissKeyboard','discard','file'])$(id).disabled=value||!doc||readOnly;}
 function fail(error){busy(false);status(error.message||String(error));$('closeError').textContent=error.message||String(error);closeAfterSave=false;}
 function modified(){if(!readOnly&&!opening){dirty=true;version++;status('');}}
-function resetDocumentFieldsV2730(){
+function resetDocumentFieldsV2730(){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};
   visualRefreshV2730.reset();choices?.cancel();form?.reset();touch?.reset();cdqKeyboardFieldV2550(false);menu(true);
   documentPaintV2730?.dispose();documentPaintV2730=null;
   doc=null;documentTask=null;fieldDefinitions=null;readerCalibration=null;formattedFields.clear();fieldTypography.clear();touchedIdentity.clear();lateIdentity=null;
@@ -275,7 +279,7 @@ function resetDocumentFieldsV2730(){
   cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;delete $('viewer').dataset.ready;$('viewer').classList.remove('cdq-form');$('viewer').inert=true;
   $('calibrationHelp')?.setAttribute('hidden','');
 }
-async function destroyReaderDocumentV2730(task=documentTask){
+async function destroyReaderDocumentV2730(task=documentTask){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};
   documentPaintV2730?.dispose();documentPaintV2730=null;
   viewer.setDocument(null);viewer.linkService.setDocument(null);await scripting.setDocument(null);
   if(task){let taskReset=destroyedReaderTasksV2730.get(task);if(!taskReset){taskReset=Promise.resolve().then(()=>task.destroy());destroyedReaderTasksV2730.set(task,taskReset);}await taskReset;}
@@ -302,7 +306,7 @@ async function resetClosedDocumentV2730(){
     await Promise.all([pdfWorker.promise,sandboxReady]);tell({type:'CDQ_READER_READY'});
   }catch{tell({type:'CDQ_READER_RESET_FAILED_V2730'});}
 }
-function close(){if(closed)return;closedViewportV2730=readerViewportV2730(viewer);closed=true;documentGenerationV2730++;dirty=false;$('viewer').inert=true;$('viewer').style.opacity='0';try{$('closeDialog').close()}catch(_){};tell({type:'CDQ_READER_CLOSE',reusable:hosted});if(hosted)resetPromiseV2730=resetClosedDocumentV2730();else history.back();}
+function close(){if(closed)return;qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};closedViewportV2730=readerViewportV2730(viewer);closed=true;documentGenerationV2730++;dirty=false;$('viewer').inert=true;$('viewer').style.opacity='0';try{$('closeDialog').close()}catch(_){};tell({type:'CDQ_READER_CLOSE',reusable:hosted});if(hosted)resetPromiseV2730=resetClosedDocumentV2730();else history.back();}
 async function requestClose(){
   if(saving){status('Enregistrement en cours…');return;}
   if(decimalGuard&&!decimalGuard.validate())return;
@@ -386,10 +390,13 @@ async function open(data){
           viewer.eventBus.dispatch('annotationlayerrendered',{source:viewer.getPageView(0),pageNumber:1,error:null});
           $('container').scrollTop=0;$('container').scrollLeft=0;
         }else{
-          // Keep Canvas2D readback reliable when result badges sample page pixels.
-          const task=documentTask=attemptTask=api.getDocument({data:sourceBytes,worker:pdfWorker,standardFontDataUrl:assets+'standard_fonts/',cMapUrl:assets+'cmaps/',cMapPacked:true,wasmUrl:assets+'wasm/',isEvalSupported:false,enableXfa:false,enableHWA:false});
+          // Keep the original RGB pixels on the Canvas2D path. In particular,
+          // avoid transferring OffscreenCanvas bitmaps back into a software
+          // canvas before result badges sample those same page pixels.
+          const task=documentTask=attemptTask=api.getDocument({data:sourceBytes,worker:pdfWorker,standardFontDataUrl:assets+'standard_fonts/',cMapUrl:assets+'cmaps/',cMapPacked:true,wasmUrl:assets+'wasm/',isEvalSupported:false,enableXfa:false,enableHWA:false,isOffscreenCanvasSupported:false});
           const parsed=await task.promise;checkLease();doc=parsed;
           if(eligible)protectReaderSnapshotsV2730(doc);
+          qaFirstPaintOwnerV2731=Object.freeze({document:doc,generation,epoch:workEpoch});
           firstPaint=documentPaintV2730=cancellableReaderPaintV2730(firstReaderPaintV2682(viewer.eventBus));viewer.setDocument(doc);viewer.linkService.setDocument(doc);
         }
         doc.annotationStorage.onSetModified=()=>{if(!readOnly&&!opening){dirty=true;status('');}};
@@ -404,20 +411,27 @@ async function open(data){
         applyFieldTypography();cdqApplyConstraintDefaultsV2583();
         readerCalibration=installReaderCalibration({surface:$('viewer'),doc,fields,tell});
         nativeInput.configure(fields);$('viewer').classList.toggle('cdq-form',!!(fields?.get?.('client_nom')||fields?.client_nom)&&!!(fields?.get?.('charge_point_1_charge_utilisee')||fields?.charge_point_1_charge_utilisee));
-        // A reused page has no new pagerendered event. Recreate its sandbox only
-        // after the new widgets and metadata exist, in the normal action order.
-        if(reuse){await scripting.setDocument(doc);checkLease();if((fields?.size||fields&&Object.keys(fields).length||actions)&&!scripting.ready)throw Error('Les calculs du PDF n’ont pas pu redémarrer.');}
-        if(fields?.size||fields&&Object.keys(fields).length||actions){const deadline=Date.now()+12000;while(!scripting.ready){checkLease();if(Date.now()>deadline)throw Error('Les calculs du PDF n’ont pas pu démarrer. Fermez le document puis réessayez.');await new Promise(r=>setTimeout(r,25));}}
+        // Fresh artwork and sandbox startup compete for the same browser
+        // thread. Let PDF.js finish its first paint before initializing actions.
+        // Its automatic request shares this one sandbox; a retained canvas
+        // resolves this wait immediately and keeps its existing startup path.
         await firstPaint.wait(firstPageHasAnnotations);checkLease();
-        cdqRestoreInteractiveFieldsV2581();applyFieldTypography();choices.refresh();applyFieldTypography();form.refresh();refreshResults();
-        if(initialAppliedV2730){restoreInitialIdentityV2730();dirty=true;version++;cdqRestoreInteractiveFieldsV2581();choices.refresh();}
+        await scripting.setDocument(doc);checkLease();
+        if(reuse&&(fields?.size||fields&&Object.keys(fields).length||actions)&&!scripting.ready)throw Error('Les calculs du PDF n’ont pas pu redémarrer.');
+        if(fields?.size||fields&&Object.keys(fields).length||actions){const deadline=Date.now()+12000;while(!scripting.ready){checkLease();if(Date.now()>deadline)throw Error('Les calculs du PDF n’ont pas pu démarrer. Fermez le document puis réessayez.');await new Promise(r=>setTimeout(r,25));}await awaitReaderPageActionsV2731(scripting,viewer.currentPageNumber,{pdfjsVersion:api.version,checkLease});}
+        if(initialAppliedV2730){restoreInitialIdentityV2730();dirty=true;version++;}
+        cdqRestoreInteractiveFieldsV2581();choices.refresh();
+        if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;
+        readerCalibration?.refresh();
+        visualRefreshV2730.schedule();
         await visualRefreshV2730.flush();checkLease();
+        form.refresh();
         await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));checkLease();
         await visualRefreshV2730.flush();checkLease();
         if(canvasCandidateV2730)canvasCandidateV2730.viewport=readerViewportV2730(viewer);
         if(reuse&&!canRetainReaderCanvasV2730(canvasCandidateV2730,{epoch:workEpoch,document:doc,pageView:viewer.getPageView(0),controls:$('viewer').querySelectorAll('input,textarea,select,button').length,viewport:retained.viewport}))throw Error('Le rendu du rapport a changé pendant son ouverture.');
         opening=false;busy(false);$('viewer').style.opacity='';$('viewer').dataset.ready='true';status(readOnly?'Consultation seulement':'');
-        applyLateIdentity();tell({type:'CDQ_READER_OPENED'});return;
+        applyLateIdentity();tell({type:'CDQ_READER_OPENED',readerRequestId:data.readerRequestId});return;
       }catch(error){
         if(generation!==documentGenerationV2730)return;
         if(!reuse||attempt!==0||work.stats().epoch!==workEpoch)throw error;
@@ -472,6 +486,10 @@ $('discard').onclick=()=>{
 $('closeDialog').addEventListener('cancel',e=>{if(saving)e.preventDefault();else tell({type:'CDQ_READER_CLOSE_CANCELLED_V2640'});closeAfterSave=false;});
 for(const type of ['input','change'])$('viewer').addEventListener(type,e=>{if(autoReportName&&e.target.name==='identification_balance'){const next=identificationReportName(e.target.value);if(next){name=next;$('name').textContent=name;}}});
 $('viewer').addEventListener('input',modified);$('viewer').addEventListener('change',modified);
+// Scripted PDF fields cancel native insertion and return accepted text through
+// the sandbox, without emitting input/change. Capture the editing intent before
+// that interception so close/save also protects those answers and their version.
+$('viewer').addEventListener('beforeinput',e=>{if(cdqTextEntryFieldV2550(e.target))modified();},{capture:true});
 for(const type of ['input','change'])$('viewer').addEventListener(type,e=>{if(e.isTrusted&&e.target.name)touchedIdentity.add(e.target.name);});
 $('viewer').addEventListener('input',()=>readerCalibration?.refresh());$('viewer').addEventListener('change',()=>readerCalibration?.refresh());
 $('viewer').addEventListener('pointerdown',e=>{
@@ -510,7 +528,7 @@ window.addEventListener('message',async e=>{
     status(d.queued?'Conservé sur cet appareil — synchronisation en attente.':'✓ Enregistré dans le dossier client');
     if(closeAfterSave&&!dirty){close();}else closeAfterSave=false;
   }
-  if(d.type==='CDQ_READER_OPEN'&&api&&viewer)try{await open(d)}catch(err){opening=false;fail(err);}
+  if(d.type==='CDQ_READER_OPEN'&&api&&viewer)try{await open(d)}catch(err){opening=false;fail(err);tell({type:'CDQ_READER_OPEN_FAILED_V2731',readerRequestId:d.readerRequestId,error:String(err?.message||err).slice(0,500)});}
 });
 try{
   const loaded=await loadReaderModulesV2730(specifier=>import(specifier),assets);api=loaded[0];const ui=loaded[1];readerUIV2730=ui;sandboxModule=loaded[2];api.GlobalWorkerOptions.workerSrc=assets+'build/pdf.worker.mjs';
@@ -529,7 +547,7 @@ try{
       sandbox.create(data);
       restoreInitialIdentityV2730();
     },
-    async dispatchEventInSandbox(event){const sandbox=await sandboxReady;setTimeout(()=>sandbox.dispatchEvent(event),0);},
+    dispatchEventInSandbox(event){return dispatchReaderSandboxEventV2731(sandboxReady,event);},
     async destroySandbox(){(await sandboxReady).nukeSandbox();sandboxReady=sandboxModule.QuickJSSandbox(assets+'wasm/');sandboxReady.catch(()=>{});}
   })}});
   serializeReaderScriptingV2730(scripting);
@@ -555,11 +573,16 @@ try{
     }
     cdqRevealFieldV2552(field,true);
   }});
-  eventBus.on('pagesinit',()=>{viewer.currentScaleValue='page-width';});
-  eventBus.on('pagerendered',()=>refreshResults());
+  eventBus.on('pagesinit',()=>{
+    qaFirstPageLeaseCleanupV2731();
+    const owner=qaFirstPaintOwnerV2731,pageView=viewer.getPageView(0),page=pageView?.pdfPage;
+    qaFirstPageLeaseCleanupV2731=owner?installFirstPageRenderLeaseV2731({document:owner.document,page,pageView,generation:owner.generation,epoch:owner.epoch,getDocument:()=>qaFirstPaintOwnerV2731===owner?doc:null,getPage:()=>viewer.getPageView(0)?.pdfPage,getPageView:()=>viewer.getPageView(0),getGeneration:()=>documentGenerationV2730,getEpoch:()=>pdfWorkV2729().stats().epoch,isClosed:()=>closed,isOpening:()=>opening,surface:$('viewer'),pdfjsVersion:api.version,RenderingCancelledException:api.RenderingCancelledException}):()=>{};
+    viewer.currentScaleValue='page-width';
+  });
+  eventBus.on('pagerendered',event=>{if(event.pageNumber===1&&event.source===viewer.getPageView(0)){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};}if(opening)visualRefreshV2730.schedule();else refreshResults();});
   eventBus.on('scalechanging',e=>{$('zoom').textContent=Math.round(e.scale*100)+' %';});
   eventBus.on('pagerendered',e=>{if(!e.error&&e.source?.div)e.source.div.dataset.cdqPaintedV2556='true';if(e.error)fail(e.error);});
-  eventBus.on('annotationlayerrendered',e=>{if(!e.error&&e.pageNumber===1)captureReaderCanvasesV2730(canvasCandidateV2730,e.source);cdqWrapStableAnnotationLayerV2556(e.source);cdqRestoreInteractiveFieldsV2581();applyFieldTypography();if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();applyFieldTypography();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();refreshResults();});
+  eventBus.on('annotationlayerrendered',e=>{if(!e.error&&e.pageNumber===1)captureReaderCanvasesV2730(canvasCandidateV2730,e.source);cdqWrapStableAnnotationLayerV2556(e.source);if(opening)return;cdqRestoreInteractiveFieldsV2581();applyFieldTypography();if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();applyFieldTypography();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();refreshResults();});
   eventBus.on('updatefromsandbox',event=>{
     if(!doc||closed)return;
     const detail=event.detail||{};
@@ -588,5 +611,5 @@ try{
   // READY now means both engines are prepared; the first report no longer
   // pays for starting the PDF worker and compiling its calculation sandbox.
   await Promise.all([pdfWorker.promise,sandboxReady]);tell({type:'CDQ_READER_READY'});
-}catch(e){const message=String(e?.message||e||'Initialisation impossible.').slice(0,500);console.error('CDQ_READER_INIT_FAILED_V2730',message);fail(new Error(message));$('empty').textContent='Le lecteur n’a pas pu démarrer. Fermez puis mettez à jour l’application.';}
+}catch(e){const message=String(e?.message||e||'Initialisation impossible.').slice(0,500);console.error('CDQ_READER_INIT_FAILED_V2730',message);fail(new Error(message));tell({type:'CDQ_READER_INIT_FAILED_V2731',error:message});$('empty').textContent='Le lecteur n’a pas pu démarrer. Fermez puis mettez à jour l’application.';}
 

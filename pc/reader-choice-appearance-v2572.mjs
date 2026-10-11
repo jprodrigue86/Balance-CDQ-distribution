@@ -1,4 +1,5 @@
 import {normalizeReportLayoutV2721} from './reader-report-layout-v2721.mjs';
+import {approvedReportFamilyV2731} from './reader-approved-reports-v2731.mjs';
 import {normalizeReportMicroV2725} from './reader-report-micro-v2725.mjs';
 import {normalizeReportCorrectionsV2728} from './reader-report-corrections-v2728.mjs';
 import {pruneInvisibleReportHeadingV2730} from './reader-heading-prune-v2730.mjs';
@@ -45,6 +46,7 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const L=providedLibrary||await pdfLibrary();
   const {PDFDocument,PDFName}=L;
   const pdf=await PDFDocument.load(data,{updateMetadata:false});
+  if(approvedReportFamilyV2731(pdf,L))return data;
   const form=pdf.getForm();
   const floorChanged=normalizeFloorStatusV2691(pdf,L),precisionChanged=normalizePrecisionEquipmentV2691(pdf,L);
   const presentationChanged=await normalizeReportPresentationV2695(pdf,L);
@@ -86,6 +88,10 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
     const options=new Set(technician.acroField.getOptions().map(option=>option.value.decodeText())),missing=[];
     for(const value of technician.getSelected())if(typeof value==='string'&&value.length<=1000&&value.trim()&&!options.has(value)){missing.push(value);options.add(value);}
     if(missing.length)technician.addOptions(missing);
+  }
+  if(approvedReportFamilyV2731(pdf,L)){
+    form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
+    return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
   }
   normalizeFloorStatusV2691(pdf,L);
   normalizeReportLayoutV2677(pdf,L);

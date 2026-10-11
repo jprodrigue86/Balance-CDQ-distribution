@@ -13,7 +13,7 @@ const pdf=f=>['PDF','application/pdf'].includes(f.mimeType||f.type);
 const base64=bytes=>{let bin='';for(let i=0;i<bytes.length;i+=16384)bin+=String.fromCharCode(...bytes.subarray(i,i+16384));return btoa(bin);};
 const hash=async text=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text))),b=>b.toString(16).padStart(2,'0')).join('');
 const fileKey=f=>[String(f.id),f.nom||f.name||'',f.mimeType||f.type||'',sourceRev(f),String(f.version||''),f.md5Checksum||f.sha256Checksum||''];
-const snapshotKey=s=>JSON.stringify([s.name,s.files.map(fileKey),s.folders,fileKey(s.list)]);
+const snapshotKey=s=>JSON.stringify([s.name,s.files.map(fileKey),s.folders,s.listFolderId,fileKey(s.list)]);
 async function groups(items,read){
  const out=new Array(items.length);let next=0,failed=false,error;
  await Promise.all(Array.from({length:Math.min(3,items.length)},async()=>{while(!failed){const i=next++;if(i>=items.length)return;try{out[i]=await read(items[i]);}catch(e){if(!failed){failed=true;error=e;}}}}));
@@ -40,8 +40,11 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
  if(!fileId)return null;const guard=()=>{if(!stillCurrent())throw Error('Le client, le compte ou une sauvegarde a changé.');};guard();
  async function snapshot(){
   const response=await rpc('obtenirContenuDossierParesseux',clientId,clientId);guard();const root=folderContent(response,clientId);
-  const lists=root.fichiers.filter(f=>norm(f.nom||f.name)==='liste de balance.pdf'&&pdf(f));
-  if(lists.length!==1||String(lists[0].id)!==String(fileId))throw Error('La liste a été déplacée, remplacée ou supprimée.');
+  const lists=root.fichiers.filter(f=>norm(f.nom||f.name)==='liste de balance.pdf'&&pdf(f)).map(file=>({file,folderId:String(clientId)}));
+  const listFolders=root.dossiers.filter(f=>norm(f.nom||f.name)==='liste de balance').sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+  if(listFolders.some(f=>!f.id)||new Set(listFolders.map(f=>String(f.id))).size!==listFolders.length)throw Error('Dossier de liste incomplet.');
+  await groups(listFolders,async folder=>{const r=await rpc('obtenirContenuDossierParesseux',folder.id,clientId);guard();const child=folderContent(r,folder.id);for(const file of child.fichiers)if(norm(file.nom||file.name)==='liste de balance.pdf'&&pdf(file))lists.push({file,folderId:String(folder.id)});});
+  const selected=lists.filter(row=>String(row.file.id)===String(fileId));if(selected.length!==1)throw Error('La liste a été déplacée, remplacée ou supprimée.');
   const folders=root.dossiers.filter(f=>/^rapports? (?:d ?)?etalonnages?$/.test(norm(f.nom||f.name))).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
   if(folders.some(f=>!f.id)||new Set(folders.map(f=>String(f.id))).size!==folders.length)throw Error('Dossier de rapports incomplet.');
   const children=await groups(folders,async folder=>{const r=await rpc('obtenirContenuDossierParesseux',folder.id,clientId);guard();return folderContent(r,folder.id);});
@@ -49,7 +52,7 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
   for(const f of root.fichiers)if(!excluded(f)&&(sheet(f)||pdf(f)))take(f);for(const child of children)for(const f of child.fichiers)if(!excluded(f)&&sheet(f))take(f);
   const sorted=[...files.values()].sort((a,b)=>String(a.id).localeCompare(String(b.id)));
   if(sorted.length>500||sorted.some(f=>!sourceRev(f)||f._cdqPendingSaveV2660||String(f.id).startsWith('cdq-local-')))throw Error('Révisions des rapports non confirmées.');
-  return {name:root.nom||root.name||'',files:sorted,folders:folders.map(f=>String(f.id)),list:{...lists[0]}};
+  return {name:root.nom||root.name||'',files:sorted,folders:folders.map(f=>String(f.id)),listFolderId:selected[0].folderId,list:{...selected[0].file}};
  }
  const before=await snapshot(),beforeKey=snapshotKey(before),records=[];let L,existing,old,libraryPromise;
  const pdfLibrary=async()=>{libraryPromise??=Promise.resolve().then(library);L=await libraryPromise;guard();return L;};
@@ -82,7 +85,7 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
  // Validate membership and every source revision after rendering, immediately
  // before saving, even when the existing list needs no PDF write.
  const after=await snapshot();guard();if(beforeKey!==snapshotKey(after))throw Error('Les rapports ou la liste ont changé pendant la préparation.');
- const result={status:'ready',fileId:String(fileId),clientId:String(clientId),count:rows.length,listRevision:'v2728-client',listStamp:JSON.stringify(fileKey(after.list)),digest,rows,checkedAt:new Date().toISOString(),updatedAt:sourceRev(before.list),clientSnapshot:after};
+ const result={status:'ready',fileId:String(fileId),clientId:String(clientId),folderId:after.listFolderId,count:rows.length,listRevision:'v2728-client',listStamp:JSON.stringify(fileKey(after.list)),digest,rows,checkedAt:new Date().toISOString(),updatedAt:sourceRev(before.list),clientSnapshot:after};
  if(unchanged)return {...result,unchanged:true,fastV2729:true};
  guard();const saveId='list-v2729-'+crypto.randomUUID(),ack=await rpc('enregistrerPdfLecteurCDQV2520',fileId,base64(bytes),saveId,rev(existing));guard();
  if(ack?.ok!==true||String(ack.id)!==String(fileId)||!rev(ack))throw Error('Enregistrement de la liste non confirmé.');

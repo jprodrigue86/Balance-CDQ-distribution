@@ -1,3 +1,4 @@
+import {createFirstPaintSchedulerV2731} from "../../../reader-first-paint-scheduler-v2731.mjs";
 /**
  * @licstart The following is the entire license notice for the
  * JavaScript code in this page
@@ -9782,7 +9783,7 @@ function convertRGBToRGBA({
       dest[destPos + 2] = s2 >>> 16 | s3 << 16 | alphaMask;
       dest[destPos + 3] = s3 >>> 8 | alphaMask;
     }
-    for (let j = i * 4, jj = srcPos + len; j < jj; j += 3) {
+    for (let j = i * 4, jj = srcPos + len; j < jj && destPos < dest.length; j += 3) {
       dest[destPos++] = src[j] | src[j + 1] << 8 | src[j + 2] << 16 | alphaMask;
     }
   } else {
@@ -9795,7 +9796,7 @@ function convertRGBToRGBA({
       dest[destPos + 2] = s2 << 16 | s3 >>> 16 | alphaMask;
       dest[destPos + 3] = s3 << 8 | alphaMask;
     }
-    for (let j = i * 4, jj = srcPos + len; j < jj; j += 3) {
+    for (let j = i * 4, jj = srcPos + len; j < jj && destPos < dest.length; j += 3) {
       dest[destPos++] = src[j] << 24 | src[j + 1] << 16 | src[j + 2] << 8 | alphaMask;
     }
   }
@@ -15863,7 +15864,8 @@ class PDFPageProxy {
     isEditing = false,
     recordImages = false,
     recordOperations = false,
-    operationsFilter = null
+    operationsFilter = null,
+    cdqFirstPaintLeaseV2731 = null
   }) {
     this._stats?.time("Overall");
     const intentArgs = this._transport.getRenderingIntent(intent, annotationMode, printAnnotationStorage, isEditing);
@@ -15894,6 +15896,7 @@ class PDFPageProxy {
     const shouldRecordOperations = !!canvas && !this.recordedBBoxes && (recordOperations || recordForDebugger);
     const shouldRecordImages = !!canvas && !this.imageCoordinates && recordImages;
     const complete = error => {
+      internalRenderTask._cdqFirstPaintSchedulerV2731?.dispose();
       intentState.renderTasks.delete(internalRenderTask);
       if (shouldRecordOperations) {
         const recordedBBoxes = internalRenderTask.gfx?.dependencyTracker.take();
@@ -15945,7 +15948,8 @@ class PDFPageProxy {
         imagesTracker: shouldRecordImages ? new CanvasImagesTracker(canvas) : null,
         viewport,
         transform,
-        background
+        background,
+        cdqFirstPaintLeaseV2731: cdqFirstPaintLeaseV2731?.page===this&&!intentPrint?cdqFirstPaintLeaseV2731:null
       },
       objs: this.objs,
       commonObjs: this.commonObjs,
@@ -17102,6 +17106,8 @@ class InternalRenderTask {
     this._dependencyTracker = params.dependencyTracker;
     this._imagesTracker = params.imagesTracker;
     this._operationsFilter = operationsFilter;
+    this._cdqFirstPaintLeaseV2731=params.cdqFirstPaintLeaseV2731;
+    this._cdqFirstPaintSchedulerV2731=createFirstPaintSchedulerV2731({lease:this._cdqFirstPaintLeaseV2731,pageIndex,displayIntent:this._useRequestAnimationFrame,run:()=>this._nextBound().catch(this._cancelBound),cancel:error=>this.cancel(error),scheduleNormal:()=>this._scheduleNextBound(),isCancelled:()=>this.cancelled});
   }
   get completed() {
     return this.capability.promise.catch(function () {});
@@ -17113,6 +17119,7 @@ class InternalRenderTask {
     if (this.cancelled) {
       return;
     }
+    if(!this._cdqCheckFirstPaintLeaseV2731())return;
     if (this._canvas) {
       if (InternalRenderTask.#canvasInUse.has(this._canvas)) {
         throw new Error("Cannot use the same canvas during multiple render() operations. " + "Use different canvas or ensure previous operations were " + "cancelled or completed.");
@@ -17149,6 +17156,7 @@ class InternalRenderTask {
     this.graphicsReadyCallback?.();
   }
   cancel(error = null, extraDelay = 0) {
+    this._cdqFirstPaintSchedulerV2731?.dispose();
     this.running = false;
     this.cancelled = true;
     this.gfx?.endDrawing();
@@ -17184,7 +17192,16 @@ class InternalRenderTask {
       this._scheduleNext();
     }
   }
+  _cdqCheckFirstPaintLeaseV2731(){
+    if(this.cancelled)return false;
+    const lease=this._cdqFirstPaintLeaseV2731;
+    if(!lease)return true;
+    try{if(lease.current())return true;}catch(error){this.cancel(error);return false;}
+    this.cancel();return false;
+  }
   _scheduleNext() {
+    if(!this._cdqCheckFirstPaintLeaseV2731())return;
+    if(this._cdqFirstPaintSchedulerV2731?.schedule())return;
     if (this._useRequestAnimationFrame) {
       this.#rAF = window.requestAnimationFrame(() => {
         this.#rAF = null;
@@ -17198,6 +17215,7 @@ class InternalRenderTask {
     if (this.cancelled) {
       return;
     }
+    if(!this._cdqCheckFirstPaintLeaseV2731())return;
     this.operatorListIdx = this.gfx.executeOperatorList(this.operatorList, this.operatorListIdx, this._continueBound, this.stepper, this._operationsFilter);
     if (this.operatorListIdx === this.operatorList.argsArray.length) {
       this.running = false;

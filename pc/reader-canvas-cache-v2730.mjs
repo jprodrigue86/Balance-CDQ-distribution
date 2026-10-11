@@ -114,8 +114,17 @@ export async function rebuildReaderAnnotationsV2730({cached,document,pageView,ui
 // Keep normal, cache and null teardown jobs in one queue, so an aborted job
 // cannot later destroy or dispatch events into the next report's sandbox.
 export function serializeReaderScriptingV2730(manager){
-  const setDocument=manager.setDocument.bind(manager);let queue=Promise.resolve();
-  manager.setDocument=document=>{const job=queue.catch(()=>{}).then(()=>setDocument(document));queue=job;return job;};
+  const setDocument=manager.setDocument.bind(manager);let queue=Promise.resolve(),requestedDocument=null,requestedJob=null;
+  manager.setDocument=document=>{
+    // CDQ starts calculations while the first canvas is rendering. PDFViewer
+    // requests the same document again after that paint; share its one sandbox
+    // instead of executing Open actions twice or destroying a ready sandbox.
+    if(document&&document===requestedDocument&&requestedJob)return requestedJob;
+    requestedDocument=document;
+    const job=queue.catch(()=>{}).then(()=>setDocument(document));queue=job;requestedJob=job;
+    job.catch(()=>{if(requestedJob===job){requestedDocument=null;requestedJob=null;}});
+    return job;
+  };
 }
 
 export function cancellableReaderPaintV2730(paint){

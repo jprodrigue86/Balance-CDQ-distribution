@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.30" data-cdq-pc-release="56d7e69e2c9cd8d6508fca3d7753df73b6c5bcb10a0f91e9d0d10f1fc1cf6210">
+<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.31" data-cdq-pc-release="a69201c5e0a05644647503bca16e3ad8a7186cc5a48cdea94b27b13157730e6e">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./app-session-v2661.js"></script>
@@ -475,7 +475,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.10-v27.30-instant-reports';
+const CDQ_PWA_BUILD = '2026.10.11-v27.31-report-fixes';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1593,7 +1593,7 @@ function cdqWarmPdfReaderV2554(){
       cdqReaderPrewarmDoneV2554=ready;resolve(ready);
     };
     const onMessage=event=>{
-      if(event.source===frame.contentWindow&&event.origin===location.origin&&event.data?.type==='CDQ_READER_READY')done(true);
+      if(event.source!==frame.contentWindow||event.origin!==location.origin)return;if(event.data?.type==='CDQ_READER_READY')done(true);else if(event.data?.type==='CDQ_READER_INIT_FAILED_V2731')done(false);
     };
     const timeout=setTimeout(done,8000);
     window.addEventListener('message',onMessage);
