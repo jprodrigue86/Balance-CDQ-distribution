@@ -7,22 +7,34 @@ import {installReaderCalibration} from './reader-calibration-v2565.mjs';
 import {installReaderChoices} from './reader-choices-v2572.mjs';
 import {installReaderTheme,applyReaderTheme} from './reader-theme-v2572.mjs';
 import {pdfWorkV2729} from './pdf-work-v2729.mjs';
-import {centerFieldGlyphs} from './reader-layout-v2653.mjs';
+import {centerFieldsGlyphs} from './reader-layout-v2653.mjs';
 import {downloadPdf} from './pdf-download-v2657.mjs';
 import {readReaderMetadataV2724} from './pdf-metadata-v2724.mjs';
 import {precisionToleranceDisplayV2726} from './reader-precision-excentricity-v2726.mjs';
+import {createReaderVisualRefreshV2730} from './reader-visual-refresh-v2730.mjs';
+import {isCacheableReaderDraftV2730,isCacheableReaderDocumentV2730,hasPristineIdentityV2730,readerSourceKeyV2730,protectReaderSnapshotsV2730,readerViewportV2730,sameReaderViewportV2730,readerOpeningLeaseIsCurrentV2730,readerCanvasGeometryMatchesV2730,serializeReaderScriptingV2730,cancellableReaderPaintV2730,
+  captureReaderCanvasesV2730,canRetainReaderCanvasV2730,canReuseReaderCanvasV2730,clearReaderAnnotationStorageV2730,rebuildReaderAnnotationsV2730} from './reader-canvas-cache-v2730.mjs';
 installReaderTheme();
 const assets=new URL('./vendor/pdfjs-6.3.289/',import.meta.url).href;
+function loadReaderModulesV2730(load,base){
+  // pdf_viewer.mjs reads the global installed by pdf.mjs during evaluation.
+  // The sandbox module is independent and can load alongside the core.
+  const core=load(base+'build/pdf.mjs'),sandbox=load(base+'build/pdf.sandbox.mjs');
+  const ui=core.then(()=>load(base+'web/pdf_viewer.mjs'));
+  return Promise.all([core,ui,sandbox]);
+}
 const $=id=>document.getElementById(id),hosted=parent!==window;
 let parentOrigin='',autoReportName=false;
 const formattedFields=new Map(),fieldTypography=new Map();
 function applyFieldTypography(){
+  const fields=[];
   for(const field of $('viewer').querySelectorAll('input,textarea,select,button.cdq-choice-field')){
     if(!fieldTypography.has(field.name)||field.name.startsWith('_')||/statut/i.test(field.name))continue;
     const size=fieldTypography.get(field.name);
     field.style.setProperty('font-size','calc('+size+'px * var(--total-scale-factor))','important');
-    centerFieldGlyphs(field);
+    fields.push(field);
   }
+  centerFieldsGlyphs(fields);
 }
 function refreshResults(){if(!doc)return;paintReaderResults($('viewer'));}
 $('viewer').addEventListener('input',()=>requestAnimationFrame(applyFieldTypography));
@@ -30,9 +42,45 @@ $('viewer').addEventListener('change',()=>requestAnimationFrame(applyFieldTypogr
 
 try{const o=new URL(document.referrer).origin;if(o===location.origin||/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(o))parentOrigin=o;}catch(_){}
 const tell=data=>{if(hosted&&parentOrigin)parent.postMessage(data,parentOrigin)};
-let api,viewer,scripting,doc,touch,form,readOnly=false,dirty=false,version=0,savedVersion=0,saving=false;
+let api,viewer,scripting,doc,touch,form,documentTask,pdfWorker,sandboxReady,sandboxModule,readerUIV2730,readOnly=false,dirty=false,version=0,savedVersion=0,saving=false;
+let canvasCandidateV2730=null,closedCanvasV2730=null,closedViewportV2730=null,documentPaintV2730=null,documentGenerationV2730=0,resetPromiseV2730=Promise.resolve();
+const destroyedReaderTasksV2730=new WeakMap();
 let lastAttempt=null,fieldDefinitions=null,nativeInput,readerCalibration=null,choices=null,decimalGuard=null;
+const visualRefreshV2730=createReaderVisualRefreshV2730(()=>{
+  if(!doc||closed)return;
+  cdqRestorePrecisionToleranceV2726();refreshResults();applyFieldTypography();
+});
 const touchedIdentity=new Set();let lateIdentity=null;
+let initialValuesV2730=null,initialAppliedV2730=false,initialUpdatesV2730=[],initialPreparedDraftV2730=false;
+function initializeSandboxIdentityV2730(data,values,document,locked,preparedDraft=false){
+  const updates=[];if(locked)return updates;
+  for(const [name,value] of Object.entries(values||{})){
+    if(!/^client_(nom|telephone|technicien|adresse|ville|province|code_postal)$/.test(name)||typeof value!=='string'||value.length>1000||!value.trim())continue;
+    const raw=data.objects?.get?.(name)||data.objects?.[name],defs=raw?(Array.isArray(raw)?raw:[raw]):[];
+    // CREATE historically replaced the approved template's static Qc default.
+    // Keep onlyEmpty protection for every private value and untrusted report.
+    const blankProvince=preparedDraft&&name==='client_province'&&defs.length>0&&defs.every(def=>def.value==='Qc'&&def.defaultValue==='Qc');
+    if(!defs.length||defs.every(def=>def.editable===false||def.readOnly)||(!blankProvince&&defs.some(def=>String(def.value??def.defaultValue??'').trim())))continue;
+    for(const def of defs){
+      if(def.editable===false||def.readOnly)continue;
+      const state={value};if(Array.isArray(def.items)){const items=def.items.map(item=>({...item}));if(!items.some(item=>item.exportValue===value))items.push({displayValue:value,exportValue:value});def.items=items;state.items=items;}
+      def.value=value;document.annotationStorage.setValue(def.id,state);updates.push({id:def.id,name,...state});
+    }
+  }
+  return updates;
+}
+function restoreInitialIdentityV2730(){
+  for(const update of initialUpdatesV2730){
+    const {id,name,value,items}=update;
+    // PDF.js processes dropdown items by resetting selection to item zero.
+    // Send the items first and the wanted value in a separate event, including
+    // after a layer that was absent when sandbox initialization ran.
+    if(items)viewer.eventBus.dispatch('updatefromsandbox',{source:window,detail:{id,items}});
+    viewer.eventBus.dispatch('updatefromsandbox',{source:window,detail:{id,value}});
+    doc.annotationStorage.setValue(id,{value,...(items?{items}:{})});
+    for(const definition of cdqFieldDefinitionsV2581(name))if(definition.id===id){definition.value=value;if(items)definition.items=items;}
+  }
+}
 function applyLateIdentity(){
   if(!lateIdentity||!doc||opening||readOnly||closed)return;
   const values=lateIdentity;lateIdentity=null;
@@ -69,18 +117,19 @@ function cdqFieldDefinitionsV2581(name){
 }
 function cdqStoredFieldStateV2581(name){
   const definitions=cdqFieldDefinitionsV2581(name);
-  let value='',formattedValue,hasValue=false,pdfReadOnly=definitions.length>0;
+  let value='',formattedValue,items,hasValue=false,pdfReadOnly=definitions.length>0;
   for(const definition of definitions){
     let stored=definition;
     try{if(definition?.id)stored=doc?.annotationStorage?.getValue(definition.id,definition)||definition;}catch(_){}
     const candidate=stored?.value??definition?.value??definition?.defaultValue;
     if(formattedValue===undefined)formattedValue=stored?.formattedValue??formattedFields.get(definition.id);
+    if(items===undefined)items=stored?.items;
     if(!hasValue&&candidate!==undefined&&candidate!==null){value=candidate;hasValue=true;}
     const flags=Number(stored?.fieldFlags??definition?.fieldFlags??stored?.flags??definition?.flags??0);
     const locked=definition?.editable===false||Boolean(stored?.readOnly??definition?.readOnly) || !!(flags&1);
     if(!locked)pdfReadOnly=false;
   }
-  const state={value:hasValue?value:'',formattedValue,readOnly:pdfReadOnly};
+  const state={value:hasValue?value:'',formattedValue,readOnly:pdfReadOnly,...(items?{items}: {})};
   const precision=name==='tolerance_excentricite'&&cdqFieldDefinitionsV2581('type_plateau').length>0&&cdqFieldDefinitionsV2581('charge_point_7_charge_utilisee').length>0;
   const display=precisionToleranceDisplayV2726(name,state,precision);
   if(display!==state)for(const definition of definitions)if(definition?.id){
@@ -125,6 +174,9 @@ function cdqRestoreInteractiveFieldsV2581(){
     const state=cdqStoredFieldStateV2581(name);
     if(document.activeElement!==field){
       if(field.tagName==='SELECT'){
+        // A new technician may be absent from the bundled dropdown. These
+        // option changes are included in PDF.js' saved Opt dictionary too.
+        if(Array.isArray(state.items))for(const item of state.items)if(![...field.options].some(option=>option.value===item.exportValue))field.add(new Option(item.displayValue,item.exportValue));
         const wanted=new Set(Array.isArray(state.value)?state.value.map(String):[String(state.value??'')]);
         for(const option of field.options)option.selected=wanted.has(String(option.value));
       }else{
@@ -215,7 +267,42 @@ const status=value=>{const el=$('status');el.textContent=value;el.dataset.active
 function busy(value){saving=value;$('viewer').inert=value;$('savingMask').hidden=!value;for(const id of ['save','saveClose','doneFields','dismissKeyboard','discard','file'])$(id).disabled=value||!doc||readOnly;}
 function fail(error){busy(false);status(error.message||String(error));$('closeError').textContent=error.message||String(error);closeAfterSave=false;}
 function modified(){if(!readOnly&&!opening){dirty=true;version++;status('');}}
-function close(){if(closed)return;closed=true;dirty=false;try{$('closeDialog').close()}catch(_){};tell({type:'CDQ_READER_CLOSE'});if(!hosted)history.back();}
+function resetDocumentFieldsV2730(){
+  visualRefreshV2730.reset();choices?.cancel();form?.reset();touch?.reset();cdqKeyboardFieldV2550(false);menu(true);
+  documentPaintV2730?.dispose();documentPaintV2730=null;
+  doc=null;documentTask=null;fieldDefinitions=null;readerCalibration=null;formattedFields.clear();fieldTypography.clear();touchedIdentity.clear();lateIdentity=null;
+  lastAttempt=null;pending=null;dirty=false;version=0;savedVersion=0;closeAfterSave=false;initialAppliedV2730=false;initialUpdatesV2730=[];
+  cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;delete $('viewer').dataset.ready;$('viewer').classList.remove('cdq-form');$('viewer').inert=true;
+  $('calibrationHelp')?.setAttribute('hidden','');
+}
+async function destroyReaderDocumentV2730(task=documentTask){
+  documentPaintV2730?.dispose();documentPaintV2730=null;
+  viewer.setDocument(null);viewer.linkService.setDocument(null);await scripting.setDocument(null);
+  if(task){let taskReset=destroyedReaderTasksV2730.get(task);if(!taskReset){taskReset=Promise.resolve().then(()=>task.destroy());destroyedReaderTasksV2730.set(task,taskReset);}await taskReset;}
+}
+async function resetClosedDocumentV2730(){
+  try{
+    const candidate=canvasCandidateV2730,task=documentTask,pageView=viewer.getPageView(0),epoch=pdfWorkV2729().stats().epoch;
+    const keep=viewer.currentScaleValue==='page-width'&&canRetainReaderCanvasV2730(candidate,{epoch,document:doc,pageView,controls:$('viewer').querySelectorAll('input,textarea,select,button').length,viewport:closedViewportV2730});
+    canvasCandidateV2730=null;closedCanvasV2730=null;visualRefreshV2730.reset();
+    choices?.cancel();form?.reset();touch?.reset();cdqKeyboardFieldV2550(false);menu(true);
+    if(keep){
+      // Resolve PageClose/WillClose before destroying the sandbox, without
+      // resetting PDFViewer's already-painted page. Drain queued dispatches.
+      viewer.eventBus.dispatch('pagesdestroy',{source:viewer});
+      await new Promise(resolve=>setTimeout(resolve,0));await new Promise(resolve=>setTimeout(resolve,0));
+      await scripting.setDocument(null);await new Promise(resolve=>setTimeout(resolve,0));
+      const parkedViewport={...readerViewportV2730(viewer),width:closedViewportV2730?.width,height:closedViewportV2730?.height};
+      if(pdfWorkV2729().stats().epoch===epoch&&canRetainReaderCanvasV2730(candidate,{epoch,document:doc,pageView,controls:$('viewer').querySelectorAll('input,textarea,select,button').length,viewport:parkedViewport})){
+        candidate.artwork.layer.cancel();clearReaderAnnotationStorageV2730(doc.annotationStorage);
+        closedCanvasV2730={...candidate,document:doc,task};
+      }else await destroyReaderDocumentV2730(task);
+    }else await destroyReaderDocumentV2730(task);
+    resetDocumentFieldsV2730();opening=false;fileId='';readOnly=false;autoReportName=false;initialValuesV2730=null;initialPreparedDraftV2730=false;closedViewportV2730=null;status('Ouverture…');
+    await Promise.all([pdfWorker.promise,sandboxReady]);tell({type:'CDQ_READER_READY'});
+  }catch{tell({type:'CDQ_READER_RESET_FAILED_V2730'});}
+}
+function close(){if(closed)return;closedViewportV2730=readerViewportV2730(viewer);closed=true;documentGenerationV2730++;dirty=false;$('viewer').inert=true;$('viewer').style.opacity='0';try{$('closeDialog').close()}catch(_){};tell({type:'CDQ_READER_CLOSE',reusable:hosted});if(hosted)resetPromiseV2730=resetClosedDocumentV2730();else history.back();}
 async function requestClose(){
   if(saving){status('Enregistrement en cours…');return;}
   if(decimalGuard&&!decimalGuard.validate())return;
@@ -229,8 +316,9 @@ async function output(){
   if(decimalGuard&&!decimalGuard.validateAll())throw Error("Corrigez les décimales de la mesure avant d’enregistrer.");
   commitActive();await new Promise(r=>setTimeout(r,120));
   await scripting.dispatchWillSave();await new Promise(r=>setTimeout(r,0));
+  await visualRefreshV2730.flush();
   let bytes=await doc.saveDocument();
-  bytes=(await work.request('save',{bytes},{epoch:workEpoch})).bytes;
+  bytes=(await work.request('save',{bytes,summary:false},{epoch:workEpoch})).bytes;
   return new Blob([bytes],{type:'application/pdf'});
 }
 async function finishDocument(){
@@ -252,40 +340,101 @@ async function save(external=false){
     lastAttempt={id:requestId,version:snapshot,blob};
     pending={id:requestId,version:snapshot};
     pending.timer=setTimeout(()=>{if(pending?.id!==requestId)return;pending=null;fail(new Error('La sauvegarde n’a pas encore été confirmée. Le PDF reste ouvert; réessayez ou téléchargez vos réponses.'));},90000);
-    tell({type:'CDQ_READER_SAVE',blob,name,requestId});
+    tell({type:'CDQ_READER_SAVE',blob,name,requestId,readerPreparedVersion:2730});
   }catch(e){fail(e);}
 }
 async function open(data){
   const work=pdfWorkV2729(),workEpoch=work.stats().epoch;
+  await resetPromiseV2730;
+  if(work.stats().epoch!==workEpoch)throw Error('Le compte a changé pendant l’ouverture du rapport.');
+  if(data.preparedEpoch!==undefined&&data.preparedEpoch!==workEpoch)throw Error('Le compte ou l’accès Drive a changé.');
   applyReaderTheme(data.theme);
   if(data.desktop===true){document.body.classList.add('cdq-reader-pc');$('readerTop').append($('name'));$('readerNameBar')?.remove();}
   const blob=data.blob;
   if(!(blob instanceof Blob)||blob.size>32*1024*1024||(await blob.slice(0,5).text())!=='%PDF-')throw Error('PDF invalide (32 Mo maximum).');
-  if(doc)return; // A repeated READY/OPEN exchange must never erase current answers.
-  opening=true;autoReportName=data.autoReportName===true;$('viewer').inert=true;name=String(data.name||name);fileId=String(data.fileId||'');readOnly=!!data.readOnly;
+  if(work.stats().epoch!==workEpoch)throw Error('Le compte a changé pendant l’ouverture du rapport.');
+  if(doc||opening)return; // A repeated OPEN must never erase current answers.
+  let generation=++documentGenerationV2730;
+  const checkLease=()=>{if(!readerOpeningLeaseIsCurrentV2730({generation,currentGeneration:documentGenerationV2730,epoch:workEpoch,currentEpoch:work.stats().epoch,closed}))throw Error('Le compte ou le rapport a changé pendant son ouverture.');if(reuse&&(!sameReaderViewportV2730(retained?.viewport,readerViewportV2730(viewer))||!readerCanvasGeometryMatchesV2730(retained?.artwork,viewer.getPageView(0))))throw Error('Les dimensions du lecteur ont changé.');};
+  visualRefreshV2730.reset();opening=true;closed=false;autoReportName=data.autoReportName===true;
+  $('viewer').inert=true;$('viewer').style.opacity='0';name=String(data.name||name);fileId=String(data.fileId||'');readOnly=!!data.readOnly;
+  initialValuesV2730=data.initialValues||null;initialAppliedV2730=false;initialUpdatesV2730=[];initialPreparedDraftV2730=data.readerPreparedVersion===2730&&isCacheableReaderDraftV2730({...data,bytes:blob.size});
   $('name').textContent=name;$('empty').style.display='none';status('Ouverture du PDF…');
-  const sourceBytes=(await work.requestBlob('open',blob,{},{epoch:workEpoch})).bytes;
-  const task=api.getDocument({data:sourceBytes,standardFontDataUrl:assets+'standard_fonts/',cMapUrl:assets+'cmaps/',cMapPacked:true,wasmUrl:assets+'wasm/',isEvalSupported:false,enableXfa:false,enableHWA:true});
-  doc=await task.promise;const firstPaint=firstReaderPaintV2682(viewer.eventBus);viewer.setDocument(doc);viewer.linkService.setDocument(doc);
-  doc.annotationStorage.onSetModified=()=>{if(!readOnly&&!opening){dirty=true;status('');}};
-  $('save').hidden=readOnly;$('saveClose').hidden=readOnly;
-  // Scripting can initialise fields after the first canvas appears. User input is
-  // tracked independently and is never cleared by a delayed render or rotation.
-  const [metadata]=await Promise.all([readReaderMetadataV2724(doc),viewer.firstPagePromise]);
-  const {fields,actions,typography,firstPageHasAnnotations}=metadata;fieldDefinitions=fields;
-  if(fields?.get?.('identification_balance')||fields?.identification_balance)autoReportName=true;
-  for(const [field,size] of typography)fieldTypography.set(field,size);
-  applyFieldTypography();
-  cdqApplyConstraintDefaultsV2583();
-  readerCalibration=installReaderCalibration({surface:$('viewer'),doc,fields,tell});
-  nativeInput.configure(fields);$('viewer').classList.toggle('cdq-form',!!(fields?.get?.('client_nom')||fields?.client_nom)&&!!(fields?.get?.('charge_point_1_charge_utilisee')||fields?.charge_point_1_charge_utilisee));
-  if(fields?.size||fields&&Object.keys(fields).length||actions){const deadline=Date.now()+12000;while(!scripting.ready){if(Date.now()>deadline)throw Error('Les calculs du PDF n’ont pas pu démarrer. Fermez le document puis réessayez.');await new Promise(r=>setTimeout(r,25));}}
-  await firstPaint.wait(firstPageHasAnnotations);
-  cdqRestoreInteractiveFieldsV2581();applyFieldTypography();choices.refresh();applyFieldTypography();form.refresh();refreshResults();
-  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-  opening=false;busy(false);$('viewer').dataset.ready='true';status(readOnly?'Consultation seulement':'');
-  applyLateIdentity();
-  tell({type:'CDQ_READER_OPENED'});
+  const preparedBlob=data.preparedBlob instanceof Blob?data.preparedBlob:data.readerPreparedVersion===2730?blob:null;
+  let sourceBytes,retained=closedCanvasV2730,reuse=false;
+  closedCanvasV2730=null;
+  // This opening owns the retained task before its first asynchronous read.
+  // A concurrent close can therefore destroy it through the normal reset.
+  if(retained)documentTask=retained.task;
+  try{
+    sourceBytes=preparedBlob?new Uint8Array(await preparedBlob.arrayBuffer()):(await work.requestBlob('open',blob,{summary:false},{epoch:workEpoch})).bytes;
+    checkLease();
+    const sourceLength=sourceBytes.byteLength,cacheSource={...data,bytes:sourceLength};
+    const sourceKind=preparedBlob?(isCacheableReaderDraftV2730(cacheSource)?'draft':isCacheableReaderDocumentV2730(cacheSource)?'document':null):null,eligible=!!sourceKind;
+    const key=eligible?await readerSourceKeyV2730(sourceBytes):null;checkLease();
+    reuse=eligible&&canReuseReaderCanvasV2730(retained,{key,epoch:workEpoch,viewport:readerViewportV2730(viewer),pageView:viewer.getPageView(0)});
+    if(retained&&!reuse){await destroyReaderDocumentV2730(retained.task);retained=null;checkLease();}
+    for(let attempt=0;attempt<2;attempt++){
+      let attemptTask=null;
+      try{
+        canvasCandidateV2730=eligible?{key,epoch:workEpoch,bytes:sourceLength,sourceKind,pristineIdentity:false}:null;
+        let firstPaint;
+        if(reuse){
+          doc=retained.document;documentTask=attemptTask=retained.task;
+          firstPaint=documentPaintV2730={wait:async()=>{},dispose(){}};
+          await rebuildReaderAnnotationsV2730({cached:retained,document:doc,pageView:viewer.getPageView(0),ui:readerUIV2730,viewer});checkLease();
+          viewer.eventBus.dispatch('annotationlayerrendered',{source:viewer.getPageView(0),pageNumber:1,error:null});
+          $('container').scrollTop=0;$('container').scrollLeft=0;
+        }else{
+          // Keep Canvas2D readback reliable when result badges sample page pixels.
+          const task=documentTask=attemptTask=api.getDocument({data:sourceBytes,worker:pdfWorker,standardFontDataUrl:assets+'standard_fonts/',cMapUrl:assets+'cmaps/',cMapPacked:true,wasmUrl:assets+'wasm/',isEvalSupported:false,enableXfa:false,enableHWA:false});
+          const parsed=await task.promise;checkLease();doc=parsed;
+          if(eligible)protectReaderSnapshotsV2730(doc);
+          firstPaint=documentPaintV2730=cancellableReaderPaintV2730(firstReaderPaintV2682(viewer.eventBus));viewer.setDocument(doc);viewer.linkService.setDocument(doc);
+        }
+        doc.annotationStorage.onSetModified=()=>{if(!readOnly&&!opening){dirty=true;status('');}};
+        $('save').hidden=readOnly;$('saveClose').hidden=readOnly;
+        // Scripting can initialise fields after the first canvas appears. Input
+        // becomes available only after the canvas, widgets and calculations.
+        const [metadata]=await Promise.all([readReaderMetadataV2724(doc),viewer.firstPagePromise]);checkLease();
+        const {fields,actions,typography,firstPageHasAnnotations}=metadata;fieldDefinitions=fields;
+        if(canvasCandidateV2730)canvasCandidateV2730.pristineIdentity=hasPristineIdentityV2730(fields);
+        if(fields?.get?.('identification_balance')||fields?.identification_balance)autoReportName=true;
+        for(const [field,size] of typography)fieldTypography.set(field,size);
+        applyFieldTypography();cdqApplyConstraintDefaultsV2583();
+        readerCalibration=installReaderCalibration({surface:$('viewer'),doc,fields,tell});
+        nativeInput.configure(fields);$('viewer').classList.toggle('cdq-form',!!(fields?.get?.('client_nom')||fields?.client_nom)&&!!(fields?.get?.('charge_point_1_charge_utilisee')||fields?.charge_point_1_charge_utilisee));
+        // A reused page has no new pagerendered event. Recreate its sandbox only
+        // after the new widgets and metadata exist, in the normal action order.
+        if(reuse){await scripting.setDocument(doc);checkLease();if((fields?.size||fields&&Object.keys(fields).length||actions)&&!scripting.ready)throw Error('Les calculs du PDF n’ont pas pu redémarrer.');}
+        if(fields?.size||fields&&Object.keys(fields).length||actions){const deadline=Date.now()+12000;while(!scripting.ready){checkLease();if(Date.now()>deadline)throw Error('Les calculs du PDF n’ont pas pu démarrer. Fermez le document puis réessayez.');await new Promise(r=>setTimeout(r,25));}}
+        await firstPaint.wait(firstPageHasAnnotations);checkLease();
+        cdqRestoreInteractiveFieldsV2581();applyFieldTypography();choices.refresh();applyFieldTypography();form.refresh();refreshResults();
+        if(initialAppliedV2730){restoreInitialIdentityV2730();dirty=true;version++;cdqRestoreInteractiveFieldsV2581();choices.refresh();}
+        await visualRefreshV2730.flush();checkLease();
+        await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));checkLease();
+        await visualRefreshV2730.flush();checkLease();
+        if(canvasCandidateV2730)canvasCandidateV2730.viewport=readerViewportV2730(viewer);
+        if(reuse&&!canRetainReaderCanvasV2730(canvasCandidateV2730,{epoch:workEpoch,document:doc,pageView:viewer.getPageView(0),controls:$('viewer').querySelectorAll('input,textarea,select,button').length,viewport:retained.viewport}))throw Error('Le rendu du rapport a changé pendant son ouverture.');
+        opening=false;busy(false);$('viewer').style.opacity='';$('viewer').dataset.ready='true';status(readOnly?'Consultation seulement':'');
+        applyLateIdentity();tell({type:'CDQ_READER_OPENED'});return;
+      }catch(error){
+        if(generation!==documentGenerationV2730)return;
+        if(!reuse||attempt!==0||work.stats().epoch!==workEpoch)throw error;
+        // Only a pristine opening can reach this fallback: the form has never
+        // been revealed or made editable. Destroy every partial widget/sandbox
+        // before parsing the immutable source again (getDocument transfers it).
+        generation=++documentGenerationV2730;reuse=false;retained=null;await destroyReaderDocumentV2730(attemptTask);checkLease();
+        resetDocumentFieldsV2730();canvasCandidateV2730=null;
+        sourceBytes=new Uint8Array(await preparedBlob.arrayBuffer());checkLease();
+      }
+    }
+  }catch(error){
+    if(generation!==documentGenerationV2730)return;
+    canvasCandidateV2730=null;closedCanvasV2730=null;await destroyReaderDocumentV2730(documentTask||retained?.task);
+    if(generation!==documentGenerationV2730)return;
+    resetDocumentFieldsV2730();opening=false;throw error;
+  }
 }
 function menu(hide=false){$('more').hidden=hide?true:!$('more').hidden;$('menu').setAttribute('aria-expanded',String(!$('more').hidden));}
 function zoom(factor,origin){if(viewer&&doc){const target=Math.max(.35,Math.min(4,viewer.currentScale*factor));viewer.updateScale({scaleFactor:target/viewer.currentScale,origin,drawingDelay:250});}}
@@ -364,9 +513,26 @@ window.addEventListener('message',async e=>{
   if(d.type==='CDQ_READER_OPEN'&&api&&viewer)try{await open(d)}catch(err){opening=false;fail(err);}
 });
 try{
-  api=await import(assets+'build/pdf.mjs');api.GlobalWorkerOptions.workerSrc=assets+'build/pdf.worker.mjs';
-  const ui=await import(assets+'web/pdf_viewer.mjs'),eventBus=new ui.EventBus(),linkService=new ui.PDFLinkService({eventBus,externalLinkTarget:2});
-  scripting=new ui.PDFScriptingManager({eventBus,sandboxBundleSrc:assets+'build/pdf.sandbox.mjs',wasmUrl:assets+'wasm/'});
+  const loaded=await loadReaderModulesV2730(specifier=>import(specifier),assets);api=loaded[0];const ui=loaded[1];readerUIV2730=ui;sandboxModule=loaded[2];api.GlobalWorkerOptions.workerSrc=assets+'build/pdf.worker.mjs';
+  pdfWorker=new api.PDFWorker();sandboxReady=sandboxModule.QuickJSSandbox(assets+'wasm/');
+  const eventBus=new ui.EventBus(),linkService=new ui.PDFLinkService({eventBus,externalLinkTarget:2});
+  window.addEventListener('updatefromsandbox',event=>eventBus.dispatch('updatefromsandbox',{source:window,detail:event.detail}));
+  scripting=new ui.PDFScriptingManager({eventBus,externalServices:{createScripting:()=>({
+    async createSandbox(data){
+      // Initial identity is already durable beside the blank template. Give
+      // it to the sandbox before its Open action, without parsing/saving a
+      // second PDF or overwriting any existing identity/measurement.
+      const sandboxDocument=doc,generation=documentGenerationV2730,epoch=pdfWorkV2729().stats().epoch,values=initialValuesV2730,locked=readOnly,preparedDraft=initialPreparedDraftV2730;
+      const sandbox=await sandboxReady;
+      if(doc!==sandboxDocument||!readerOpeningLeaseIsCurrentV2730({generation,currentGeneration:documentGenerationV2730,epoch,currentEpoch:pdfWorkV2729().stats().epoch,closed}))throw Error('Le compte ou le rapport a changé pendant son ouverture.');
+      const updates=initializeSandboxIdentityV2730(data,values,sandboxDocument,locked,preparedDraft);initialAppliedV2730||=updates.length>0;initialUpdatesV2730=updates;
+      sandbox.create(data);
+      restoreInitialIdentityV2730();
+    },
+    async dispatchEventInSandbox(event){const sandbox=await sandboxReady;setTimeout(()=>sandbox.dispatchEvent(event),0);},
+    async destroySandbox(){(await sandboxReady).nukeSandbox();sandboxReady=sandboxModule.QuickJSSandbox(assets+'wasm/');sandboxReady.catch(()=>{});}
+  })}});
+  serializeReaderScriptingV2730(scripting);
   viewer=new ui.PDFViewer({container:$('container'),viewer:$('viewer'),eventBus,linkService,scriptingManager:scripting,removePageBorders:true,annotationMode:api.AnnotationMode.ENABLE_FORMS,maxCanvasPixels:16777216,enableDetailCanvas:false,textLayerMode:0});
   linkService.setViewer(viewer);scripting.setViewer(viewer);
   const cdqRawUpdateScaleV2556=viewer.updateScale.bind(viewer);
@@ -393,11 +559,12 @@ try{
   eventBus.on('pagerendered',()=>refreshResults());
   eventBus.on('scalechanging',e=>{$('zoom').textContent=Math.round(e.scale*100)+' %';});
   eventBus.on('pagerendered',e=>{if(!e.error&&e.source?.div)e.source.div.dataset.cdqPaintedV2556='true';if(e.error)fail(e.error);});
-  eventBus.on('annotationlayerrendered',e=>{cdqWrapStableAnnotationLayerV2556(e.source);cdqRestoreInteractiveFieldsV2581();applyFieldTypography();if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();applyFieldTypography();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();refreshResults();});
+  eventBus.on('annotationlayerrendered',e=>{if(!e.error&&e.pageNumber===1)captureReaderCanvasesV2730(canvasCandidateV2730,e.source);cdqWrapStableAnnotationLayerV2556(e.source);cdqRestoreInteractiveFieldsV2581();applyFieldTypography();if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();applyFieldTypography();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();refreshResults();});
   eventBus.on('updatefromsandbox',event=>{
+    if(!doc||closed)return;
     const detail=event.detail||{};
     if(detail.id&&Object.hasOwn(detail,'formattedValue'))formattedFields.set(detail.id,detail.formattedValue??'');
-    setTimeout(()=>{cdqRestorePrecisionToleranceV2726();refreshResults();applyFieldTypography();},0);
+    visualRefreshV2730.schedule();
   });
   // A technician can stop at the last reading without moving to another field.
   // Commit only complete numeric inputs, so partial decimals stay editable.
@@ -418,6 +585,8 @@ try{
   eventBus.on('textlayerrendered',()=>form.refresh());
   document.addEventListener('visibilitychange',()=>{if(document.hidden)touch.reset();});
   if(hosted){$('empty').style.display='none';status('Ouverture…');}else status('Choisissez un PDF.');
-  tell({type:'CDQ_READER_READY'});
-}catch(e){fail(e);$('empty').textContent='Le lecteur n’a pas pu démarrer. Fermez puis mettez à jour l’application.';}
+  // READY now means both engines are prepared; the first report no longer
+  // pays for starting the PDF worker and compiling its calculation sandbox.
+  await Promise.all([pdfWorker.promise,sandboxReady]);tell({type:'CDQ_READER_READY'});
+}catch(e){const message=String(e?.message||e||'Initialisation impossible.').slice(0,500);console.error('CDQ_READER_INIT_FAILED_V2730',message);fail(new Error(message));$('empty').textContent='Le lecteur n’a pas pu démarrer. Fermez puis mettez à jour l’application.';}
 

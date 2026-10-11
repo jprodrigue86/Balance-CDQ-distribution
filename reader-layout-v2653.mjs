@@ -8,14 +8,15 @@ export function textInkMetrics(text,size){
   }
   return {ascent:size*.718,descent:/[gjpqy]/.test(String(text))?size*.207:0};
 }
-export function centerFieldGlyphs(field){
+function measureFieldGlyphs(field){
   if(field.tagName==='TEXTAREA'||field.tagName==='SELECT')return;
   context??=document.createElement('canvas').getContext('2d');
   if(!context)return;
   const style=getComputedStyle(field),size=parseFloat(style.fontSize);
   if(!Number.isFinite(size)||size<=0)return;
   context.font=style.fontWeight+' '+size+'px '+style.fontFamily;
-  const value=field.tagName==='BUTTON'?field.querySelector('.cdq-choice-value')?.textContent:field.value;
+  const label=field.tagName==='BUTTON'?field.querySelector('.cdq-choice-value'):null;
+  const value=field.tagName==='BUTTON'?label?.textContent:field.value;
   let m=context.measureText(String(value||'200'));
   if(!Number.isFinite(m.actualBoundingBoxAscent))return;
   // The line box must contain the complete font, including the bottom of g/y.
@@ -24,19 +25,31 @@ export function centerFieldGlyphs(field){
   const height=field.getBoundingClientRect().height;
   const fontHeight=m.actualBoundingBoxAscent+m.actualBoundingBoxDescent;
   const fit=Math.min(1,Math.max(1,height-1)/fontHeight);
-  if(fit<1){field.style.setProperty('font-size',(size*fit)+'px','important');context.font=style.fontWeight+' '+(size*fit)+'px '+style.fontFamily;m=context.measureText(String(value||'200'));}
+  if(fit<1){context.font=style.fontWeight+' '+(size*fit)+'px '+style.fontFamily;m=context.measureText(String(value||'200'));}
   const effectiveSize=size*fit,fontAscent=m.fontBoundingBoxAscent??effectiveSize*.92,fontDescent=m.fontBoundingBoxDescent??effectiveSize*.24;
   const shift=(m.actualBoundingBoxAscent-m.actualBoundingBoxDescent-fontAscent+fontDescent)/2;
+  return {field,label,fontSize:fit<1?size*fit:null,lineHeight:fontAscent+fontDescent,shift};
+}
+function applyFieldGlyphs(plan){
+  if(!plan)return;
+  const {field,label,fontSize,lineHeight,shift}=plan;
+  if(fontSize!==null)field.style.setProperty('font-size',fontSize+'px','important');
   field.style.setProperty('text-align','center','important');
   if(field.tagName==='BUTTON'){
-    const label=field.querySelector('.cdq-choice-value');
-    if(label){label.style.lineHeight=(fontAscent+fontDescent)+'px';label.style.transform='translateY('+shift+'px)';}
+    if(label){label.style.lineHeight=lineHeight+'px';label.style.transform='translateY('+shift+'px)';}
   }else{
     field.style.setProperty('box-sizing','border-box','important');
-    field.style.setProperty('line-height',(fontAscent+fontDescent)+'px','important');
+    field.style.setProperty('line-height',lineHeight+'px','important');
     field.style.setProperty('padding-top',Math.max(0,2*shift)+'px','important');
     field.style.setProperty('padding-bottom',Math.max(0,-2*shift)+'px','important');
   }
+}
+export function centerFieldGlyphs(field){applyFieldGlyphs(measureFieldGlyphs(field));}
+export function centerFieldsGlyphs(fields){
+  // Read every field before changing any CSS, so the next field does not force
+  // layout after the previous field's font, line-height or padding writes.
+  const plans=Array.from(fields,measureFieldGlyphs);
+  for(const plan of plans)applyFieldGlyphs(plan);
 }
 
 export function compactToleranceActions(pdf,L){

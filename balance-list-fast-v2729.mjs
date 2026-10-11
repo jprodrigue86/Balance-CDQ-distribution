@@ -36,7 +36,7 @@ function completeSheet(snapshot,file,clientId){
 
 // Two authorised folder snapshots replace N individual metadata requests and
 // the server's re-download/rebuild. Missing or changed sources abort the write.
-export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,loadSheet,library,cachedSignature,stillCurrent,onSaved=()=>{},hashText=hash,render=null}){
+export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,loadSheet,library,cachedSignature,stillCurrent,onSaved=()=>{},onSourceRead=()=>{},previousState=null,hashText=hash,render=null}){
  if(!fileId)return null;const guard=()=>{if(!stillCurrent())throw Error('Le client, le compte ou une sauvegarde a changé.');};guard();
  async function snapshot(){
   const response=await rpc('obtenirContenuDossierParesseux',clientId,clientId);guard();const root=folderContent(response,clientId);
@@ -51,21 +51,29 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
   if(sorted.length>500||sorted.some(f=>!sourceRev(f)||f._cdqPendingSaveV2660||String(f.id).startsWith('cdq-local-')))throw Error('Révisions des rapports non confirmées.');
   return {name:root.nom||root.name||'',files:sorted,folders:folders.map(f=>String(f.id)),list:{...lists[0]}};
  }
- const before=await snapshot(),beforeKey=snapshotKey(before),L=await library();guard();
- const existing=await loadPdf(fileId,sourceRev(before.list));guard();
- if(!existing?.blob||!rev(existing)||existing.id&&String(existing.id)!==String(fileId)||existing.clientId&&String(existing.clientId)!==String(clientId)||sourceRev(before.list)!==rev(existing))throw Error('La révision de la liste a changé.');
- const old=await L.PDFDocument.load(await existing.blob.arrayBuffer(),{updateMetadata:false}),records=[];
+ const before=await snapshot(),beforeKey=snapshotKey(before),records=[];let L,existing,old,libraryPromise;
+ const pdfLibrary=async()=>{libraryPromise??=Promise.resolve().then(library);L=await libraryPromise;guard();return L;};
  await groups(before.files,async file=>{
   guard();let signature=cachedSignature?.(file),parsed=signatureValues(signature);
   if(!parsed){if(sheet(file)){const returned=await loadSheet(file.id,clientId,sourceRev(file));guard();const snapshot=completeSheet(returned,file,clientId),values=sheetBalanceValuesV2703(snapshot.onglets[0].valeurs);signature=values==='null'?values:JSON.stringify([...JSON.parse(values),sheetReportConformityV2727(snapshot)]);}
-   else{const record=await loadPdf(file.id,sourceRev(file));guard();if(!record?.blob||record.id&&String(record.id)!==String(file.id)||rev(record)!==sourceRev(file)||record.clientId&&String(record.clientId)!==String(clientId))throw Error('Un rapport a changé pendant la préparation.');signature=await equipmentSnapshotV2697(record.blob,L);}}
+   else{const record=await loadPdf(file.id,sourceRev(file));guard();if(!record?.blob||record.id&&String(record.id)!==String(file.id)||rev(record)!==sourceRev(file)||record.clientId&&String(record.clientId)!==String(clientId))throw Error('Un rapport a changé pendant la préparation.');signature=await equipmentSnapshotV2697(record.blob,await pdfLibrary());}
+   guard();onSourceRead(file,signature);}
   guard();parsed=signatureValues(signature);if(!parsed)throw Error('Données de balance incomplètes.');const {values}=parsed;if(values===null)return;
   const [fabricant,modele,capacite,echelon,identification,conformity]=values;records.push({id:String(file.id),source:file.nom||file.name||'',revision:sourceRev(file),fabricant,modele,capacite,echelon,identification,conformity});
  });
  const seen=new Set(),rows=records.sort((a,b)=>(Date.parse(b.revision)||0)-(Date.parse(a.revision)||0)||a.id.localeCompare(b.id)).filter(r=>{const id=norm(r.identification);if(id&&seen.has(id))return false;if(id)seen.add(id);return true;}).sort((a,b)=>String(a.identification||a.source).localeCompare(String(b.identification||b.source),'fr',{numeric:true}));
  const digest=await hashText(JSON.stringify([String(clientId),before.name,rows.map(r=>[r.fabricant,r.modele,r.capacite,r.echelon,r.identification,r.conformity])]));guard();
- const previous=old.catalog.get(L.PDFName.of('CDQBalanceListV2728'));
- const unchanged=previous?.decodeText?.()===digest;let bytes;
+ // A confirmed revision/digest receipt survives an app restart. Rechecking an
+ // unchanged list needs only its two fresh folder snapshots, without fetching
+ // or parsing the same list PDF again. A remote list edit invalidates receipt.
+ let unchanged=previousState?.fileId===String(fileId)&&String(previousState.clientId||'')===String(clientId)&&previousState.updatedAt===sourceRev(before.list)&&previousState.listStamp===JSON.stringify(fileKey(before.list))&&previousState.digest===digest;
+ if(!unchanged){
+  existing=await loadPdf(fileId,sourceRev(before.list));guard();
+  if(!existing?.blob||!rev(existing)||existing.id&&String(existing.id)!==String(fileId)||existing.clientId&&String(existing.clientId)!==String(clientId)||sourceRev(before.list)!==rev(existing))throw Error('La révision de la liste a changé.');
+  await pdfLibrary();old=await L.PDFDocument.load(await existing.blob.arrayBuffer(),{updateMetadata:false});guard();
+  unchanged=old.catalog.get(L.PDFName.of('CDQBalanceListV2728'))?.decodeText?.()===digest;
+ }
+ let bytes;
  if(!unchanged){
   if(render)bytes=await render(rows,before.name,old.getAuthor()||'',digest);
   else if(pdfWorkV2729())bytes=(await pdfWorkV2729().request('list',{rows,name:before.name,author:old.getAuthor()||'',digest})).bytes;
@@ -74,12 +82,12 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
  // Validate membership and every source revision after rendering, immediately
  // before saving, even when the existing list needs no PDF write.
  const after=await snapshot();guard();if(beforeKey!==snapshotKey(after))throw Error('Les rapports ou la liste ont changé pendant la préparation.');
- const result={status:'ready',fileId,count:rows.length,listRevision:'v2728-client',checkedAt:new Date().toISOString(),updatedAt:rev(existing),clientSnapshot:after};
+ const result={status:'ready',fileId:String(fileId),clientId:String(clientId),count:rows.length,listRevision:'v2728-client',listStamp:JSON.stringify(fileKey(after.list)),digest,rows,checkedAt:new Date().toISOString(),updatedAt:sourceRev(before.list),clientSnapshot:after};
  if(unchanged)return {...result,unchanged:true,fastV2729:true};
  guard();const saveId='list-v2729-'+crypto.randomUUID(),ack=await rpc('enregistrerPdfLecteurCDQV2520',fileId,base64(bytes),saveId,rev(existing));guard();
  if(ack?.ok!==true||String(ack.id)!==String(fileId)||!rev(ack))throw Error('Enregistrement de la liste non confirmé.');
  // A confirmed write may be cached immediately without another Drive download.
  try{await onSaved({...existing,...ack,revision:rev(ack),modifiedTime:rev(ack),dateModification:rev(ack),blob:new Blob([bytes],{type:'application/pdf'}),clientId,nom:'Liste de balance.pdf'});}catch{ /* A failed local cache cannot undo an acknowledged Drive upload. */ }
  guard();
- return {...result,updatedAt:rev(ack),fastV2729:true};
+ return {...result,updatedAt:rev(ack),listStamp:JSON.stringify(fileKey({...after.list,...ack,revision:rev(ack),modifiedTime:rev(ack),dateModification:rev(ack)})),fastV2729:true};
 }

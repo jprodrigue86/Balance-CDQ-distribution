@@ -36,7 +36,7 @@ export function createPdfWorkEngineV2729({limit=96*1024*1024,worker=false}={}){
   }
   const bytes=new Uint8Array(payload.bytes);
   if(bytes.length<8||bytes.length>32*1024*1024||String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw Error('PDF invalide.');
-  const hash=await digest(bytes);current();const key=type+'|'+hash+(type==='prefill'?'|'+JSON.stringify([payload.values,payload.strict,payload.onlyEmpty]):''),found=get(key);if(found)return {...copy(found),cacheHit:true};
+  const hash=await digest(bytes);current();const foreground=payload.summary===false&&['open','save'].includes(type),baseKey=type+'|'+hash,key=baseKey+(foreground?'|foreground':'')+(type==='prefill'?'|'+JSON.stringify([payload.values,payload.strict,payload.onlyEmpty]):''),found=get(key)||(foreground?get(baseKey):null);if(found)return {...copy(found),cacheHit:true};
   executed++;
   if(type==='inspect'){const info=await summary(bytes,L);current();put(key,{info});return {info};}
   if(!['open','save','prefill'].includes(type))throw Error('Traitement PDF inconnu.');
@@ -47,7 +47,11 @@ export function createPdfWorkEngineV2729({limit=96*1024*1024,worker=false}={}){
   }else result=new Uint8Array(await (type==='open'?normalizeEditableFormOnOpen(bytes,L):saveEditableFormAppearance(bytes,L)));
   // One inspection feeds the name, red marker and equipment list. A saved
   // output is not assumed to be stable under the next opening repair.
-  current();const info=await summary(result,L),resultHash=await digest(result);current();
+  // Opening and saving already have their own PDF.js fields. Extracting the
+  // equipment/name/conformity here reparsed the entire PDF before its first
+  // editable paint. Explicit inspections still use the audited summary path.
+  current();if(foreground){put(key,{bytes:result});return {bytes:result.slice()};}
+  const info=await summary(result,L),resultHash=await digest(result);current();
   put('inspect|'+resultHash,{info});put(key,{bytes:result,info});return {bytes:result.slice(),info};
  }
  return {run,clear(){epoch++;cache.clear();total=0;},stats:()=>({entries:cache.size,bytes:total,hits,executed})};
