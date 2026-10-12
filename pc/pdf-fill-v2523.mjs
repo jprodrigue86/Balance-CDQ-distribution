@@ -1,3 +1,6 @@
+import {normalizeMeasurementRulesV2736} from './reader-measurements-v2736.mjs';
+import {normalizeReportVisualV2736} from './reader-report-visual-v2736.mjs';
+import {applyEquipmentHeaderGapV2736} from './reader-equipment-gap-v2736.mjs';
 import {approvedReportFamilyV2735,updateApprovedIdentityAppearanceV2735} from './reader-approved-reports-v2735.mjs';
 import {normalizeFloorStatusV2691} from './reader-floor-status-v2691.mjs';
 // Fill raw inputs, then run the approved PDF's own JavaScript calculations.
@@ -14,7 +17,8 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
   let bytes=new Uint8Array(await (blob||(await floorTemplate()).blob).arrayBuffer());
   await import('./vendor/pdf-lib-1.17.1.min.js');
   const L=library||globalThis.PDFLib,lib=await L.PDFDocument.load(bytes),form=lib.getForm(),approved=approvedReportFamilyV2735(lib,L);let changed=false;
-  if(!approved)changed=compactToleranceActions(lib,L)|normalizeFloorStatusV2691(lib,L);
+  if(approved)changed=normalizeMeasurementRulesV2736(lib,L,approved)|normalizeReportVisualV2736(lib,L,approved)|applyEquipmentHeaderGapV2736(lib,L,approved);
+  else changed=compactToleranceActions(lib,L)|normalizeFloorStatusV2691(lib,L);
   for(const entry of entries){
     const [name,value]=entry;const field=form.getFieldMaybe(name);
     if(!field){if(strict)throw Error('Champ absent du modèle : '+name);continue;}
@@ -47,7 +51,8 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
       const widgets=original.call(field.acroField).filter(w=>{try{const r=w.getRectangle();return [r.x,r.y,r.width,r.height].every(Number.isFinite);}catch{return false;}});
       if(widgets.length){try{field.acroField.getWidgets=()=>widgets;field.defaultUpdateAppearances(font);}finally{field.acroField.getWidgets=original;}}
     }
-    if(!approved)centerSingleLineAppearances(lib,L);
+    if(approved)normalizeReportVisualV2736(lib,L,approved);
+    else centerSingleLineAppearances(lib,L);
     return new Blob([await lib.save({updateFieldAppearances:false})],{type:'application/pdf'});
   }
   if(changed)bytes=await lib.save({updateFieldAppearances:false});
@@ -73,7 +78,8 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
     // Allow document timers to finish; Enter navigation is not triggered by this transfer.
     await new Promise(r=>setTimeout(r,80));
     if(errors.length)throw Error('Calcul PDF interrompu : '+errors[0]);
-    const output=new Blob([await doc.saveDocument()],{type:'application/pdf'});
+    const {saveEditableFormAppearance}=await import('./reader-choice-appearance-v2572.mjs');
+    const output=new Blob([await saveEditableFormAppearance(await doc.saveDocument(),L)],{type:'application/pdf'});
     return output;
   }finally{window.removeEventListener('updatefromsandbox',update);sandbox?.nukeSandbox();await task.destroy();}
 }

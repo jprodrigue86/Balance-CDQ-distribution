@@ -1,3 +1,6 @@
+import {normalizeMeasurementRulesV2736} from './reader-measurements-v2736.mjs';
+import {normalizeReportVisualV2736} from './reader-report-visual-v2736.mjs';
+import {applyEquipmentHeaderGapV2736} from './reader-equipment-gap-v2736.mjs';
 import {approvedReportFamilyV2735} from './reader-approved-reports-v2735.mjs';
 import {normalizeCamionDisplayV2741} from './reader-camion-display-v2741.mjs';
 import {normalizeTableColumnV2737} from './reader-table-column-v2737.mjs';
@@ -49,8 +52,9 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const L=providedLibrary||await pdfLibrary();
   const {PDFDocument,PDFName}=L;
   const pdf=await PDFDocument.load(data,{updateMetadata:false});
-  if(approvedReportFamilyV2735(pdf,L)){
-    const changed=normalizeTableColumnV2737(pdf,L);
+  const correctedFamilyV2736=approvedReportFamilyV2735(pdf,L);
+  if(correctedFamilyV2736){
+    const changed=normalizeTableColumnV2737(pdf,L)|normalizeMeasurementRulesV2736(pdf,L,correctedFamilyV2736)|normalizeReportVisualV2736(pdf,L,correctedFamilyV2736)|applyEquipmentHeaderGapV2736(pdf,L,correctedFamilyV2736);
     return changed?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;
   }
   if(approvedReportFamilyV2731(pdf,L))return data;
@@ -96,13 +100,17 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
     for(const value of technician.getSelected())if(typeof value==='string'&&value.length<=1000&&value.trim()&&!options.has(value)){missing.push(value);options.add(value);}
     if(missing.length)technician.addOptions(missing);
   }
-  if(approvedReportFamilyV2735(pdf,L)){
+  const correctedFamilyV2736=approvedReportFamilyV2735(pdf,L);
+  if(correctedFamilyV2736){
     normalizeTableColumnV2737(pdf,L);
+    normalizeMeasurementRulesV2736(pdf,L,correctedFamilyV2736);
+    applyEquipmentHeaderGapV2736(pdf,L,correctedFamilyV2736);
     // PDF.js already saved this indicator's authored native appearance.
     // Normalize only a changed driver, preserving pristine master paint.
     const display=pdf.getForm().getFieldMaybe('_cdq_camion_indicateur_v2741');
     const driver=pdf.getForm().getFieldMaybe('charge_excentricite');
     if(display?.getText&&driver?.getText&&String(display.getText()||'')!==String(driver.getText()||''))normalizeCamionDisplayV2741(pdf,L);
+    normalizeReportVisualV2736(pdf,L,correctedFamilyV2736);
     form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
     return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
   }
