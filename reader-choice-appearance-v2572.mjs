@@ -1,3 +1,6 @@
+import {approvedReportFamilyV2735} from './reader-approved-reports-v2735.mjs';
+import {normalizeCamionDisplayV2741} from './reader-camion-display-v2741.mjs';
+import {normalizeTableColumnV2737} from './reader-table-column-v2737.mjs';
 import {normalizeReportLayoutV2721} from './reader-report-layout-v2721.mjs';
 import {approvedReportFamilyV2731} from './reader-approved-reports-v2731.mjs';
 import {normalizeReportMicroV2725} from './reader-report-micro-v2725.mjs';
@@ -46,6 +49,10 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const L=providedLibrary||await pdfLibrary();
   const {PDFDocument,PDFName}=L;
   const pdf=await PDFDocument.load(data,{updateMetadata:false});
+  if(approvedReportFamilyV2735(pdf,L)){
+    const changed=normalizeTableColumnV2737(pdf,L);
+    return changed?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;
+  }
   if(approvedReportFamilyV2731(pdf,L))return data;
   const form=pdf.getForm();
   const floorChanged=normalizeFloorStatusV2691(pdf,L),precisionChanged=normalizePrecisionEquipmentV2691(pdf,L);
@@ -88,6 +95,16 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
     const options=new Set(technician.acroField.getOptions().map(option=>option.value.decodeText())),missing=[];
     for(const value of technician.getSelected())if(typeof value==='string'&&value.length<=1000&&value.trim()&&!options.has(value)){missing.push(value);options.add(value);}
     if(missing.length)technician.addOptions(missing);
+  }
+  if(approvedReportFamilyV2735(pdf,L)){
+    normalizeTableColumnV2737(pdf,L);
+    // PDF.js already saved this indicator's authored native appearance.
+    // Normalize only a changed driver, preserving pristine master paint.
+    const display=pdf.getForm().getFieldMaybe('_cdq_camion_indicateur_v2741');
+    const driver=pdf.getForm().getFieldMaybe('charge_excentricite');
+    if(display?.getText&&driver?.getText&&String(display.getText()||'')!==String(driver.getText()||''))normalizeCamionDisplayV2741(pdf,L);
+    form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
+    return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
   }
   if(approvedReportFamilyV2731(pdf,L)){
     form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));

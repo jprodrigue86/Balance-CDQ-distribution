@@ -1,3 +1,4 @@
+import {approvedReportFamilyV2735} from './reader-approved-reports-v2735.mjs';
 import {captionInkV2719} from './report-caption-ink-v2719.mjs';
 import {reportGridV2704} from './reader-report-layout-v2704.mjs';
 
@@ -34,6 +35,7 @@ function replaceStream(pdf,L,ref,o,text){
 }
 
 export async function normalizeReportTypographyV2719(pdf,L,{key=''}={}){
+ if(approvedReportFamilyV2735(pdf,L))return false;
  const N=L.PDFName.of,page=pdf.getPage(0),form=pdf.getForm(),marker=N('CDQReportTypographyV2719');
  if(!form.getFieldMaybe('client_nom')||!form.getFieldMaybe('indicateur_fabricant')||!form.getFieldMaybe('charge_point_1_charge_utilisee')||!page.node.has(N('CDQReportMicroV2716')))return false;
  page.node.normalize();
