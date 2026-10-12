@@ -1,3 +1,4 @@
+import {approvedReportFamilyV2735} from './reader-approved-reports-v2735.mjs';
 import {precisionEquipmentV2691} from './reader-precision-equipment-v2691.mjs';
 import {normalizePrecisionWidthsV2701} from './reader-precision-widths-v2701.mjs';
 import {clearWidgetFrameV2702} from './reader-truck-equipment-v2702.mjs';
@@ -12,6 +13,7 @@ export const precisionCaptionsV2700=[
  ['CAPACITÉ MAXIMALE (Max)','UNITÉ DE MESURE','ÉCHELON (e)','RÉSOLUTION (d)','ÉTALON UTILISÉ']
 ];
 export async function normalizePrecisionFontsV2700(pdf,L){
+ if(approvedReportFamilyV2735(pdf,L))return false;
  const N=L.PDFName.of,form=pdf.getForm();
  if(!form.getFieldMaybe('type_plateau')||!form.getFieldMaybe('resolution')||!form.getFieldMaybe('charge_point_7_charge_utilisee')||form.getFieldMaybe('charge_point_8_charge_utilisee'))return false;
  // Materialize fonts requested by earlier appearance helpers before repairing

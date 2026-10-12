@@ -1,3 +1,6 @@
+import {approvedReportMetadataFamilyV2735} from './reader-approved-reports-v2735.mjs';
+import {refreshReaderCamionDisplayV2741} from './reader-camion-display-v2741.mjs';
+import {installReaderTableColumnV2737} from './reader-table-column-v2737.mjs';
 import {installFirstPageRenderLeaseV2731} from './reader-first-paint-scheduler-v2731.mjs';
 let qaFirstPageLeaseCleanupV2731=()=>{},qaFirstPaintOwnerV2731=null;
 import {installDecimalPrecisionV2695,decimalPrecisionErrorV2695,isCorrectionReadingV2695} from './reader-decimals-v2695.mjs';
@@ -32,13 +35,14 @@ const formattedFields=new Map(),fieldTypography=new Map();
 function applyFieldTypography(){
   const fields=[];
   for(const field of $('viewer').querySelectorAll('input,textarea,select,button.cdq-choice-field')){
-    if(!fieldTypography.has(field.name)||field.name.startsWith('_')||/statut/i.test(field.name))continue;
+    if(!fieldTypography.has(field.name)||field.name.startsWith('_')||/statut/i.test(field.name)||tableColumnV2737?.isSans()&&field.name.startsWith('indicateur_'))continue;
     const size=fieldTypography.get(field.name);
     const desired='calc('+size+'px * var(--total-scale-factor))';
     if(field.style.getPropertyValue('font-size')!==desired||field.style.getPropertyPriority('font-size')!=='important')field.style.setProperty('font-size',desired,'important');
     fields.push(field);
   }
-  centerFieldsGlyphs(fields);
+  if(!approvedReportMetadataFamilyV2735(fieldDefinitions))centerFieldsGlyphs(fields);
+  refreshReaderCamionDisplayV2741({surface:$('viewer'),document:doc,fields:fieldDefinitions,typography:fieldTypography});
 }
 function refreshResults(){if(!doc)return;paintReaderResults($('viewer'));}
 $('viewer').addEventListener('input',()=>requestAnimationFrame(applyFieldTypography));
@@ -49,10 +53,10 @@ const tell=data=>{if(hosted&&parentOrigin)parent.postMessage(data,parentOrigin)}
 let api,viewer,scripting,doc,touch,form,documentTask,pdfWorker,sandboxReady,sandboxModule,readerUIV2730,readOnly=false,dirty=false,version=0,savedVersion=0,saving=false;
 let canvasCandidateV2730=null,closedCanvasV2730=null,closedViewportV2730=null,documentPaintV2730=null,documentGenerationV2730=0,resetPromiseV2730=Promise.resolve();
 const destroyedReaderTasksV2730=new WeakMap();
-let lastAttempt=null,fieldDefinitions=null,nativeInput,readerCalibration=null,choices=null,decimalGuard=null;
+let lastAttempt=null,fieldDefinitions=null,nativeInput,readerCalibration=null,choices=null,decimalGuard=null,tableColumnV2737=null;
 const visualRefreshV2730=createReaderVisualRefreshV2730(()=>{
   if(!doc||closed)return;
-  cdqRestorePrecisionToleranceV2726();refreshResults();applyFieldTypography();
+  tableColumnV2737?.refresh();cdqRestorePrecisionToleranceV2726();refreshResults();applyFieldTypography();
 },{defer:()=>opening});
 const touchedIdentity=new Set();let lateIdentity=null;
 let initialValuesV2730=null,initialAppliedV2730=false,initialUpdatesV2730=[],initialPreparedDraftV2730=false;
@@ -272,7 +276,7 @@ function busy(value){saving=value;$('viewer').inert=value;$('savingMask').hidden
 function fail(error){busy(false);status(error.message||String(error));$('closeError').textContent=error.message||String(error);closeAfterSave=false;}
 function modified(){if(!readOnly&&!opening){dirty=true;version++;status('');}}
 function resetDocumentFieldsV2730(){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};
-  visualRefreshV2730.reset();choices?.cancel();form?.reset();touch?.reset();cdqKeyboardFieldV2550(false);menu(true);
+  tableColumnV2737?.dispose();tableColumnV2737=null;visualRefreshV2730.reset();choices?.cancel();form?.reset();touch?.reset();cdqKeyboardFieldV2550(false);menu(true);
   documentPaintV2730?.dispose();documentPaintV2730=null;
   doc=null;documentTask=null;fieldDefinitions=null;readerCalibration=null;formattedFields.clear();fieldTypography.clear();touchedIdentity.clear();lateIdentity=null;
   lastAttempt=null;pending=null;dirty=false;version=0;savedVersion=0;closeAfterSave=false;initialAppliedV2730=false;initialUpdatesV2730=[];
@@ -405,6 +409,7 @@ async function open(data){
         // becomes available only after the canvas, widgets and calculations.
         const [metadata]=await Promise.all([readReaderMetadataV2724(doc),viewer.firstPagePromise]);checkLease();
         const {fields,actions,typography,firstPageHasAnnotations}=metadata;fieldDefinitions=fields;
+        tableColumnV2737?.dispose();tableColumnV2737=installReaderTableColumnV2737({surface:$('viewer'),getDocument:()=>doc,getFields:()=>fieldDefinitions,getPageView:index=>viewer.getPageView(index),afterChange:()=>{}});
         if(canvasCandidateV2730)canvasCandidateV2730.pristineIdentity=hasPristineIdentityV2730(fields);
         if(fields?.get?.('identification_balance')||fields?.identification_balance)autoReportName=true;
         for(const [field,size] of typography)fieldTypography.set(field,size);

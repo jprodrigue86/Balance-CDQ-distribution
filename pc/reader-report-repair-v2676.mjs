@@ -1,7 +1,9 @@
+import {approvedReportFamilyV2735} from './reader-approved-reports-v2735.mjs';
 // Repair the twelve report families requested for V26.76. The two approved
 // references, Plancher and Précision (including special copies), are excluded.
 export const repairedReportKeysV2676=Object.freeze(['table','camion','train','cuve3','cuve4','tremie3','tremie4','chariot','convoyeur','multitete','suspendue','trackscale']);
 export function repairReportFormV2676(pdf,L,key){
+ if(approvedReportFamilyV2735(pdf,L))return false;
  const {PDFName,PDFDict,PDFArray,PDFRawStream,PDFHexString,PDFString,StandardFonts,decodePDFRawStream}=L,N=PDFName.of,form=pdf.getForm();
  const read=o=>o instanceof PDFRawStream?new TextDecoder().decode(decodePDFRawStream(o).decode()):o?.decodeText?.()||'';
  const status=form.getFieldMaybe('Statut_conformite'),action=status?.acroField.dict.lookupMaybe(N('AA'),PDFDict)?.lookupMaybe(N('C'),PDFDict),owner=action?read(action.lookup(N('JS'))):'';

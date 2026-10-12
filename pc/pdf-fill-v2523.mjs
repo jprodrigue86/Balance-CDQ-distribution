@@ -1,3 +1,4 @@
+import {approvedReportFamilyV2735,updateApprovedIdentityAppearanceV2735} from './reader-approved-reports-v2735.mjs';
 import {normalizeFloorStatusV2691} from './reader-floor-status-v2691.mjs';
 // Fill raw inputs, then run the approved PDF's own JavaScript calculations.
 import {floorTemplate} from './floor-template-v2519.mjs';
@@ -12,8 +13,8 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
   for(const [k,v] of entries)if(!rawField.test(k)||String(v).length>1000)throw Error('Champ de transfert refusé : '+k);
   let bytes=new Uint8Array(await (blob||(await floorTemplate()).blob).arrayBuffer());
   await import('./vendor/pdf-lib-1.17.1.min.js');
-  const L=library||globalThis.PDFLib,lib=await L.PDFDocument.load(bytes),form=lib.getForm();let changed=false;
-  changed=compactToleranceActions(lib,L)|normalizeFloorStatusV2691(lib,L);
+  const L=library||globalThis.PDFLib,lib=await L.PDFDocument.load(bytes),form=lib.getForm(),approved=approvedReportFamilyV2735(lib,L);let changed=false;
+  if(!approved)changed=compactToleranceActions(lib,L)|normalizeFloorStatusV2691(lib,L);
   for(const entry of entries){
     const [name,value]=entry;const field=form.getFieldMaybe(name);
     if(!field){if(strict)throw Error('Champ absent du modèle : '+name);continue;}
@@ -35,9 +36,10 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
       if(field instanceof L.PDFTextField){if(!onlyEmpty||!String(field.getText()||'').trim())field.setText(String(value));}
       else if(field instanceof L.PDFDropdown&&(!onlyEmpty||!field.getSelected().some(v=>String(v).trim())))field.select(String(value));
     }
-    const font=await lib.embedFont(L.StandardFonts.HelveticaBold);
+    const font=approved?null:await lib.embedFont(L.StandardFonts.HelveticaBold);
     for(const [name] of entries){
       const field=form.getFieldMaybe(name);if(!field)continue;
+      if(approved){updateApprovedIdentityAppearanceV2735(lib,L,field);continue;}
       // Some approved PDFs contain a non-widget kid without a rectangle.
       // Update only identity widgets with actual geometry; keep every field,
       // script and original kid in the document unchanged.
@@ -45,7 +47,7 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
       const widgets=original.call(field.acroField).filter(w=>{try{const r=w.getRectangle();return [r.x,r.y,r.width,r.height].every(Number.isFinite);}catch{return false;}});
       if(widgets.length){try{field.acroField.getWidgets=()=>widgets;field.defaultUpdateAppearances(font);}finally{field.acroField.getWidgets=original;}}
     }
-    centerSingleLineAppearances(lib,L);
+    if(!approved)centerSingleLineAppearances(lib,L);
     return new Blob([await lib.save({updateFieldAppearances:false})],{type:'application/pdf'});
   }
   if(changed)bytes=await lib.save({updateFieldAppearances:false});
