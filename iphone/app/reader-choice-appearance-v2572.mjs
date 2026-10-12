@@ -1,6 +1,8 @@
 import {normalizeReportLayoutV2721} from './reader-report-layout-v2721.mjs';
+import {approvedReportFamilyV2731} from './reader-approved-reports-v2731.mjs';
 import {normalizeReportMicroV2725} from './reader-report-micro-v2725.mjs';
 import {normalizeReportCorrectionsV2728} from './reader-report-corrections-v2728.mjs';
+import {pruneInvisibleReportHeadingV2730} from './reader-heading-prune-v2730.mjs';
 import {normalizeReportTypographyV2719} from './reader-report-typography-v2719.mjs';
 import {normalizeReportMicroV2716} from './reader-report-micro-v2716.mjs';
 import {normalizeReportLayoutV2713} from './reader-report-layout-v2713.mjs';
@@ -44,6 +46,7 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const L=providedLibrary||await pdfLibrary();
   const {PDFDocument,PDFName}=L;
   const pdf=await PDFDocument.load(data,{updateMetadata:false});
+  if(approvedReportFamilyV2731(pdf,L))return data;
   const form=pdf.getForm();
   const floorChanged=normalizeFloorStatusV2691(pdf,L),precisionChanged=normalizePrecisionEquipmentV2691(pdf,L);
   const presentationChanged=await normalizeReportPresentationV2695(pdf,L);
@@ -52,7 +55,8 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   if(compactReportReadyV2682(pdf,L)){
     const fontsChanged=await normalizePrecisionFontsV2700(pdf,L);
     const layoutChanged=(await normalizeReportLayoutV2704(pdf,L))|(await normalizeReportLayoutV2713(pdf,L))|(await normalizeReportMicroV2716(pdf,L))|(await normalizeReportTypographyV2719(pdf,L))|(await normalizeReportLayoutV2721(pdf,L))|(await normalizeReportMicroV2725(pdf,L))|(await normalizeReportCorrectionsV2728(pdf,L));
-    return floorChanged||precisionChanged||calculationsChanged||decimalsChanged||presentationChanged||fontsChanged||layoutChanged?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;
+    const headingChanged=pruneInvisibleReportHeadingV2730(pdf,L);
+    return floorChanged||precisionChanged||calculationsChanged||decimalsChanged||presentationChanged||fontsChanged||layoutChanged||headingChanged?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;
   }
   normalizeReportLayoutV2677(pdf,L);
   const changed=normalizePrecisionAppearanceV2665(pdf,L)|repairReportFormV2676(pdf,L)|compactToleranceActions(pdf,L)|centerSingleLineAppearances(pdf,L)|await alignStatusAppearances(pdf,L);
@@ -63,7 +67,8 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const finalPresentationChanged=await normalizeReportPresentationV2695(pdf,L);
   const fontsChanged=await normalizePrecisionFontsV2700(pdf,L);
   const layoutChanged=(await normalizeReportLayoutV2704(pdf,L))|(await normalizeReportLayoutV2713(pdf,L))|(await normalizeReportMicroV2716(pdf,L))|(await normalizeReportTypographyV2719(pdf,L))|(await normalizeReportLayoutV2721(pdf,L))|(await normalizeReportMicroV2725(pdf,L))|(await normalizeReportCorrectionsV2728(pdf,L));
-  if(!changed&&!vesselChanged&&!floorChanged&&!precisionChanged&&!equipmentChanged&&!calculationsChanged&&!finalCalculationsChanged&&!decimalsChanged&&!presentationChanged&&!finalPresentationChanged&&!fontsChanged&&!layoutChanged&&!rawNeedsAppearanceRepair(data))return data;
+  const headingChanged=pruneInvisibleReportHeadingV2730(pdf,L);
+  if(!changed&&!vesselChanged&&!floorChanged&&!precisionChanged&&!equipmentChanged&&!calculationsChanged&&!finalCalculationsChanged&&!decimalsChanged&&!presentationChanged&&!finalPresentationChanged&&!fontsChanged&&!layoutChanged&&!headingChanged&&!rawNeedsAppearanceRepair(data))return data;
   form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
   compactReportV2682(pdf,L);
   return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
@@ -74,6 +79,20 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
   const {PDFDocument,PDFName,PDFArray,StandardFonts}=L;
   const pdf=await PDFDocument.load(bytes,{updateMetadata:false});
   const form=pdf.getForm();
+  // PDF.js saves a dynamically added technician as /V, but does not serialize
+  // the dropdown's updated items into /Opt. Keep that exact saved value valid
+  // for the next editable opening and other PDF viewers, without replacing the
+  // existing options, ResetForm default, permissions or field actions.
+  const technician=form.getFieldMaybe('client_technicien');
+  if(typeof technician?.getSelected==='function'&&typeof technician?.getOptions==='function'&&typeof technician?.addOptions==='function'){
+    const options=new Set(technician.acroField.getOptions().map(option=>option.value.decodeText())),missing=[];
+    for(const value of technician.getSelected())if(typeof value==='string'&&value.length<=1000&&value.trim()&&!options.has(value)){missing.push(value);options.add(value);}
+    if(missing.length)technician.addOptions(missing);
+  }
+  if(approvedReportFamilyV2731(pdf,L)){
+    form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
+    return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
+  }
   normalizeFloorStatusV2691(pdf,L);
   normalizeReportLayoutV2677(pdf,L);
   compactToleranceActions(pdf,L);
@@ -151,6 +170,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
   await normalizeReportLayoutV2721(pdf,L);
   await normalizeReportMicroV2725(pdf,L);
   await normalizeReportCorrectionsV2728(pdf,L);
+  pruneInvisibleReportHeadingV2730(pdf,L);
   return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
 }
 

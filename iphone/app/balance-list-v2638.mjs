@@ -2,8 +2,9 @@ import {calibrationIdentity,calibrationRpc} from './calibration-feedback-v2566.m
 import {createEquipmentTrackerV2697} from './equipment-list-v2697.mjs';
 import './balance-list-conformity-v2728.mjs';
 import {updateBalanceListFastV2729} from './balance-list-fast-v2729.mjs';
+import {ensureBalanceListFolderV2731,balanceListLocationV2731,balanceListNeedsPlacementV2731} from './balance-list-folder-v2731.mjs';
 import './field-work-v2729.mjs';
-const equipment=createEquipmentTrackerV2697({identity:()=>calibrationIdentity().email,library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},loadPdf:(id,revision)=>window.cdqLoadPdfForCalibrationV2668(id,revision),loadSheet:id=>call('obtenirSnapshotGoogleSheetHorsLigne',id,client())});
+const equipment=createEquipmentTrackerV2697({identity:()=>calibrationIdentity().email,library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},loadPdf:(id,revision)=>window.cdqLoadPdfForCalibrationV2668(id,revision),loadSheet:(id,revision,clientId)=>call('obtenirSnapshotGoogleSheetHorsLigne',id,clientId||client())});
 window.cdqEquipmentListV2697=equipment;
 const canRead=()=>!!window.cdqDriveEntryV2632?.canRead()&&!!calibrationIdentity().email;
 const canWrite=()=>canRead()&&['admin','technicien'].includes(calibrationIdentity().role);
@@ -16,31 +17,36 @@ function readerBusy(){try{return !!window.parent.document.getElementById('legacy
 const jobs=new Map(),receipts=new Map(),states=new Map(),failed=new Map();
 // Saves belong to their client, independently of the visible page or selection.
 const saveWaits=new Map(),changes=new Map(),satisfied=new Map(),clientTimers=new Map();
+const hydrated=new Set(),reviews=new Map(),reviewReceipts=new Map(),pausedClients=new Set();
 const key=id=>calibrationIdentity().email+'|'+id;
-const waiting=id=>(saveWaits.get(key(id))?.size||0)>0;
+const journalKey=id=>'cdqBalanceListJournalV2730:'+key(id);
+function restoreClient(id){
+ const k=key(id);if(!id||hydrated.has(k)||!canRead())return;hydrated.add(k);
+ try{const value=JSON.parse(localStorage.getItem(journalKey(id))||'null');if(value?.owner!==calibrationIdentity().email||value.clientId!==String(id)||value.version!==1)return;
+  if(Number.isSafeInteger(value.changes)&&value.changes>=0)changes.set(k,value.changes);
+  if(Number.isSafeInteger(value.satisfied)&&value.satisfied>=0)satisfied.set(k,Math.min(value.satisfied,changes.get(k)||0));
+  if(Array.isArray(value.pending))saveWaits.set(k,new Map(value.pending.filter(row=>Array.isArray(row)&&row.length===2&&row.every(v=>typeof v==='string'))));
+  if(Array.isArray(value.reviews))reviews.set(k,new Set(value.reviews.filter(token=>typeof token==='string')));
+  if(Array.isArray(value.acknowledgements)){const acks=new Map(value.acknowledgements.filter(row=>Array.isArray(row)&&typeof row[0]==='string'&&row[1]?.clientId===String(id)));reviewReceipts.set(k,acks);for(const [token,detail] of acks)if(reviews.get(k)?.has(token))equipment.acknowledge(token,detail);}
+  if(value.ready?.status==='ready'&&value.ready.clientId===String(id)&&typeof value.ready.fileId==='string')states.set(k,value.ready);
+ }catch{}
+}
+function persistClient(id){
+ if(!id||!canRead())return;const k=key(id),r=states.get(k),ready=r?.status==='ready'?Object.fromEntries(['status','fileId','clientId','folderId','count','listRevision','listStamp','checkedAt','updatedAt','digest','rows'].filter(name=>r[name]!==undefined).map(name=>[name,r[name]])):null;
+ try{localStorage.setItem(journalKey(id),JSON.stringify({version:1,owner:calibrationIdentity().email,clientId:String(id),changes:changes.get(k)||0,satisfied:satisfied.get(k)||0,pending:[...(saveWaits.get(k)||[])],reviews:[...(reviews.get(k)||[])],acknowledgements:[...(reviewReceipts.get(k)||[])].filter(([token])=>reviews.get(k)?.has(token)),ready}));}catch{}
+}
+const waiting=id=>{restoreClient(id);return (saveWaits.get(key(id))?.size||0)>0;};
+const needsUpdate=k=>(changes.get(k)||0)>(satisfied.get(k)||0)||(reviews.get(k)?.size||0)>0;
 function paintRows(){
-  const id=client(),k=key(id),running=jobs.has(k)||waiting(id)||failed.has(k)||(changes.get(k)||0)>(satisfied.get(k)||0);
-  for(const row of document.querySelectorAll('.file-row')){
-    const checkbox=row.querySelector('.file-checkbox[data-file-id]'),known=states.get(k)?.fileId||listFile(id)?.id;
-    const isList=!!known&&checkbox?.dataset.fileId===String(known);
-    let indicator=row.querySelector('[data-balance-list-working]');
-    if(!isList||!canRead()){indicator?.remove();row.dataset.balanceListBusy='false';continue;}
-    if(!indicator){indicator=document.createElement('span');indicator.dataset.balanceListWorking='';indicator.className='cdq-balance-list-working';indicator.setAttribute('role','status');const badge=row.querySelector(':scope > .file-today-done-badge');row.insertBefore(indicator,badge||null);}
-    const title=row.querySelector('.file-name');if(document.documentElement.classList.contains('cdq-desktop-v2676')&&title&&indicator.parentElement!==title)title.append(indicator);
-    indicator.hidden=!running;const active=jobs.has(k)&&navigator.onLine!==false;
-    const text=navigator.onLine===false?'Liste de balances : actualisation en attente de connexion':active?'Liste de balances : actualisation en cours':waiting(id)?'Liste de balances : sauvegarde du rapport en attente':failed.get(k)?.retryAt?'Liste de balances : nouvelle tentative prévue après une interruption temporaire':failed.has(k)?'Liste de balances : actualisation interrompue; réessayez depuis le menu':'Liste de balances : actualisation prévue après le rapport';
-    if(indicator.getAttribute('aria-label')!==text){indicator.setAttribute('aria-label',text);indicator.title=running?text:'';}
-    indicator.classList.toggle('cdq-balance-list-paused',!active);
-    const label='';
-    if(indicator.textContent!==label)indicator.textContent=label;
-    row.dataset.balanceListBusy=active?'true':'false';
-  }
+ restoreClient(client());
+ for(const row of document.querySelectorAll('.file-row')){row.querySelector('[data-balance-list-working]')?.remove();row.dataset.balanceListBusy='false';}
 }
 function scheduleClient(id,delay=150){
+  restoreClient(id);
   const k=key(id);if(clientTimers.has(k))return;
-  const failure=failed.get(k),stamp=sourceFingerprint(root(id))+'|saved:'+(changes.get(k)||0);
+  const failure=failed.get(k),stamp=clientFingerprint(id)+'|saved:'+(changes.get(k)||0);
   if(failure?.stamp===stamp){if(!failure.retryAt)return;delay=Math.max(delay,failure.retryAt-Date.now());}
-  const version=epoch;clientTimers.set(k,setTimeout(()=>{clientTimers.delete(k);if(version===epoch&&!waiting(id)&&!readerBusy()&&window.cdqFieldWorkV2729?.available()!==false)refresh(false,true,id).catch(()=>{});},delay));
+  const version=epoch;clientTimers.set(k,setTimeout(()=>{clientTimers.delete(k);if(version!==epoch||waiting(id))return;if(readerBusy()||window.cdqFieldWorkV2729?.available()===false){pausedClients.add(k);return;}pausedClients.delete(k);refresh(false,true,id).catch(()=>{});},delay));
 }
 function temporaryFailure(error){
  const message=norm(error?.message||error);
@@ -53,30 +59,71 @@ function fail(id,stamp,error){
  failed.set(k,{stamp,attempts,transient,retryAt});if(retryAt)scheduleClient(id,retryAt-Date.now());
 }
 function clearFailure(k){failed.delete(k);if(clientTimers.has(k)){clearTimeout(clientTimers.get(k));clientTimers.delete(k);}}
+function updateConfirmedRows(id,detail,sourceId){
+ const k=key(id),state=states.get(k),revision=String(detail.modifiedTime||detail.dateModification||detail.revision||'');if(!Array.isArray(state?.rows)||!revision)return;
+ const signature=detail.equipmentSignature||equipment.signature?.(sourceId,id);let values;try{values=JSON.parse(signature);}catch{return;}
+ if(!Array.isArray(values)||values.length!==6||!values.slice(0,5).every(v=>typeof v==='string')||!['conforming','nonconforming','unknown'].includes(values[5]))return;
+ const fileId=String(detail.id||detail.fileId||sourceId),[fabricant,modele,capacite,echelon,identification,conformity]=values,prior=state.rows.find(row=>row.id===sourceId||row.id===fileId),row={id:fileId,source:detail.name||detail.nom||prior?.source||'',revision,fabricant,modele,capacite,echelon,identification,conformity};
+ const rows=state.rows.filter(old=>old.id!==fileId&&old.id!==sourceId&&(!identification||norm(old.identification)!==norm(identification)));rows.push(row);rows.sort((a,b)=>String(a.identification||a.source).localeCompare(String(b.identification||b.source),'fr',{numeric:true}));states.set(k,{...state,rows,count:rows.length});
+ // These exact values came from the acknowledged saved bytes, never from a
+ // pending upload. The PDF's old digest remains until its own write is acked.
+ equipment.rememberRead?.({...detail,id:fileId},signature,id);
+ window.dispatchEvent(new CustomEvent('cdq:balance-list-rows-v2730',{detail:{clientId:String(id)}}));
+}
 async function saved(event,local=false){
   if(owner!==calibrationIdentity().email)reset();
   const d=event.detail||{},id=String(d.clientId||'');if(!id){schedule();return;}
   if(!canWrite()||excluded(d.name||d.nom))return;
-  const k=key(id),file=String(d.sourceId||d.id||d.fileId||''),token=String(d.saveId||'');
+  if(d.owner&&String(d.owner.email||d.owner).trim().toLowerCase()!==String(calibrationIdentity().email).trim().toLowerCase())return;
+  restoreClient(id);const k=key(id),file=String(d.sourceId||d.id||d.fileId||''),token=String(d.saveId||'');
   const pending=saveWaits.get(k);
   const matched=pending?.has(file)?file:token?[...(pending||[])].find(([,value])=>value===token)?.[0]:undefined;
   if(!local||d.pending===false){
     // An earlier acknowledgement cannot release a newer edit of this file.
     if(matched!==undefined&&token&&pending.get(matched)!==token){equipment.acknowledge(token,d);return;}
     if(matched!==undefined)pending.delete(matched);
+    if(token){let review=reviews.get(k);if(!review)reviews.set(k,review=new Set());review.add(token);let acks=reviewReceipts.get(k);if(!acks)reviewReceipts.set(k,acks=new Map());acks.set(token,Object.fromEntries(['id','fileId','sourceId','clientId','owner','revision','modifiedTime','dateModification','version','md5Checksum','sha256Checksum'].filter(name=>d[name]!==undefined).map(name=>[name,d[name]])));}
+    // Persist the acknowledged work before any PDF analysis promise. Closing
+    // the app here must not forget an update whose Drive upload already ended.
+    persistClient(id);
   }
   const savedOwner=owner,savedEpoch=epoch,review=!local||d.pending===false?equipment.awaitDecision(token):equipment.decision(token);const decision=review&&typeof review.then==='function'?(await review,equipment.decision(token)):review;if(savedOwner!==owner||savedEpoch!==epoch||!canWrite())return;
-  if(decision===false){if(!local||d.pending===false)equipment.acknowledge(token,d);if(!waiting(id)&&(failed.has(k)||(changes.get(k)||0)>(satisfied.get(k)||0)))scheduleClient(id);paintRows();return;}
-  if(local&&d.pending!==false){let pending=saveWaits.get(k);if(!pending)saveWaits.set(k,pending=new Map());pending.set(file,token);paintRows();return;}
+  if(decision===false){reviews.get(k)?.delete(token);if(!local||d.pending===false)equipment.acknowledge(token,d);persistClient(id);if(!waiting(id)&&(failed.has(k)||needsUpdate(k)))scheduleClient(id);paintRows();return;}
+  if(local&&d.pending!==false){let pending=saveWaits.get(k);if(!pending)saveWaits.set(k,pending=new Map());pending.set(file,token);persistClient(id);paintRows();return;}
   if(!local||d.pending===false)equipment.acknowledge(token,d);
-  changes.set(k,(changes.get(k)||0)+1);const job=jobs.get(k);if(job)job.dirty=true;
+  updateConfirmedRows(id,d,file);
+  reviews.get(k)?.delete(token);changes.set(k,(changes.get(k)||0)+1);persistClient(id);const job=jobs.get(k);if(job)job.dirty=true;
   paintRows();scheduleClient(id);
 }
 function root(id){try{return cacheContenuCompagnies[id]||null;}catch{return null;}}
-function listFile(id){return (root(id)?.fichiers||[]).find(f=>norm(f.nom||f.name)==='liste de balance.pdf');}
-export function sourceFingerprint(tree){
+function listFile(id){const tree=root(id);return typeof balanceListLocationV2731==='function'?balanceListLocationV2731(tree,states.get(key(id))?.fileId).file:(tree?.fichiers||[]).find(f=>norm(f.nom||f.name)==='liste de balance.pdf');}
+function listFolder(id){return typeof balanceListLocationV2731==='function'?balanceListLocationV2731(root(id),states.get(key(id))?.fileId).folder:null;}
+function needsPlacement(id){return typeof balanceListNeedsPlacementV2731==='function'&&balanceListNeedsPlacementV2731(root(id));}
+function rehydratingListId(tree,confirmed){
+ if(!tree||confirmed?.status!=='ready'||String(confirmed.clientId)!==String(tree.id)||!confirmed.fileId||!confirmed.folderId||String(confirmed.folderId)===String(tree.id))return '';
+ const folders=(tree.dossiers||[]).filter(folder=>String(folder.id)===String(confirmed.folderId)&&norm(folder.nom||folder.name)==='liste de balance');
+ // Root metadata can replace an expired child cache while it reloads. Only
+ // the already verified client/folder binding survives that incomplete view.
+ return folders.length===1&&(folders[0].charge===false||!Array.isArray(folders[0].fichiers))?String(confirmed.fileId):'';
+}
+const clientFingerprint=id=>sourceFingerprint(root(id),states.get(key(id)));
+async function placeList(id,version,create=true){
+ if(typeof ensureBalanceListFolderV2731!=='function')return null;
+ return ensureBalanceListFolderV2731({clientId:id,owner:calibrationIdentity().email,preferredFileId:states.get(key(id))?.fileId||listFile(id)?.id||'',create,rpc:(name,...args)=>call(name,...args),stillCurrent:()=>version===epoch&&canWrite(),onLocated:located=>{
+  const old=root(id)||{dossiers:[]};
+  const listIds=located.root.dossiers.filter(d=>norm(d.nom||d.name)==='liste de balance').flatMap(d=>(d.fichiers||[]).filter(f=>norm(f.nom||f.name)==='liste de balance.pdf').map(f=>String(f.id)));
+  window.cdqInstantFiles2530?.forget?.(id,listIds);
+  const next={...old,...located.root,dossiers:located.root.dossiers.map(d=>norm(d.nom||d.name)==='liste de balance'?d:old.dossiers?.find(prior=>String(prior.id)===String(d.id))||d)};
+  try{cacheContenuCompagnies[id]=window.cdqInstantFiles2530?.overlay?.(id,next)||next;}catch{}
+  for(const d of located.root.dossiers)if(norm(d.nom||d.name)==='liste de balance')for(const f of d.fichiers||[])if(norm(f.nom||f.name)==='liste de balance.pdf')window.cdqInstantFiles2530?.keep?.(id,f,d.id);
+  try{window.sauvegarderCachePersistantClient?.(id,root(id),Date.now());}catch{}
+  if(id===client()&&!readerBusy())window.afficherContenu?.(root(id));
+ }});
+}
+export function sourceFingerprint(tree,confirmed=null){
   if(!tree)return '';
-  const rows=[['schema','v2729-equipment-conformity'],['client',String(tree.id||''),tree.nom||tree.name||'']],take=(node,pdf)=>{for(const f of node.fichiers||[]){if(excluded(f.nom||f.name))continue;const type=f.mimeType||f.type;if(type==='application/vnd.google-apps.spreadsheet'||type==='GOOGLE_SHEETS'||pdf&&(type==='application/pdf'||type==='PDF'))rows.push([String(f.id),type==='application/pdf'?'PDF':type==='application/vnd.google-apps.spreadsheet'?'GOOGLE_SHEETS':type]);}};
+  const known=typeof balanceListLocationV2731==='function'?balanceListLocationV2731(tree).file:(tree.fichiers||[]).find(f=>norm(f.nom||f.name)==='liste de balance.pdf');
+  const rows=[['schema','v2730-equipment-conformity'],['client',String(tree.id||''),tree.nom||tree.name||''],['list',String(known?.id||rehydratingListId(tree,confirmed))]],take=(node,pdf)=>{for(const f of node.fichiers||[]){if(excluded(f.nom||f.name))continue;const type=f.mimeType||f.type;if(type==='application/vnd.google-apps.spreadsheet'||type==='GOOGLE_SHEETS'||pdf&&(type==='application/pdf'||type==='PDF'))rows.push([String(f.id),type==='application/pdf'?'PDF':type==='application/vnd.google-apps.spreadsheet'?'GOOGLE_SHEETS':type]);}};
   take(tree,true);
   for(const d of tree.dossiers||[])if(/^rapports? (?:d ?)?etalonnages?$/.test(norm(d.nom||d.name))){rows.push(['folder',String(d.id)]);take(d,false);}
   return JSON.stringify(rows.sort((a,b)=>a[0].localeCompare(b[0])));
@@ -85,11 +132,11 @@ const receiptPrefix=()=> 'cdqBalanceListV2703:';
 function remembered(id){const k=key(id);if(receipts.has(k))return receipts.get(k);try{const r=JSON.parse(localStorage.getItem(receiptPrefix()+k)||'null');if(r){receipts.set(k,r);return r;}}catch{}return null;}
 function remember(id,fingerprint){const r={fingerprint,requestedAt:Date.now()};receipts.set(key(id),r);try{localStorage.setItem(receiptPrefix()+key(id),JSON.stringify(r));}catch{}}
 function paint(id,text,error=false){if(id!==client())return;const p=document.getElementById('cdqClientActionsV2640');if(!p||p.hidden)return;let el=p.querySelector('[data-balance-list-status]');if(!el){el=document.createElement('p');el.dataset.balanceListStatus='';el.className='cdq-workspace-status';el.setAttribute('role','status');p.append(el);}if(el.textContent!==text)el.textContent=text;el.classList.toggle('cdq-workspace-error',error);}
-function ready(id,r,notify=false){states.set(key(id),r);if(r.fileId&&r.updatedAt)window.cdqInstantFiles2530?.confirm?.({id:r.fileId,nom:'Liste de balance.pdf',type:'PDF',dateModification:r.updatedAt},id,id);if(notify)paint(id,'Liste à jour · '+(r.count||0)+' balance(s)'+(r.warnings?.length?' · '+r.warnings.length+' fichier(s) à vérifier':''));}
+function ready(id,r,notify=false){const folderId=listFolder(id)?.id||r.listFolderId||r.folderId||id;states.set(key(id),{...r,clientId:String(id),folderId});persistClient(id);if(r.fileId&&r.updatedAt)window.cdqInstantFiles2530?.confirm?.({id:r.fileId,nom:'Liste de balance.pdf',type:'PDF',dateModification:r.updatedAt},id,folderId);if(notify)paint(id,'Liste à jour · '+(r.count||0)+' balance(s)'+(r.warnings?.length?' · '+r.warnings.length+' fichier(s) à vérifier':''));}
 async function call(name,id,...args){const account=calibrationIdentity().email,version=epoch;if(!canRead())throw Error('Accès Drive requis.');const r=await calibrationRpc(name,id,...args);if(version!==epoch||account!==calibrationIdentity().email||!canRead())throw Error('Le compte a changé.');return r;}
 async function open(){
-  const id=client();if(!id||!canRead())return;
-  const file=listFile(id),known=states.get(key(id)),fileId=known?.fileId||file?.id;
+  const id=client();if(!id||!canRead())return;restoreClient(id);
+  const tree=root(id),file=listFile(id),known=states.get(key(id)),fileId=file?.id||(!tree||tree.charge===false||listFolder(id)?.charge===false?known?.fileId:'');
   // Existing PDF is immediately readable, including during an update.
   if(fileId)return window.cdqOpenPdfV2520?.(fileId,{nom:'Liste de balance.pdf'});
   if(navigator.onLine===false){paint(id,'Aucune liste disponible hors ligne.',true);return;}
@@ -99,30 +146,42 @@ async function open(){
 }
 async function refresh(force=false,verify=false,id=client()){
   if(!id||!canWrite()||navigator.onLine===false)return {status:'unavailable'};
-  const k=key(id),fingerprint=sourceFingerprint(root(id)),active=jobs.get(k);
-  const stamp=fingerprint+'|saved:'+(changes.get(k)||0);
+  if(owner!==calibrationIdentity().email)reset();
+  restoreClient(id);
+  const k=key(id),active=jobs.get(k);let fingerprint=clientFingerprint(id);
+  let stamp=fingerprint+'|saved:'+(changes.get(k)||0);
   const failure=failed.get(k);
   if(force)failed.delete(k);
   else if(failure?.stamp===stamp){if(!failure.retryAt)return {status:'retry-manually'};if(failure.retryAt>Date.now()){scheduleClient(id,failure.retryAt-Date.now());return {status:'retry-wait'};}}
-  if(active){if(fingerprint&&fingerprint!==active.fingerprint)active.dirty=true;if(force)active.forceNext=true;return active.promise;}
+  if(active){
+    if(fingerprint&&fingerprint!==active.fingerprint)active.dirty=true;
+    if(!force)return active.promise;
+    // All callers joining an active refresh share one subsequent forced check,
+    // and their await includes that check. Account resets cancel it entirely.
+    active.followup??=active.promise.then(()=>active.version===epoch&&k===key(id)&&canWrite()?refresh(true,false,id):{status:'unavailable'});
+    return active.followup;
+  }
   if(waiting(id)&&!force){paintRows();return {status:'waiting-save'};}
-  if(!force&&!verify&&remembered(id)?.fingerprint===fingerprint&&(changes.get(k)||0)===(satisfied.get(k)||0))return {status:'cached'};
+  if(!force&&!verify&&remembered(id)?.fingerprint===fingerprint&&!needsUpdate(k)&&!needsPlacement(id))return {status:'cached'};
   // Automatic checks are silent; only an explicit refresh reports progress.
   const progress=(text,error=false)=>{if(force)paint(id,text,error);};
-  const version=epoch,change=changes.get(k)||0,job={fingerprint,dirty:false,promise:null};jobs.set(k,job);paintRows();
+  const version=epoch,change=changes.get(k)||0,pendingReviews=[...(reviews.get(k)||[])],job={fingerprint,version,dirty:false,promise:null};jobs.set(k,job);paintRows();
+  const satisfiedNow=()=>{if(!waiting(id)&&change===(changes.get(k)||0)){remember(id,fingerprint);satisfied.set(k,change);for(const token of pendingReviews)reviews.get(k)?.delete(token);}};
   job.promise=(async()=>{try{
-    const existingId=listFile(id)?.id||states.get(k)?.fileId;
+    if(needsPlacement(id)||!listFile(id)&&!listFolder(id)){await placeList(id,version,!!listFile(id));if(version!==epoch||!canWrite())throw Error('Le compte a changé.');fingerprint=clientFingerprint(id);job.fingerprint=fingerprint;stamp=fingerprint+'|saved:'+change;}
+    const tree=root(id),existingId=listFile(id)?.id||rehydratingListId(tree,states.get(k))||(!tree||tree.charge===false?states.get(k)?.fileId:'');
     if(existingId&&typeof updateBalanceListFastV2729==='function'){
-      const result=await updateBalanceListFastV2729({clientId:id,fileId:String(existingId),rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision),loadSheet:file=>call('obtenirSnapshotGoogleSheetHorsLigne',file,id),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file),stillCurrent:()=>version===epoch&&canWrite()&&!waiting(id)&&change===(changes.get(k)||0)&&fingerprint===sourceFingerprint(root(id)),onSaved:record=>window.cdqStoreBalanceListV2729(record)});
-      clearFailure(k);if(!waiting(id)&&change===(changes.get(k)||0)){remember(id,fingerprint);satisfied.set(k,change);}ready(id,result,force);return result;
+      const result=await updateBalanceListFastV2729({clientId:id,fileId:String(existingId),rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision),loadSheet:file=>call('obtenirSnapshotGoogleSheetHorsLigne',file,id),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true),onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,false),previousState:states.get(k),stillCurrent:()=>version===epoch&&canWrite()&&!waiting(id)&&change===(changes.get(k)||0)&&fingerprint===clientFingerprint(id),onSaved:record=>window.cdqStoreBalanceListV2729(record)});
+      equipment.flushReads?.();clearFailure(k);satisfiedNow();ready(id,result,force);return result;
     }
     let result=await call('cdqActualiserListeBalanceV2665',id,force,stamp);states.set(k,result);
     progress('Actualisation de la liste…');
     const deadline=Date.now()+180000;
     while(version===epoch&&canRead()&&Date.now()<deadline){
       if(result.status==='ready'){
-        if(window.cdqEnsureListConformityV2728)result=await window.cdqEnsureListConformityV2728({result,clientId:id,clientName:root(id)?.nom||root(id)?.name||'',files:sources(root(id)||{}),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},loadPdf:file=>window.cdqLoadPdfForCalibrationV2668(file),loadSheet:file=>call('obtenirSnapshotGoogleSheetHorsLigne',file,id),rpc:(name,...args)=>call(name,...args),cachedSignature:file=>equipment.confirmedSignature?.(file),stillCurrent:()=>version===epoch&&canWrite()&&!waiting(id)&&change===(changes.get(k)||0)&&fingerprint===sourceFingerprint(root(id))});
-        clearFailure(k);if(!waiting(id)&&change===(changes.get(k)||0)){remember(id,fingerprint);satisfied.set(k,change);}ready(id,result,force);return result;
+        const placed=await placeList(id,version);if(placed?.file){result={...result,fileId:String(placed.file.id),folderId:String(placed.folder.id)};fingerprint=clientFingerprint(id);job.fingerprint=fingerprint;stamp=fingerprint+'|saved:'+change;}
+        if(window.cdqEnsureListConformityV2728)result=await window.cdqEnsureListConformityV2728({result,clientId:id,clientName:root(id)?.nom||root(id)?.name||'',files:sources(root(id)||{}),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},loadPdf:file=>window.cdqLoadPdfForCalibrationV2668(file),loadSheet:file=>call('obtenirSnapshotGoogleSheetHorsLigne',file,id),rpc:(name,...args)=>call(name,...args),cachedSignature:file=>equipment.confirmedSignature?.(file),stillCurrent:()=>version===epoch&&canWrite()&&!waiting(id)&&change===(changes.get(k)||0)&&fingerprint===clientFingerprint(id)});
+        clearFailure(k);satisfiedNow();ready(id,result,force);return result;
       }
       if(result.status==='error')throw Error(result.message||'Actualisation impossible.');
       if(!['busy','pending','working'].includes(result.status))throw Error('Réponse d’actualisation non confirmée.');
@@ -133,8 +192,8 @@ async function refresh(force=false,verify=false,id=client()){
     }
     if(version===epoch){fail(id,stamp,Error('Actualisation toujours en cours sur le serveur.'));progress('Actualisation en cours sur le serveur. La liste existante reste accessible.');}
     return {status:'pending'};
-  }catch(e){if(version===epoch){fail(id,stamp,e);progress('Actualisation interrompue. La liste existante reste accessible.',true);}return {status:'error',message:e.message};}
-  finally{if(jobs.get(k)===job)jobs.delete(k);if(version===epoch){if(job.forceNext)queueMicrotask(()=>refresh(true,false,id));else if(job.dirty&&!waiting(id))scheduleClient(id);paintRows();}}})();
+  }catch(e){if(version===epoch){equipment.flushReads?.();fail(id,stamp,e);progress('Actualisation interrompue. La liste existante reste accessible.',true);}return {status:'error',message:e.message};}
+  finally{if(jobs.get(k)===job)jobs.delete(k);if(version===epoch){if(!job.followup&&job.dirty&&!waiting(id))scheduleClient(id);paintRows();}}})();
   return job.promise;
 }
 function closeMenu(){document.querySelector('[data-balance-list-menu]')?.remove();document.querySelector('[data-client-list]')?.setAttribute('aria-expanded','false');}
@@ -146,13 +205,13 @@ function menu(){
   for(const [label,action,write] of [['Ouvrir la liste',open,false],['Actualiser la liste',()=>refresh(true),true]]){const b=document.createElement('button');b.type='button';b.textContent=label;b.disabled=write&&!canWrite();b.onclick=()=>{closeMenu();if(id===client())Promise.resolve(action()).catch(e=>paint(id,e.message,true));};p.append(b);}
   actions.append(p);actions.querySelector('[data-client-list]')?.setAttribute('aria-expanded','true');
 }
-function reset(){epoch++;owner=calibrationIdentity().email;visibleClient='';receipts.clear();states.clear();jobs.clear();failed.clear();saveWaits.clear();changes.clear();satisfied.clear();pcScan=null;for(const t of clientTimers.values())clearTimeout(t);clientTimers.clear();clearTimeout(timer);clearTimeout(scanTimer);timer=scanTimer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();paintRows();}
+function reset(){epoch++;owner=calibrationIdentity().email;visibleClient='';receipts.clear();states.clear();jobs.clear();failed.clear();saveWaits.clear();changes.clear();satisfied.clear();hydrated.clear();reviews.clear();reviewReceipts.clear();pausedClients.clear();pcScan=null;for(const t of clientTimers.values())clearTimeout(t);clientTimers.clear();clearTimeout(timer);clearTimeout(scanTimer);timer=scanTimer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();paintRows();}
 function sources(tree){const files=[],take=(node,pdf)=>{for(const f of node.fichiers||[]){if(!excluded(f.nom||f.name)&&!f._cdqPendingSaveV2660&&(['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].includes(f.mimeType||f.type)||pdf&&['PDF','application/pdf'].includes(f.mimeType||f.type)))files.push(f);}};take(tree,true);for(const d of tree.dossiers||[])if(/^rapports? (?:d ?)?etalonnages?$/.test(norm(d.nom||d.name)))take(d,false);return files;}
 function scheduleScan(id){
  if(scanTimer||pcScan||readerBusy()||navigator.onLine===false||window.cdqFieldWorkV2729?.available()===false)return;
  const version=epoch;scanTimer=setTimeout(()=>{scanTimer=0;if(version!==epoch||client()!==id||readerBusy()||document.hidden||!canWrite())return;
-  const task=equipment.inspect(sources(root(id)||{}),()=>client()===id&&epoch===version&&canWrite()&&!readerBusy()&&!document.hidden);pcScan=task;
-  task.then(changed=>{if(changed&&epoch===version&&canWrite()){const k=key(id);changes.set(k,(changes.get(k)||0)+1);paintRows();scheduleClient(id);}}).catch(()=>{}).finally(()=>{if(pcScan===task){pcScan=null;if(client()!==id)schedule();}});
+  const task=equipment.inspect(sources(root(id)||{}),()=>client()===id&&epoch===version&&canWrite()&&!readerBusy()&&!document.hidden,id);pcScan=task;
+  task.then(changed=>{if(changed&&epoch===version&&canWrite()){const k=key(id);changes.set(k,(changes.get(k)||0)+1);persistClient(id);paintRows();scheduleClient(id);}}).catch(()=>{}).finally(()=>{if(pcScan===task){pcScan=null;if(client()!==id)schedule();}});
  },1200);
 }
 function inspect(){
@@ -160,34 +219,42 @@ function inspect(){
   const id=client();if(id!==visibleClient){visibleClient=id;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();}
   paintRows();if(!canWrite()||document.hidden)return;
   const tree=root(id);if(!id||!tree)return;
-  const fingerprint=sourceFingerprint(tree),job=jobs.get(key(id));
+  const fingerprint=clientFingerprint(id),job=jobs.get(key(id));
   if(job){if(fingerprint!==job.fingerprint)job.dirty=true;return;}
   const receipt=remembered(id);
   // Verify an existing list once before remembering this schema. Identical
   // contents produce no write; subsequent openings reuse the confirmed receipt.
-  if(!receipt&&listFile(id)){if(typeof updateBalanceListFastV2729==='function')scheduleClient(id);else remember(id,fingerprint);}
+  if(needsPlacement(id))scheduleClient(id);
+  else if(!receipt&&listFile(id)){if(typeof updateBalanceListFastV2729==='function')scheduleClient(id);else remember(id,fingerprint);}
   else if(receipt?.fingerprint!==fingerprint)scheduleClient(id);
-  if((changes.get(key(id))||0)>(satisfied.get(key(id))||0)&&!waiting(id))scheduleClient(id);
+  if(needsUpdate(key(id))&&!waiting(id))scheduleClient(id);
   scheduleScan(id);
 }
 // Coalesce notifications without postponing the first check when rows repaint.
 function schedule(){if(timer)return;timer=setTimeout(()=>{timer=0;inspect();},150);}
-window.cdqBalanceListV2638={refresh,open,menu,inspect};
+// The structured last-confirmed list is available synchronously on a cold app
+// start. Consumers can show these rows while a separate cloud update resumes.
+function snapshot(id=client()){if(!id||!canRead())return null;restoreClient(id);const k=key(id),ready=states.get(k),tree=root(id);return ready?.status==='ready'?{...ready,rows:(ready.rows||[]).map(row=>({...row})),pending:waiting(id)||needsUpdate(k)||jobs.has(k)||!!tree&&remembered(id)?.fingerprint!==clientFingerprint(id)}:null;}
+window.cdqBalanceListV2638={refresh,open,menu,inspect,snapshot};
 window.addEventListener('cdq:access-ready',()=>{if(owner!==calibrationIdentity().email)reset();schedule();});
 window.addEventListener('cdq:drive-cleared-v2632',reset);window.addEventListener('cdq:drive-ready-v2632',schedule);
-window.addEventListener('cdq:field-idle-v2729',schedule);
+function resumePaused(){for(const k of [...pausedClients,...changes.keys(),...reviews.keys()])if(k.startsWith(owner+'|')&&(pausedClients.has(k)||needsUpdate(k)))scheduleClient(k.slice(owner.length+1));schedule();}
+window.addEventListener('cdq:field-idle-v2729',resumePaused);
+window.cdqFieldWorkV2729?.subscribe?.(resumePaused);
 for(const event of ['cdq:copied','cdq:pdf-saved'])window.addEventListener(event,e=>saved(e));
 window.addEventListener('cdq:pdf-save-retired-v2707',e=>{
  if(owner!==calibrationIdentity().email)reset();
  const d=e.detail||{},k=key(String(d.clientId||'')),pending=saveWaits.get(k),file=String(d.sourceId||''),token=String(d.saveId||'');
  if(!canRead()||d.owner&&d.owner!==calibrationIdentity().email)return;
  if(pending?.get(file)===token)pending.delete(file);
+ reviews.get(k)?.delete(token);
  equipment.retire(token);
+ persistClient(String(d.clientId||''));
  paintRows();
 });
 window.addEventListener('cdq:pdf-local-saved',e=>saved(e,true));window.addEventListener('cdq:client-renamed',e=>saved(e));
 for(const event of ['cdq:deleted','cdq:moved','cdq:renamed'])window.addEventListener(event,schedule);
-window.addEventListener('cdq:reader-closed-v2703',()=>{for(const k of changes.keys())if(k.startsWith(owner+'|')&&(changes.get(k)||0)>(satisfied.get(k)||0))scheduleClient(k.slice(owner.length+1));schedule();});
+window.addEventListener('cdq:reader-closed-v2703',resumePaused);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
 window.addEventListener('online',()=>{for(const [k,failure] of failed)if(k.startsWith(owner+'|')&&failure.transient){clearFailure(k);scheduleClient(k.slice(owner.length+1));}for(const k of changes.keys())if(k.startsWith(owner+'|')&&(changes.get(k)||0)>(satisfied.get(k)||0))scheduleClient(k.slice(owner.length+1));paintRows();schedule();});window.addEventListener('offline',paintRows);
 document.addEventListener('click',e=>{if(e.target.closest?.('.folder-header,.bottom-nav-item,.company-item')){closeMenu();schedule();}},true);

@@ -17,10 +17,10 @@ export async function equipmentSnapshotV2697(blob,L){
  const pdf=await L.PDFDocument.load(await blob.arrayBuffer(),{updateMetadata:false});return equipmentValuesV2697(pdf.getForm());
 }
 export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,storage=localStorage}){
- let owner='',epoch=0,data={reports:{},saves:{},sequence:0},scan=null;const analyses=new Map();
+ let owner='',epoch=0,data={reports:{},saves:{},sequence:0},scan=null,readDirty=false;const analyses=new Map();
  const account=()=>{const value=identity();return String(value?.email??value??'').trim().toLowerCase();};
  const storageKey=()=> 'cdqEquipmentListV2703:'+owner;
- function sync(){const email=account();if(owner===email)return;owner=email;epoch++;try{data=owner&&JSON.parse(storage.getItem(storageKey())||'null')||{reports:{},saves:{},sequence:0};}catch{data={reports:{},saves:{},sequence:0}}data.reports??={};data.saves??={};if(!Number.isSafeInteger(data.sequence))data.sequence=0;scan=null;}
+ function sync(){const email=account();if(owner===email)return;owner=email;epoch++;readDirty=false;try{data=owner&&JSON.parse(storage.getItem(storageKey())||'null')||{reports:{},saves:{},sequence:0};}catch{data={reports:{},saves:{},sequence:0}}data.reports??={};data.saves??={};if(!Number.isSafeInteger(data.sequence))data.sequence=0;scan=null;}
  function valid(email,generation){sync();return !!email&&owner===email&&epoch===generation;}
  function persist(){if(!owner||owner!==account())return;try{storage.setItem(storageKey(),JSON.stringify(data));}catch{}}
  const stamp=f=>JSON.stringify([f.modifiedTime||f.dateModification||f.revision||'',String(f.version||''),f.md5Checksum||f.sha256Checksum||'']);
@@ -29,9 +29,10 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
  function noteSave(rec,blob,saveId){
   sync();const email=owner,generation=epoch,id=String(rec?.id||''),token=String(saveId||'');if(!email||!id||!token||rec?.owner&&String(rec.owner?.email??rec.owner).trim().toLowerCase()!==email)return Promise.reject(Error('Le compte du rapport a changé.'));
   const previous=data.saves[token],prior=data.reports[id],sequence=++data.sequence,waiting=[...analyses.values()].filter(a=>a.owner===email&&a.fileId===id).map(a=>a.job.catch(()=>{}));
-  const save={...previous,fileId:id,at:Date.now(),sequence,previous:prior,ready:false};data.saves[token]=save;
-  data.reports[id]={...prior,local:true,saveId:token,confirmedRevision:''};persist();
-  const job=(async()=>{const [before,after]=await Promise.all([snapshot(rec.blob),snapshot(blob)]);await Promise.all(waiting);if(!valid(email,generation))throw Error('Le compte a changé.');if(data.saves[token]!==save||save.retired)return false;
+  const clientId=String(rec.clientId||''),known=prior&&(!clientId||prior.clientId===clientId)&&completeSignature(prior.signature)&&((prior.verifiedReadV2729&&!prior.local&&prior.stamp===stamp(rec))||(prior.local&&prior.saveId===rec.pendingSaveId))?prior.signature:null;
+  const save={...previous,fileId:id,clientId,at:Date.now(),sequence,previous:prior,ready:false};data.saves[token]=save;
+  data.reports[id]={...prior,clientId:clientId||prior?.clientId||'',local:true,saveId:token,confirmedRevision:''};persist();
+  const job=(async()=>{const [before,after]=await Promise.all([known===null?snapshot(rec.blob):Promise.resolve(known),snapshot(blob)]);await Promise.all(waiting);if(!valid(email,generation))throw Error('Le compte a changé.');if(data.saves[token]!==save||save.retired)return false;
    save.ready=true;save.changed=!!(previous?.changed||before!==after||Object.values(data.saves).some(s=>s!==save&&s.fileId===id&&s.changed&&!s.acknowledged&&!s.retired));
    if(data.reports[id]?.saveId===token)data.reports[id]={...data.reports[id],signature:after,verifiedReadV2729:!!(save.acknowledged&&data.reports[id].confirmedRevision)};
    data.saves=Object.fromEntries(Object.entries(data.saves).sort(([,a],[,b])=>b.at-a.at||b.sequence-a.sequence).slice(0,1000));persist();return save.changed;
@@ -40,9 +41,9 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
  function awaitDecision(saveId){sync();const analysis=analyses.get(saveId),job=analysis?.owner===owner?analysis.job:null;return job?job.catch(()=>{}).then(()=>decision(saveId)):decision(saveId);}
  function decision(saveId){sync();const save=data.saves[saveId];return save?.acknowledged||save?.retired?false:save?.changed;}
  function retire(saveId){sync();const save=data.saves[saveId];if(save&&!save.acknowledged){save.retired=true;if(data.reports[save.fileId]?.saveId===saveId){let prior=save.previous,depth=0;while(prior?.local&&data.saves[prior.saveId]?.retired&&depth++<1000)prior=data.saves[prior.saveId].previous;if(prior)data.reports[save.fileId]=prior;else delete data.reports[save.fileId];}persist()}}
- function acknowledge(saveId,meta={}){sync();if(meta.owner&&String(meta.owner?.email??meta.owner).trim().toLowerCase()!==owner)return;const save=data.saves[saveId];if(save&&!save.retired){save.acknowledged=true;const report=data.reports[save.fileId];if(report?.saveId===saveId){report.confirmedRevision=String(meta.modifiedTime||meta.dateModification||meta.revision||'');if(report.confirmedRevision){report.stamp=stamp(meta);report.local=false;report.verifiedReadV2729=!!save.ready;}}persist();}}
- function signature(id){sync();return data.reports[id]?.signature||'';}
- async function inspect(files,stillCurrent=()=>true){
+ function acknowledge(saveId,meta={}){sync();if(meta.owner&&String(meta.owner?.email??meta.owner).trim().toLowerCase()!==owner)return;const save=data.saves[saveId];if(save&&!save.retired){if(save.clientId&&meta.clientId&&String(meta.clientId)!==save.clientId)return;save.acknowledged=true;const report=data.reports[save.fileId];if(report?.saveId===saveId){report.confirmedRevision=String(meta.modifiedTime||meta.dateModification||meta.revision||'');report.clientId=save.clientId||String(meta.clientId||report.clientId||'');if(report.confirmedRevision){report.stamp=stamp(meta);report.local=false;report.verifiedReadV2729=!!save.ready;}}persist();}}
+ function signature(id,clientId=''){sync();const record=data.reports[id];return !clientId||record?.clientId===String(clientId)?record?.signature||'':'';}
+ async function inspect(files,stillCurrent=()=>true,clientId=''){
   sync();if(scan)return scan;const email=owner,generation=epoch;if(!email)return false;
   const task=(async()=>{let changed=false;for(const file of files){
    if(!valid(email,generation)||!stillCurrent())break;const old=data.reports[file.id],version=stamp(file),expected=String(file.modifiedTime||file.dateModification||file.revision||'');
@@ -52,13 +53,24 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
    // A stale folder response must not reread a version older than our upload.
    const listed=Date.parse(file.modifiedTime||file.dateModification||file.revision||''),confirmed=Date.parse(old?.confirmedRevision||'');
    if(confirmed&&listed&&listed<confirmed)continue;
-   if(old?.verifiedReadV2729&&old.stamp===version&&completeSignature(old.signature))continue;
-   try{let next;if(['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].includes(file.mimeType||file.type)){const sheet=await loadSheet(file.id,expected);if(!valid(email,generation)||!stillCurrent())break;validateReportReadV2729(sheet,file,{owner:email,sheet:true});const values=sheetBalanceValuesV2703(sheet.onglets[0].valeurs);next=values==='null'?values:JSON.stringify([...JSON.parse(values),sheetReportConformityV2727(sheet)]);}else{const rec=await loadPdf(file.id,expected);if(!valid(email,generation)||!stillCurrent())break;validateReportReadV2729(rec,file,{owner:email});next=await snapshot(rec.blob);}if(!valid(email,generation)||!stillCurrent())break;
+   if(old?.verifiedReadV2729&&(!clientId||old.clientId===String(clientId))&&old.stamp===version&&completeSignature(old.signature))continue;
+   try{let next;if(['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].includes(file.mimeType||file.type)){const sheet=await loadSheet(file.id,expected,clientId);if(!valid(email,generation)||!stillCurrent())break;validateReportReadV2729(sheet,file,{owner:email,clientId,sheet:true});const values=sheetBalanceValuesV2703(sheet.onglets[0].valeurs);next=values==='null'?values:JSON.stringify([...JSON.parse(values),sheetReportConformityV2727(sheet)]);}else{const rec=await loadPdf(file.id,expected);if(!valid(email,generation)||!stillCurrent())break;validateReportReadV2729(rec,file,{owner:email,clientId});next=await snapshot(rec.blob);}if(!valid(email,generation)||!stillCurrent())break;
     if(stamp(file)!==version||data.reports[file.id]!==old)continue; // A changed folder or newer local edit wins a delayed read.
-    if(old&&old.signature!==next)changed=true;data.reports[file.id]={signature:next,stamp:version,verifiedReadV2729:true};persist();
+    if(old&&old.signature!==next)changed=true;data.reports[file.id]={signature:next,stamp:version,clientId:String(clientId||''),verifiedReadV2729:true};persist();
    }catch{ /* Leave the previous fingerprint intact; the next Drive event can retry. */ }
   }return changed;})();scan=task;try{return await task;}finally{if(scan===task)scan=null;}
  }
- function confirmedSignature(file){sync();const report=data.reports[file.id];return report?.verifiedReadV2729&&!report.local&&report.stamp===stamp(file)&&completeSignature(report.signature)?report.signature:null;}
- return {noteSave,decision,awaitDecision,acknowledge,retire,signature,confirmedSignature,inspect};
+ function confirmedSignature(file,clientId='',freshFolder=false){sync();const report=data.reports[file.id];if(!report?.verifiedReadV2729||report.local||report.stamp!==stamp(file)||!completeSignature(report.signature))return null;
+  // V27.29 keyed verified records by globally unique Drive file ID. A fresh
+  // authorised complete folder snapshot proves the client's membership when
+  // importing that old record; a contradictory client can never be promoted.
+  if(clientId&&!report.clientId&&freshFolder){report.clientId=String(clientId);readDirty=true;}
+  return !clientId||report.clientId===String(clientId)?report.signature:null;
+ }
+ // Called only after the fast-list path has verified the exact source bytes.
+ // Persist those fields so a later scan or a fresh app session cannot download
+ // every report again merely to recover values already read for this list.
+ function rememberRead(file,signature,clientId='',persistNow=true){sync();if(!owner||!file?.id||!String(file.modifiedTime||file.dateModification||file.revision||'')||!completeSignature(signature)||data.reports[file.id]?.local)return false;data.reports[file.id]={signature,stamp:stamp(file),clientId:String(clientId||''),verifiedReadV2729:true};readDirty=true;if(persistNow)flushReads();return true;}
+ function flushReads(){sync();if(readDirty){persist();readDirty=false;}}
+ return {noteSave,decision,awaitDecision,acknowledge,retire,signature,confirmedSignature,rememberRead,flushReads,inspect};
 }

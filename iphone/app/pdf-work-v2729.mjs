@@ -56,9 +56,9 @@ export function createPdfWorkV2729({workerFactory=()=>new Worker(new URL('./pdf-
    current(job);
    // Capture before hashing, and send that exact snapshot. The caller may
    // reuse or change its buffer while the asynchronous digest is pending.
-   const source=job.payload.bytes,bytes=(ArrayBuffer.isView(source)?new Uint8Array(source.buffer,source.byteOffset,source.byteLength):new Uint8Array(source)).slice(),key='open|'+await hashBytes(bytes);current(job);job.openKey=key;job.payload={...job.payload,bytes};
-   const cached=cachedOpen(key);if(cached){job.cached=true;finish(job,cached);return;}
-   const prior=openInflight.get(key);if(prior&&jobs.get(prior.leader.id)===prior.leader){job.mode='shared';job.group=prior;prior.followers.add(job);
+   const source=job.payload.bytes,bytes=(ArrayBuffer.isView(source)?new Uint8Array(source.buffer,source.byteOffset,source.byteLength):new Uint8Array(source)).slice(),baseKey='open|'+await hashBytes(bytes),foreground=job.payload.summary===false,key=baseKey+(foreground?'|foreground':'');current(job);job.openKey=key;job.payload={...job.payload,bytes};
+   const cached=cachedOpen(key)||(foreground?cachedOpen(baseKey):null);if(cached){job.cached=true;finish(job,cached);return;}
+   const prior=openInflight.get(key)||(foreground?openInflight.get(baseKey):null);if(prior&&jobs.get(prior.leader.id)===prior.leader){job.mode='shared';job.group=prior;prior.followers.add(job);
     if(priority(job)<priority(prior.leader)){const leader=prior.leader;leader.payload={...leader.payload,prime:false};if(!leader.started){clearTimeout(leader.timer);leader.timer=deadline(leader);if(leader.mode==='worker')try{worker.postMessage({id:leader.id,type:'promote',priority:0});}catch{failed(worker);}}}
     return;
    }

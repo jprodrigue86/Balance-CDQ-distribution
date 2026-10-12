@@ -1,0 +1,24 @@
+{
+  "version": "27.30",
+  "asset": "camion-restored.png",
+  "sha256": "96703f85c275e7e77ef84f82b50da4b8a99897f7eb9d476e335abe731717575d",
+  "width": 2170,
+  "height": 725,
+  "method": "Built-in imagegen photo restoration with original panorama and original photographed door as references",
+  "sourceReferences": [
+    "assets/report-art-v2695/camion.png",
+    "qa/truck-original-v2727/original-door.png"
+  ],
+  "invariants": [
+    "Approved panorama crop and perspective",
+    "Four visible wheels in original positions",
+    "Six scale sections with 1\u20136 labels",
+    "25000 display",
+    "White cab, stainless box, red HIAB",
+    "Door handle fully unobstructed"
+  ],
+  "note": "Restorative quality change at native source dimensions; no 4K original was available.",
+  "runtimeAsset": "truck-photo.pdf",
+  "runtimeSha256": "74b16cca4b4262cf5dd5356204da6d78a06d9acb7ce7344da4a0d7d100dbe2c9",
+  "preparedLosslessPredictors": true
+}

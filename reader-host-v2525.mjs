@@ -4,6 +4,7 @@ let active=null;
 export const currentReader=()=>active;
 let openQueue=Promise.resolve();
 let parkedReaderV2730=null,pendingReaderV2730=null,poolEpochV2730=0;
+let secondEngineTimerV2731=null;
 let preparedReaderV2730=window.cdqPreparedReaderV2729||null;
 function retireReaderSlotV2730(prepared){prepared?.cancel?.();prepared?.frame?.remove();}
 // The legacy menu prewarm writes this public slot directly. Adopt that write
@@ -20,6 +21,7 @@ Object.defineProperty(window,'cdqPreparedReaderV2729',{configurable:true,get:()=
   if(active||pendingReaderV2730){retireReaderSlotV2730(parkedReaderV2730);parkedReaderV2730=null;}
 }});
 function retirePreparedReaderV2730(){
+  clearTimeout(secondEngineTimerV2731);secondEngineTimerV2731=null;
   poolEpochV2730++;
   const retained=new Set([preparedReaderV2730,parkedReaderV2730,pendingReaderV2730]);
   preparedReaderV2730=parkedReaderV2730=pendingReaderV2730=null;
@@ -42,6 +44,26 @@ function prepareClosedReaderV2730(frame,route){
   const done=ready=>{if(finished)return;finished=true;clearTimeout(timer);window.removeEventListener('message',receive);prepared.ready=ready;settle(ready);if(!ready){if(preparedReaderV2730===prepared)preparedReaderV2730=null;if(parkedReaderV2730===prepared)parkedReaderV2730=null;frame.remove();}};
   const receive=event=>{if(event.source!==frame.contentWindow||event.origin!==location.origin)return;if(event.data?.type==='CDQ_READER_READY')done(true);if(event.data?.type==='CDQ_READER_RESET_FAILED_V2730')done(false);};
   prepared.cancel=()=>done(false);timer=setTimeout(()=>done(false),8000);window.addEventListener('message',receive);preparedReaderV2730=prepared;
+}
+function prepareSecondEngineV2731(owner,ownerFrame,valid){
+  if(secondEngineTimerV2731!==null||preparedReaderV2730||parkedReaderV2730||pendingReaderV2730)return;
+  // Compile only the empty worker/sandbox after the current report is editable.
+  // No PDF bytes, fields or canvas are requested until a later explicit open.
+  secondEngineTimerV2731=setTimeout(()=>{
+    secondEngineTimerV2731=null;
+    if(!valid()||!ownerFrame.isConnected||pendingReaderV2730||(active&&active!==owner))return;
+    const frames=new Set([ownerFrame,preparedReaderV2730?.frame,parkedReaderV2730?.frame].filter(frame=>frame?.isConnected));
+    if(frames.size>=2)return;
+    const frame=document.createElement('iframe');frame.id='cdq-reader-prewarm-v2554';frame.title='Lecteur PDF CDQ';
+    frame.hidden=true;frame.setAttribute('aria-hidden','true');frame.referrerPolicy='origin';
+    frame.style.cssText='position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0';
+    frame.src=new URL('./reader-v2525.html',import.meta.url).href;
+    let settle,timer,finished=false;const prepared={frame,ready:false,readyPromise:new Promise(resolve=>{settle=resolve;})};
+    const done=ready=>{if(finished)return;finished=true;clearTimeout(timer);window.removeEventListener('message',receive);prepared.ready=ready;settle(ready);if(!ready){if(preparedReaderV2730===prepared)preparedReaderV2730=null;if(parkedReaderV2730===prepared)parkedReaderV2730=null;frame.remove();}};
+    const receive=event=>{if(event.source!==frame.contentWindow||event.origin!==location.origin)return;if(!valid())return done(false);if(event.data?.type==='CDQ_READER_READY')done(true);if(event.data?.type==='CDQ_READER_INIT_FAILED_V2731')done(false);};
+    prepared.cancel=()=>done(false);timer=setTimeout(()=>done(false),8000);window.addEventListener('message',receive);
+    window.cdqPreparedReaderV2729=prepared;document.body.append(frame);
+  },320);
 }
 export function openReader(data){
   // Bind provenance, access mode and the flat identity sidecar to the same
@@ -130,7 +152,7 @@ async function openReaderInternal(data,context){
   const tell=message=>{if(!closed)frame.contentWindow?.postMessage(message,origin)};
   function requestClose(){if(opened)tell({type:'CDQ_READER_REQUEST_CLOSE'});else pendingClose=true;}
   function pop(){if(closed)return;history.pushState({cdqReader:marker},'',location.href);tell({type:'CDQ_READER_REQUEST_CLOSE'});}
-  function close(reusable=false){
+  function close(reusable=false,failure=null){
     if(closed)return;closed=true;if(active===handle)active=null;clearTimeout(timer);
     window.removeEventListener('message',receive);window.removeEventListener('popstate',pop);window.removeEventListener('resize',resize);window.removeEventListener('cdq:keyboard-insets-v2653',resize);window.visualViewport?.removeEventListener('resize',resize);if(reusable&&opened&&valid())prepareClosedReaderV2730(frame,route);else frame.remove();
     try{const root=data.workspaceSource?.document.documentElement;if(root?.dataset.cdqReaderSessionV2679===marker)delete root.dataset.cdqReaderSessionV2679;root?.classList.remove('cdq-workspace-reader-open');data.workspaceSource?.cdqWorkspaceV2638?.readerClosed();data.workspaceSource?.cdqWorkspaceV2638?.measure();}catch{}
@@ -138,7 +160,12 @@ async function openReaderInternal(data,context){
     if(guard&&history.state?.cdqReader===marker)history.replaceState(null,'',location.href);
     data.onClose?.();
     try{data.workspaceSource?.dispatchEvent?.(new CustomEvent('cdq:reader-closed-v2703'));}catch{}
-    for(const waiter of closeWaiters){clearTimeout(waiter.timer);waiter.resolve();}closeWaiters=[];
+    for(const waiter of closeWaiters){clearTimeout(waiter.timer);if(failure)waiter.reject(failure);else waiter.resolve();}closeWaiters=[];
+  }
+  function openingFailed(error){
+    // A failed parse/sandbox must release the new-report request immediately,
+    // rather than keeping the workspace busy until the 30-second watchdog.
+    try{data.onError?.(error);}finally{close(false,error);}
   }
   async function receive(event){
     if(!closed&&data.workspaceSource&&event.source===data.workspaceSource&&event.origin===location.origin&&event.data?.type==='CDQ_WORKSPACE_LAYOUT_V2638'){layout(event.data);return;}
@@ -147,15 +174,18 @@ async function openReaderInternal(data,context){
     }
     if(closed||event.source!==frame.contentWindow||event.origin!==origin)return;
     const m=event.data||{};
+    if(!opened&&((m.type==='CDQ_READER_OPEN_FAILED_V2731'&&m.readerRequestId===marker)||(m.type==='CDQ_READER_INIT_FAILED_V2731'&&!ready))){
+      openingFailed(new Error(String(m.error||'Le lecteur n’a pas pu ouvrir ce PDF. Réessayez son ouverture.').slice(0,500)));return;
+    }
     if(m.type==='CDQ_READER_READY'){
       if(ready)return;
       ready=true;
       if(!guard&&!window.BalanceCDQNative&&!/BalanceCDQAndroid\//i.test(navigator.userAgent)){history.pushState({cdqReader:marker},'',location.href);guard=true;window.addEventListener('popstate',pop);}
-      const result=pdfPreparation?await pdfPreparation:null;if(closed)return;if(result?.error){close();data.onError?.(result.error);return;}
-      if(!valid()){close();data.onError?.(Error('Le compte ou l’accès Drive a changé.'));return;}
-      tell({type:'CDQ_READER_OPEN',blob:sourceBlob,preparedBlob:result?.blob,readerPreparedVersion:result?.preparedVersion===2730?2730:undefined,readerNormalizedV2730:result?.normalized===true,preparedEpoch:workEpoch,initialValues:data.initialValues,name:data.name,theme:data.theme,fileId:data.onSave?String(data.fileId||'local-copy'):'',readOnly:!!data.readOnly,autoReportName:data.autoReportName===true,desktop:!!data.workspaceSource?.document.documentElement.classList.contains('cdq-desktop-v2676')});
+      const result=pdfPreparation?await pdfPreparation:null;if(closed)return;if(result?.error){openingFailed(result.error);return;}
+      if(!valid()){openingFailed(Error('Le compte ou l’accès Drive a changé.'));return;}
+      tell({type:'CDQ_READER_OPEN',readerRequestId:marker,blob:sourceBlob,preparedBlob:result?.blob,readerPreparedVersion:result?.preparedVersion===2730?2730:undefined,readerNormalizedV2730:result?.normalized===true,preparedEpoch:workEpoch,initialValues:data.initialValues,name:data.name,theme:data.theme,fileId:data.onSave?String(data.fileId||'local-copy'):'',readOnly:!!data.readOnly,autoReportName:data.autoReportName===true,desktop:!!data.workspaceSource?.document.documentElement.classList.contains('cdq-desktop-v2676')});
     }
-    if(m.type==='CDQ_READER_OPENED'){opened=true;clearTimeout(timer);data.onOpened?.();if(prefillValues)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});if(pendingClose)requestClose();}
+    if(m.type==='CDQ_READER_OPENED'&&m.readerRequestId===marker){opened=true;clearTimeout(timer);data.onOpened?.();if(prefillValues)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});if(pendingClose)requestClose();prepareSecondEngineV2731(handle,frame,valid);}
     if(m.type==='CDQ_READER_CLOSE')close(m.reusable===true);
     if(m.type==='CDQ_READER_CLOSE_CANCELLED_V2640'){data.workspaceSource?.cdqWorkspaceV2638?.readerCancelled();for(const waiter of closeWaiters){clearTimeout(waiter.timer);waiter.reject(Error('Le rapport courant reste ouvert. Enregistrez-le ou fermez-le avant d’ouvrir le suivant.'));}closeWaiters=[];}
     if(m.type==='CDQ_READER_DISCARD'&&/^discard-[\w-]{8,80}$/.test(String(m.requestId||''))){
@@ -169,7 +199,7 @@ async function openReaderInternal(data,context){
       catch(e){saves.delete(m.requestId);tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:false,error:e.message||String(e)});}
     }
   }
-  const timer=setTimeout(()=>{if(!opened){close();data.onError?.(new Error('Le lecteur n’a pas ouvert le PDF. La copie reste conservée; réessayez son ouverture.'));}},30000);
+  const timer=setTimeout(()=>{if(!opened)openingFailed(new Error('Le lecteur n’a pas ouvert le PDF. La copie reste conservée; réessayez son ouverture.'));},30000);
   const resize=()=>layout();
   window.addEventListener('resize',resize);window.addEventListener('cdq:keyboard-insets-v2653',resize);window.visualViewport?.addEventListener('resize',resize);
   handle={fileId:String(data.fileId||''),requestClose:()=>closed?Promise.resolve():new Promise((resolve,reject)=>{const waiter={resolve,reject,timer:null};waiter.timer=setTimeout(()=>{closeWaiters=closeWaiters.filter(w=>w!==waiter);reject(Error('Fermez le rapport courant avant d’ouvrir le suivant.'));},30000);closeWaiters.push(waiter);requestClose();}),prefill:values=>{prefillValues={...prefillValues,...values};if(opened)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});}};active=handle;pendingReaderV2730=null;window.addEventListener('message',receive);if(!reused)document.body.append(frame);layout();if(reused)queueMicrotask(()=>receive({source:frame.contentWindow,origin,data:{type:'CDQ_READER_READY'}}));return handle;

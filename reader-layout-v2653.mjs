@@ -33,15 +33,16 @@ function measureFieldGlyphs(field){
 function applyFieldGlyphs(plan){
   if(!plan)return;
   const {field,label,fontSize,lineHeight,shift}=plan;
-  if(fontSize!==null)field.style.setProperty('font-size',fontSize+'px','important');
-  field.style.setProperty('text-align','center','important');
+  const set=(name,value)=>{if(field.style.getPropertyValue?.(name)!==value||field.style.getPropertyPriority?.(name)!=='important')field.style.setProperty(name,value,'important');};
+  if(fontSize!==null)set('font-size',fontSize+'px');
+  set('text-align','center');
   if(field.tagName==='BUTTON'){
-    if(label){label.style.lineHeight=lineHeight+'px';label.style.transform='translateY('+shift+'px)';}
+    if(label){const height=lineHeight+'px',position='translateY('+shift+'px)';if(label.style.lineHeight!==height)label.style.lineHeight=height;if(label.style.transform!==position)label.style.transform=position;}
   }else{
-    field.style.setProperty('box-sizing','border-box','important');
-    field.style.setProperty('line-height',lineHeight+'px','important');
-    field.style.setProperty('padding-top',Math.max(0,2*shift)+'px','important');
-    field.style.setProperty('padding-bottom',Math.max(0,-2*shift)+'px','important');
+    set('box-sizing','border-box');
+    set('line-height',lineHeight+'px');
+    set('padding-top',Math.max(0,2*shift)+'px');
+    set('padding-bottom',Math.max(0,-2*shift)+'px');
   }
 }
 export function centerFieldGlyphs(field){applyFieldGlyphs(measureFieldGlyphs(field));}

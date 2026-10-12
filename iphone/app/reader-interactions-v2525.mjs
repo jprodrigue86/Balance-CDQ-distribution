@@ -255,8 +255,8 @@ export function installFormNavigation({surface, toolbar, previous, next, done, o
     return false;
   }
   const fields = () => orderFields(Array.from(surface.querySelectorAll(selector)).filter(isNavigableField));
-  function update() {
-    const list = fields(), index = list.indexOf(active);
+  function update(navigable) {
+    const list = active ? navigable || fields() : [], index = list.indexOf(active);
     toolbar.hidden = index < 0;
     owner.body.classList.toggle('form-navigation', index >= 0);
     previous.disabled = index <= 0;
@@ -296,7 +296,7 @@ export function installFormNavigation({surface, toolbar, previous, next, done, o
       if (field.tagName !== 'TEXTAREA'&&navSet.has(field)) field.enterKeyHint = 'next';
     }
     if(active&&!navSet.has(active))active=null;
-    update();
+    update(navigable);
   }
   surface.addEventListener('pointerdown',e=>{
     if(isChoice(e.target)&&e.target!==autoChoice)autoChoice=null;

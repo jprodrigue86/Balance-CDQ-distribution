@@ -1,4 +1,5 @@
-import {nameFromReport} from './report-name-v2648.mjs';
+import {nameFromReport,nextNumberedReportNameV2731} from './report-name-v2648.mjs';
+import {pdfWorkV2729} from './pdf-work-v2729.mjs';
 import {openSheet} from './sheet-launcher-v2526.mjs';
 import {REPORT_NAMES,bundledTemplate,bundledCreationTemplate} from './report-templates-v2636.mjs';
 import {fillInFrame} from './pdf-fill-client-v2523.mjs';
@@ -9,6 +10,14 @@ const DB_NAME = 'cdq-offline-templates-v1';
 export const MODELS = REPORT_NAMES;
 const known = key => Object.prototype.hasOwnProperty.call(MODELS,key);
 const identifier = value => typeof value==='string' && /^[\w-]{1,150}$/.test(value);
+// A new report keeps its identity beside the durable blank PDF until the reader
+// or the background filler saves complete PDF bytes. Do not parse and serialize
+// the whole report on the user's opening path just to insert company details.
+export function identityDraftV2730(values) {
+  const entries=Object.entries(values||{});
+  if(!entries.length||entries.some(([name,value])=>!/^client_(nom|telephone|technicien|adresse|ville|province|code_postal)$/.test(name)||typeof value!=='string'||value.length>1000))return null;
+  return Object.fromEntries(entries.filter(([,value])=>value.trim()!==''));
+}
 export function validDestination(d) {
   return !!d && identifier(d.clientId) && identifier(d.folderId) && typeof d.name==='string' && d.name.length>0;
 }
@@ -18,12 +27,12 @@ export function validPdf(blob) {
 export function validTemplate(t) {
   return !!t && known(t.modeleId) && validPdf(t.blob) && identifier(t.templateId);
 }
-export function makeCopy(template,destination,email,requestId) {
+export function makeCopy(template,destination,email,requestId,existingNames=[]) {
   if(!validTemplate(template)||!validDestination(destination)||!email||!/^[\w-]{8,100}$/.test(requestId||''))
     throw new Error('Préparez le modèle et choisissez le dossier du client.');
-  const name=MODELS[template.modeleId]+' — '+new Date().toISOString().replace(/[:.]/g,'-')+'.pdf';
+  const name=nextNumberedReportNameV2731(MODELS[template.modeleId],existingNames);
   return {id:requestId,email,modeleId:template.modeleId,blob:template.blob,templateId:template.templateId,
-    bundled:!!template.bundled,templateBlob:template.bundled?(template.creationBlob||(template.creation?null:template.blob)):null,creationAsset:template.creation||null,sourceId:template.sourceId||'',modifieLe:template.modifieLe,destination:{...destination},name,creationName:name,
+    bundled:!!template.bundled,readerPreparedVersion:template.readerPreparedVersion===2730?2730:undefined,templateBlob:template.bundled?(template.creationBlob||(template.creation?null:template.blob)):null,creationAsset:template.creation||null,sourceId:template.sourceId||'',modifieLe:template.modifieLe,destination:{...destination},name,creationName:name,
     autoReportName:true,createdAt:Date.now(),status:'pending',editVersion:0,uploadId:(template.creationBlob||template.creation)?requestId+'_appearance':'',syncedUploadId:'',driveId:''};
 }
 export function syncRequest(copy) {
@@ -33,6 +42,7 @@ export function syncRequest(copy) {
 export function nextSync(copy,protocol=0) {
   if(copy.removed&&copy.retirementReason==='user'&&copy.cancelledDriveId&&!copy.cancelledDeleteConfirmed)return {type:'CDQ_OFFLINE_CANCELLED_DELETE_V2714',requestId:copy.id,driveId:copy.cancelledDriveId,clientId:copy.destination.clientId};
   if(copy.removed)return null;
+  if(copy.initialValues&&Object.keys(copy.initialValues).length)return null;
   if(copy.kind==='sheet')return null;
   if(copy.kind==='prepared')return !copy.removed&&copy.uploadId&&copy.uploadId!==copy.syncedUploadId&&protocol>=38
     ?{type:'CDQ_OFFLINE_SAVE',requestId:copy.id,driveId:copy.driveId,revision:copy.revision,uploadId:copy.uploadId,blob:copy.blob,...(copy.autoReportName?{reportName:copy.name,clientId:copy.destination.clientId}:{})}:null;
@@ -51,6 +61,9 @@ export function applyResult(copy,data) {
     if(!data.ok){c.error=data.message||'La copie reste sur cet appareil.';return c;}
     if(!identifier(data.id))return copy;
     c.driveId=data.id;c.revision=data.revision||'';c.error='';c.templateBlob=null;c.creationAsset=null;
+    if(typeof data.name==='string'&&data.name.length<=200&&/\.pdf$/i.test(data.name)){
+      c.creationName=data.name;if(copy.name===(copy.creationName||copy.name))c.name=data.name;
+    }
     c.status=c.uploadId && c.uploadId!==c.syncedUploadId?'pending':'synced';
   } else if(data.type==='CDQ_OFFLINE_SAVE_RESULT') {
     if(!data.ok){c.error=data.message||'Le PDF rempli reste sur cet appareil.';return c;}
@@ -89,9 +102,22 @@ function download(blob,name) {
   setTimeout(()=>URL.revokeObjectURL(url),30000);
 }
 export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFile=openSheet,storage=nativeStorage}) {
-  let session=null,localEmail='',profile=null,chain=Promise.resolve(),epoch=0,documentReaderWarmed=false;
+  let session=null,appliedSession=null,appliedOnline=null,localEmail='',profile=null,chain=Promise.resolve(),epoch=0,documentReaderWarmed=false;
+  let readAccessVersion=0,readAccountVersion=0,pendingAccessTransitions=0;
+  const retirementJobs=new Map(),readRetirementVersions=new Map();
   const inflight=new Map(),requested=new Set(),copyJobs=new Map();
-  const readers=new Map(),creationDownloads=new Map();
+  const readers=new Map(),creationDownloads=new Map(),identityDownloads=new Map();
+  const destinationNames=new Map(),destinationJobs=new Map();
+  const nameKey=(email,folderId)=>email+':'+folderId;
+  function rememberNames(c){
+    if(!c||c.removed||!c.email||!c.destination?.folderId)return;
+    const key=nameKey(c.email,c.destination.folderId),names=destinationNames.get(key)||new Set();
+    if(c.name)names.add(c.name);if(c.creationName)names.add(c.creationName);destinationNames.set(key,names);
+  }
+  function reserveDestination(email,folderId,fn){
+    const key=nameKey(email,folderId),previous=destinationJobs.get(key)||Promise.resolve(),job=previous.catch(()=>{}).then(fn);
+    destinationJobs.set(key,job);job.finally(()=>{if(destinationJobs.get(key)===job)destinationJobs.delete(key);}).catch(()=>{});return job;
+  }
   const sessionStorage=sessionCopyStorageV2664(storage,id=>readers.has(id));
   const {get,put,all}=sessionStorage;
   // Le moteur hors ligne reste actif, mais aucun bouton séparé n'est montré.
@@ -105,9 +131,10 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   const status=document.createElement('p');status.setAttribute('role','status');panel.append(status);
   const content=document.createElement('div');panel.append(content);document.body.append(launch,panel);
   const serial=fn=>{const p=chain.then(fn);chain=p.catch(()=>{});return p;};
-  const serialCopy=(id,fn)=>{const key=String(id),previous=copyJobs.get(key)||Promise.resolve();const p=chain.then(()=>previous.catch(()=>{})).then(fn);copyJobs.set(key,p);p.finally(()=>{if(copyJobs.get(key)===p)copyJobs.delete(key);}).catch(()=>{});return p;};
+  const serialCopy=(id,fn,foreground=false)=>{const key=String(id),previous=copyJobs.get(key)||Promise.resolve();const p=(foreground?Promise.resolve():chain).then(()=>previous.catch(()=>{})).then(fn);copyJobs.set(key,p);p.finally(()=>{if(copyJobs.get(key)===p)copyJobs.delete(key);}).catch(()=>{});return p;};
+  const validReadStamp=readStamp=>!readStamp||(readStamp.access===readAccessVersion&&readStamp.retirement===(readRetirementVersions.get(readStamp.key)||0));
   const allowed=email=>localEmail===email||session?.email===email;
-  function notifyLocalReportV2713(c){if(session?.email===c?.email&&c?.kind!=='prepared'&&c?.kind!=='sheet'&&c?.readerRequestId&&!c.removed)send({type:'CDQ_LOCAL_REPORT_UPDATED_V2713',email:c.email,localId:c.id,driveId:c.driveId||'',blob:c.blob,name:c.name,clientId:c.destination.clientId,folderId:c.destination.folderId,uploadId:c.uploadId,editVersion:c.editVersion||0,pending:!c.driveId||c.uploadId!==c.syncedUploadId});}
+  function notifyLocalReportV2713(c){if(session?.email===c?.email&&c?.kind!=='prepared'&&c?.kind!=='sheet'&&c?.readerRequestId&&!c.removed)send({type:'CDQ_LOCAL_REPORT_UPDATED_V2713',email:c.email,localId:c.id,driveId:c.driveId||'',blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,equipmentSignature:c.equipmentSignature,name:c.name,clientId:c.destination.clientId,folderId:c.destination.folderId,uploadId:c.uploadId,editVersion:c.editVersion||0,pending:!c.driveId||c.uploadId!==c.syncedUploadId});}
   async function notifySnapshotV2714(){const current=session,stamp=epoch;if(!current)return;const copies=await all('copies');if(stamp!==epoch||session!==current)return;send({type:'CDQ_LOCAL_REPORT_SNAPSHOT_V2714',email:current.email,localIds:copies.filter(c=>c.email===current.email&&localReportVisibleV2714(c)).map(c=>c.id)});}
   async function retireCopyV2714(c,reason){
     const current=session,stamp=epoch;if(!current?.canWrite||c.email!==current.email)throw Error('Retrait non autorisé.');
@@ -116,7 +143,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
     const job=inflight.get(c.id);if(job){clearTimeout(job.timer);inflight.delete(c.id);}
     send({type:'CDQ_LOCAL_REPORT_RETIRED_V2714',email:current.email,localId:c.id,clientId:c.destination?.clientId,driveId:c.filledDriveId||c.driveId||''});
   }
-  function notifyDocument(c){notifyLocalReportV2713(c);if(session?.email===c?.email&&c?.driveId&&!c.removed)send({type:'CDQ_OFFLINE_DOCUMENT_UPDATED',email:c.email,fileId:c.driveId,blob:c.blob,revision:c.revision,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId});}
+  function notifyDocument(c){notifyLocalReportV2713(c);if(session?.email===c?.email&&c?.driveId&&!c.removed)send({type:'CDQ_OFFLINE_DOCUMENT_UPDATED',email:c.email,fileId:c.driveId,blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,equipmentSignature:c.equipmentSignature,revision:c.revision,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId});}
   function button(parent,label,fn) {
     const b=document.createElement('button');b.type='button';b.textContent=label;
     b.style.cssText='padding:12px 16px;margin:6px 8px 6px 0;border:1px solid #7896a5;border-radius:9px;background:#193545;color:white;font:inherit';
@@ -135,7 +162,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   async function refresh() {
     const stamp=epoch,p=await get('state','profile');if(stamp!==epoch)return;
     profile=p;
-    const copiesHere=p?(await all('copies')).some(c=>c.email===p.email&&!c.removed):false;
+    const copiesHere=!session&&navigator.onLine===false&&p?(await all('copies')).some(c=>c.email===p.email&&!c.removed):false;
     if(stamp!==epoch)return;
     launch.hidden=true;
     if(!session&&copiesHere&&navigator.onLine===false)panel.hidden=false;
@@ -183,7 +210,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         if(company!==c.destination.name){company=c.destination.name;const h=document.createElement('h3');h.textContent=company;content.append(h);}
         const row=document.createElement('div');content.append(row);text(row,'● '+c.name+(c.uploadId!==c.syncedUploadId?' — modifications en attente':''));
         if(c.error)text(row,c.error);
-        button(row,'Ouvrir',()=>{if(stamp!==epoch||!allowed(email))throw Error('Déverrouillez CDQ.');return openPdf({blob:c.blob,name:c.name,fileId:c.driveId,readOnly:!p.canWrite,onSave:p.canWrite?(blob,id)=>saveCopy(c.id,email,blob,id):null});});
+        button(row,'Ouvrir',()=>{if(stamp!==epoch||!allowed(email))throw Error('Déverrouillez CDQ.');return openPdf({blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,name:c.name,fileId:c.driveId,readOnly:!p.canWrite,onSave:p.canWrite?(blob,id,name,provenance)=>saveCopy(c.id,email,blob,id,provenance):null});});
         button(row,'Retirer du mode hors ligne',()=>serial(async()=>{
           if(stamp!==epoch||!allowed(email))throw Error('Déverrouillez CDQ.');
           const latest=await get('copies',c.id);if(latest.uploadId!==latest.syncedUploadId||inflight.has(c.id))throw Error('Synchronisez les modifications avant de retirer ce PDF.');
@@ -207,12 +234,13 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         if(session&&navigator.onLine!==false)button(row,'Préparer maintenant',()=>{requested.delete(session.email+':'+key);requestModel(key);status.textContent='Préparation de '+name+' demandée…';});
         continue;
       }
-      button(row,'Consulter le modèle',()=>openPdf({blob:t.blob,name:name+'.pdf',modeleId:key,readOnly:true}));
+      button(row,'Consulter le modèle',()=>openPdf({blob:t.blob,readerPreparedVersion:t.readerPreparedVersion,name:name+'.pdf',modeleId:key,readOnly:true}));
       if(p.canWrite&&select)button(row,'Créer une copie',()=>serial(async()=>{
         if(stamp!==epoch||!allowed(email))throw new Error('Déverrouillez CDQ de nouveau.');
         const d=destinations.find(d=>d.folderId===select.value);if(!d)throw new Error('Choisissez d’abord le dossier du client.');
         if(!window.confirm('Copier « '+name+' » dans « '+d.name+' » ?'))return;
-        await put('copies',makeCopy(t,d,email,'local_'+crypto.randomUUID()));await refresh();await sync();
+        const copy=makeCopy(t,d,email,'local_'+crypto.randomUUID(),copies.filter(c=>c.destination?.folderId===d.folderId).flatMap(c=>[c.name,c.creationName].filter(Boolean)));
+        await put('copies',copy);rememberNames(copy);await refresh();await sync();
       }));
     }
     text(content,'Les originaux restent inchangés. Une copie créée ici est conservée sur cet appareil, puis ajoutée au dossier client après reconnexion et déverrouillage.');
@@ -223,78 +251,118 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       const row=document.createElement('div');row.style.cssText='border-top:1px solid #385360;padding-top:10px;margin-top:18px';content.append(row);
       text(row,c.name);text(row,c.destination.name+' — '+(c.status==='synced'?'Ajouté au dossier client':c.uploadId?'PDF rempli conservé ici — envoi en attente':'Copie conservée ici — envoi en attente'));
       if(c.error)text(row,c.error);
-      button(row,'Ouvrir la copie',()=>openPdf({blob:c.blob,name:c.name,fileId:c.id,modeleId:c.modeleId,autoReportName:c.autoReportName===true,readOnly:!p.canWrite,
-        onSave:p.canWrite?(blob,requestId)=>saveCopy(c.id,email,blob,requestId):null}));
+      button(row,'Ouvrir la copie',()=>openPdf({blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,initialValues:c.initialValues||null,name:c.name,fileId:c.id,modeleId:c.modeleId,autoReportName:c.autoReportName===true,readOnly:!p.canWrite,
+        onSave:p.canWrite?(blob,requestId,name,provenance)=>saveCopy(c.id,email,blob,requestId,provenance):null}));
       button(row,'Télécharger la copie',()=>download(c.blob,c.name));
     }
   }
-  async function saveCopy(id,email,blob,readerRequestId) {
-    const stamp=epoch;
+  async function saveCopy(id,email,blob,readerRequestId,provenance={}) {
+    const stamp=epoch,accessVersion=readAccessVersion;
+    const canSave=()=>stamp===epoch&&accessVersion===readAccessVersion&&!pendingAccessTransitions&&allowed(email)&&profile?.canWrite&&(!session||session.email===email&&session.canWrite);
     await verifyPdf(blob);
     return serialCopy(id,async()=>{
-      if(stamp!==epoch||!allowed(email)||!profile?.canWrite)throw new Error('Déverrouillez CDQ pour enregistrer.');
+      if(!canSave())throw new Error('Déverrouillez CDQ pour enregistrer.');
       const c=await get('copies',id);if(!c||c.removed||c.email!==email)throw new Error('Copie locale retirée ou introuvable.');
       // Repeated reader requests are idempotent. Resolve only after IndexedDB commits.
       if(c.readerRequestId!==readerRequestId){
-        const reportName=await nameFromReport(blob,c.name);
-        if(stamp!==epoch||!allowed(email)||!profile?.canWrite)throw Error('Le compte a changé.');
-        const updated={...c,autoReportName:c.autoReportName||reportName!==c.name,blob,name:reportName,readerRequestId,editVersion:(c.editVersion||0)+1,uploadId:'pdf_'+crypto.randomUUID(),status:'pending',error:''};
-        await put('copies',updated);if(stamp===epoch)notifyDocument(updated);
+        const worker=pdfWorkV2729(),inspection=worker?await worker.inspect(blob):null;
+        const reportName=inspection?.name||await nameFromReport(blob,c.name);
+        if(!canSave())throw Error('Le compte a changé.');
+        const updated={...c,equipmentSignature:inspection?.equipment,readerPreparedVersion:provenance.readerPreparedVersion===2730?2730:undefined,initialValues:null,autoReportName:c.autoReportName||reportName!==c.name,blob,name:reportName,readerRequestId,editVersion:(c.editVersion||0)+1,uploadId:'pdf_'+crypto.randomUUID(),status:'pending',error:''};
+        await put('copies',updated);if(canSave()){rememberNames(updated);notifyDocument(updated);}
       }
       refresh().catch(()=>{});sync().catch(()=>{});return {queued:true};
-    });
+    },true);
   }
-  async function sync() {
-    const current=session,stamp=epoch;if(navigator.onLine===false||!current?.canWrite)return;
-    const copies=await all('copies');if(stamp!==epoch||session!==current)return;
+  async function sync(initializingSession=false) {
+    const current=session,stamp=epoch,accessVersion=readAccessVersion;
+    const currentSync=()=>stamp===epoch&&session===current&&accessVersion===readAccessVersion&&(!pendingAccessTransitions||initializingSession&&pendingAccessTransitions===1)&&current?.canWrite;
+    if(navigator.onLine===false||!currentSync())return;
+    // A complete draft is already durable. Scanning and detaching every other
+    // pending PDF must not compete with this reader's first canvas and fields.
+    if([...readers.values()].some(reader=>reader.opening&&reader.epoch===stamp&&reader.email===current.email))return;
+    const copies=await all('copies');if(!currentSync())return;
     for(let c of copies){
       if((c.removed&&!c.cancelledDriveId)||c.email!==current.email||inflight.has(c.id)||readers.get(c.id)?.opening)continue;
+      if(c.initialValues&&Object.keys(c.initialValues).length){
+        // Materialize only after the visible reader has opened. An interrupted
+        // draft restarts this work from its persisted identity on the next run.
+        if(!identityDownloads.has(c.id)){
+          const id=c.id,identity=JSON.stringify(c.initialValues),version=c.editVersion||0;
+          const job=(async()=>{
+            // Only CREATE sidecars reach this guarded canonical-template path.
+            // Match original CREATE prefill (including static province Qc).
+            const blob=await fillInFrame(c.initialValues,{blob:c.blob,strict:false});
+            if(!currentSync())return false;
+            return serialCopy(id,async()=>{
+              const latest=await get('copies',id);
+              if(!currentSync()||!latest||latest.removed||latest.email!==current.email||latest.readerRequestId||(latest.editVersion||0)!==version||JSON.stringify(latest.initialValues)!==identity)return false;
+              const updated={...latest,blob,initialValues:null,uploadId:'pdf_'+crypto.randomUUID(),editVersion:version+1,status:'pending',error:''};
+              await put('copies',updated);if(currentSync())notifyDocument(updated);return true;
+            },true);
+          })();
+          identityDownloads.set(id,job);
+          job.then(()=>{if(identityDownloads.get(id)===job)identityDownloads.delete(id);if(stamp===epoch&&session===current)sync().catch(()=>{});},error=>{if(identityDownloads.get(id)===job)identityDownloads.delete(id);if(stamp===epoch&&session===current)status.textContent=error.message||String(error);});
+        }
+        continue;
+      }
       if(!c.removed&&!c.driveId&&c.bundled&&!validPdf(c.templateBlob)&&c.creationAsset){
         if(!creationDownloads.has(c.id)){
          const id=c.id,job=(async()=>{try{
           const blob=await bundledCreationTemplate(c.creationAsset);
-          if(stamp!==epoch||session?.email!==current.email)return;
+          if(!currentSync())return;
           const updated=await serialCopy(id,async()=>{
             const latest=await get('copies',id);
-            if(stamp!==epoch||session?.email!==current.email||!latest||latest.email!==current.email||latest.removed)return null;
+            if(!currentSync()||!latest||latest.email!==current.email||latest.removed)return null;
             if(latest.driveId||validPdf(latest.templateBlob))return latest;
             const updated={...latest,templateBlob:blob,error:''};await put('copies',updated);return updated;
-          });
-          return !!updated&&stamp===epoch&&session?.email===current.email;
+          },true);
+          return !!updated&&currentSync();
         }catch(error){
-          if(stamp!==epoch||session?.email!==current.email)return;
-          await serialCopy(id,async()=>{const latest=await get('copies',id);if(latest&&latest.email===current.email&&!latest.driveId)await put('copies',{...latest,error:error.message||String(error)});});
+          if(!currentSync())return;
+          await serialCopy(id,async()=>{const latest=await get('copies',id);if(currentSync()&&latest&&latest.email===current.email&&!latest.driveId)await put('copies',{...latest,error:error.message||String(error)});},true);
           refresh().catch(()=>{});return false;
          }})();creationDownloads.set(id,job);
          job.then(ok=>{if(creationDownloads.get(id)===job)creationDownloads.delete(id);if(ok)sync().catch(()=>{});}).catch(()=>{if(creationDownloads.get(id)===job)creationDownloads.delete(id);});
         }
         continue;
       }
-      if(c.uploadId&&c.uploadId!==c.syncedUploadId&&!/^[a-zA-Z0-9_-]{8,100}$/.test(c.uploadId)){c={...c,uploadId:'pdf_'+crypto.randomUUID()};await put('copies',c);if(stamp!==epoch||session!==current)return;}
+      if(c.uploadId&&c.uploadId!==c.syncedUploadId&&!/^[a-zA-Z0-9_-]{8,100}$/.test(c.uploadId)){c={...c,uploadId:'pdf_'+crypto.randomUUID()};await put('copies',c);if(!currentSync())return;}
       if(inflight.has(c.id)||readers.get(c.id)?.opening)continue;
-      c=await get('copies',c.id);if(stamp!==epoch||session!==current)return;
+      c=await get('copies',c.id);if(!currentSync())return;
       if(!c||(c.removed&&!c.cancelledDriveId)||inflight.has(c.id))continue;
       const tombstone=await get('state','deleted:'+current.email+':'+(c.filledDriveId||c.driveId||''));
-      if(stamp!==epoch||session!==current)return;
+      if(!currentSync())return;
       if(tombstone&&!c.removed&&Number(c.createdAt||0)<=Number(tombstone.deletedAt)){await retireCopyV2714(c,'deleted');continue;}
-      c=await get('copies',c.id);if(stamp!==epoch||session!==current)return;if(!c||(c.removed&&!c.cancelledDriveId)||inflight.has(c.id))continue;
+      c=await get('copies',c.id);if(!currentSync())return;if(!c||(c.removed&&!c.cancelledDriveId)||inflight.has(c.id))continue;
       const message=nextSync(c,current.protocol);if(!message)continue;
       const job={type:message.type,uploadId:message.uploadId||'',epoch:stamp};inflight.set(c.id,job);
       job.timer=setTimeout(()=>{if(inflight.get(c.id)===job){inflight.delete(c.id);status.textContent='Réponse non reçue. La copie reste conservée ici. Utilisez « Réessayer la synchronisation ».';}},90000);
       try{send(message);}catch(e){clearTimeout(job.timer);inflight.delete(c.id);throw e;}
     }
   }
-  async function handleNow(data,stamp) {
-    if(stamp!==epoch)return;
+  async function handleNow(data,stamp,readStamp=null) {
+    if(stamp!==epoch||!validReadStamp(readStamp))return;
     if(data.type==='CDQ_OFFLINE_SHOW_LOCAL'){panel.hidden=false;await refresh();return;}
     if(data.type==='CDQ_OFFLINE_SESSION'){
       if(typeof data.email!=='string'||!data.email||data.email.length>320)return;
+      const canWrite=!!data.canWrite,protocol=Number(data.protocol)||0,online=navigator.onLine;
+      const unchanged=session?.email===data.email&&session.canWrite===canWrite&&session.protocol===protocol;
+      // Creation explicitly repeats this announcement before every new report.
+      // Once established, it must not rescan and detach every stored PDF.
+      // Ordinary announcements still replay pending rows after Selector reload.
+      // Keep the object captured by an in-progress identity/save job unchanged.
+      // A real access/protocol/connectivity transition still runs the full path;
+      // a failed initialization is retried rather than treated as established.
+      if(data.reannounceOnlyV2730===true&&unchanged&&appliedSession===session&&appliedOnline===online)return;
       if(session?.email!==data.email)for(const job of inflight.values())clearTimeout(job.timer);
-      if(session?.email!==data.email){inflight.clear();sessionStorage.clear();}
-      session={email:data.email,canWrite:!!data.canWrite,protocol:Number(data.protocol)||0};localEmail=data.email;
+      if(session?.email!==data.email){inflight.clear();sessionStorage.clear();destinationNames.clear();}
+      if(!unchanged)session={email:data.email,canWrite,protocol};localEmail=data.email;
+      const announcedSession=session;
       await put('state',{id:'profile',...session});navigator.storage?.persist?.().catch(()=>{});
       if(session.protocol<38)requestModel('camion');
-      await refresh();await notifySnapshotV2714();for(const c of await all('copies'))if(stamp===epoch&&session?.email===data.email&&c.email===data.email){if(c.removed&&c.retiredAt)send({type:'CDQ_LOCAL_REPORT_RETIRED_V2714',email:data.email,localId:c.id,clientId:c.destination?.clientId});else notifyLocalReportV2713(c);}await sync();return;
+      await refresh();await notifySnapshotV2714();for(const c of await all('copies'))if(stamp===epoch&&session?.email===data.email&&c.email===data.email){rememberNames(c);if(c.removed&&c.retiredAt)send({type:'CDQ_LOCAL_REPORT_RETIRED_V2714',email:data.email,localId:c.id,clientId:c.destination?.clientId});else notifyLocalReportV2713(c);}await sync(true);
+      if(stamp===epoch&&session===announcedSession){appliedSession=session;appliedOnline=online;}return;
     }
     const current=session;if(!current||(data.email&&data.email!==current.email))return;
     if(data.type==='CDQ_OFFLINE_REPORT_RETIRE_TARGET_V2714'){
@@ -337,11 +405,11 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
     if(data.type==='CDQ_LOCAL_REPORT_OPEN_V2713'){
       try{const c=await get('copies',String(data.localId||''));if(stamp!==epoch||current!==session)return;
        if(!c||c.email!==current.email||c.removed||c.kind==='prepared'||c.kind==='sheet')throw Error('Copie locale indisponible.');
-       await openPdf({blob:c.blob,name:c.name,fileId:c.id,modeleId:c.modeleId,autoReportName:c.autoReportName===true,readOnly:!current.canWrite,onSave:current.canWrite?(blob,id)=>saveCopy(c.id,current.email,blob,id):null});
+       await openPdf({blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,initialValues:c.initialValues||null,name:c.name,fileId:c.id,modeleId:c.modeleId,autoReportName:c.autoReportName===true,readOnly:!current.canWrite,onSave:current.canWrite?(blob,id,name,provenance)=>saveCopy(c.id,current.email,blob,id,provenance):null});
       }catch(e){if(stamp===epoch&&current===session)send({type:'CDQ_LOCAL_REPORT_ERROR_V2713',email:current.email,message:e.message||String(e)});}return;
     }
     if(['CDQ_OFFLINE_SHEET_LIST','CDQ_OFFLINE_SHEET_STORE','CDQ_OFFLINE_SHEET_REMOVE'].includes(data.type)){
-      const reply=payload=>{if(stamp===epoch&&current===session)send({type:'CDQ_OFFLINE_DOCUMENT_RESULT',requestId:data.requestId,...payload});};
+      const reply=payload=>{if(stamp===epoch&&current===session&&validReadStamp(readStamp)){if(readStamp?.collection)readStamp.replied=true;send({type:'CDQ_OFFLINE_DOCUMENT_RESULT',requestId:data.requestId,...payload});}};
       try{
         if(data.type==='CDQ_OFFLINE_SHEET_LIST'){
           const sheets=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='sheet'&&!c.removed).map(c=>({fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,account:c.account||'',confirmed:c.confirmed===true}));
@@ -362,19 +430,19 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       return;
     }
     if(['CDQ_OFFLINE_DOCUMENT_STORE','CDQ_OFFLINE_DOCUMENT_REMOVE','CDQ_OFFLINE_DOCUMENT_LIST','CDQ_OFFLINE_DOCUMENT_GET','CDQ_OFFLINE_DOCUMENT_EDIT','CDQ_OFFLINE_DOCUMENT_COMMIT_LEGACY'].includes(data.type)){
-      const reply=payload=>send({type:'CDQ_OFFLINE_DOCUMENT_RESULT',requestId:data.requestId,...payload});
+      const reply=payload=>{if(stamp===epoch&&current===session&&validReadStamp(readStamp)){if(readStamp?.collection)readStamp.replied=true;send({type:'CDQ_OFFLINE_DOCUMENT_RESULT',requestId:data.requestId,...payload});}};
       try{
         if(data.type==='CDQ_OFFLINE_DOCUMENT_LIST'){
           const removed=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&c.removed).map(c=>c.driveId);
-          const documents=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&!c.removed).map(c=>({fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,revision:c.revision,blob:c.blob,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId}));
+          const documents=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&!c.removed).map(c=>({fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,revision:c.revision,blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId}));
           if(stamp===epoch)reply({ok:true,offlineSelectionVersion:2664,removed,documents});return;
         }
         if(!identifier(data.fileId))throw Error('Identifiant PDF invalide.');
         const id='prepared:'+current.email+':'+data.fileId,c=await get('copies',id);
-        if(stamp!==epoch||current!==session)return;
+        if(stamp!==epoch||current!==session||!validReadStamp(readStamp))return;
         if(data.type==='CDQ_OFFLINE_DOCUMENT_GET'){
           if(data.legacyPending&&c&&!c.removed)throw Error('Une ancienne sauvegarde attend sa synchronisation. Reconnectez CDQ avant de modifier ce PDF.');
-          reply({ok:true,document:c&&!c.removed?{fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,revision:c.revision,blob:c.blob,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId}:null});return;
+          reply({ok:true,document:c&&!c.removed?{fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,revision:c.revision,blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId}:null});return;
         }
         if(data.type==='CDQ_OFFLINE_DOCUMENT_EDIT'){
           if(!current.canWrite||!c||c.removed)throw Error('PDF hors ligne indisponible.');
@@ -382,7 +450,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
             if(Number(data.editVersion)!==Number(c.editVersion||0))throw Error('Ce PDF a été modifié dans une autre fenêtre. Fermez puis rouvrez le document avant de continuer.');
             await verifyPdf(data.blob);if(stamp!==epoch||current!==session)return;
             const reportName=(c.autoReportName||data.autoReportName)?await nameFromReport(data.blob,c.name):c.name;
-            const updated={...c,autoReportName:c.autoReportName||data.autoReportName===true,name:reportName,blob:data.blob,readerRequestId:data.saveId,editVersion:(c.editVersion||0)+1,uploadId:'pdf_'+crypto.randomUUID(),status:'pending',error:''};
+            const updated={...c,readerPreparedVersion:data.readerPreparedVersion===2730?2730:undefined,autoReportName:c.autoReportName||data.autoReportName===true,name:reportName,blob:data.blob,readerRequestId:data.saveId,editVersion:(c.editVersion||0)+1,uploadId:'pdf_'+crypto.randomUUID(),status:'pending',error:''};
             await put('copies',updated);notifyDocument(updated);
           }
           const latest=await get('copies',id);reply({ok:true,queued:latest.uploadId!==latest.syncedUploadId,editVersion:latest.editVersion,name:latest.name});refresh().catch(()=>{});sync().catch(()=>{});return;
@@ -414,21 +482,28 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       await put('destinations',{id:current.email+':'+data.folderId,email:current.email,clientId:data.clientId,folderId:data.folderId,name:data.name,savedAt:Date.now()});await refresh();
     }
     if(data.type==='CDQ_OFFLINE_PREFILL_V2642'){
+      const values=Object.fromEntries(Object.entries(data.values||{}).filter(([k,v])=>/^client_(adresse|ville|code_postal|province|telephone)$/.test(k)&&typeof v==='string'&&v.length<=1000));
+      // A context lookup can return only the company/technician already in the
+      // durable draft. Do not detach its entire PDF while the reader is booting.
+      if(!Object.keys(values).length)return;
       const c=await get('copies',String(data.requestId||''));
       if(!current.canWrite||!c||c.removed||c.email!==current.email||stamp!==epoch||current!==session)return;
-      const values=Object.fromEntries(Object.entries(data.values||{}).filter(([k,v])=>/^client_(adresse|ville|code_postal|province|telephone)$/.test(k)&&typeof v==='string'&&v.length<=1000));
       const reader=readers.get(c.id);if(reader?.epoch===stamp){const handle=await reader.handle;if(stamp!==epoch||current!==session||!current.canWrite)return;handle?.prefill?.(values);}
       // Preserve the late coordinates on disk too. Saved answers are never replaced.
       if(!c.readerRequestId&&Object.keys(values).length){
+        if(c.initialValues){await put('copies',{...c,initialValues:{...c.initialValues,...values}});sync().catch(()=>{});return;}
         const blob=await fillInFrame(values,{blob:c.blob,strict:false,onlyEmpty:true});
         if(stamp!==epoch||current!==session)return;
         const latest=await get('copies',c.id);if(latest?.readerRequestId)return;
-        await put('copies',{...latest,blob,editVersion:(latest.editVersion||0)+1,uploadId:'pdf_'+crypto.randomUUID(),status:'pending'});await sync();
+        await put('copies',{...latest,blob,editVersion:(latest.editVersion||0)+1,uploadId:'pdf_'+crypto.randomUUID(),status:'pending'});sync().catch(()=>{});
       }
       return;
     }
     if(data.type==='CDQ_OFFLINE_CREATE_LOCAL'){
-      const id=String(data.requestId||'');
+      const id=String(data.requestId||''),accessVersion=readStamp?.access??readAccessVersion;
+      const currentAccess=()=>stamp===epoch&&session===current&&accessVersion===readAccessVersion&&!pendingAccessTransitions;
+      const currentCreation=()=>currentAccess()&&current.canWrite;
+      const reply=payload=>{if(currentAccess())send({type:'CDQ_OFFLINE_CREATE_LOCAL_RESULT',email:current.email,requestId:id,...payload});};
       try{
         if(!current.canWrite||!/^[\w-]{8,100}$/.test(id)||!known(data.modeleId))throw new Error('Copie locale non autorisée ou demande invalide.');
         const d={clientId:String(data.clientId||''),folderId:String(data.folderId||''),name:String(data.destinationName||data.name||'Dossier client')};
@@ -437,26 +512,49 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         let c=await get('copies',id);
         if(c?.removed)throw Error('Cette création a été annulée. Créez un nouveau rapport.');
         if(c&&(c.email!==current.email||c.modeleId!==data.modeleId||c.destination.clientId!==d.clientId||c.destination.folderId!==d.folderId))throw new Error('Identifiant déjà utilisé pour une autre copie.');
-        if(stamp!==epoch)return;
-        if(!c){c=makeCopy(t,d,current.email,id);if(data.prefill&&Object.keys(data.prefill).length){c.blob=await fillInFrame(data.prefill,{blob:c.blob,strict:false});c.uploadId=id+'_prefill';c.editVersion=1;}if(stamp!==epoch||session!==current)return;await put('copies',c);}
-        await put('destinations',{id:current.email+':'+d.folderId,email:current.email,...d,savedAt:Date.now()});
-        await refresh();
-        if(stamp!==epoch||session!==current)return;
+        if(!currentCreation())return;
+        if(!c)c=await reserveDestination(current.email,d.folderId,async()=>{
+          if(!currentCreation())return null;
+          const names=destinationNames.get(nameKey(current.email,d.folderId))||new Set();
+          if(Array.isArray(data.existingNames))for(const name of data.existingNames)if(typeof name==='string'&&name.length<=220)names.add(name);
+          const copy=makeCopy(t,d,current.email,id,[...names]);
+          if(data.prefill&&Object.keys(data.prefill).length){const identity=identityDraftV2730(data.prefill);if(data.open===true&&identity)copy.initialValues=identity;else{copy.blob=await fillInFrame(data.prefill,{blob:copy.blob,strict:false});copy.uploadId=id+'_prefill';copy.editVersion=1;}}
+          if(!currentCreation())return null;
+          await put('copies',copy);if(!currentCreation())return null;
+          destinationNames.set(nameKey(current.email,d.folderId),names);rememberNames(copy);return copy;
+        });
+        if(!c||!currentCreation())return;
+        // The copy already contains its complete destination. Updating the
+        // remembered destination and the hidden copies panel is secondary.
+        const rememberDestination=()=>{if(currentCreation())put('destinations',{id:current.email+':'+d.folderId,email:current.email,...d,savedAt:Date.now()}).then(()=>refresh()).catch(()=>{});};
+        if(!currentCreation())return;
         // Confirm the visible reader as well as the durable copy. A hidden old
         // reader must never swallow a new-report request.
         if(data.open===true){
-          Promise.resolve().then(()=>new Promise((resolve,reject)=>{
-            if(stamp!==epoch||session!==current)return reject(Error('Le compte a changé.'));
-            const reader={epoch:stamp,handle:null,opening:true};readers.set(c.id,reader);
-            const finish=callback=>value=>{reader.opening=false;callback(value);if(stamp===epoch&&session?.email===current.email)sync().catch(()=>{});};
-            try{reader.handle=Promise.resolve(openPdf({blob:c.blob,name:c.name,fileId:c.id,modeleId:c.modeleId,autoReportName:c.autoReportName===true,readOnly:false,
-              onOpened:finish(resolve),onError:finish(reject),onClose:()=>{if(readers.get(c.id)===reader)readers.delete(c.id);},onSave:(blob,requestId)=>saveCopy(c.id,current.email,blob,requestId)}));
-            reader.handle.catch(finish(reject));}catch(error){finish(reject)(error);}
-          })).then(()=>{if(stamp===epoch&&session?.email===current.email)send({type:'CDQ_OFFLINE_CREATE_LOCAL_RESULT',requestId:id,ok:true,modeleId:c.modeleId,name:c.name});})
-          .catch(e=>{if(stamp===epoch&&session?.email===current.email)send({type:'CDQ_OFFLINE_CREATE_LOCAL_RESULT',requestId:id,ok:false,message:'Copie conservée dans Mes copies locales. '+(e.message||String(e))});});
-        }else send({type:'CDQ_OFFLINE_CREATE_LOCAL_RESULT',requestId:id,ok:true,modeleId:c.modeleId,name:c.name});
-        await sync();
-      }catch(e){send({type:'CDQ_OFFLINE_CREATE_LOCAL_RESULT',requestId:id,ok:false,message:e.message||String(e)});}
+          let opening=readers.get(c.id)?.openedPromise;
+          if(!opening){
+            const reader={epoch:stamp,email:current.email,handle:null,opening:true,openedPromise:null};readers.set(c.id,reader);
+            opening=reader.openedPromise=new Promise((resolve,reject)=>{
+              let settled=false;
+              const finish=(error=null)=>{
+                if(settled)return;settled=true;clearTimeout(timer);reader.opening=false;
+                if(error){if(readers.get(c.id)===reader)readers.delete(c.id);reject(error);}else resolve();
+                if(currentCreation())sync().catch(()=>{});
+              };
+              const timer=setTimeout(()=>finish(Error('Le lecteur n’a pas ouvert le PDF. Réessayez la copie conservée.')),30000);
+              if(!currentCreation()){finish(Error('Le compte a changé.'));return;}
+              try{reader.handle=Promise.resolve(openPdf({blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,initialValues:c.initialValues||null,name:c.name,fileId:c.id,modeleId:c.modeleId,autoReportName:c.autoReportName===true,readOnly:false,
+                onOpened:()=>finish(),onError:error=>finish(error||Error('Ouverture du rapport impossible.')),
+                onClose:()=>{if(readers.get(c.id)===reader)readers.delete(c.id);finish(Error('Le lecteur a été fermé avant l’ouverture du rapport.'));},
+                onSave:(blob,requestId,name,provenance)=>saveCopy(c.id,current.email,blob,requestId,provenance)}));
+                reader.handle.catch(finish);
+              }catch(error){finish(error);}
+            });
+          }
+          opening.then(()=>{rememberDestination();reply({ok:true,modeleId:c.modeleId,name:c.name});})
+            .catch(error=>{rememberDestination();reply({ok:false,message:'Copie conservée dans Mes copies locales. '+(error.message||String(error))});});
+        }else{rememberDestination();reply({ok:true,modeleId:c.modeleId,name:c.name});sync().catch(()=>{});}
+      }catch(e){reply({ok:false,message:e.message||String(e)});}
       return;
     }
     if(['CDQ_OFFLINE_COPY_RESULT','CDQ_OFFLINE_SAVE_RESULT'].includes(data.type)){
@@ -471,7 +569,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       }
       const deleted=data.ok&&identifier(data.id)?await get('state','deleted:'+current.email+':'+data.id):null;
       if(deleted&&Number(copy.createdAt||0)<=Number(deleted.deletedAt)){await retireCopyV2714({...copy,driveId:data.id},'deleted');return;}
-      const updated=applyResult(copy,data);await put('copies',updated);if(stamp===epoch&&data.ok)notifyDocument(updated);await refresh();if(data.ok)await sync();
+      const updated=applyResult(copy,data);await put('copies',updated);if(stamp===epoch&&data.ok){rememberNames(updated);notifyDocument(updated);}refresh().catch(()=>{});if(data.ok)sync().catch(()=>{});
     }
   }
   launch.onclick=()=>{panel.hidden=false;refresh().catch(e=>{status.textContent=e.message;});};
@@ -480,6 +578,77 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   document.addEventListener?.('visibilitychange',()=>{if(!document.hidden)resume();});
   window.addEventListener('offline',()=>serial(refresh).catch(()=>{}));
   refresh().catch(()=>{});
-  return {handle(data){const stamp=epoch;const id=data.type==='CDQ_OFFLINE_LOCAL_RETIRE_V2714'?data.localId:data.fileId?'prepared:'+String(session?.email||'')+':'+data.fileId:/^CDQ_OFFLINE_(?:CREATE_LOCAL|PREFILL_V2642|COPY_RESULT|SAVE_RESULT|CANCELLED_CREATION_V2714|CANCELLED_DELETE_V2714_RESULT)$/.test(data.type)?data.requestId:'';return (['CDQ_OFFLINE_REPORT_DELETED_V2714','CDQ_OFFLINE_REPORT_RETIRE_TARGET_V2714'].includes(data.type)?handleNow(data,stamp):id?serialCopy(id,()=>handleNow(data,stamp)):serial(()=>handleNow(data,stamp))).catch(e=>{status.textContent=e.message||String(e);});},
-    lock(){epoch++;session=null;localEmail='';for(const job of inflight.values())clearTimeout(job.timer);inflight.clear();requested.clear();readers.clear();creationDownloads.clear();sessionStorage.clear();panel.hidden=true;},refresh};
+  return {handle(data){
+      const stamp=epoch,retirement=['CDQ_OFFLINE_REPORT_DELETED_V2714','CDQ_OFFLINE_REPORT_RETIRE_TARGET_V2714'].includes(data.type);
+      // Stable creation preambles must not wait for a background refresh.
+      if(data.type==='CDQ_OFFLINE_SESSION'&&data.reannounceOnlyV2730===true&&!pendingAccessTransitions&&session&&appliedSession===session&&appliedOnline===navigator.onLine&&session.email===data.email&&session.canWrite===!!data.canWrite&&session.protocol===(Number(data.protocol)||0))return Promise.resolve();
+      const accessChange=data.type==='CDQ_OFFLINE_SESSION'&&typeof data.email==='string'&&data.email&&data.email.length<=320&&(pendingAccessTransitions||session?.email!==data.email||session.canWrite!==!!data.canWrite||session.protocol!==(Number(data.protocol)||0));
+      if(accessChange){if(session?.email!==data.email)readAccountVersion++;readAccessVersion++;pendingAccessTransitions++;}
+      const retirementTargets=retirement&&session?.canWrite&&(!data.email||data.email===session.email)?data.type==='CDQ_OFFLINE_REPORT_DELETED_V2714'?(Array.isArray(data.ids)&&data.ids.length<=500?data.ids.filter(identifier):[]):identifier(data.localId)?[data.localId]:[]:[];
+      const retirementKeys=[...new Set(retirementTargets)].map(id=>'prepared:'+session.email+':'+id);
+      for(const key of retirementKeys)readRetirementVersions.set(key,(readRetirementVersions.get(key)||0)+1);
+      let job;
+      if(['CDQ_OFFLINE_CREATE_LOCAL','CDQ_OFFLINE_PREFILL_V2642','CDQ_OFFLINE_COPY_RESULT','CDQ_OFFLINE_SAVE_RESULT'].includes(data.type)){
+        const accessVersion=readAccessVersion,foreground=session&&appliedSession===session&&!pendingAccessTransitions;
+        const create=()=>{if(stamp!==epoch||accessVersion!==readAccessVersion)return;return serialCopy(String(data.requestId||''),()=>handleNow(data,stamp,{access:accessVersion,key:'creation:'+String(data.requestId||''),retirement:0}),true);};
+        job=foreground?create():chain.then(create);
+      }else if(['CDQ_OFFLINE_DOCUMENT_LIST','CDQ_OFFLINE_SHEET_LIST'].includes(data.type)){
+        const accessVersion=readAccessVersion,foreground=session&&appliedSession===session&&!pendingAccessTransitions;
+        const rejectCollections=message=>send({type:'CDQ_OFFLINE_DOCUMENT_RESULT',requestId:data.requestId,ok:false,message});
+        const readCollections=(version=accessVersion,retried=false)=>{
+          if(stamp!==epoch||version!==readAccessVersion)return;
+          // A cloud acknowledgment refreshes these read-only collections. It
+          // must not wait behind the unrelated hidden-panel profile refresh.
+          // Session initialization and announced access changes retain their
+          // ordered path; a transition during storage still fences the reply.
+          if(!session){rejectCollections('La session hors ligne n’est pas encore prête. Réessayez.');return;}
+          const owner=session.email,accountVersion=readAccountVersion,readStamp={access:version,key:'collections:'+owner,retirement:0,collection:true,replied:false};
+          return handleNow(data,stamp,readStamp).then(()=>{
+            if(readStamp.replied||stamp!==epoch||accountVersion!==readAccountVersion||session?.email!==owner||version===readAccessVersion)return;
+            // The old snapshot was fenced by an access announcement. Read it
+            // afresh once, only after the same account's session is applied.
+            if(retried){rejectCollections('La session hors ligne a changé pendant la lecture. Réessayez.');return;}
+            return chain.then(()=>afterAccessTransitions(true,owner,accountVersion));
+          });
+        };
+        const afterAccessTransitions=(retried=false,owner=null,accountVersion=readAccountVersion)=>{
+          if(stamp!==epoch||accountVersion!==readAccountVersion)return;
+          // Startup may repeat an announcement while its first application is
+          // still queued. Capture the applied version after those transitions;
+          // repeating the same session must not discard an unanswered list.
+          if(pendingAccessTransitions)return chain.then(()=>afterAccessTransitions(retried,owner,accountVersion));
+          if(owner&&session?.email!==owner)return;
+          if(owner&&appliedSession!==session){rejectCollections('La session hors ligne n’est pas encore prête. Réessayez.');return;}
+          return readCollections(readAccessVersion,retried);
+        };
+        job=!session&&!pendingAccessTransitions?Promise.resolve(readCollections()):foreground?readCollections():chain.then(afterAccessTransitions);
+      }else if(data.type==='CDQ_OFFLINE_DOCUMENT_GET'){
+        const accessVersion=readAccessVersion;
+        const foreground=session&&appliedSession===session&&!pendingAccessTransitions;
+        const readForeground=()=>{
+          if(stamp!==epoch||accessVersion!==readAccessVersion)return;
+          const id='prepared:'+String(session?.email||'')+':'+data.fileId;
+          const readStamp={access:accessVersion,key:id,retirement:readRetirementVersions.get(id)||0};
+          const readCopy=()=>{
+            if(stamp!==epoch||!validReadStamp(readStamp))return;
+            return serialCopy(id,()=>handleNow(data,stamp,readStamp),true);
+          };
+          // Retirements register their per-copy writes after scanning storage.
+          // Await this target's fence before joining copyJobs to avoid a cycle.
+          const retirements=[...(retirementJobs.get(id)||[])];
+          return retirements.length?Promise.all(retirements.map(p=>p.catch(()=>{}))).then(readCopy):readCopy();
+        };
+        job=foreground?readForeground():chain.then(readForeground);
+      }else{
+        const id=data.type==='CDQ_OFFLINE_LOCAL_RETIRE_V2714'?data.localId:data.fileId?'prepared:'+String(session?.email||'')+':'+data.fileId:/^CDQ_OFFLINE_(?:CREATE_LOCAL|PREFILL_V2642|COPY_RESULT|SAVE_RESULT|CANCELLED_CREATION_V2714|CANCELLED_DELETE_V2714_RESULT)$/.test(data.type)?data.requestId:'';
+        job=retirement?handleNow(data,stamp):id?serialCopy(id,()=>handleNow(data,stamp)):serial(()=>handleNow(data,stamp));
+      }
+      if(accessChange)job.finally(()=>{pendingAccessTransitions--;}).catch(()=>{});
+      for(const key of retirementKeys){
+        const jobs=retirementJobs.get(key)||new Set();jobs.add(job);retirementJobs.set(key,jobs);
+        job.finally(()=>{jobs.delete(job);if(!jobs.size&&retirementJobs.get(key)===jobs)retirementJobs.delete(key);}).catch(()=>{});
+      }
+      return job.catch(e=>{status.textContent=e.message||String(e);});
+    },
+    lock(){epoch++;session=null;appliedSession=null;appliedOnline=null;localEmail='';for(const job of inflight.values())clearTimeout(job.timer);inflight.clear();requested.clear();readers.clear();creationDownloads.clear();identityDownloads.clear();destinationNames.clear();sessionStorage.clear();panel.hidden=true;},refresh};
 }
