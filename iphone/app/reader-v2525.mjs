@@ -3,7 +3,8 @@ import {refreshReaderCamionDisplayV2741} from './reader-camion-display-v2741.mjs
 import {installReaderTableColumnV2737} from './reader-table-column-v2737.mjs';
 import {installFirstPageRenderLeaseV2731} from './reader-first-paint-scheduler-v2731.mjs';
 let qaFirstPageLeaseCleanupV2731=()=>{},qaFirstPaintOwnerV2731=null;
-import {installDecimalPrecisionV2695,decimalPrecisionErrorV2695,isCorrectionReadingV2695} from './reader-decimals-v2695.mjs';
+import {installMeasurementValidationV2736,measurementErrorV2736,isCorrectionReadingV2736,isCompleteMeasurementInputV2736} from './reader-measurements-v2736.mjs';
+import {refreshReportVisualV2736} from './reader-report-visual-v2736.mjs';
 import {firstReaderPaintV2682} from './reader-first-paint-v2682.mjs';
 import {paintReaderResults} from './reader-results-v2648.mjs';
 import {identificationReportName} from './report-name-v2648.mjs';
@@ -35,6 +36,7 @@ const formattedFields=new Map(),fieldTypography=new Map();
 function applyFieldTypography(){
   const fields=[];
   for(const field of $('viewer').querySelectorAll('input,textarea,select,button.cdq-choice-field')){
+    if(isCorrectionReadingV2736(field.name))field.inputMode='text';
     if(!fieldTypography.has(field.name)||field.name.startsWith('_')||/statut/i.test(field.name)||tableColumnV2737?.isSans()&&field.name.startsWith('indicateur_'))continue;
     const size=fieldTypography.get(field.name);
     const desired='calc('+size+'px * var(--total-scale-factor))';
@@ -43,6 +45,7 @@ function applyFieldTypography(){
   }
   if(!approvedReportMetadataFamilyV2735(fieldDefinitions))centerFieldsGlyphs(fields);
   refreshReaderCamionDisplayV2741({surface:$('viewer'),document:doc,fields:fieldDefinitions,typography:fieldTypography});
+  refreshReportVisualV2736({surface:$('viewer'),fields:fieldDefinitions});
 }
 function refreshResults(){if(!doc)return;paintReaderResults($('viewer'));}
 $('viewer').addEventListener('input',()=>requestAnimationFrame(applyFieldTypography));
@@ -375,7 +378,7 @@ async function open(data){
   // A concurrent close can therefore destroy it through the normal reset.
   if(retained)documentTask=retained.task;
   try{
-    sourceBytes=preparedBlob?new Uint8Array(await preparedBlob.arrayBuffer()):(await work.requestBlob('open',blob,{summary:false},{epoch:workEpoch})).bytes;
+    sourceBytes=(await work.requestBlob('open',preparedBlob||blob,{summary:false},{epoch:workEpoch})).bytes;
     checkLease();
     const sourceLength=sourceBytes.byteLength,cacheSource={...data,bytes:sourceLength};
     const sourceKind=preparedBlob?(isCacheableReaderDraftV2730(cacheSource)?'draft':isCacheableReaderDocumentV2730(cacheSource)?'document':null):null,eligible=!!sourceKind;
@@ -445,7 +448,7 @@ async function open(data){
         // before parsing the immutable source again (getDocument transfers it).
         generation=++documentGenerationV2730;reuse=false;retained=null;await destroyReaderDocumentV2730(attemptTask);checkLease();
         resetDocumentFieldsV2730();canvasCandidateV2730=null;
-        sourceBytes=new Uint8Array(await preparedBlob.arrayBuffer());checkLease();
+        sourceBytes=(await work.requestBlob('open',preparedBlob,{summary:false},{epoch:workEpoch})).bytes;checkLease();
       }
     }
   }catch(error){
@@ -568,7 +571,7 @@ try{
     onConfirm:field=>form.advance(field),
     onOpen:()=>{cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;cdqKeyboardFieldV2550(false);},
     onClose:()=>form.refresh()});
-  decimalGuard=installDecimalPrecisionV2695({surface:$('viewer'),getEchelon:()=>$('viewer').querySelector('[name="echelon"]')?.value||cdqStoredFieldStateV2581('echelon').value,status});
+  decimalGuard=installMeasurementValidationV2736({surface:$('viewer'),getEchelon:()=>$('viewer').querySelector('[name="echelon"]')?.value||cdqStoredFieldStateV2581('echelon').value,status});
   form=installFormNavigation({validate:field=>decimalGuard.validate(field),surface:$('viewer'),toolbar:$('formNav'),previous:$('previousField'),next:$('nextField'),done:$('doneFields'),openChoice:field=>choices.open(field),choiceIsOpen:()=>choices.isOpen(),reveal:field=>{
     if(cdqTextEntryFieldV2550(field)){
       cdqNavigationTextFieldV2562=field;
@@ -595,14 +598,14 @@ try{
     visualRefreshV2730.schedule();
   });
   // A technician can stop at the last reading without moving to another field.
-  // Commit only complete numeric inputs, so partial decimals stay editable.
+  // Commit complete numbers or the explicit skip/overload tokens; partial input stays editable.
   let liveCalculationTimer=0;
   $('viewer').addEventListener('input',e=>{
     const field=e.target,value=String(field.value??'');
-    if(readOnly||opening||saving||!field.name||!(/^(echelon|capacite_maximale|charge_excentricite|charge_point_\d+_(charge_utilisee|charge_contrainte|avant_correction|apres_correction)|excentricite_(avant|apres)_)/.test(field.name)))return;
+    if(readOnly||opening||saving||!field.name||!(isCorrectionReadingV2736(field.name)||/^(echelon|capacite_maximale|charge_excentricite|charge_point_\d+_(charge_utilisee|charge_contrainte))$/.test(field.name)))return;
     clearTimeout(liveCalculationTimer);
-    if(isCorrectionReadingV2695(field.name)&&decimalPrecisionErrorV2695(value,$('viewer').querySelector('[name="echelon"]')?.value||cdqStoredFieldStateV2581('echelon').value))return;
-    if(value!==''&&!/^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(value.replace(/[\s\u00a0\u202f]/g,'')))return;
+    if(isCorrectionReadingV2736(field.name)&&measurementErrorV2736(value,$('viewer').querySelector('[name="echelon"]')?.value||cdqStoredFieldStateV2581('echelon').value))return;
+    if(isCorrectionReadingV2736(field.name)?!isCompleteMeasurementInputV2736(value):value!==''&&!/^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(value.replace(/[\s\u00a0\u202f]/g,'')))return;
     liveCalculationTimer=setTimeout(()=>{
       if(readOnly||opening||saving||document.activeElement!==field)return;
       const definition=cdqFieldDefinitionsV2581(field.name)[0];if(!definition?.id)return;

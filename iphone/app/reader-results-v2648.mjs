@@ -48,11 +48,16 @@ export function paintReaderResults(surface){
     const bad=!!(row?row[1]==='rouge':header[2]);
     badge.classList.toggle('bad',bad);badge.classList.toggle('row-result',!!row);badge.hidden=!input.checked;
     badge.style.fontSize=parseFloat(getComputedStyle(section).height)*.66+'px';
-    const frame=artworkFrame(section,!!row);
+    // V27.36 masters own their exact final cyan cell. Preserve that rectangle
+    // through redraws instead of applying the legacy pixel detector's inset.
+    const nativeRow=!!row&&section.dataset.cdqFrameV2736==='native';
+    const frame=nativeRow?{left:0,top:0,width:100,height:100}:artworkFrame(section,!!row);
     if(frame)for(const key of ['left','top','width','height'])badge.style[key]=frame[key]+'%';
+    if(nativeRow)badge.dataset.cdqFrameV2736='native';
     if(header&&!badge.childNodes.length){
       const label=document.createElement('span');label.textContent=bad?'NON CONFORME':'CONFORME';
       badge.append(label);badge.insertAdjacentHTML('beforeend','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+(bad?'M5 5l14 14M19 5L5 19':'M4 12.5l5 5L20 6.5')+'"/></svg>');
     }
   }
 }
+
