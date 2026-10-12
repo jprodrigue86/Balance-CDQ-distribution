@@ -39,7 +39,8 @@ function invoiceAmountLabel(line){
   var l=String(line||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[-–—]/g,' ').replace(/\s+/g,' ').trim();
   var suggestion=/\b(?:exemples?|examples?|sugg\w*|recommand\w*|recommend\w*|propos\w*)\b/.test(l)||/\b(?:guide|options?|choix)\b.*\b(?:pourboire|tip|gratuity)\b/.test(l);
   var paid=/\b(?:total\s+(?:paye|paid|regle)|montant\s+paye|amount\s+paid|paid\s+(?:amount|total))\b/.test(l);
-  var rank=paid||/\b(?:grand\s+total|total\s+(?:final|general)|final\s+total)\b/.test(l)?3:/\btotal\b|\b(?:montant\s+(?:total|a\s+payer|du)|net\s+a\s+payer|solde\s+a\s+payer|amount\s+due|balance\s+due|a\s+payer)\b/.test(l)?2:0;
+  var bareTotal=/^total(?:\s+(?:ttc|tax(?:es?)?\s+(?:comprises?|inclus\w*|included)))?(?=\s*(?:$|[:$€]|\d|(?:cad|cdn)\b))/.test(l);
+  var rank=paid||/\b(?:grand\s+total|total\s+(?:final|general)|final\s+total)\b/.test(l)?3:bareTotal||/\b(?:montant\s+(?:total|a\s+payer|du)|net\s+a\s+payer|solde\s+a\s+payer|amount\s+due|balance\s+due|a\s+payer)\b/.test(l)?2:0;
   var includedTaxes=/\b(?:taxes?|tax)\s+(?:comprises?|inclus\w*|included|incl\b)/.test(l);
   var excluded=/\b(?:sous\s*total|subtotal|sub\s*total|depot|deposit|acompte|monnaie|change|savings?|economies?|rabais|remises?|reduction|discount|coupon|escompte|cash\s+(?:tendered|received)|montant\s+(?:recu|remis)|argent\s+remis|especes\s+(?:recues|remises)|tendered)\b/.test(l)||(!paid&&/\b(?:total\s+(?:du\s+)?(?:pourboire|tips?|gratuity)|(?:pourboire|tips?|gratuity)\s+total)\b/.test(l))||(!includedTaxes&&/\btotal\s+(?:des\s+)?(?:taxes?|tps|tvq|gst|qst)\b/.test(l))||(!includedTaxes&&/^(?:tps|tvq|gst|qst|taxes?|tax)\b/.test(l))||(!rank&&/\b(?:tps|tvq|gst|qst|taxes?|tax|pourboire|tips?|gratuity)\b/.test(l));
   return {rank:rank,paid:paid,suggestion:suggestion,excluded:excluded,text:l};
@@ -49,16 +50,73 @@ function invoiceOnlyAmount(line){
   var token=tokens[0],rest=(line.slice(0,token.start)+line.slice(token.end)).replace(/\b(?:CAD|CDN|CA)\b/gi,'').replace(/[\s$€:;()]/g,'');
   return rest?[]:[token.value];
 }
-function parseAmount(t){
+function invoiceLayoutRowsV2734(layout){
+  if(!layout||typeof layout!=='object'||layout.version!==2734||!Number.isInteger(layout.width)||!Number.isInteger(layout.height)||layout.width<=0||layout.height<=0||layout.width>16384||layout.height>16384||layout.width*layout.height>60000000||!Array.isArray(layout.lines)||!layout.lines.length||layout.lines.length>400)return null;
+  var count=0,chars=0,lines=[];
+  function box(value,maxText){
+    if(!value||typeof value.text!=='string'||value.text.length>maxText||/[\r\n\u0000]/.test(value.text))return false;
+    chars+=value.text.length;
+    return ['left','top','right','bottom'].every(function(key){return Number.isInteger(value[key])})&&value.left>=0&&value.top>=0&&value.right>value.left&&value.bottom>value.top&&value.right<=layout.width&&value.bottom<=layout.height;
+  }
+  for(var i=0;i<layout.lines.length;i++){
+    var line=layout.lines[i];if(!box(line,1024)||!Array.isArray(line.elements)||line.elements.length>128)return null;
+    count+=line.elements.length;if(count>2400)return null;
+    for(var j=0;j<line.elements.length;j++){var element=line.elements[j];if(!box(element,256)||element.left<line.left||element.right>line.right||element.top<line.top||element.bottom>line.bottom)return null}
+    if(chars>65536)return null;
+    var words=line.elements.slice().sort(function(a,b){return a.left-b.left}).map(function(element){return element.text.trim()}).filter(Boolean).join(' ');
+    var text=words||line.text.trim();if(words&&!lineAmounts(words).length&&lineAmounts(line.text).length)text=line.text.trim();
+    lines.push({left:line.left,top:line.top,right:line.right,bottom:line.bottom,text:text,elements:line.elements});
+  }
+  function rowPriority(line){var meta=invoiceAmountLabel(line.text.replace(/^(?:T0TAL|TOTAI)(?=\s|[:$]|$)/i,'TOTAL'));return meta.rank||meta.excluded||meta.suggestion?0:/^\$?\s*\d[\d ,.]*\s*\$?$/.test(line.text)?1:2}
+  // Anchor financial labels and amounts before unrelated background OCR so
+  // a noisy neighboring box cannot claim their row first.
+  lines.sort(function(a,b){return rowPriority(a)-rowPriority(b)||(a.top+a.bottom)-(b.top+b.bottom)||a.left-b.left});
+  var rows=[];
+  lines.forEach(function(line){
+    var row=rows.find(function(candidate){return candidate.every(function(other){var height=Math.min(line.bottom-line.top,other.bottom-other.top),overlap=Math.min(line.bottom,other.bottom)-Math.max(line.top,other.top);return overlap>=height*.4&&Math.abs((line.top+line.bottom-other.top-other.bottom)/2)<=height*.5})});
+    if(row)row.push(line);else rows.push([line]);
+  });
+  rows.sort(function(a,b){return (a[0].top+a[0].bottom)-(b[0].top+b[0].bottom)});
+  return rows.map(function(row){
+    row.sort(function(a,b){return a.left-b.left});var text=row.map(function(line){return line.text}).join(' '),labelText=text.replace(/^(?:T0TAL|TOTAI)(?=\s|[:$]|$)/i,'TOTAL'),meta=invoiceAmountLabel(labelText);
+    if(meta.rank&&!meta.excluded&&!meta.suggestion&&!lineAmounts(text).length&&!/[\-%−]/.test(text)){
+      var atoms=[];row.forEach(function(line){(line.elements.length?line.elements:[line]).forEach(function(element){atoms.push({text:element.text,left:element.left,right:element.right})})});atoms.sort(function(a,b){return a.left-b.left});
+      var numbers=[];atoms.forEach(function(atom,index){var match=atom.text.trim().match(/^\$?\s*(\d{1,5})\s*\$?$/);if(match)numbers.push({atom:atom,index:index,digits:match[1]})});
+      if(numbers.length===2&&numbers[1].digits.length===2){var whole=numbers[0],cent=numbers[1],gap=cent.atom.left-whole.atom.right,charWidth=Math.min((whole.atom.right-whole.atom.left)/whole.atom.text.replace(/\s/g,'').length,(cent.atom.right-cent.atom.left)/2);if(gap>=0&&gap<=charWidth*2.5){atoms[whole.index].text=whole.atom.text.replace(whole.digits,whole.digits+'.'+cent.digits);atoms.splice(cent.index,1);text=atoms.map(function(atom){return atom.text}).join(' ')}}
+    }
+    return text;
+  });
+}
+function invoiceColumnRowsV2734(lines){
+  var result=lines.map(function(line){return {line:line,noAdjacent:false}});
+  function labelKey(line){var text=invoiceAmountLabel(line).text.replace(/[:$]/g,'').trim();if(/^(?:sous\s*total|subtotal|sub\s*total)$/.test(text))return 'subtotal';if(/^(?:tps|tvq|gst|qst)$/.test(text))return text;if(/^(?:total(?:\s+(?:paye|paid|ttc))?|grand\s+total|montant\s+a\s+payer)$/.test(text))return 'total';return ''}
+  for(var i=0;i<result.length;i++){
+    if(!labelKey(result[i].line))continue;
+    var end=i,keys=[];while(end<result.length&&labelKey(result[end].line)){keys.push(labelKey(result[end].line));end++}
+    var after=end,values=[];while(after<result.length&&invoiceOnlyAmount(result[after].line).length){values.push(invoiceOnlyAmount(result[after].line)[0]);after++}
+    if(keys.length>1&&values.length){
+      var unique=keys.every(function(key,index){return keys.indexOf(key)===index});
+      var finalAmount=values[values.length-1],consistent=values.every(function(value){return value<=finalAmount});
+      if(unique&&keys[keys.length-1]==='total'&&keys.length===values.length&&consistent){for(var j=0;j<keys.length;j++)result[i+j].line+=' '+result[end+j].line;result.splice(end,values.length)}
+      else for(var j=0;j<keys.length;j++)result[i+j].noAdjacent=true;
+    }else if(keys.length===1&&values.length>1)result[i].noAdjacent=true;
+    i=end-1;
+  }
+  return result;
+}
+function parseAmount(t,layout){
   // Accept a missing OCR space only for a leading known TOTAL label followed
   // immediately by a complete decimal amount, never for arbitrary identifiers.
-  var ls=textLines(t).map(function(line){return line.replace(/^(TOTAL(?:\s+(?:PAY[EÉ]|PAID|TTC))?|GRAND\s+TOTAL)(?=\d{1,5}\s*[,.]\s*\d{2}(?:\s|\$|$))/i,'$1 ')}),rows=[],suggestionBlock=false,labels=[];
-  ls.forEach(function(line){
+  var geometry=invoiceLayoutRowsV2734(layout),physical=geometry!==null,sourceRows=physical?geometry.map(function(line){return {line:line,noAdjacent:true}}):invoiceColumnRowsV2734(textLines(t)),rows=[],suggestionBlock=false,labels=[];
+  sourceRows.forEach(function(sourceRow){
+    var line=sourceRow.line.replace(/^(T[O0]TA[LI]|TOTAL(?:\s+(?:PAY[EÉ]|PAID|TTC))?|GRAND\s+TOTAL)(?=\d{1,5}\s*[,.]\s*\d{2}(?:\s|\$|$))/i,'$1 ');
+    if(physical)line=line.replace(/^(?:T0TAL|TOTAI)(?=\s*(?:$|[:$]|\d|PAY[EÉ]\b|PAID\b|TTC\b))/i,'TOTAL');
     var meta=invoiceAmountLabel(line);
+    if(physical&&meta.rank&&!/^(?:(?:total(?:\s+(?:paye|paid|regle|ttc|final|general|tax(?:es?)?\s+(?:comprises?|inclus\w*|included)))?)|grand\s+total|(?:montant\s+(?:total|paye|a\s+payer|du)|net\s+a\s+payer|solde\s+a\s+payer|amount\s+(?:due|paid)|paid\s+(?:amount|total)|balance\s+due|a\s+payer))(?=\s*(?:$|[:$€]|\d|(?:cad|cdn)\b))/.test(meta.text))meta.rank=0;
     if(meta.suggestion)suggestionBlock=true;
     else if(/^(?:visa|mastercard|transaction|paiement\s+(?:effectue|confirme)|payment\s+(?:confirmed|completed|approved))\b/.test(meta.text))suggestionBlock=false;
     var blocked=meta.excluded||meta.suggestion||suggestionBlock;
-    rows.push({line:line,meta:meta,blocked:blocked});
+    rows.push({line:line,meta:meta,blocked:blocked,noAdjacent:sourceRow.noAdjacent});
   });
   // A separate tax/tip/subtotal label owns its following amount. If none
   // follows, the preceding amount is ambiguous and cannot supply TOTAL.
@@ -66,7 +124,7 @@ function parseAmount(t){
   rows.forEach(function(row,index){
     if(row.blocked||!row.meta.rank)return;
     var amounts=lineAmounts(row.line);
-    if(!amounts.length){
+    if(!amounts.length&&!row.noAdjacent){
       [index-1,index+1].forEach(function(adjacent){var neighbor=rows[adjacent];if(neighbor&&!neighbor.blocked&&!neighbor.meta.rank)amounts=amounts.concat(invoiceOnlyAmount(neighbor.line)||[])});
     }
     labels.push({rank:row.meta.rank,amounts:amounts});
@@ -134,7 +192,7 @@ async function deleteSaved(item){
   catch(e){status(e&&e.message?e.message:String(e),'error')}
   finally{setBusy(false)}
 }
-function applyOcr(t){ocrText=String(t||'');$('#cdqInvoiceAmountV2590',page).value='';update();if(!ocrText.trim()){detected('Aucun texte détecté','Reprenez une photo plus nette ou importez l’image originale.','error');status('Aucun texte lisible détecté dans le reçu.','error');return}var a=parseAmount(t),d=parseDate(t),m=merchant(t),de=desc(t),c=infer(t),found=0;if(Number.isFinite(a)){$('#cdqInvoiceAmountV2590',page).value=displayMoney(a);found++}if(d){$('#cdqInvoiceDateV2590',page).value=d;found++}if(m){$('#cdqInvoiceMerchantV2590',page).value=m;found++}if(!de&&c==='Essence')de='Carburant';if(de)$('#cdqInvoiceDescriptionV2590',page).value=de;if(c)choose(c,'ocr');update();if(!Number.isFinite(a)){detected('Montant à vérifier','Le total est absent ou ambigu. Saisissez le montant réellement payé indiqué sur le reçu.','error');status('Total non confirmé : saisissez le montant de la facture avant d’enregistrer.','error');return}detected(found>=2?'Informations détectées':'Lecture terminée',found>=2?'Vérifiez les champs avant d’enregistrer.':'Complétez les champs manquants manuellement.',found>=2?'ok':'idle');status('Lecture automatique terminée. Vérifiez les informations.')}
+function applyOcr(t,layout){ocrText=String(t||'');$('#cdqInvoiceAmountV2590',page).value='';update();if(!ocrText.trim()){detected('Aucun texte détecté','Reprenez une photo plus nette ou importez l’image originale.','error');status('Aucun texte lisible détecté dans le reçu.','error');return}var a=parseAmount(t,layout),d=parseDate(t),m=merchant(t),de=desc(t),c=infer(t),found=0;if(Number.isFinite(a)){$('#cdqInvoiceAmountV2590',page).value=displayMoney(a);found++}if(d){$('#cdqInvoiceDateV2590',page).value=d;found++}if(m){$('#cdqInvoiceMerchantV2590',page).value=m;found++}if(!de&&c==='Essence')de='Carburant';if(de)$('#cdqInvoiceDescriptionV2590',page).value=de;if(c)choose(c,'ocr');update();if(!Number.isFinite(a)){detected('Montant à vérifier','Le total est absent ou ambigu. Saisissez le montant réellement payé indiqué sur le reçu.','error');status('Total non confirmé : saisissez le montant de la facture avant d’enregistrer.','error');return}detected(found>=2?'Informations détectées':'Lecture terminée',found>=2?'Vérifiez les champs avant d’enregistrer.':'Complétez les champs manquants manuellement.',found>=2?'ok':'idle');status('Lecture automatique terminée. Vérifiez les informations.')}
 async function analyze(){
   if(!dataUrl||busy)return;
   cancelInvoiceOcrV2733();var run={id:uid(),sequence:photoSequence,owner:email()+'|'+userRole(),photo:dataUrl};ocrRunV2733=run;
@@ -152,7 +210,7 @@ async function analyze(){
   catch(e){if(!currentInvoiceOcrV2733(run))return;var msg=e&&e.message?e.message:String(e||'Lecture automatique impossible.');var missing=/cdqLireFactureOcrV2599|Script function not found|fonction.*introuvable|not found/i.test(msg);detected(missing?'Lecture automatique à activer':'Lecture impossible',missing?'Le service OCR iPhone V25.99 doit être déployé une fois dans CDQ Script Manager.':msg,'error');status(missing?'Activez le service OCR V25.99 dans CDQ Script Manager, puis réessayez.':msg,'error')}
   finally{if(currentInvoiceOcrV2733(run)){setBusy(false);cancelInvoiceOcrV2733()}}
 }
-window.cdqNativeReceiptOcrV2590=function(id,ok,text,msg){var run=ocrRunV2733;if(!run||String(id)!==String(window.__cdqInvoiceOcrRequestV2590||'')||String(id)!==String(run.id)||!currentInvoiceOcrV2733(run))return;cancelInvoiceOcrV2733();setBusy(false);if(ok)applyOcr(text);else{detected('Lecture impossible',String(msg||'Le reçu n’a pas pu être lu.'),'error');status(String(msg||'Lecture automatique impossible.'),'error')}};
+window.cdqNativeReceiptOcrV2590=function(id,ok,text,msg,layout){var run=ocrRunV2733;if(!run||String(id)!==String(window.__cdqInvoiceOcrRequestV2590||'')||String(id)!==String(run.id)||!currentInvoiceOcrV2733(run))return;cancelInvoiceOcrV2733();setBusy(false);if(ok)applyOcr(text,layout);else{detected('Lecture impossible',String(msg||'Le reçu n’a pas pu être lu.'),'error');status(String(msg||'Lecture automatique impossible.'),'error')}};
 async function context(force=false){syncInvoiceScopeV2631();serverStorageRevision=0;if(!email()){serverStorageMode='legacy';return}var owner=email()+'|'+userRole(),epoch=invoiceEpochV2631;serverStorageMode='checking';try{var c=await invoiceReadV2631('cdqContexteFactureV2590',[],force===true);if(owner!==email()+'|'+userRole()||epoch!==invoiceEpochV2631||!invoiceAllowedV2631())return;if(c&&c.ok){serverTech=String(c.technicien||'').trim();serverStorageMode=String(c.classement||'legacy').trim().toLowerCase();serverStorageRevision=Number(c.storageRevision)||0;update();return}}catch(_){}if(owner===email()+'|'+userRole()&&epoch===invoiceEpochV2631&&invoiceAllowedV2631())serverStorageMode='legacy'}
 async function save(){if(busy)return;if(userRole()==='lecture'){status('Le rôle Lecture seule ne peut pas enregistrer de facture.','error');return}if(serverStorageMode==='checking')await context();if(serverStorageMode!=='mensuel'||serverStorageRevision<2732){status('Le service Factures V27.32 doit être déployé pour activer le classement par mois et catégorie.','error');return}if(!dataUrl){status('Prenez une photo du reçu avant d’enregistrer.','error');return}var amount=numberMoney($('#cdqInvoiceAmountV2590',page).value),date=$('#cdqInvoiceDateV2590',page).value,shop=$('#cdqInvoiceMerchantV2590',page).value.trim(),description=$('#cdqInvoiceDescriptionV2590',page).value.trim();if(!Number.isFinite(amount)||amount<0){status('Vérifiez le montant de la facture.','error');return}if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){status('Vérifiez la date de la facture.','error');return}if(!category){status('Choisissez une catégorie de dépense.','error');return}setBusy(true,'Enregistrement de la facture…');try{var r=await rpc('cdqEnregistrerFactureV2590',[{requestId:requestId,dataUrl:dataUrl,montant:amount,date:date,commercant:shop,description:description,categorie:category}]);if(!r||!r.ok)throw Error(r&&r.message||"L'enregistrement n'a pas été confirmé.");serverTech=String(r.technicien||serverTech||'').trim();update();status('Facture enregistrée : '+String(r.nom||filename()),'ok');if(typeof afficherMessage==='function')afficherMessage('Facture enregistrée.',true);await refreshSaved();reset();status('Facture enregistrée. Vous pouvez en ajouter une autre ou supprimer une facture ci-dessous.','ok')}catch(e){var msg=e.message||String(e);status(/cdqEnregistrerFactureV2590|Script function not found|fonction/i.test(msg)?'Le service Factures doit être activé dans CDQ Script Manager avant le premier enregistrement.':msg,'error')}finally{setBusy(false)}}
 function ensurePage(){if(page&&page.isConnected)return page;page=document.createElement('section');page.id='cdqInvoicePageV2590';page.hidden=true;page.innerHTML='<div class="cdq-invoice-shell"><header class="cdq-invoice-title"><div><h2>Factures</h2><p>Reçus et dépenses</p></div><button type="button" class="cdq-invoice-close" data-inv-close aria-label="Fermer la page">×</button></header><section class="cdq-invoice-panel cdq-invoice-tech">'+svg('user')+'<div><small>Technicien détecté</small><strong data-inv-tech>—</strong></div><em>Identification automatique</em></section><div class="cdq-invoice-main"><section class="cdq-invoice-panel cdq-invoice-photo"><h3>'+svg('camera')+' Photo du reçu</h3><div class="cdq-invoice-preview" data-inv-preview></div><input data-inv-file type="file" accept="image/*,image/heic,image/heif,image/tiff,.heic,.heif,.jpg,.jpeg,.jpe,.jfif,.png,.webp,.gif,.bmp,.avif,.tif,.tiff" capture="environment" hidden><input data-inv-gallery-file type="file" accept="image/*,image/heic,image/heif,image/tiff,.heic,.heif,.jpg,.jpeg,.jpe,.jfif,.png,.webp,.gif,.bmp,.avif,.tif,.tiff" hidden><div class="cdq-invoice-photo-actions"><button class="primary" data-inv-take>'+svg('camera')+'Prendre</button><button data-inv-import>'+svg('gallery')+'Importer</button><button data-inv-clear>✕ Retirer</button></div></section><section class="cdq-invoice-panel cdq-invoice-ocr"><h3>'+svg('scan')+' Lecture automatique (OCR)</h3><button class="primary analyze" data-inv-analyze>'+svg('scan')+'Analyser le reçu</button><div class="cdq-invoice-detected" data-inv-detected data-state="idle">'+svg('check')+'<div><strong></strong><small></small></div></div><div class="cdq-invoice-fields"><label>Montant (CAD)<span>'+svg('money')+'<input id="cdqInvoiceAmountV2590" inputmode="decimal" placeholder="0,00"></span></label><label>Date<span>'+svg('calendar')+'<input id="cdqInvoiceDateV2590" type="date"></span></label><label>Commerçant<span>'+svg('store')+'<input id="cdqInvoiceMerchantV2590" placeholder="Nom du commerçant"></span></label><label>Description<span>'+svg('note')+'<input id="cdqInvoiceDescriptionV2590" placeholder="Description (optionnelle)"></span></label></div></section></div><section class="cdq-invoice-panel cdq-invoice-category"><h3>'+svg('tag')+' Catégorie de dépense</h3><label class="cdq-invoice-category-manual"><span>Choix manuel</span><select id="cdqInvoiceCategoryV2615"><option value="">Choisir une catégorie…</option><option value="Essence">Essence</option><option value="Outils">Outils</option><option value="Hébergement">Hébergement</option><option value="Réparation véhicule">Réparation véhicule</option><option value="Restaurant">Restaurant</option><option value="Autre">Autre</option></select><small data-inv-cat-note>La détection automatique est une suggestion. Vous pouvez toujours choisir la catégorie manuellement.</small></label><div class="cdq-invoice-category-buttons"><button data-cat="Essence">⛽<span>Essence</span></button><button data-cat="Outils">🔧<span>Outils</span></button><button data-cat="Hébergement">🛏<span>Hébergement</span></button><button data-cat="Réparation véhicule">🚗<span>Réparation<br>véhicule</span></button><button data-cat="Restaurant">🍽<span>Restaurant</span></button><button type="button" data-cat="Autre">🧾<span>Autre</span></button></div></section><section class="cdq-invoice-panel cdq-invoice-dest"><h3>'+svg('folder')+' Destination et nom de fichier</h3><small>Classement automatique par mois et catégorie (selon la date de la facture)</small><p>'+svg('folder')+'<span data-inv-path></span></p><small>Nom du fichier (généré automatiquement)</small><p>'+svg('note')+'<span data-inv-name></span></p></section><button class="cdq-invoice-save primary" data-inv-save>'+svg('save')+'<span>Enregistrer la facture</span></button><div class="cdq-invoice-status" data-inv-status></div><section class="cdq-invoice-panel cdq-invoice-saved"><div class="cdq-invoice-saved-head"><h3>'+svg('folder')+' Mes factures enregistrées</h3><button type="button" data-inv-refresh>↻ Actualiser</button></div><div data-inv-saved-list></div></section></div>';document.body.append(page);bind();position();return page}
