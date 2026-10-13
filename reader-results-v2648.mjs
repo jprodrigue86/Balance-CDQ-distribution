@@ -37,6 +37,24 @@ function artworkFrame(section,row){
   }catch(_){/* A report without readable page pixels keeps its PDF geometry. */}
   if(frame)cache.set(key,frame);return frame;
 }
+// Recover only the author's existing green checkbox canvas when PDF.js first
+// initializes a pristine report. No substitute icon, added overlay, field
+// write or PDF structure change. A real red result always takes precedence.
+export function restoreBlankConclusionV2738(surface){
+ const inputs=[...surface.querySelectorAll('.buttonWidgetAnnotation.checkBox input')];
+ const green=inputs.find(input=>input.name==='Bouton_Conforme');
+ const red=inputs.find(input=>input.name==='Bouton_NonConforme');
+ if(!green||!red||red.checked||green.checked)return false;
+ const hasReading=[...surface.querySelectorAll('input,textarea')].some(input=>
+  /^(?:charge_point_\d+_(?:avant|apres)_correction(?:_2)?|excentricite_(?:avant|apres)_.+|B4_.+_(?:Avant|Apres)Correction)$/.test(input.name||'')&&
+  !!String(input.value??'').replace(/[\s\u00a0\u202f]/g,''));
+ if(hasReading)return false;
+ // PDF.js uses the input checked state to select its native "checked" /AP
+ // canvas, which contains the approved green CONFORME artwork.
+ green.checked=true;
+ return true;
+}
+
 export function paintReaderResults(surface){
   for(const input of surface.querySelectorAll('.buttonWidgetAnnotation.checkBox input')){
     const name=input.name||'',row=/^charge_point_\d+_conforme_(vert|rouge)$/.exec(name),header=/^(bloc3|excentricite)_statut_(non_)?conforme$/.exec(name);
@@ -59,5 +77,5 @@ export function paintReaderResults(surface){
       badge.append(label);badge.insertAdjacentHTML('beforeend','<svg viewBox="0 0 24 24" aria-hidden="true"><path d="'+(bad?'M5 5l14 14M19 5L5 19':'M4 12.5l5 5L20 6.5')+'"/></svg>');
     }
   }
+  restoreBlankConclusionV2738(surface);
 }
-

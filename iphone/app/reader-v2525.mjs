@@ -360,14 +360,15 @@ async function open(data){
   if(work.stats().epoch!==workEpoch)throw Error('Le compte a changé pendant l’ouverture du rapport.');
   if(data.preparedEpoch!==undefined&&data.preparedEpoch!==workEpoch)throw Error('Le compte ou l’accès Drive a changé.');
   applyReaderTheme(data.theme);
-  if(data.desktop===true){document.body.classList.add('cdq-reader-pc');$('readerTop').append($('name'));$('readerNameBar')?.remove();}
+  if(data.desktop===true){document.body.classList.add('cdq-reader-pc');document.body.classList.remove('cdq-reader-mobile');$('readerTop').append($('name'));$('readerNameBar')?.remove();}
+  else{document.body.classList.add('cdq-reader-mobile');document.body.classList.remove('cdq-reader-pc');$('readerTop').append($('name'));}
   const blob=data.blob;
   if(!(blob instanceof Blob)||blob.size>32*1024*1024||(await blob.slice(0,5).text())!=='%PDF-')throw Error('PDF invalide (32 Mo maximum).');
   if(work.stats().epoch!==workEpoch)throw Error('Le compte a changé pendant l’ouverture du rapport.');
   if(doc||opening)return; // A repeated OPEN must never erase current answers.
   let generation=++documentGenerationV2730;
   const checkLease=()=>{if(!readerOpeningLeaseIsCurrentV2730({generation,currentGeneration:documentGenerationV2730,epoch:workEpoch,currentEpoch:work.stats().epoch,closed}))throw Error('Le compte ou le rapport a changé pendant son ouverture.');if(reuse&&(!sameReaderViewportV2730(retained?.viewport,readerViewportV2730(viewer))||!readerCanvasGeometryMatchesV2730(retained?.artwork,viewer.getPageView(0))))throw Error('Les dimensions du lecteur ont changé.');};
-  visualRefreshV2730.reset();opening=true;closed=false;autoReportName=data.autoReportName===true;
+  visualRefreshV2730.reset();delete $('viewer').dataset.cdqFamily;opening=true;closed=false;autoReportName=data.autoReportName===true;
   $('viewer').inert=true;$('viewer').style.opacity='0';name=String(data.name||name);fileId=String(data.fileId||'');readOnly=!!data.readOnly;
   initialValuesV2730=data.initialValues||null;initialAppliedV2730=false;initialUpdatesV2730=[];initialPreparedDraftV2730=data.readerPreparedVersion===2730&&isCacheableReaderDraftV2730({...data,bytes:blob.size});
   $('name').textContent=name;$('empty').style.display='none';status('Ouverture du PDF…');
@@ -412,6 +413,9 @@ async function open(data){
         // becomes available only after the canvas, widgets and calculations.
         const [metadata]=await Promise.all([readReaderMetadataV2724(doc),viewer.firstPagePromise]);checkLease();
         const {fields,actions,typography,firstPageHasAnnotations}=metadata;fieldDefinitions=fields;
+         // Select only the exact approved Suspendue field schema before restoring
+         // the original cyan widget appearance in CSS; never repaint the page.
+         $('viewer').dataset.cdqFamily=approvedReportMetadataFamilyV2735(fields)||'';
         tableColumnV2737?.dispose();tableColumnV2737=installReaderTableColumnV2737({surface:$('viewer'),getDocument:()=>doc,getFields:()=>fieldDefinitions,getPageView:index=>viewer.getPageView(index),afterChange:()=>{}});
         if(canvasCandidateV2730)canvasCandidateV2730.pristineIdentity=hasPristineIdentityV2730(fields);
         if(fields?.get?.('identification_balance')||fields?.identification_balance)autoReportName=true;

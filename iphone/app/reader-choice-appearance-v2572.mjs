@@ -1,4 +1,5 @@
 import {normalizeMeasurementRulesV2736} from './reader-measurements-v2736.mjs';
+import {compactApprovedFloorToleranceV2739} from './reader-floor-tolerance-v2739.mjs';
 import {normalizeReportVisualV2736} from './reader-report-visual-v2736.mjs';
 import {applyEquipmentHeaderGapV2736} from './reader-equipment-gap-v2736.mjs';
 import {approvedReportFamilyV2735} from './reader-approved-reports-v2735.mjs';
@@ -69,7 +70,7 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const correctedFamilyV2736=approvedReportFamilyV2735(pdf,L);
   if(correctedFamilyV2736){
     const nativeMulti=preserveNativeMultiHeadV2737(pdf,L,correctedFamilyV2736);
-    const changed=normalizeTableColumnV2737(pdf,L)|(!nativeMulti&&normalizeMeasurementRulesV2736(pdf,L,correctedFamilyV2736))|normalizeReportVisualV2736(pdf,L,correctedFamilyV2736)|applyEquipmentHeaderGapV2736(pdf,L,correctedFamilyV2736);
+    const changed=normalizeTableColumnV2737(pdf,L)|(!nativeMulti&&normalizeMeasurementRulesV2736(pdf,L,correctedFamilyV2736))|normalizeReportVisualV2736(pdf,L,correctedFamilyV2736)|applyEquipmentHeaderGapV2736(pdf,L,correctedFamilyV2736)|compactApprovedFloorToleranceV2739(pdf,L,correctedFamilyV2736);
     return changed?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;
   }
   if(approvedReportFamilyV2731(pdf,L))return data;
@@ -121,6 +122,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
     if(!preserveNativeMultiHeadV2737(pdf,L,correctedFamilyV2736))
       normalizeMeasurementRulesV2736(pdf,L,correctedFamilyV2736);
     applyEquipmentHeaderGapV2736(pdf,L,correctedFamilyV2736);
+    compactApprovedFloorToleranceV2739(pdf,L,correctedFamilyV2736);
     // PDF.js already saved this indicator's authored native appearance.
     // Normalize only a changed driver, preserving pristine master paint.
     const display=pdf.getForm().getFieldMaybe('_cdq_camion_indicateur_v2741');
