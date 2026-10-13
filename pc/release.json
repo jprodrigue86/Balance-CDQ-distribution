@@ -1,10 +1,10 @@
 {
   "platform": "pc-pwa",
-  "version": "27.40",
-  "release": "7371c19b0c29564dd637a3873ce1a3c39170d818a574e19e5356142bcdb7c3b8",
+  "version": "27.41",
+  "release": "5fade84cc9459b7f95aebd5e0132ade499761f30942ab24d822bf59bf475b6c6",
   "desktopModel": 3,
-  "androidSourceBuild": "2026.10.13-v27.40-pdf-drive-confirmation-mobile",
-  "androidSelectorSha256": "fc8b1a610c958e91899dcf2c93a3c34c338d989bbea1fc11e21fda01eaa7be01",
+  "androidSourceBuild": "2026.10.13-v27.41-invoice-category",
+  "androidSelectorSha256": "9954bd3c20808b1c8fc7304176e368a0cb49d308455474f6521d83509a924936",
   "generatedFrom": "scripts/build-pc-v2676.mjs",
   "files": 877
 }

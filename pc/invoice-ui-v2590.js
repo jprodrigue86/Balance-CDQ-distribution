@@ -137,8 +137,45 @@ function parseAmount(t,layout){
 }
 function parseDate(t){var text=String(t||''),m=text.match(/\b(20\d{2})[\/-](0?[1-9]|1[0-2])[\/-](0?[1-9]|[12]\d|3[01])\b/);if(m)return m[1]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[3]).padStart(2,'0');m=text.match(/\b(0?[1-9]|[12]\d|3[01])[\/-](0?[1-9]|[12]\d|3[01])[\/-](20\d{2})\b/);if(!m)return'';var a=Number(m[1]),b=Number(m[2]),month,day;if(a<=12&&b>12){month=a;day=b}else if(a>12&&b<=12){day=a;month=b}else{month=a;day=b}if(month<1||month>12||day<1||day>31)return'';return m[3]+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0')}
 function merchant(t){var bad=/^(bienvenue|welcome|merci|thank|total|sous[- ]?total|tps|tvq|taxe|date|facture|reçu|receipt|station|pompe|tel|tél|www\.|http|visa|mastercard|débit|debit|bronze|generic)/i;return (textLines(t).slice(0,18).find(function(l){return /[A-Za-zÀ-ÿ]{3}/.test(l)&&!bad.test(l)&&!/^\d/.test(l)&&!(/\b(QC|Québec|Quebec)\b/i.test(l)&&/\d/.test(l))&&!/\b(?:blvd|boulevard|rue|street|route|autoroute)\b/i.test(l)})||'').slice(0,80)}
-function desc(t){var ls=textLines(t),bad=/total|sous[- ]?total|tps|tvq|taxe|merci|date|facture|reçu|receipt|visa|mastercard|débit|debit|\$|\b20\d{2}[\/-]\d{1,2}[\/-]\d{1,2}\b/i;return String(ls.find(function(l){return !bad.test(l)&&l.length>3&&l.length<80&&/essence|carburant|pompe|litres?|outil|perceuse|quincaillerie|hébergement|hotel|hôtel|chambre|réparation|garage|pneu|huile|mécanique/i.test(l)})||'').slice(0,100)}
-function infer(t){if(/restaurant|resto\b|pizzeria|bistro|brasserie|caf[eé]t[eé]ria|tim hortons|mcdonald|subway/i.test(t))return 'Restaurant';t=String(t||'').toLowerCase();if(/essence|carburant|pompe|litres?|diesel|super sans plomb/.test(t))return'Essence';if(/hôtel|hotel|chambre|hébergement|motel|auberge/.test(t))return'Hébergement';if(/garage|réparation|reparation|vidange|pneu|mécanique|mecanique|alignement|frein/.test(t))return'Réparation véhicule';if(/outil|perceuse|quincaillerie|douille|meuleuse|scie/.test(t))return'Outils';return''}
+// V27.41 classification only: printed room-number forms do not prove lodging.
+function invoiceCategoryTextV2741(t){return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/œ/g,'oe').replace(/\b0(eufs?)(?=avec|\b)/g,'o$1').replace(/\bcham(?:be|8re|rn?bre)\b/g,'chambre').replace(/\bh0tel\b/g,'hotel').replace(/\b(?:rest0rant|restauramt)\b/g,'restaurant').replace(/\brest0\b/g,'resto').replace(/\bbistr0\b/g,'bistro').replace(/\bpourb(?:[o0][i1l]re|otre)\b/g,'pourboire').replace(/(\d)([a-z])/g,'$1 $2').replace(/\s+/g,' ').trim()}
+function invoiceRoomNumberV2741(line){var l=invoiceCategoryTextV2741(line);return /\b(?:n[o0°º]\s*(?:de\s*)?chambre|numero\s*(?:de\s*)?chambre|room\s*(?:number|no)|chambre\s*(?:n[o0]|numero))\b/.test(l)||/^(?:chambre|room)\s*[:#]?\s*(?:[a-z]?\d{1,5}[a-z]?|[_-]+)\s*$/.test(l)}
+function invoiceMealV2741(line){var l=invoiceCategoryTextV2741(line);return !/\b(?:cafetieres?|machines?|moulin|coupe[- ]?oeufs?|grille[- ]?pain|outils?|quincaillerie)\b/.test(l)&&/\b(?:club\s*(?:cesar|caesar|sandwich)|[0-9]*\s*[o0]eufs?(?:\s*avec)?|omelette|dejeuner|breakfast|salade|sandwich|burgers?|pizza|poutine|soupes?|steak|poulet|frites|repas|cafe|espresso|cappuccino|boisson|biere|menu\s*(?:du\s*jour|midi))\b/.test(l)}
+function invoiceCategoryEvidenceV2741(t){
+  var lines=textLines(t),normal=lines.map(invoiceCategoryTextV2741),text=normal.join('\n');
+  var charged=function(i){return lineAmounts(lines[i]).some(function(n){return n>0})||(i+1<lines.length&&invoiceOnlyAmount(lines[i+1]).some(function(n){return n>0}))};
+  var lodging=normal.some(function(l,i){return !invoiceRoomNumberV2741(l)&&!/\b(?:room\s*service|service\s*(?:aux?|de)\s*chambres?|chambre\s*(?:a\s*air|froide))\b/.test(l)&&/\b(?:chambre|nuits?|nuitees?|sejour|hebergement|room|nights?|accommodation|lodging)\b/.test(l)&&charged(i)});
+  var mealItem=lines.find(function(l,i){return invoiceMealV2741(normal[i])&&charged(i)});
+  var fuel=normal.some(function(l,i){return /\b(?:essence|carburant|litres?|diesel|super sans plomb)\b/.test(l)&&charged(i)});
+  var repair=normal.some(function(l,i){return /\b(?:reparation|vidange|pneu|mecanique|alignement|frein)\b/.test(l)&&charged(i)});
+  var tools=normal.some(function(l,i){return /\b(?:outil|perceuse|quincaillerie|douille|meuleuse|scie)\b/.test(l)&&charged(i)});
+  var service=/\b(?:addition|serveur|serveuse|servi|served)\b|\btable\s*[#:]*\s*\d/.test(text),tip=/\b(?:pourboire|gratuity|tips?)\b/.test(text);
+  // ML Kit can return the entire price column after the labels. A meal name
+  // plus its restaurant bill/table context remains evidence without inventing
+  // a label/price pairing or changing the protected amount parser.
+  var mealService=/\baddition\s*[#:]*\s*\d|\btable\s*[#:]*\s*\d/.test(text);
+  if(!mealItem&&mealService)mealItem=lines.find(function(l,i){return invoiceMealV2741(normal[i])&&!/\b(?:inclus\w*|included|gratuit\w*|free)\b/.test(normal[i])});
+  return {lines:lines,normal:normal,text:text,lodging:lodging,fuel:fuel,repair:repair,tools:tools,meal:!!mealItem||service&&tip,mealItem:mealItem};
+}
+function desc(t){
+  var ls=textLines(t),bad=/total|sous[- ]?total|tps|tvq|taxe|merci|date|facture|reçu|receipt|visa|mastercard|débit|debit|\$|\b20\d{2}[\/-]\d{1,2}[\/-]\d{1,2}\b/i;
+  if(infer(t)==='Restaurant'){var item=invoiceCategoryEvidenceV2741(t).mealItem;if(item){var amount=invoiceAmountTokens(item)[0];return (amount?item.slice(0,amount.start):item).replace(/[\s$]+$/g,'').slice(0,100)}}
+  return String(ls.find(function(l){return !invoiceRoomNumberV2741(l)&&!bad.test(l)&&l.length>3&&l.length<80&&/essence|carburant|pompe|litres?|outil|perceuse|quincaillerie|hébergement|hotel|hôtel|chambre|réparation|garage|pneu|huile|mécanique/i.test(l)})||'').slice(0,100);
+}
+function infer(t){
+  var evidence=invoiceCategoryEvidenceV2741(t),text=evidence.text;
+  if(evidence.lodging)return'Hébergement';
+  if(evidence.fuel)return'Essence';
+  if(evidence.repair)return'Réparation véhicule';
+  if(evidence.tools)return'Outils';
+  if(evidence.meal)return'Restaurant';
+  if(/\b(?:restaurant|resto|pizzeria|bistro|brasserie|cafeteria|tim hortons|mcdonald|subway)\b/.test(text))return'Restaurant';
+  if(/\b(?:essence|carburant|pompe|litres?|diesel|super sans plomb)\b/.test(text))return'Essence';
+  if(evidence.normal.some(function(l){return !invoiceRoomNumberV2741(l)&&/\b(?:hotel|hebergement|motel|auberge|chambre)\b/.test(l)&&!/\b(?:room\s*service|chambre\s*(?:a\s*air|froide))\b/.test(l)}))return'Hébergement';
+  if(/\b(?:garage|reparation|vidange|pneu|mecanique|alignement|frein)\b/.test(text))return'Réparation véhicule';
+  if(/\b(?:outil|perceuse|quincaillerie|douille|meuleuse|scie)\b/.test(text))return'Outils';
+  return'';
+}
 function renderSaved(){
   if(!page)return;
   var list=$('[data-inv-saved-list]',page);if(!list)return;list.replaceChildren();
