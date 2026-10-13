@@ -14,8 +14,20 @@ export function installLocalReportListV2713({host=window,fromPwa,owner,allowed,c
   const localId='cdq-local-'+d.localId,key=email+'|'+d.localId,old=seen.get(key);if(old&&Number(old.version)>Number(d.editVersion||0))return;
   if(old?.retired)return;
   if(d.driveId){remove(d.clientId,localId);seen.set(key,{version:Number(d.editVersion||0),driveId:d.driveId});return;}
-  if(old?.driveId||old?.retired)return;seen.set(key,{version:Number(d.editVersion||0),driveId:''});
-  confirm({id:localId,nom:String(d.name||'Rapport.pdf'),type:'PDF',_cdqLocalReportV2713:d.localId,_cdqPendingSaveV2660:String(d.uploadId||d.localId)},String(d.clientId),String(d.folderId||d.clientId));
+  if(old?.driveId||old?.retired)return;
+  const error=String(d.error||'').trim().slice(0,350);
+  seen.set(key,{version:Number(d.editVersion||0),driveId:'',error});
+  // V27.40: inspect the locally committed PDF as a pending report; this
+  // does not acknowledge a Drive upload or change the calibration results.
+  try{Promise.resolve(host.cdqReportConformityV2727?.noteSave({id:localId,clientId:d.clientId,owner:email},d.blob,String(d.uploadId||d.localId))).catch(()=>{});}catch{}
+  // A stalled/failed upload must not keep the animated upload circle forever.
+  // This is still a LOCAL report, never a false Drive confirmation.
+  const localName=String(d.name||'Rapport.pdf');
+  confirm({id:localId,nom:error?localName+' — ⚠ Drive non confirmé':localName,
+    type:'PDF',_cdqLocalReportV2713:d.localId,
+    _cdqPendingSaveV2660:error?'':String(d.uploadId||d.localId),
+    _cdqDriveUploadErrorV2740:error},
+    String(d.clientId),String(d.folderId||d.clientId));
  });
  return {open(id){if(!String(id).startsWith('cdq-local-'))return false;if(!allowed())throw Error('Accès Drive requis.');post({type:'CDQ_LOCAL_REPORT_OPEN_V2713',email:owner(),localId:String(id).slice(10)});return true;},
   retire(id,client){if(!allowed())return Promise.reject(Error('Accès Drive requis.'));const local=String(id).startsWith('cdq-local-');id=String(id).replace(/^cdq-local-/,'');if(!/^[\w-]{8,150}$/.test(id))return Promise.reject(Error('Copie locale invalide.'));
@@ -25,3 +37,4 @@ export function installLocalReportListV2713({host=window,fromPwa,owner,allowed,c
   },async canPublish(id){const key=owner()+'|'+id;try{await seen.get(key)?.retiring;}catch{}return !seen.get(key)?.retired;},
   reset(){for(const r of requests.values()){clearTimeout(r.timer);r.reject(Error('Le compte a changé.'));}requests.clear();seen.clear();}};
 }
+

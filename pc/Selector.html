@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.37" data-cdq-pc-release="f5305f9e628d68001a10e23f6775af946fba54242acae86a32c9f0f8327870fb">
+<html data-cdq-pc-version="27.40" data-cdq-pc-release="7371c19b0c29564dd637a3873ce1a3c39170d818a574e19e5356142bcdb7c3b8">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -820,7 +820,7 @@ for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2
     if(!parent)return false;
     const old=located?.fichier||file(root,result.id)||{};
     let supplied=result.meta||result.fichier||result;
-    if(old._cdqPendingSaveV2660&&supplied._cdqCommittedUploadV2660!==old._cdqPendingSaveV2660&&!supplied._cdqPendingSaveV2660)supplied={...supplied,nom:old.nom,_cdqPendingSaveV2660:old._cdqPendingSaveV2660};
+    if(old._cdqPendingSaveV2660&&supplied._cdqCommittedUploadV2660!==old._cdqPendingSaveV2660&&!supplied._cdqPendingSaveV2660)supplied={...supplied,nom:old.nom,_cdqPendingSaveV2660:old._cdqPendingSaveV2660,_cdqDriveUploadErrorV2740:old._cdqDriveUploadErrorV2740||''};
     if(supplied._cdqCommittedUploadV2660&&supplied._cdqCommittedUploadV2660===old._cdqPendingSaveV2660)supplied={...supplied,_cdqPendingSaveV2660:''};
     const meta={...fallback,...old,...supplied,id:String(result.id),nom:String(supplied.nom||result.nom||old.nom||fallback.nom||'')};
     if(!meta.nom)return false;
@@ -854,7 +854,7 @@ for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.12-v27.37-pdf-corrections">
+<meta name="cdq-package-build" content="2026.10.13-v27.40-pdf-drive-confirmation-mobile">
 
 
 <script id="cdqBridgeV23">
@@ -908,7 +908,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.12-v27.37-pdf-corrections'
+    build:'2026.10.13-v27.40-pdf-drive-confirmation-mobile'
   });
 }
 
@@ -921,7 +921,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.12-v27.37-pdf-corrections'
+        build:'2026.10.13-v27.40-pdf-drive-confirmation-mobile'
       });
     }
   } catch(e) {}
@@ -11574,7 +11574,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.12-v27.37-pdf-corrections";
+  const CDQ_BUILD = "2026.10.13-v27.40-pdf-drive-confirmation-mobile";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13834,7 +13834,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.12-v27.37-pdf-corrections";
+const CDQ_V19_BUILD = "2026.10.13-v27.40-pdf-drive-confirmation-mobile";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -14602,7 +14602,14 @@ function reportRuntimeV2636(){
     const payload=await encode(data.blob);guard(email);
     const hash=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(email+':'+data.requestId)))].map(x=>x.toString(16).padStart(2,'0')).join('');
     const name=String(data.name||model.name);
-    const result=await window.cdqAppelServeur('creerRapportLocalCDQV2642',[data.modeleId,data.folderId,data.clientId,name,'copy-'+hash,payload]);guard(email);
+    // The server request is idempotent by 'copy-'+hash. A stalled RPC is
+    // bounded so it never blocks later reports; any eventual replay resolves
+    // against the same Drive file rather than creating a duplicate.
+    let deadline;
+    const result=await Promise.race([
+      window.cdqAppelServeur('creerRapportLocalCDQV2642',[data.modeleId,data.folderId,data.clientId,name,'copy-'+hash,payload]),
+      new Promise((_,reject)=>{deadline=setTimeout(()=>reject(Error('Drive ne répond pas. Le rapport reste conservé localement; une reprise est possible.')),55000);})
+    ]).finally(()=>clearTimeout(deadline));guard(email);
     if(!result?.ok||!result.id||!result.revision||String(result.clientId)!==String(data.clientId))throw Error('La destination du rapport n’a pas été confirmée.');
     if(window.cdqLocalReportListV2714&&!await window.cdqLocalReportListV2714.canPublish(data.requestId)){
       guard(email);
@@ -14613,10 +14620,15 @@ function reportRuntimeV2636(){
     guard(email);
     const finalMeta=result,finalName=String(result.nom||name);
     const record={id:result.id,autoReportName:true,nom:finalName,revision:finalMeta.revision,clientId:data.clientId,type:'PDF',taille:data.blob.size,blob:data.blob};
-    await cdqV19PutRecord('document-pdf',result.id,record);guard(email);
     const confirmed={...result,nom:finalName,revision:finalMeta.revision};
-    window.dispatchEvent(new CustomEvent('cdq:copied',{detail:confirmed}));
-    window.cdqInstantFiles2530?.confirm?.(confirmed,data.clientId,data.folderId,{id:model.sourceId,nom:finalName,type:'PDF'});
+    // The backend's validated id + revision is the ONLY cloud confirmation.
+    // Cache and folder refresh are secondary. A full/blocked IndexedDB or
+    // failing client-list repaint must never consume the Drive acknowledgment.
+    try{window.dispatchEvent(new CustomEvent('cdq:copied',{detail:confirmed}));}catch(error){console.warn('CDQ notification création différée',error);}
+    try{window.cdqInstantFiles2530?.confirm?.(confirmed,data.clientId,data.folderId,{id:model.sourceId,nom:finalName,type:'PDF'});}catch(error){console.warn('CDQ actualisation dossiers différée',error);}
+    Promise.resolve().then(()=>cdqV19PutRecord('document-pdf',result.id,record)).catch(error=>{
+      console.warn('CDQ cache de rapport différé. Drive confirmé:',result.id,error);
+    });
     return confirmed;
   };
   window.cdqCreateReportV2636=async function(key,folderId,clientId,destinationName,requestId){
@@ -14686,6 +14698,43 @@ window.addEventListener('online',function(){
   cdqPublierSessionHorsLigne();
   cdqRafraichirTechniciensRapports(true).catch(function(){});
 });
+function withDriveDeadlineV2741(request,timeoutMs=55000){
+ let timer;
+ return Promise.race([request,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Drive ne répond pas. Le PDF rempli reste conservé sur cet appareil; réessayez la synchronisation.')),timeoutMs);})]).finally(()=>clearTimeout(timer));
+}
+function confirmDriveSaveV2741({data,result,email,guard,get,put,confirm,dispatch,warn=()=>{}}){
+ guard(email);
+ if(!result?.ok||!result.id||!result.revision||data.clientId&&String(result.clientId)!==String(data.clientId))throw Error('La sauvegarde Drive n’a pas été confirmée.');
+ const receipt={...result,_cdqCommittedUploadV2660:data.uploadId,_cdqDriveUploadErrorV2740:''};
+ try{confirm(receipt,result.clientId,data.folderId||result.clientId);}catch(error){warn(error);}
+ try{dispatch('cdq:pdf-saved',{...result,saveId:data.uploadId});}catch(error){warn(error);}
+ Promise.resolve().then(async()=>{
+  guard(email);const previous=await get('document-pdf',result.id);guard(email);
+  if(!previous?.pendingSaveId||previous.pendingSaveId===data.uploadId)
+   await put('document-pdf',result.id,{...previous,pendingSaveId:'',id:result.id,nom:result.nom,autoReportName:!!data.reportName||previous?.autoReportName===true,blob:data.blob,revision:result.revision,clientId:result.clientId,type:'PDF',taille:data.blob.size});
+ }).catch(warn);
+ return result;
+}
+function publishDriveDocumentV2741({data:d,email,valid,versions,get,put,confirm,dispatch,refresh,conformity,warn=()=>{}}){
+ valid(email);const key=email+'|'+d.fileId,old=versions.get(key),version=Number(d.editVersion||0);
+ if(old&&old.version>version)return;
+ const token={version,uploadId:d.uploadId};versions.set(key,token);
+ const error=String(d.error||'').trim().slice(0,350);
+ const conformitySaveIdV2727=String(d.uploadId||('offline-'+d.fileId+'-'+version));
+ try{Promise.resolve(conformity?.noteSave({id:d.fileId,clientId:d.clientId,revision:d.revision,owner:email},d.blob,conformitySaveIdV2727)).catch(warn);}catch(problem){warn(problem);}
+ try{if(!d.pending)conformity?.tracker.acknowledge(conformitySaveIdV2727,{id:d.fileId,clientId:d.clientId,owner:email,revision:d.revision});}catch(problem){warn(problem);}
+ try{confirm({id:d.fileId,nom:d.name,type:'PDF',_cdqPendingSaveV2660:d.pending?d.uploadId:'',_cdqCommittedUploadV2660:d.pending?'':d.uploadId,_cdqDriveUploadErrorV2740:error},d.clientId,d.folderId||d.clientId);}catch(problem){warn(problem);}
+ try{dispatch('cdq:pdf-local-saved',{id:d.fileId,sourceId:d.sourceId||d.fileId,clientId:d.clientId,owner:email,name:d.name,saveId:d.uploadId,pending:!!d.pending,revision:d.revision,equipmentSignature:d.equipmentSignature,error});}catch(problem){warn(problem);}
+ Promise.resolve().then(async()=>{
+  valid(email);const prior=await get('document-pdf',d.fileId);valid(email);
+  if(versions.get(key)!==token||Number(prior?.localEditVersionV2660||0)>version)return;
+  await put('document-pdf',d.fileId,{id:d.fileId,nom:d.name,autoReportName:d.autoReportName===true,clientId:d.clientId,clientName:d.clientName,revision:d.revision,taille:d.blob.size,blob:d.blob,readerPreparedVersion:d.readerPreparedVersion===2730?2730:undefined,offlineSelected:d.offlineSelected===true,offlinePrepared:d.offlineSelected===true,pendingSaveId:d.pending?d.uploadId:'',localEditVersionV2660:d.editVersion,driveUploadErrorV2740:error});valid(email);
+  if(versions.get(key)===token)await refresh();
+ }).catch(warn);
+}
+const cdqDriveDocumentVersionsV2741=new Map();
+window.addEventListener('cdq:drive-cleared-v2632',()=>cdqDriveDocumentVersionsV2741.clear());
+
 const cdqDocumentJobsV2660=new Map();
 function cdqRunDocumentV2660(email,id,fn){
  const key=email+'|'+id,previous=cdqDocumentJobsV2660.get(key)||Promise.resolve();
@@ -14703,19 +14752,21 @@ window.addEventListener('message',function(event){
         if(cdqAccessState!=='ready'||utilisateurCourantEmail!==email)throw new Error('Reconnectez votre compte pour synchroniser.');
         const a=new Uint8Array(await data.blob.arrayBuffer());let bin='';
         for(let i=0;i<a.length;i+=32768)bin+=String.fromCharCode.apply(null,a.subarray(i,i+32768));
-        let r=data.revision?await cdqV19Gs('enregistrerPdfLecteurCDQV2520',[data.driveId,btoa(bin),data.uploadId,data.revision]):await cdqV19Gs('enregistrerPdfRempliCDQ',[data.driveId,btoa(bin),data.uploadId]);
+        let r=data.revision?await withDriveDeadlineV2741(cdqV19Gs('enregistrerPdfLecteurCDQV2520',[data.driveId,btoa(bin),data.uploadId,data.revision])):await withDriveDeadlineV2741(cdqV19Gs('enregistrerPdfRempliCDQ',[data.driveId,btoa(bin),data.uploadId]));
         if(!r||!r.ok)throw new Error('La sauvegarde n’a pas été confirmée.');
-        if(data.reportName)r=await cdqRenameReportV2648(r,data.reportName,email,data.clientId);
-        const previous=await cdqV19GetRecord('document-pdf',r.id);cdqReaderGuardV2520(email);
-        if(!previous?.pendingSaveId||previous.pendingSaveId===data.uploadId)await cdqV19PutRecord('document-pdf',r.id,{...previous,pendingSaveId:'',id:r.id,nom:r.nom,autoReportName:!!data.reportName||previous?.autoReportName===true,blob:data.blob,revision:r.revision,clientId:r.clientId,type:'PDF',taille:data.blob.size});cdqReaderGuardV2520(email);
-        window.cdqInstantFiles2530?.confirm?.({...r,_cdqCommittedUploadV2660:data.uploadId},r.clientId,data.folderId||r.clientId);
-        window.dispatchEvent(new CustomEvent('cdq:pdf-saved',{detail:{...r,saveId:data.uploadId}}));
+        if(data.reportName)r=await withDriveDeadlineV2741(cdqRenameReportV2648(r,data.reportName,email,data.clientId));
+        confirmDriveSaveV2741({data,result:r,email,guard:cdqReaderGuardV2520,get:cdqV19GetRecord,put:cdqV19PutRecord,
+          confirm:(...args)=>window.cdqInstantFiles2530?.confirm?.(...args),dispatch:(type,detail)=>window.dispatchEvent(new CustomEvent(type,{detail})),
+          warn:error=>console.warn('CDQ cache/affichage différé; sauvegarde Drive confirmée',r.id,error)});
         cdqPostToPwa({type:'CDQ_OFFLINE_SAVE_RESULT',requestId:data.requestId,uploadId:data.uploadId,ok:true,id:r.id,revision:r.revision||'',reportName:data.reportName?r.nom:''});
       }catch(e){cdqPostToPwa({type:'CDQ_OFFLINE_SAVE_RESULT',requestId:data.requestId,uploadId:data.uploadId,ok:false,message:e.message||String(e)});}
     });
   }
   if(data.type==='CDQ_OFFLINE_COPY' && data.bundled===true){
     const email=utilisateurCourantEmail;
+    // The V26.60 publisher transforms this exact anchor into its
+    // per-document queue. Its previous.catch(()=>{}) already prevents a
+    // failed earlier report from blocking another report.
     cdqRunDocumentV2660(email,String(data.driveId||data.requestId),async function(){
       try{
         const result=await window.cdqBundledReportCopyV2636(data,email);
@@ -15286,9 +15337,20 @@ function installLocalReportListV2713({host=window,fromPwa,owner,allowed,confirm,
   const localId='cdq-local-'+d.localId,key=email+'|'+d.localId,old=seen.get(key);if(old&&Number(old.version)>Number(d.editVersion||0))return;
   if(old?.retired)return;
   if(d.driveId){remove(d.clientId,localId);seen.set(key,{version:Number(d.editVersion||0),driveId:d.driveId});return;}
-  if(old?.driveId||old?.retired)return;seen.set(key,{version:Number(d.editVersion||0),driveId:''});
-  window.cdqReportConformityV2727?.noteSave({id:localId,clientId:d.clientId,owner:email},d.blob,String(d.uploadId||d.localId)).catch(()=>{});
-  confirm({id:localId,nom:String(d.name||'Rapport.pdf'),type:'PDF',_cdqLocalReportV2713:d.localId,_cdqPendingSaveV2660:String(d.uploadId||d.localId)},String(d.clientId),String(d.folderId||d.clientId));
+  if(old?.driveId||old?.retired)return;
+  const error=String(d.error||'').trim().slice(0,350);
+  seen.set(key,{version:Number(d.editVersion||0),driveId:'',error});
+  // V27.40: inspect the locally committed PDF as a pending report; this
+  // does not acknowledge a Drive upload or change the calibration results.
+  try{Promise.resolve(host.cdqReportConformityV2727?.noteSave({id:localId,clientId:d.clientId,owner:email},d.blob,String(d.uploadId||d.localId))).catch(()=>{});}catch{}
+  // A stalled/failed upload must not keep the animated upload circle forever.
+  // This is still a LOCAL report, never a false Drive confirmation.
+  const localName=String(d.name||'Rapport.pdf');
+  confirm({id:localId,nom:error?localName+' — ⚠ Drive non confirmé':localName,
+    type:'PDF',_cdqLocalReportV2713:d.localId,
+    _cdqPendingSaveV2660:error?'':String(d.uploadId||d.localId),
+    _cdqDriveUploadErrorV2740:error},
+    String(d.clientId),String(d.folderId||d.clientId));
  });
  return {open(id){if(!String(id).startsWith('cdq-local-'))return false;if(!allowed())throw Error('Accès Drive requis.');post({type:'CDQ_LOCAL_REPORT_OPEN_V2713',email:owner(),localId:String(id).slice(10)});return true;},
   retire(id,client){if(!allowed())return Promise.reject(Error('Accès Drive requis.'));const local=String(id).startsWith('cdq-local-');id=String(id).replace(/^cdq-local-/,'');if(!/^[\w-]{8,150}$/.test(id))return Promise.reject(Error('Copie locale invalide.'));
@@ -15298,6 +15360,7 @@ function installLocalReportListV2713({host=window,fromPwa,owner,allowed,confirm,
   },async canPublish(id){const key=owner()+'|'+id;try{await seen.get(key)?.retiring;}catch{}return !seen.get(key)?.retired;},
   reset(){for(const r of requests.values()){clearTimeout(r.timer);r.reject(Error('Le compte a changé.'));}requests.clear();seen.clear();}};
 }
+
 // Upload progress is a status. Cancelling an unsent report belongs in its menu.
 function installPendingReportMenuV2731(row, options){
  if(row.cdqPendingMenuV2731){row.cdqPendingMenuV2731.update(options);return row.cdqPendingMenuV2731;}
@@ -15572,14 +15635,9 @@ const cdqOffline24 = (() => {
     if(d.type==='CDQ_OFFLINE_DOCUMENT_UPDATED'&&d.email===String(utilisateurCourantEmail||'')&&d.blob instanceof Blob){
       (async()=>{const email=account(),q=await cdqV19QueueGet();valid(email);
         if(q.some(a=>String(a.targetId)===String(d.fileId)&&/pdf/.test(a.kind)))return;
-        const prior=await cdqV19GetRecord('document-pdf',d.fileId);valid(email);
-        if(Number(prior?.localEditVersionV2660||0)>Number(d.editVersion||0))return;
-        const conformitySaveIdV2727=String(d.uploadId||('offline-'+d.fileId+'-'+Number(d.editVersion||0)));
-        window.cdqReportConformityV2727?.noteSave({id:d.fileId,clientId:d.clientId,revision:d.revision,owner:email},d.blob,conformitySaveIdV2727).catch(()=>{});
-        if(!d.pending)window.cdqReportConformityV2727?.tracker.acknowledge(conformitySaveIdV2727,{id:d.fileId,clientId:d.clientId,owner:email,revision:d.revision});
-        await cdqV19PutRecord('document-pdf',d.fileId,{id:d.fileId,nom:d.name,autoReportName:d.autoReportName===true,clientId:d.clientId,clientName:d.clientName,revision:d.revision,taille:d.blob.size,blob:d.blob,readerPreparedVersion:d.readerPreparedVersion===2730?2730:undefined,offlineSelected:d.offlineSelected===true,offlinePrepared:d.offlineSelected===true,pendingSaveId:d.pending?d.uploadId:'',localEditVersionV2660:d.editVersion});valid(email);
-        window.cdqInstantFiles2530.confirm({id:d.fileId,nom:d.name,type:'PDF',_cdqPendingSaveV2660:d.pending?d.uploadId:'',_cdqCommittedUploadV2660:d.pending?'':d.uploadId},d.clientId,d.folderId||d.clientId);
-        window.dispatchEvent(new CustomEvent('cdq:pdf-local-saved',{detail:{id:d.fileId,sourceId:d.sourceId||d.fileId,clientId:d.clientId,owner:email,name:d.name,saveId:d.uploadId,pending:!!d.pending,revision:d.revision,equipmentSignature:d.equipmentSignature}}));await refresh();
+        publishDriveDocumentV2741({data:d,email,valid,versions:cdqDriveDocumentVersionsV2741,get:cdqV19GetRecord,put:cdqV19PutRecord,refresh,conformity:window.cdqReportConformityV2727,
+          confirm:(...args)=>window.cdqInstantFiles2530?.confirm?.(...args),dispatch:(type,detail)=>window.dispatchEvent(new CustomEvent(type,{detail})),
+          warn:error=>console.warn('CDQ miroir local différé; copie canonique conservée',d.fileId,error)});
       })().catch(afficherErreur);
     }
   });
@@ -16308,7 +16366,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.12-v27.37-pdf-corrections";
+const CDQ_V20_BUILD = "2026.10.13-v27.40-pdf-drive-confirmation-mobile";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -17155,7 +17213,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.12-v27.37-pdf-corrections";
+const CDQ_V21_BUILD = "2026.10.13-v27.40-pdf-drive-confirmation-mobile";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21820,7 +21878,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.12-v27.37-pdf-corrections',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.13-v27.40-pdf-drive-confirmation-mobile',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23224,12 +23282,17 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
   let tree;try{tree=cacheContenuCompagnies[String(compagnieSelectionnee||'')]}catch{}if(!tree)return;
   const scoped=scope?.nodeType===1&&scope.closest('#filesContainer'),list=scoped?[...(scope.matches('.file-row')?[scope]:[]),...all('.file-row',scope)]:all('#filesContainer .file-row');
   for(const row of list){
-   const id=row.querySelector('.file-checkbox')?.dataset.fileId,found=trouverFichierDansArbre(tree,id)?.fichier,pending=!!found?._cdqPendingSaveV2660;
+   const id=row.querySelector('.file-checkbox')?.dataset.fileId,found=trouverFichierDansArbre(tree,id)?.fichier,pending=!!found?._cdqPendingSaveV2660,error=String(found?._cdqDriveUploadErrorV2740||'');
    let badge=$('.file-pending-v2708',row);
    if(!badge){badge=document.createElement('span');badge.className='file-pending-v2708 cdq23-row-spinner';badge.setAttribute('role','status');badge.title='Synchronisation avec Drive en cours';badge.setAttribute('aria-label',badge.title);row.querySelector('.file-name')?.append(badge)}
-   badge.hidden=!pending;
-   if(pending)window.cdqInstallPendingReportMenuV2731?.(row,id);else row.cdqPendingMenuV2731?.remove();
-   const green=$('.file-today-done-badge',row);if(green)green.hidden=pending||!(cdqFichierModifieAujourdhui(found?.dateModification)||cdqFichierModifieAujourdhui(found?._cdqSavedAtV2708));
+   badge.classList.toggle('cdq23-row-spinner',!error);badge.textContent=error?'⚠':'';
+   badge.title=error+' — Cliquer pour réessayer la synchronisation';if(!error)badge.title='Synchronisation avec Drive en cours';badge.setAttribute('aria-label',badge.title);
+   badge.tabIndex=error?0:-1;badge.setAttribute('role',error?'button':'status');
+   const retry=()=>{if(error)cdqPostToPwa({type:'CDQ_OFFLINE_RETRY_SYNC_V2741',email:String(utilisateurCourantEmail||'')});};
+   badge.onclick=retry;badge.onkeydown=e=>{if(error&&['Enter',' '].includes(e.key)){e.preventDefault();retry();}};
+   badge.hidden=!(pending||error);
+   if(pending||error)window.cdqInstallPendingReportMenuV2731?.(row,id);else row.cdqPendingMenuV2731?.remove();
+   const green=$('.file-today-done-badge',row);if(green)green.hidden=pending||!!error||!(cdqFichierModifieAujourdhui(found?.dateModification)||cdqFichierModifieAujourdhui(found?._cdqSavedAtV2708));
   }
  }
  let navChangedV2724=false;const fileRootsV2724=new Set();
@@ -23249,6 +23312,7 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
  addEventListener('cdq:pdf-local-saved',rows);addEventListener('cdq:pdf-saved',rows);addEventListener('cdq:access-state-v2527',()=>{finish(true);applyOrder()});document.addEventListener('cdq:icons-changed',applyOrder);motion();applyOrder();
  window.cdqInterfaceV2708={applyOrder,finish,organize,rows};
 })();
+
 
 
 </script>
@@ -23318,6 +23382,12 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
 </script>
 <link rel="stylesheet" href="./report-conformity-v2727.css">
 <script type="module" src="./report-conformity-ui-v2727.mjs"></script>
+<script id="cdq-drive-retry-v2741">
+(()=>{const retry=window.cdqRetrySyncV2680;window.cdqRetrySyncV2680=async function(){
+ if(utilisateurCourantEmail&&cdqAccessState==='ready')cdqPostToPwa({type:'CDQ_OFFLINE_RETRY_SYNC_V2741',email:String(utilisateurCourantEmail)});
+ return retry?retry.apply(this,arguments):window.cdqSynchroniserEnAttente?.();
+};})();
+</script>
 <script src="./icon-background-v2697.js"></script>
 <link rel="stylesheet" href="./desktop-workspace-v2688.css">
 <script src="./desktop-model2-v2676.js"></script>

@@ -115,6 +115,69 @@ body.cdq-reader-pc #status[data-active=true]{opacity:1}
 }
 #viewer .annotationLayer :is(input,textarea,select):autofill{background-color:#99fdfd!important;box-shadow:0 0 0 1000px #99fdfd inset!important;color:#000!important}
 
+/* V27.38 preview — the existing Suspendue conclusion widget owns its
+   original /MK/BG cyan and /MK/BC border; keep them visible in PDF.js.
+   Do not add another rectangle to the page or affect other report models. */
+#viewer[data-cdq-family="suspendue"] .annotationLayer .textWidgetAnnotation :is(input,textarea)[name="resume_commentaires"],
+#viewer[data-cdq-family="suspendue"] .annotationLayer .textWidgetAnnotation :is(input,textarea)[name="resume_commentaires"]:is(:focus,:hover,:active){
+  background:#99fdfd!important;
+  background-image:none!important;
+  border:1px solid #05d9ef!important;
+  box-shadow:none!important;
+  box-sizing:border-box!important;
+}
+
+/* V27.39 mobile title between minus and plus. The PC reader never receives
+   .cdq-reader-mobile; its centered title and toolbar are unchanged. */
+body.cdq-reader-mobile header#readerTop{
+  display:grid!important;
+  grid-template-columns:44px 36px minmax(0,1fr) 36px 42px!important;
+  grid-template-areas:"back minus name plus menu"!important;
+  grid-template-rows:1fr!important;
+  column-gap:3px!important;
+  align-items:center!important;
+}
+body.cdq-reader-mobile #readerTop #back{grid-area:back!important}
+body.cdq-reader-mobile #readerTop #zoomControls{display:contents!important}
+body.cdq-reader-mobile #readerTop #zoom{display:none!important}
+body.cdq-reader-mobile #readerTop #minus{grid-area:minus!important}
+body.cdq-reader-mobile #readerTop #plus{grid-area:plus!important}
+body.cdq-reader-mobile #readerTop #minus,
+body.cdq-reader-mobile #readerTop #plus{
+  min-width:36px!important;max-width:36px!important;width:36px!important;
+  margin:0!important;padding:0!important
+}
+body.cdq-reader-mobile #readerTop #menu{grid-area:menu!important}
+body.cdq-reader-mobile #readerTop #name{
+  grid-area:name!important;
+  display:-webkit-box!important;
+  width:100%!important;max-width:100%;min-width:0;
+  margin:0!important;padding:0 1px!important;
+  text-align:center!important;white-space:normal!important;
+  overflow:hidden!important;text-overflow:ellipsis!important;
+  overflow-wrap:anywhere!important;text-wrap:balance;
+  -webkit-box-orient:vertical;-webkit-line-clamp:2;
+  font-size:clamp(11px,3vw,14px)!important;line-height:1.16!important;
+  max-height:2.38em;font-weight:700;pointer-events:none
+}
+body.cdq-reader-mobile #readerNameBar{display:none!important}
+body.cdq-reader-mobile #container{bottom:0!important}
+body.cdq-reader-mobile.form-navigation #container{bottom:46px!important}
+body.cdq-reader-mobile #formNav{bottom:0!important}
+@media(max-width:600px){
+  body.cdq-reader-mobile header#readerTop{
+    padding-left:5px!important;padding-right:5px!important
+  }
+  body.cdq-reader-mobile.cdq-keyboard-field header#readerTop{
+    grid-template-columns:40px minmax(0,1fr)!important;
+    grid-template-areas:"back name"!important
+  }
+  body.cdq-reader-mobile.cdq-keyboard-field #readerTop #zoomControls,
+  body.cdq-reader-mobile.cdq-keyboard-field #readerTop #menu{display:none!important}
+  body.cdq-reader-mobile.cdq-keyboard-field #container{bottom:44px!important}
+  body.cdq-reader-mobile.cdq-keyboard-field #formNav{bottom:0!important}
+}
+
 /* PC: title occupies the space between Back and zoom, with no bottom strip. */
 body.cdq-reader-pc #readerTop{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto auto!important;align-items:center;gap:10px;grid-template-areas:"back name zoom menu"!important}
 body.cdq-reader-pc #readerTop #back{grid-area:back}
