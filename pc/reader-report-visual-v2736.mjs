@@ -3,7 +3,7 @@ import {APPROVED_REPORTS_V2735,approvedReportFamilyV2735,approvedReportMetadataF
 // Each current master already draws its final cyan result cell at the actual
 // widget rectangle. Update the owning appearance, never add a page overlay or
 // change geometry. Empty/hidden multi-head indicators retain their flags/state.
-const rowResult=/^charge_point_\d+_conforme_(vert|rouge)$/;
+const rowResult=/^charge_point_\d+_conforme_(vert|rouge)(?:_2)?$/;
 const choiceNames=new Set(['client_technicien','unite_mesure']);
 const number=value=>String(+value.toFixed(6));
 const decode=(stream,L)=>new TextDecoder().decode(stream instanceof L.PDFRawStream?L.decodePDFRawStream(stream).decode():stream.getUnencodedContents());
@@ -41,6 +41,9 @@ export function normalizeReportVisualV2736(pdf,L){
       const ap=widget.dict.lookupMaybe(N('AP'),L.PDFDict);if(!ap)continue;
       const normal=ap.lookup(N('N'));
       if(result){
+        // V2763 already has user-approved, centered native Yes/Off appearances.
+        // Preserve the 0.6pt inset instead of overwriting it with V27.36 fills.
+        if(family==='multitete'&&pdf.catalog.has(N('CDQApprovedReportV2737')))continue;
         if(!(normal instanceof L.PDFDict))continue;
         const reference=normal.get(N('Yes')),old=normal.lookup(N('Yes'));if(!(old instanceof L.PDFRawStream)&&!old?.getUnencodedContents)continue;
         const source=decode(old,L),color=source.match(/([-+]?[\d.]+\s+[-+]?[\d.]+\s+[-+]?[\d.]+)\s+rg\b/)?.[1];if(!color)continue;
