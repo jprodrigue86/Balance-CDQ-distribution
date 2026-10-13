@@ -47,6 +47,20 @@ function rawNeedsAppearanceRepair(bytes){
   return false;
 }
 
+// Only the exact approved V27.37 Multi-têtes may retain its own 230 native
+// Calculate/Blur actions. The V27.36 normalizer must never rewrite them on
+// open or save; other families keep the tested legacy safeguards.
+function preserveNativeMultiHeadV2737(pdf,L,approved){
+ if(approved!=='multitete')return false;
+ const N=L.PDFName.of;
+ const revision=pdf.catalog.lookupMaybe(N('CDQNativeMultiHeadV2763'),L.PDFNumber)?.asNumber();
+ const numeric=pdf.catalog.lookupMaybe(N('CDQMultiHeadPdfjsNumericV2737'),L.PDFNumber)?.asNumber();
+ if(revision!==2763||numeric!==2737||pdf.catalog.lookupMaybe(N('CDQMultiHeadSkipOverloadV2737'),L.PDFNumber)?.asNumber()!==2737||!pdf.catalog.has(N('CDQApprovedReportV2737')))return false;
+ if(pdf.catalog.has(N('CDQMeasurementRulesV2736')))
+  throw Error('Two Multi-têtes measurement engines detected; refusing to modify approved report');
+ return true;
+}
+
 export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const data=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
   const L=providedLibrary||await pdfLibrary();
@@ -54,7 +68,8 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const pdf=await PDFDocument.load(data,{updateMetadata:false});
   const correctedFamilyV2736=approvedReportFamilyV2735(pdf,L);
   if(correctedFamilyV2736){
-    const changed=normalizeTableColumnV2737(pdf,L)|normalizeMeasurementRulesV2736(pdf,L,correctedFamilyV2736)|normalizeReportVisualV2736(pdf,L,correctedFamilyV2736)|applyEquipmentHeaderGapV2736(pdf,L,correctedFamilyV2736);
+    const nativeMulti=preserveNativeMultiHeadV2737(pdf,L,correctedFamilyV2736);
+    const changed=normalizeTableColumnV2737(pdf,L)|(!nativeMulti&&normalizeMeasurementRulesV2736(pdf,L,correctedFamilyV2736))|normalizeReportVisualV2736(pdf,L,correctedFamilyV2736)|applyEquipmentHeaderGapV2736(pdf,L,correctedFamilyV2736);
     return changed?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;
   }
   if(approvedReportFamilyV2731(pdf,L))return data;
@@ -103,7 +118,8 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
   const correctedFamilyV2736=approvedReportFamilyV2735(pdf,L);
   if(correctedFamilyV2736){
     normalizeTableColumnV2737(pdf,L);
-    normalizeMeasurementRulesV2736(pdf,L,correctedFamilyV2736);
+    if(!preserveNativeMultiHeadV2737(pdf,L,correctedFamilyV2736))
+      normalizeMeasurementRulesV2736(pdf,L,correctedFamilyV2736);
     applyEquipmentHeaderGapV2736(pdf,L,correctedFamilyV2736);
     // PDF.js already saved this indicator's authored native appearance.
     // Normalize only a changed driver, preserving pristine master paint.

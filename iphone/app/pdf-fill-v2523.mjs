@@ -17,7 +17,16 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
   let bytes=new Uint8Array(await (blob||(await floorTemplate()).blob).arrayBuffer());
   await import('./vendor/pdf-lib-1.17.1.min.js');
   const L=library||globalThis.PDFLib,lib=await L.PDFDocument.load(bytes),form=lib.getForm(),approved=approvedReportFamilyV2735(lib,L);let changed=false;
-  if(approved)changed=normalizeMeasurementRulesV2736(lib,L,approved)|normalizeReportVisualV2736(lib,L,approved)|applyEquipmentHeaderGapV2736(lib,L,approved);
+  // A V27.37 reviewed Multi-têtes has its own 57 native calculators with
+  // independent Poids 1 / Poids 2 states. Do not wrap them again during
+  // creation/prefill: the V27.36 wrapper overwrites valid native results.
+  // The strict approvedReportFamilyV2735 provenance check above must pass.
+  const nativeMulti=approved==='multitete'&&
+    lib.catalog.lookupMaybe(L.PDFName.of('CDQNativeMultiHeadV2763'),L.PDFNumber)?.asNumber()===2763&&
+    lib.catalog.has(L.PDFName.of('CDQApprovedReportV2737'))&&
+    lib.catalog.lookupMaybe(L.PDFName.of('CDQMultiHeadSkipOverloadV2737'),L.PDFNumber)?.asNumber()===2737;
+  if(approved)changed=(nativeMulti?false:normalizeMeasurementRulesV2736(lib,L,approved))|
+    normalizeReportVisualV2736(lib,L,approved)|applyEquipmentHeaderGapV2736(lib,L,approved);
   else changed=compactToleranceActions(lib,L)|normalizeFloorStatusV2691(lib,L);
   for(const entry of entries){
     const [name,value]=entry;const field=form.getFieldMaybe(name);

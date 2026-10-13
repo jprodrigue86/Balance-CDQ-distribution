@@ -63,7 +63,7 @@ export function measurementResultsV2736(d,original,cfg){
    if(q===''){rowGood=false;rowIncomplete=true;continue;}
    rowCount++;
    if(/^o\.l$/i.test(q)){rowGood=false;rowBad=true;continue;}
-   var t=number(String(out[p+'tolerance'+s]===undefined?'':out[p+'tolerance'+s])),err=number(String(out[p+(a!==''&&a!=='-'?'erreur_apres':'erreur_avant')+s]===undefined?'':out[p+(a!==''&&a!=='-'?'erreur_apres':'erreur_avant')+s]));
+   var t=number(String(out[p+'tolerance'+s]===undefined?'':out[p+'tolerance'+s])),err=number(String(out[p+(a!==''&&a!=='-'?'erreur_apres':'erreur_avant')+s]===undefined?'':out[p+(a!==''&&a!=='-'?'erreur_apres':'erreur_avant')+s]).replace(/e$/,''));
    if(!isFinite(t)||!isFinite(err)||!isFinite(e)||e<=0){rowGood=false;rowIncomplete=true;}
    else if(Math.abs(err)>t+eps){rowGood=false;rowBad=true;}
   }
@@ -75,8 +75,14 @@ export function measurementResultsV2736(d,original,cfg){
    rowGood=rowGood&&rowCount>0&&!rowIncomplete&&(!cfg.dual||meaningful(raw(p+'numero_tete')));
    // Retain the precision capacity guard, which is independent of measurement.
    if(cfg.precision&&rowCount&&out[p+'conforme']==='Non conforme'&&!isFinite(number(String(out[p+'tolerance']))))rowBad=true;
-   out[p+'conforme']=rowBad?'Non conforme':rowGood?'Conforme':'';
-   check(p+'conforme_vert',rowGood&&!rowBad);check(p+'conforme_rouge',rowBad);
+   if(cfg.revisedDual){
+    // Revised V2763 per-weight calculator is authoritative for the independent
+    // Poids 1 / Poids 2 indicators. Keep it intact after '-' or O.L input.
+    var authored=out[p+'conforme'];rowBad=authored==='Non conforme';rowGood=authored==='Conforme';
+   }else{
+    out[p+'conforme']=rowBad?'Non conforme':rowGood?'Conforme':'';
+    check(p+'conforme_vert',rowGood&&!rowBad);check(p+'conforme_rouge',rowBad);
+   }
   }
   var state=out[p+'conforme'];
   if(rowActive){activeRows++;if(state==='Conforme')goodRows++;else if(state==='Non conforme')badRows++;else incomplete++;}
@@ -121,14 +127,14 @@ export function measurementResultsV2736(d,original,cfg){
 }
 
 function readScriptV2736(action,pdf,L){const j=action?.lookup?.(L.PDFName.of('JS'));return j instanceof L.PDFRawStream?new TextDecoder().decode(L.decodePDFRawStream(j).decode()):j?.decodeText?.()||'';}
-function familyConfigurationV2736(pdf,family){
+function familyConfigurationV2736(pdf,family,L){
  const names=pdf.getForm().getFields().map(f=>f.getName()),before=names.filter(n=>/^excentricite_avant_/.test(n)),truck=family==='camion'||family==='train';
  const groups=truck?{avant:names.filter(n=>/^B4_.+_AvantCorrection$/.test(n)).sort(),apres:names.filter(n=>/^B4_.+_ApresCorrection$/.test(n)).sort()}:{avant:before,apres:before.map(n=>n.replace('excentricite_avant_','excentricite_apres_'))};
- return {rows:Math.max(...names.map(n=>Number(/^charge_point_(\d+)_charge_utilisee$/.exec(n)?.[1]||0))),dual:family==='multitete',precision:family==='precision',points:family==='cuve4'||family==='tremie4',none:family==='multitete'||family==='suspendue',partial:truck,groups};
+ return {rows:Math.max(...names.map(n=>Number(/^charge_point_(\d+)_charge_utilisee$/.exec(n)?.[1]||0))),revisedDual:family==='multitete'&&pdf.catalog.has(L.PDFName.of('CDQApprovedReportV2737')),dual:family==='multitete',precision:family==='precision',points:family==='cuve4'||family==='tremie4',none:family==='multitete'||family==='suspendue',partial:truck,groups};
 }
 export function normalizeMeasurementRulesV2736(pdf,L,family){
  const N=L.PDFName.of,form=pdf.getForm();if(!form.getFieldMaybe('echelon')||pdf.catalog.has(N('CDQMeasurementRulesV2736')))return false;
- const cfg=familyConfigurationV2736(pdf,family),seen=new Set(),actions=[];
+ const cfg=familyConfigurationV2736(pdf,family,L),seen=new Set(),actions=[];
  function visit(o){if(o instanceof L.PDFRef)o=pdf.context.lookup(o);if(!o||seen.has(o))return;seen.add(o);if(o instanceof L.PDFDict){if(o.get(N('S'))===N('JavaScript'))actions.push(o);for(const[,v]of o.entries())visit(v);}else if(o instanceof L.PDFArray)for(const v of o.asArray())visit(v);else if(o instanceof L.PDFStream)visit(o.dict);}
  for(const[,o]of pdf.context.enumerateIndirectObjects())visit(o);
  const core=measurementResultsV2736.toString(),cache=new Map();
