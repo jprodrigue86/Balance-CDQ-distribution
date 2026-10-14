@@ -46,9 +46,11 @@ const needsUpdate=k=>(changes.get(k)||0)>(satisfied.get(k)||0)||(reviews.get(k)?
 function paintRows(){
  restoreClient(client());
  const id=client(),view=id?projection.project(id,states.get(key(id))):null,listId=states.get(key(id))?.fileId||listFile(id)?.id;
- for(const row of document.querySelectorAll('.file-row')){row.querySelector('[data-balance-list-working]')?.remove();row.dataset.balanceListBusy='false';let label=row.querySelector('[data-balance-list-local-status]');
-  if(view?.localPending&&String(row.querySelector('.file-checkbox[data-file-id]')?.dataset.fileId||'')===String(listId||'')){if(!label){label=document.createElement('span');label.dataset.balanceListLocalStatus='';label.className='file-pending-v2708';row.append(label);}const text='Liste modifiée localement · '+(view.unsaved?'réponses non enregistrées':'Drive en attente');if(label.textContent!==text)label.textContent=text;row.dataset.balanceListLocalUpdatedAt=view.localUpdatedAt;}
-  else{label?.remove();delete row.dataset.balanceListLocalUpdatedAt;}
+ for(const row of document.querySelectorAll('.file-row')){row.querySelector('[data-balance-list-working]')?.remove();row.querySelector('[data-balance-list-local-status]')?.remove();if(row.dataset.balanceListBusy!=='false')row.dataset.balanceListBusy='false';
+  // Local projection remains available without adding a wide status beside
+  // the file title. Drive progress already has its shared indicator.
+  if(view?.localPending&&String(row.querySelector('.file-checkbox[data-file-id]')?.dataset.fileId||'')===String(listId||'')){if(row.dataset.balanceListLocalUpdatedAt!==view.localUpdatedAt)row.dataset.balanceListLocalUpdatedAt=view.localUpdatedAt;}
+  else delete row.dataset.balanceListLocalUpdatedAt;
  }
 }
 function projected(id){restoreClient(id);return projection.project(id,states.get(key(id)));}
@@ -143,8 +145,10 @@ async function placeList(id,version,create=true){
   const old=root(id)||{dossiers:[]};
   const listIds=located.root.dossiers.filter(d=>norm(d.nom||d.name)==='liste de balance').flatMap(d=>(d.fichiers||[]).filter(f=>norm(f.nom||f.name)==='liste de balance.pdf').map(f=>String(f.id)));
   window.cdqInstantFiles2530?.forget?.(id,listIds);
-  const next={...old,...located.root,dossiers:located.root.dossiers.map(d=>norm(d.nom||d.name)==='liste de balance'?d:old.dossiers?.find(prior=>String(prior.id)===String(d.id))||d)};
-  try{cacheContenuCompagnies[id]=window.cdqInstantFiles2530?.overlay?.(id,next)||next;}catch{}
+  const next={...old,...located.root,dossiers:located.root.dossiers.map(d=>{const prior=old.dossiers?.find(prior=>String(prior.id)===String(d.id));return norm(d.nom||d.name)==='liste de balance'?prior?Object.assign(prior,d):d:prior||d;})};
+  // The lazy folder loader binds permission to the selected root object.
+  // Background placement must retain that root while the reader is open.
+  try{cacheContenuCompagnies[id]=Object.assign(old,window.cdqInstantFiles2530?.overlay?.(id,next)||next);}catch{}
   for(const d of located.root.dossiers)if(norm(d.nom||d.name)==='liste de balance')for(const f of d.fichiers||[])if(norm(f.nom||f.name)==='liste de balance.pdf')window.cdqInstantFiles2530?.keep?.(id,f,d.id);
   try{window.sauvegarderCachePersistantClient?.(id,root(id),Date.now());}catch{}
   if(id===client()&&!readerBusy())window.afficherContenu?.(root(id));

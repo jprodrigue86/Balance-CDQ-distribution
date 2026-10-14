@@ -51,7 +51,8 @@ function cdqCreateFolderLoaderV2527(options) {
     }
   }
   function load(node, background=false){
-    if(!context()||!node||!attached(node))return Promise.reject(new Error('Déverrouillez le dossier client.'));
+    if(!context())return Promise.reject(new Error('Déverrouillez le dossier client.'));
+    if(!node||!attached(node))return Promise.reject(new Error('Le dossier actif a changé.'));
     if(fresh(node)||(!background&&node.charge!==false))return Promise.resolve(node);
     if(!background&&options.offline())return Promise.reject(new Error('Ce dossier n’a pas encore été chargé sur cet appareil.'));
     const key=String(node.id), existing=pending.get(key);
