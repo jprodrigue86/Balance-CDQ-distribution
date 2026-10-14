@@ -1,10 +1,10 @@
 {
   "platform": "pc-pwa",
-  "version": "27.44",
-  "release": "e2604e1b7fcdfd9103a2bd88fa8627e60a8f70a21e026d4a668fd7832f573ac3",
+  "version": "27.45",
+  "release": "aeeb2e87c1b0f064989d8e26ceb2dbbe410198d101e8ae1c4c43b025b9a27b67",
   "desktopModel": 3,
-  "androidSourceBuild": "2026.10.14-v27.44-pdf-review-r2-essai",
-  "androidSelectorSha256": "f1e5f6f3317aaac811a65ac767db630cde386fbc8f76673f1f662ec878b45993",
+  "androidSourceBuild": "2026.10.14-v27.45-speed-sync-receipts-pdf-cleanup",
+  "androidSelectorSha256": "dbf0989f305ccab283992a460d5e77e09c4810985b638bad7c9edb2502f985b1",
   "generatedFrom": "scripts/build-pc-v2676.mjs",
-  "files": 879
+  "files": 860
 }
