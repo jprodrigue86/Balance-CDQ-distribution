@@ -178,6 +178,18 @@ body.cdq-reader-mobile #formNav{bottom:0!important}
   body.cdq-reader-mobile.cdq-keyboard-field #formNav{bottom:0!important}
 }
 
+/* V27.43 trial: one native checked appearance per result widget. */
+#viewer .annotationLayer section[data-cdq-conclusion-suppressed-v2743="true"]{visibility:hidden!important}
+
+/* V27.43 review r2: native fixed Multi head numbers keep the approved point blue. */
+#viewer .annotationLayer .textWidgetAnnotation input[name^="charge_point_"][name$="_numero_tete"][readonly],
+#viewer .annotationLayer .textWidgetAnnotation input[name^="charge_point_"][name$="_numero_tete"]:disabled,
+#viewer .annotationLayer .textWidgetAnnotation textarea[name^="charge_point_"][name$="_numero_tete"][readonly],
+#viewer .annotationLayer .textWidgetAnnotation textarea[name^="charge_point_"][name$="_numero_tete"]:disabled{
+ color:#1d0fde!important;
+ -webkit-text-fill-color:#1d0fde!important;
+}
+
 /* PC: title occupies the space between Back and zoom, with no bottom strip. */
 body.cdq-reader-pc #readerTop{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto auto!important;align-items:center;gap:10px;grid-template-areas:"back name zoom menu"!important}
 body.cdq-reader-pc #readerTop #back{grid-area:back}
