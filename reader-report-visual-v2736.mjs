@@ -1,3 +1,4 @@
+import {normalizeResultGeometryV2743} from './reader-result-geometry-v2743.mjs';
 import {APPROVED_REPORTS_V2735,approvedReportFamilyV2735,approvedReportMetadataFamilyV2735} from './reader-approved-reports-v2735.mjs';
 
 // Each current master already draws its final cyan result cell at the actual
@@ -41,6 +42,8 @@ export function normalizeReportVisualV2736(pdf,L){
       const ap=widget.dict.lookupMaybe(N('AP'),L.PDFDict);if(!ap)continue;
       const normal=ap.lookup(N('N'));
       if(result){
+        // V2743: the centered native appearance below owns the result cell.
+        continue;
         // V2763 already has user-approved, centered native Yes/Off appearances.
         // Preserve the 0.6pt inset instead of overwriting it with V27.36 fills.
         if(family==='multitete'&&pdf.catalog.has(N('CDQApprovedReportV2737')))continue;
@@ -72,6 +75,7 @@ export function normalizeReportVisualV2736(pdf,L){
       }
     }
   }
+  changed=normalizeResultGeometryV2743(pdf,L,{family})||changed;
   if(!pdf.catalog.has(N('CDQReportVisualV2736'))){pdf.catalog.set(N('CDQReportVisualV2736'),pdf.context.obj({Revision:2736,Family:L.PDFString.of(family)}));changed=true;}
   return changed;
 }

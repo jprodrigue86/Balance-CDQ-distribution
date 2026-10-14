@@ -1,3 +1,5 @@
+import {trialReportMetadataFamilyV2743} from './reader-trial-reports-v2743.mjs';
+import {refreshResultGeometryV2743,restoreBlankResultConclusionV2743} from './reader-result-geometry-v2743.mjs';
 import {approvedReportMetadataFamilyV2735} from './reader-approved-reports-v2735.mjs';
 import {refreshReaderCamionDisplayV2741} from './reader-camion-display-v2741.mjs';
 import {installReaderTableColumnV2737} from './reader-table-column-v2737.mjs';
@@ -46,8 +48,9 @@ function applyFieldTypography(){
   if(!approvedReportMetadataFamilyV2735(fieldDefinitions))centerFieldsGlyphs(fields);
   refreshReaderCamionDisplayV2741({surface:$('viewer'),document:doc,fields:fieldDefinitions,typography:fieldTypography});
   refreshReportVisualV2736({surface:$('viewer'),fields:fieldDefinitions});
+  if(trialReportMetadataFamilyV2743(fieldDefinitions))refreshResultGeometryV2743($('viewer'));
 }
-function refreshResults(){if(!doc)return;paintReaderResults($('viewer'));}
+function refreshResults(){if(!doc)return;if(trialReportMetadataFamilyV2743(fieldDefinitions)){restoreBlankResultConclusionV2743($('viewer'));refreshResultGeometryV2743($('viewer'));}else paintReaderResults($('viewer'));}
 $('viewer').addEventListener('input',()=>requestAnimationFrame(applyFieldTypography));
 $('viewer').addEventListener('change',()=>requestAnimationFrame(applyFieldTypography));
 

@@ -177,3 +177,15 @@ body.cdq-reader-mobile #formNav{bottom:0!important}
   body.cdq-reader-mobile.cdq-keyboard-field #container{bottom:44px!important}
   body.cdq-reader-mobile.cdq-keyboard-field #formNav{bottom:0!important}
 }
+
+/* V27.43 trial: one native checked appearance per result widget. */
+#viewer .annotationLayer section[data-cdq-conclusion-suppressed-v2743="true"]{visibility:hidden!important}
+
+/* V27.43 review r2: native fixed Multi head numbers keep the approved point blue. */
+#viewer .annotationLayer .textWidgetAnnotation input[name^="charge_point_"][name$="_numero_tete"][readonly],
+#viewer .annotationLayer .textWidgetAnnotation input[name^="charge_point_"][name$="_numero_tete"]:disabled,
+#viewer .annotationLayer .textWidgetAnnotation textarea[name^="charge_point_"][name$="_numero_tete"][readonly],
+#viewer .annotationLayer .textWidgetAnnotation textarea[name^="charge_point_"][name$="_numero_tete"]:disabled{
+ color:#1d0fde!important;
+ -webkit-text-fill-color:#1d0fde!important;
+}
