@@ -26,6 +26,7 @@ export function installDriveActionsV2699(row,item,{favorite,rpc,canWrite}){
   form.onsubmit=async e=>{e.preventDefault();if(busy||!canWrite())return;if(mode==='rename'&&!input.value.trim()){input.reportValidity();return;}busy=true;confirm.disabled=cancel.disabled=true;status.textContent='Enregistrement…';
    const identity=()=>String(typeof utilisateurCourantEmail==='undefined'?'':utilisateurCourantEmail||'').toLowerCase(),owner=identity();
    const selection=folder?{folderIds:[String(item.id)],fileIds:[]}:{fileIds:[String(item.id)],folderIds:[]};
+   if(mode==='delete'&&window.cdqFileDeletionV2746?.remove){try{await window.cdqFileDeletionV2746.remove(selection,{clientId:'',close:()=>dialog.close(),method:folder?'supprimerDossier':'supprimerFichiers'});}finally{busy=false;confirm.disabled=cancel.disabled=false;}return;}
    const deletion=mode==='delete'?beginOptimisticDeletionV2727({...selection,identity}):null;if(deletion)dialog.close();
    try{const result=await rpc(mode==='rename'?(folder?'renommerDossier':'renommerFichier'):(folder?'supprimerDossier':'supprimerFichiers'),...(mode==='rename'?[item.id,input.value.trim(),'']:folder?[item.id,'']:[[item.id],'']));
     if(identity()!==owner)throw Error('Le compte a changé.');

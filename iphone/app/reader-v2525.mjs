@@ -1,6 +1,7 @@
 import {trialReportMetadataFamilyV2743} from './reader-trial-reports-v2743.mjs';
 import {refreshResultGeometryV2743,restoreBlankResultConclusionV2743} from './reader-result-geometry-v2743.mjs';
 import {approvedReportMetadataFamilyV2735} from './reader-approved-reports-v2735.mjs';
+import {createReaderEquipmentEmitterV2746} from './reader-equipment-edits-v2746.mjs';
 import {refreshReaderCamionDisplayV2741} from './reader-camion-display-v2741.mjs';
 import {installReaderTableColumnV2737} from './reader-table-column-v2737.mjs';
 import {installFirstPageRenderLeaseV2731} from './reader-first-paint-scheduler-v2731.mjs';
@@ -277,11 +278,24 @@ function cdqScheduleViewportFieldV2550(){
   },90);
 }
 let name='Rapport.pdf',fileId='',pending=null,opening=false,closeAfterSave=false,closed=false;
+const readerEquipmentV2746=createReaderEquipmentEmitterV2746({surface:$('viewer'),
+  canEmit:()=>!!doc&&!readOnly&&!opening&&!closed,
+  getValue:fieldName=>{
+    const input=[...$('viewer').querySelectorAll('input,textarea,select')].find(field=>field.name===fieldName);
+    if(input?.type==='checkbox'){
+      // Blank-report recovery selects a green artwork canvas in the DOM only.
+      // Keep that visual placeholder out of the equipment/conformity snapshot.
+      const stored=cdqStoredFieldStateV2581(fieldName).value;
+      return stored===true||stored==='Yes'?'Yes':'Off';
+    }
+    return input?.value??cdqStoredFieldStateV2581(fieldName).value;
+  },send:tell});
 const status=value=>{const el=$('status');el.textContent=value;el.dataset.active=String(!!value);};
 function busy(value){saving=value;$('viewer').inert=value;$('savingMask').hidden=!value;for(const id of ['save','saveClose','doneFields','dismissKeyboard','discard','file'])$(id).disabled=value||!doc||readOnly;}
 function fail(error){busy(false);status(error.message||String(error));$('closeError').textContent=error.message||String(error);closeAfterSave=false;}
 function modified(){if(!readOnly&&!opening){dirty=true;version++;status('');}}
 function resetDocumentFieldsV2730(){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};
+  readerEquipmentV2746.reset();
   tableColumnV2737?.dispose();tableColumnV2737=null;visualRefreshV2730.reset();choices?.cancel();form?.reset();touch?.reset();cdqKeyboardFieldV2550(false);menu(true);
   documentPaintV2730?.dispose();documentPaintV2730=null;
   doc=null;documentTask=null;fieldDefinitions=null;readerCalibration=null;formattedFields.clear();fieldTypography.clear();touchedIdentity.clear();lateIdentity=null;
@@ -376,6 +390,7 @@ async function open(data){
   initialValuesV2730=data.initialValues||null;initialAppliedV2730=false;initialUpdatesV2730=[];initialPreparedDraftV2730=data.readerPreparedVersion===2730&&isCacheableReaderDraftV2730({...data,bytes:blob.size});
   $('name').textContent=name;$('empty').style.display='none';status('Ouverture du PDF…');
   const preparedBlob=data.preparedBlob instanceof Blob?data.preparedBlob:data.readerPreparedVersion===2730?blob:null;
+  readerEquipmentV2746.configure(String(data.readerRequestId||data.readerSession||''));
   let sourceBytes,retained=closedCanvasV2730,reuse=false;
   closedCanvasV2730=null;
   // This opening owns the retained task before its first asynchronous read.
@@ -603,6 +618,7 @@ try{
     const detail=event.detail||{};
     if(detail.id&&Object.hasOwn(detail,'formattedValue'))formattedFields.set(detail.id,detail.formattedValue??'');
     visualRefreshV2730.schedule();
+    readerEquipmentV2746.changed();
   });
   // A technician can stop at the last reading without moving to another field.
   // Commit complete numbers or the explicit skip/overload tokens; partial input stays editable.

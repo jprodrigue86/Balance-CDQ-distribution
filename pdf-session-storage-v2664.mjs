@@ -1,4 +1,5 @@
-// Private document bytes stay in RAM unless explicitly selected offline or awaiting Drive.
+// The caller supplies the storage policy: RAM, a temporary client cache,
+// explicit offline selection, or durable work awaiting Drive.
 export function completedWorkCopyV2664(c) {
   return !!c && c.kind !== 'prepared' && c.kind !== 'sheet' && !!c.driveId &&
     c.status === 'synced' && !c.error && (c.uploadId || '') === (c.syncedUploadId || '');
@@ -23,7 +24,7 @@ export async function encodePdfRecordV2664(value){
   return r;
 }
 
-export function createPdfSessionStoreV2664({read,write,remove,list,keyOf,sessionOnly,keep=()=>false,limit=96*1024*1024}) {
+export function createPdfSessionStoreV2664({read,write,remove,list,keyOf,sessionOnly,expired=()=>false,rememberPersistent=false,optionalPersistence=()=>false,keep=()=>false,limit=96*1024*1024}) {
   const memory=new Map(),jobs=new Map();let bytes=0,generation=0;
   const size=r=>(r?.blob?.size||0)+(r?.templateBlob!==r?.blob?(r?.templateBlob?.size||0):0);
   async function independent(value){
@@ -43,12 +44,14 @@ export function createPdfSessionStoreV2664({read,write,remove,list,keyOf,session
     p.finally(()=>{if(jobs.get(key)===p)jobs.delete(key);}).catch(()=>{});return p;
   }
   async function readCurrent(key){
-    if(memory.has(key)){const r=memory.get(key);remember(key,r);return r;}
+    if(memory.has(key)){const r=memory.get(key);if(expired(r)){await remove(key,r);forget(key);return null;}remember(key,r);return r;}
     const stamp=generation,raw=await read(key);
     if(!raw||raw.cdqSessionOnlyV2664)return null;
+    if(expired(raw)){await remove(key,raw);return null;}
     // Detach bytes from IndexedDB before deleting the persistent Blob resource.
     const r=await independent(decodePdfRecordV2664(raw));
     if(sessionOnly(r)){if(stamp===generation)remember(key,r);await remove(key,r);}
+    else if(rememberPersistent&&stamp===generation)remember(key,r);
     return r;
   }
   async function commit(key,value){
@@ -60,7 +63,13 @@ export function createPdfSessionStoreV2664({read,write,remove,list,keyOf,session
       if(stamp===generation)remember(key,record);await remove(key,record);
     }else{
       // ArrayBuffer storage also works in WebKit environments rejecting IDB Blobs.
-      await write(key,encoded);if(stamp===generation)forget(key);
+      try{await write(key,encoded);}catch(error){
+        // A full temporary cache must not block opening an already received
+        // cloud PDF. Unsent work and explicit offline storage stay mandatory.
+        if(!optionalPersistence(value))throw error;
+        if(stamp===generation)remember(key,record);return record;
+      }
+      if(stamp===generation){if(rememberPersistent)remember(key,record);else forget(key);}
     }
     return record;
   }
