@@ -157,10 +157,12 @@
     return job;
   }
 
-  function loadClient(){
+  async function loadClient(){
     if(typeof compagnieSelectionnee==='undefined'||!compagnieSelectionnee)return;
     const id=client(),email=account();
     if(!id||!email||!ready())return;
+    try{await window.cdqClientDayCacheV2746?.open(id);}catch(_){ }
+    if(!current(id,email))return;
     remember(id);
 
     if((typeof cacheContenuCompagnies!=='undefined'&&cacheContenuCompagnies[id])){
@@ -201,40 +203,7 @@
     if(!ids.length)return Promise.resolve();
     if(prewarmBatch)return prewarmBatch;
 
-    if(typeof ouvrirBaseCache!=='function'||typeof cleCacheLocale!=='function'||typeof CACHE_STORE_NAME==='undefined'){
-      return Promise.all(ids.map(id=>warm(id,email)));
-    }
-
-    const job=ouvrirBaseCache().then(db=>new Promise(resolve=>{
-      let done=false;
-      const finish=()=>{
-        if(done)return;
-        done=true;
-        try{db.close();}catch(_){}
-        resolve();
-      };
-      let tx;
-      try{
-        tx=db.transaction(CACHE_STORE_NAME,'readonly');
-        const store=tx.objectStore(CACHE_STORE_NAME);
-        for(const id of ids){
-          const req=store.get(cleCacheLocale('client',id));
-          req.onsuccess=()=>{
-            if(!ready()||account()!==email)return;
-            const record=req.result;
-            if(record?.contenu){
-              cacheContenuCompagnies[id]=record.contenu;
-              cacheDerniereVerificationCompagnies[id]=Number(record.verifiedAt)||0;
-            }
-          };
-        }
-        tx.oncomplete=finish;
-        tx.onerror=finish;
-        tx.onabort=finish;
-      }catch(_){finish();}
-    })).catch(()=>Promise.all(ids.map(id=>warm(id,email)))).finally(()=>{
-      if(prewarmBatch===job)prewarmBatch=null;
-    });
+    const job=Promise.all(ids.map(id=>warm(id,email))).finally(()=>{if(prewarmBatch===job)prewarmBatch=null;});
     prewarmBatch=job;
     return job;
   }

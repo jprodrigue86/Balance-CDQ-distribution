@@ -38,7 +38,7 @@ export function createDriveTrashClientV2713({identity,allowed,writable=allowed,n
   if(!writable())throw Error('Accès en lecture seule.');if(!validId(id))throw Error('Fichier invalide.');const owner=account();guard(owner);
   if(typeof native()?.driveTrashRequest==='function')await nativeCall('restore',id);
   else{const accessToken=await access(true);guard(owner);const r=await json('files/'+encodeURIComponent(id)+'?supportsAllDrives=true&fields=id,trashed',owner,accessToken,{method:'PATCH',body:JSON.stringify({trashed:false})});if(r.id!==id||r.trashed!==false)throw Error('La restauration n’a pas été confirmée.');}
-  guard(owner);return {id};
+  guard(owner);try{host.dispatchEvent?.(new (host.CustomEvent||CustomEvent)('cdq:file-restored-v2746',{detail:{id:String(id),owner}}));}catch{}return {id};
  }
  return {list,restore,reset};
 }

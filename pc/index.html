@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.45" data-cdq-pc-release="aeeb2e87c1b0f064989d8e26ceb2dbbe410198d101e8ae1c4c43b025b9a27b67">
+<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.46" data-cdq-pc-release="0aba03245849ca85e76ba4116801c910e4faf721dcba368a597025006b28091a">
 <head>
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./app-session-v2661.js"></script>
@@ -475,7 +475,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.14-v27.45-speed-sync-receipts-pdf-cleanup';
+const CDQ_PWA_BUILD = '2026.10.14-v27.46-background-drive-live-balances-delete';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1602,6 +1602,15 @@ function cdqWarmPdfReaderV2554(){
   return cdqReaderPrewarmV2554;
 }
 
+const READER_EQUIPMENT_FIELDS_V2746=Object.freeze(["base_balance_fabricant","base_balance_modele","base_balance_numero_serie","indicateur_fabricant","indicateur_modele","indicateur_numero_serie","capacite_maximale","echelon","unite_mesure","identification_balance","Statut_conformite","Bouton_Conforme","Bouton_NonConforme"]);
+function validateReaderEquipmentValuesV2746(values){
+ const names=READER_EQUIPMENT_FIELDS_V2746;
+ if(!values||typeof values!=='object'||Array.isArray(values)||Object.keys(values).length!==names.length||Object.keys(values).some(name=>!names.includes(name)))return null;
+ const result={};
+ for(const name of names){const value=values[name];if(typeof value!=='string'||value.length>1000)return null;result[name]=value;}
+ return result;
+}
+
 let cdqPdfV2304Context=null;
 function cdqAfficherPdf(data){
   const source=document.getElementById('app')?.contentWindow;
@@ -1613,6 +1622,15 @@ function cdqAfficherPdfV2304(data,source){
   const ctx={source,fileId:String(data.fileId||''),readerSession:String(data.readerSession||''),pending:new Map()};cdqPdfV2304Context=ctx;
   cdqAfficherPdf({...data,workspaceSource:source,
     onOpened:()=>replyToSelector(source,{type:'CDQ_PDF_OPENED_V2523',fileId:ctx.fileId,readerSession:ctx.readerSession}),
+    onEquipmentEdit:detail=>{
+      if(cdqPdfV2304Context!==ctx||data.readOnly)return;
+      const values=validateReaderEquipmentValuesV2746(detail.values);if(!values)return;
+      replyToSelector(source,{type:'CDQ_PDF_EQUIPMENT_EDIT_V2746',fileId:ctx.fileId,readerSession:ctx.readerSession,sequence:detail.sequence,values});
+    },
+    onEquipmentEditEnded:detail=>{
+      if(cdqPdfV2304Context!==ctx)return;
+      replyToSelector(source,{type:'CDQ_PDF_EQUIPMENT_EDIT_ENDED_V2746',fileId:ctx.fileId,readerSession:ctx.readerSession,reason:detail.reason});
+    },
     onClose:()=>{if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession});},
     onError:error=>{if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession,error:error.message});},
     onDiscard:data.readerProtocol>=2520?()=>new Promise((resolve,reject)=>{

@@ -24,6 +24,7 @@ export function confirmedDeletionV2727(result,{fileIds=[],folderIds=[]}={}){
 // Hide immediately, including rows recreated by a background refresh. Only an
 // explicit server acknowledgement removes a row; omitted IDs regain their state.
 export function beginOptimisticDeletionV2727({fileIds=[],folderIds=[],identity=()=>'',scope=()=>'',document:doc=globalThis.document}={}){
+ const fence=doc?.defaultView?.cdqFileDeletionV2746;if(fence)return fence.begin({fileIds,folderIds},String(scope()||''));
  const files=new Set(fileIds.map(String)),folders=new Set(folderIds.map(String)),owner=identity(),place=scope(),saved=new Map(),originals=new Map(),token='delete-'+globalThis.crypto.randomUUID();let ended=false;
  const current=()=>identity()===owner&&scope()===place;
  function target(el){
@@ -65,6 +66,7 @@ export function installPcFileOperationsV2727({rpc,identity,authorized,openMove})
   undoTimer=setTimeout(()=>toast.classList.remove('show'),9000);undoTimer.unref?.();
  }
  async function remove(selection,close){
+  if(window.cdqFileDeletionV2746?.remove)return window.cdqFileDeletionV2746.remove(selection,{clientId:company(),close});
   if(deleting||!authorized()||!selection.fileIds.length&&!selection.folderIds.length)return;
   deleting=true;const clientId=company(),owner=identity();close?.();const transaction=beginOptimisticDeletionV2727({...selection,identity,scope:company});window.mettreAJourInterface?.();window.afficherMessage?.('Suppression en cours…',false);
   try{
