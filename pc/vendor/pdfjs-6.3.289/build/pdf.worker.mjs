@@ -1,5 +1,11 @@
 /* PDF.js 6 on installed Android WebViews and earlier Chromium releases. */
 (()=>{
+  // PDF.js reads each document's fingerprint inside its dedicated worker.
+  // Older installed WebViews support the reader but predate this byte helper.
+  if(typeof Uint8Array.prototype.toHex!=='function')Object.defineProperty(Uint8Array.prototype,'toHex',{configurable:true,writable:true,value:function(){
+    if(Object.prototype.toString.call(this)!=='[object Uint8Array]')throw new TypeError('Expected Uint8Array');
+    let hex='';for(const byte of Uint8Array.prototype.values.call(this))hex+=byte.toString(16).padStart(2,'0');return hex;
+  }});
   if(typeof Math.sumPrecise!=='function')Object.defineProperty(Math,'sumPrecise',{configurable:true,writable:true,value:function(values){
     let sum=0,correction=0,count=0,positiveInfinity=false,negativeInfinity=false,nan=false,negativeZero=true;
     for(const value of values){
