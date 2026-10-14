@@ -60,6 +60,16 @@ export function paintReaderResults(surface){
     const name=input.name||'',row=/^charge_point_\d+_conforme_(vert|rouge)$/.exec(name),header=/^(bloc3|excentricite)_statut_(non_)?conforme$/.exec(name);
     if(!row&&!header)continue;
     const section=input.closest('section');if(!section)continue;
+    // Approved client reports can predate the trial schema while still owning
+    // the same repaired native row appearance. The visual normalizer marks
+    // those exact fields as native; do not hide that canvas and put an older
+    // DOM rectangle over it when the trial-only reader branch is not selected.
+    if(row&&section.dataset.cdqFrameV2736==='native'&&section.querySelector('[data-canvas-name="checked"]')){
+      section.classList.remove('cdq-result-widget');
+      section.querySelector('.cdq-result-indicator')?.remove();
+      section.dataset.cdqNativeResultV2743='true';
+      continue;
+    }
     section.classList.add('cdq-result-widget');
     let badge=section.querySelector('.cdq-result-indicator');
     if(!badge){badge=document.createElement('div');badge.className='cdq-result-indicator';badge.setAttribute('aria-hidden','true');section.append(badge);}

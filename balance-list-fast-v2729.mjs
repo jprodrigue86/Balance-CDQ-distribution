@@ -49,7 +49,7 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
   if(folders.some(f=>!f.id)||new Set(folders.map(f=>String(f.id))).size!==folders.length)throw Error('Dossier de rapports incomplet.');
   const children=await groups(folders,async folder=>{const r=await rpc('obtenirContenuDossierParesseux',folder.id,clientId);guard();return folderContent(r,folder.id);});
   const files=new Map(),take=f=>{if(!f.id)throw Error('Identifiant du rapport absent.');const id=String(f.id),prior=files.get(id);if(prior&&JSON.stringify(fileKey(prior))!==JSON.stringify(fileKey(f)))throw Error('Révisions des rapports non confirmées.');files.set(id,{...f});};
-  for(const f of root.fichiers)if(!excluded(f)&&(sheet(f)||pdf(f)))take(f);for(const child of children)for(const f of child.fichiers)if(!excluded(f)&&sheet(f))take(f);
+  for(const f of root.fichiers)if(!excluded(f)&&(sheet(f)||pdf(f)))take(f);for(const child of children)for(const f of child.fichiers)if(!excluded(f)&&(sheet(f)||pdf(f)))take(f);
   const sorted=[...files.values()].sort((a,b)=>String(a.id).localeCompare(String(b.id)));
   if(sorted.length>500||sorted.some(f=>!sourceRev(f)||f._cdqPendingSaveV2660||String(f.id).startsWith('cdq-local-')))throw Error('Révisions des rapports non confirmées.');
   return {name:root.nom||root.name||'',files:sorted,folders:folders.map(f=>String(f.id)),listFolderId:selected[0].folderId,list:{...selected[0].file}};
@@ -94,3 +94,4 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
  guard();
  return {...result,updatedAt:rev(ack),listStamp:JSON.stringify(fileKey({...after.list,...ack,revision:rev(ack),modifiedTime:rev(ack),dateModification:rev(ack)})),fastV2729:true};
 }
+

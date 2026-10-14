@@ -53,13 +53,13 @@ export function nextSync(copy,protocol=0) {
   if(copy.initialValues&&Object.keys(copy.initialValues).length)return null;
   if(copy.kind==='sheet')return null;
   if(copy.kind==='prepared')return !copy.removed&&copy.uploadId&&copy.uploadId!==copy.syncedUploadId&&protocol>=38
-    ?{type:'CDQ_OFFLINE_SAVE',requestId:copy.id,driveId:copy.driveId,revision:copy.revision,uploadId:copy.uploadId,blob:copy.blob,...(copy.autoReportName?{reportName:copy.name,clientId:copy.destination.clientId}:{})}:null;
+    ?{type:'CDQ_OFFLINE_SAVE',requestId:copy.id,driveId:copy.driveId,revision:copy.revision,uploadId:copy.uploadId,blob:copy.blob,folderId:copy.destination.folderId===copy.destination.clientId?'':copy.destination.folderId,...(copy.autoReportName?{reportName:copy.name,clientId:copy.destination.clientId}:{})}:null;
   if(!known(copy.modeleId)||!validDestination(copy.destination))return null;
   // Blank-copy requests remain compatible with the parallel multi-model server fixes.
   // Filled-PDF uploads require the explicit protocol-38 acknowledgement.
   if(!copy.driveId)return copy.bundled&&!validPdf(copy.templateBlob)?null:{type:'CDQ_OFFLINE_COPY',...syncRequest(copy)};
   if(copy.uploadId && copy.uploadId!==copy.syncedUploadId && protocol>=38)
-    return {type:'CDQ_OFFLINE_SAVE',requestId:copy.id,driveId:copy.filledDriveId||copy.driveId,revision:copy.revision||'',uploadId:copy.uploadId,blob:copy.blob,...(copy.autoReportName?{reportName:copy.name,clientId:copy.destination.clientId}:{})};
+    return {type:'CDQ_OFFLINE_SAVE',requestId:copy.id,driveId:copy.filledDriveId||copy.driveId,revision:copy.revision||'',uploadId:copy.uploadId,blob:copy.blob,folderId:copy.destination.folderId,...(copy.autoReportName?{reportName:copy.name,clientId:copy.destination.clientId}:{})};
   return null;
 }
 export function applyResult(copy,data) {
@@ -495,7 +495,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         }else{
           if(!identifier(data.clientId))throw Error('Compagnie absente.');
           await put('copies',{id,email:current.email,kind:'sheet',driveId:data.fileId,name:String(data.name||'Google Sheets').slice(0,500),account:String(data.account||'').slice(0,320),confirmed:data.confirmed===true,
-            destination:{clientId:data.clientId,folderId:data.clientId,name:String(data.clientName||'Compagnie').slice(0,500)},createdAt:old?.createdAt||Date.now(),removed:false});
+            destination:{clientId:data.clientId,folderId:data.folderId||old?.destination?.folderId||'',name:String(data.clientName||'Compagnie').slice(0,500)},createdAt:old?.createdAt||Date.now(),removed:false});
         }
         reply({ok:true});await refresh();
       }catch(e){reply({ok:false,message:e.message});}
@@ -541,7 +541,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
           await verifyPdf(data.blob);if(stamp!==epoch||current!==session)return;
           if(!identifier(data.clientId)||!data.revision)throw Error('Compagnie ou révision PDF absente.');
           await put('copies',{id,email:current.email,kind:'prepared',driveId:data.fileId,revision:data.revision,blob:data.blob,name:String(data.name||'Rapport.pdf'),
-            destination:{clientId:data.clientId,folderId:data.clientId,name:String(data.clientName||'Compagnie')},createdAt:Date.now(),status:'synced',uploadId:'',syncedUploadId:'',editVersion:c?(c.editVersion||0)+1:0});
+            destination:{clientId:data.clientId,folderId:data.folderId||c?.destination?.folderId||'',name:String(data.clientName||'Compagnie')},createdAt:Date.now(),status:'synced',uploadId:'',syncedUploadId:'',editVersion:c?(c.editVersion||0)+1:0});
           if(warmPdf&&!documentReaderWarmed){documentReaderWarmed=true;warmPdf(data);}
         }
         if(stamp===epoch){reply({ok:true});await refresh();}
