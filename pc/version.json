@@ -1,11 +1,11 @@
 {
   "platform": "pc-pwa",
-  "version": "27.46",
-  "release": "0aba03245849ca85e76ba4116801c910e4faf721dcba368a597025006b28091a",
+  "version": "27.47",
+  "release": "914f449c8461d175a178fc5ccecde4d8905c97be759074cb55c37c306934bed6",
   "desktopModel": 3,
-  "androidSourceBuild": "2026.10.14-v27.46-background-drive-live-balances-delete",
-  "androidSelectorSha256": "dd44194096abb916e8849ef48a83a00ece2ad7478bb19b992d756777c4f4ba73",
+  "androidSourceBuild": "2026.10.14-v27.47-startup-pending-outbox",
+  "androidSelectorSha256": "fabcd36358870ce69b6d19389d0a377108b72c8184c91e12afaee4e30e14ff62",
   "generatedFrom": "scripts/build-pc-v2676.mjs",
   "files": 865,
-  "build": "2026.10.09-v27.46-pc-workspace"
+  "build": "2026.10.09-v27.47-pc-workspace"
 }
