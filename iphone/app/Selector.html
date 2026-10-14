@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="27.46" data-cdq-iphone-release="3fada6d90c9513d6ebf09d2e6109005e101810fe4b70c82d7a31a3fce1b539ca">
+<html data-cdq-iphone-version="27.47" data-cdq-iphone-release="683bb884032895a171d443c6a5f0ad7d995dc2fdc897dba84e22efd92a73066f">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdqNavigationPreloadV2681">(function(){
@@ -862,7 +862,7 @@ for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.14-v27.46-background-drive-live-balances-delete">
+<meta name="cdq-package-build" content="2026.10.14-v27.47-startup-pending-outbox">
 
 
 <script id="cdqBridgeV23">
@@ -916,7 +916,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.14-v27.46-background-drive-live-balances-delete'
+    build:'2026.10.14-v27.47-startup-pending-outbox'
   });
 }
 
@@ -929,7 +929,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.14-v27.46-background-drive-live-balances-delete'
+        build:'2026.10.14-v27.47-startup-pending-outbox'
       });
     }
   } catch(e) {}
@@ -11639,7 +11639,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.14-v27.46-background-drive-live-balances-delete";
+  const CDQ_BUILD = "2026.10.14-v27.47-startup-pending-outbox";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13900,7 +13900,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.14-v27.46-background-drive-live-balances-delete";
+const CDQ_V19_BUILD = "2026.10.14-v27.47-startup-pending-outbox";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -14951,7 +14951,25 @@ function cdqDriveWriteV2746(name,args,email,requestId,uploadId='',guard=cdqReade
 }
 window.cdqDriveWriteV2746=cdqDriveWriteV2746;
 window.addEventListener('message',event=>{const d=event.data||{};if(!cdqFromPwa(event)||d.type!=='CDQ_DRIVE_PENDING_V2746'||d.email!==String(utilisateurCourantEmail||'')||!Number.isInteger(d.count)||d.count<0)return;cdqDriveBackgroundV2746.setPending('copies',d.count,d.email);});
-window.addEventListener('cdq:access-state-v2527',event=>{if(event.detail!=='ready')cdqDriveBackgroundV2746.reset();else cdqV19QueueGet().then(queue=>cdqDriveBackgroundV2746.setPending('outbox',queue.length)).catch(()=>{});});
+window.addEventListener('cdq:access-state-v2527',event=>{if(event.detail!=='ready')cdqDriveBackgroundV2746.reset();else{
+ const email=String(utilisateurCourantEmail||''),epoch=cdqDriveAccessEpochV2745;
+ cdqV19QueueGet().then(queue=>{if(email===String(utilisateurCourantEmail||'')&&epoch===cdqDriveAccessEpochV2745&&cdqAccessState==='ready')cdqDriveBackgroundV2746.setPending('outbox',queue.length,email);}).catch(()=>{});
+}});
+window.addEventListener('cdq:drive-ready-v2632',()=>{
+ const email=String(utilisateurCourantEmail||''),epoch=cdqDriveAccessEpochV2745;
+ const current=()=>email===String(utilisateurCourantEmail||'')&&epoch===cdqDriveAccessEpochV2745&&cdqAccessState==='ready'&&['admin','technicien'].includes(utilisateurCourantRole)&&window.cdqDriveEntryV2632?.canRead();
+ // The initial access-ready callback can run while Drive is still being checked
+ // or the account's deleted-save receipts are being reconciled. Resume only
+ // after that existing durable cleanup has released its outbox hold.
+ Promise.resolve().then(async()=>{
+  if(!current())return;
+  await window.cdqSaveRetirementV2707?.flushDeleted();
+  if(!current())return;
+  const queue=await cdqV19QueueGet();if(!current())return;
+  cdqDriveBackgroundV2746.setPending('outbox',queue.length,email);
+  if(navigator.onLine!==false)await cdqSynchroniserEnAttente();
+ }).catch(error=>{if(current())afficherErreur(error);});
+});
 window.addEventListener('cdq:drive-cleared-v2632',()=>cdqDriveBackgroundV2746.reset());
 window.addEventListener('cdq:drive-background-idle-v2746',()=>{
  cdqDriveBackgroundV2746.publish();
@@ -16684,7 +16702,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.14-v27.46-background-drive-live-balances-delete";
+const CDQ_V20_BUILD = "2026.10.14-v27.47-startup-pending-outbox";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -17531,7 +17549,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.14-v27.46-background-drive-live-balances-delete";
+const CDQ_V21_BUILD = "2026.10.14-v27.47-startup-pending-outbox";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21946,7 +21964,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.14-v27.46-background-drive-live-balances-delete',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.14-v27.47-startup-pending-outbox',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
