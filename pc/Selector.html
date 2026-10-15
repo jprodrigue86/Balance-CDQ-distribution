@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.48" data-cdq-pc-release="0adf5b5e4377cfbd94bd80b01f6b68652b9c8be6927a3a2d131b26d018c8167a">
+<html data-cdq-pc-version="27.49" data-cdq-pc-release="4d32f8598606d40a2a88cb03e52c83ebdd2ac979dd8fcab893e47ae6996444ee">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -866,7 +866,7 @@ for(const name of ["workspace-v2638.mjs","commercial-v2721.mjs","catalog-data-v2
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.14-v27.48-client-reader-fix">
+<meta name="cdq-package-build" content="2026.10.14-v27.49-fast-folders-save-progress">
 
 
 <script id="cdqBridgeV23">
@@ -920,7 +920,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.14-v27.48-client-reader-fix'
+    build:'2026.10.14-v27.49-fast-folders-save-progress'
   });
 }
 
@@ -933,7 +933,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.14-v27.48-client-reader-fix'
+        build:'2026.10.14-v27.49-fast-folders-save-progress'
       });
     }
   } catch(e) {}
@@ -6017,6 +6017,13 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
  #cdqGlobalProgressV2293{display:none;box-sizing:border-box;color:var(--cdq-ink,#e8eef4);background:transparent;padding:8px 5px;white-space:normal;overflow-wrap:anywhere;font:14px/1.4 Arial,sans-serif}
  #cdqGlobalProgressV2293.show{display:block;opacity:1;transform:none}
  #cdqGlobalProgressV2293 .cdq-progress-label{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;color:inherit!important}
+ #cdqGlobalProgressV2293 .cdq-progress-track{display:block;height:5px;margin-top:7px;overflow:hidden;border-radius:999px;background:rgba(38,157,255,.18)}
+ #cdqGlobalProgressV2293 .cdq-progress-fill{display:block;width:100%;height:100%;border-radius:inherit;background:#269dff}
+ #cdqGlobalProgressV2293[data-activity-kind="working"] .cdq-progress-fill{width:38%;animation:cdq-blue-stage-v2749 1.4s ease-in-out infinite}
+ #cdqGlobalProgressV2293[data-activity-kind="pending"] .cdq-progress-fill,#cdqGlobalProgressV2293[data-activity-kind="error"] .cdq-progress-fill{opacity:.45}
+ #cdqGlobalProgressV2293[data-activity-kind="notice"] .cdq-progress-track,#cdqGlobalProgressV2293[data-activity-kind="idle"] .cdq-progress-track{display:none}
+ @keyframes cdq-blue-stage-v2749{from{transform:translateX(-105%)}to{transform:translateX(365%)}}
+ @media(prefers-reduced-motion:reduce){#cdqGlobalProgressV2293[data-activity-kind="working"] .cdq-progress-fill{width:100%;animation:none}}
  #cdqGlobalProgressV2293.failed{color:var(--cdq-danger,#ff7373)}
  #message{display:none!important}
  .cdq-folder-loading .folder-name::after{content:""!important}
@@ -11675,7 +11682,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.14-v27.48-client-reader-fix";
+  const CDQ_BUILD = "2026.10.14-v27.49-fast-folders-save-progress";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -11881,6 +11888,7 @@ function changerMode(){
 
 
 // One background read at a time; a folder opened by the user has priority.
+// One background read at a time; a folder opened by the user has priority.
 function cdqCreateFolderLoaderV2527(options) {
   const now=options.now||Date.now, ttl=120000, pending=new Map();
   let root=null, owner='', client='', epoch=0, active=0, backgroundActive=0, queue=[];
@@ -11890,7 +11898,7 @@ function cdqCreateFolderLoaderV2527(options) {
     if(next!==root||email!==owner||id!==client){
       epoch++;root=next;owner=email;client=id;
       for(const task of queue)task.reject(new Error('Le dossier actif a changé.'));
-      queue=[];pending.clear();
+      queue=[];pending.clear();active=0;backgroundActive=0;
     }
     return !!root&&!!owner&&!!client&&permitted();
   }
@@ -11901,8 +11909,10 @@ function cdqCreateFolderLoaderV2527(options) {
     const previous=new Map((node.dossiers||[]).map(d=>[String(d.id),d]));
     const children=(loaded.dossiers||[]).map(meta=>{
       const old=previous.get(String(meta.id));
-      if(!old||!fresh(old))return meta;
-      // Refresh this folder's metadata, while retaining its recent child listing.
+      if(!old||old.charge===false)return meta;
+      if(meta.charge===true)return merge(old,meta);
+      // A shallow root refresh is not a new listing of an already loaded child.
+      // Keep it for the client's cache window; age only schedules a fresh read.
       const {fichiers,dossiers,charge,...metadata}=meta;
       Object.assign(old,metadata);return old;
     });
@@ -11927,7 +11937,7 @@ function cdqCreateFolderLoaderV2527(options) {
         if(!loaded||String(loaded.id)!==String(task.node.id))throw new Error('Contenu du dossier introuvable.');
         merge(task.node,loaded);options.loaded(root);task.resolve(task.node);
       },task.reject).catch(task.reject).finally(()=>{
-        active--;if(task.background)backgroundActive--;
+        if(current===epoch){active--;if(task.background)backgroundActive--;}
         if(pending.get(task.key)===task)pending.delete(task.key);
         pump();
       });
@@ -11954,7 +11964,7 @@ function cdqCreateFolderLoaderV2527(options) {
     const candidates=(node?.dossiers||[]).slice().sort((a,b)=>Number(/rapport|balance/i.test(b.nom||''))-Number(/rapport|balance/i.test(a.nom||'')));
     for(const child of candidates.slice(0,8))load(child,true).catch(()=>{});
   }
-  function invalidate(){epoch++;for(const task of queue)task.reject(new Error('Actualisation du dossier.'));queue=[];pending.clear();}
+  function invalidate(){epoch++;for(const task of queue)task.reject(new Error('Actualisation du dossier.'));queue=[];pending.clear();active=0;backgroundActive=0;}
   return {load,plan,merge,invalidate};
 }
 
@@ -13937,7 +13947,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.14-v27.48-client-reader-fix";
+const CDQ_V19_BUILD = "2026.10.14-v27.49-fast-folders-save-progress";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -14422,7 +14432,7 @@ async function cdqCleanInvalidPdfsV2714(){
  if(cdqCleaningInvalidPdfsV2714||cdqV19SyncRunning||cdqAccessState!=='ready')return;
  cdqCleaningInvalidPdfsV2714=true;const email=cdqReaderOwnerV2520();
  try{const queue=await cdqV19QueueGet();cdqReaderGuardV2520(email);
-  for(const a of queue){if(cdqV19SyncRunning)return;if(a.owner===email&&a.kind==='pdf-save-v2520'&&invalidRemotePdfV2714(a.lastError))await cdqRetirementV2707.retireAction(a.id);}
+  for(const a of queue){if(cdqV19SyncRunning)return;if(a.owner===email&&a.kind==='pdf-save-v2520'&&(invalidRemotePdfV2714(a.lastError)||window.cdqFileDeletionV2746?.stateFor(a.clientId,a.targetId)==='confirmed'))await cdqRetirementV2707.retireAction(a.id);}
   cdqReaderGuardV2520(email);await cdqV19RefreshSyncPill();
  }catch(e){if(!cdqV19SyncRunning&&email===String(utilisateurCourantEmail||'')&&cdqAccessState==='ready')afficherErreur(e);}
  finally{cdqCleaningInvalidPdfsV2714=false;}
@@ -14909,7 +14919,7 @@ async function mutateDurableOutboxV2746({open,key,storeName,modifier,valid=()=>t
 }
 function failedOutboxActionV2746(action,error,now=Date.now){
  const message=String(error?.message||error||'Envoi non confirmé.'),tries=Number(action.tries||0)+1;
- const transient=/répond pas|temporair|réessay|timeout|réseau|connexion interrompue|indisponible|quota|surcharg|demande a expiré|failed to fetch|network|connection|too many|service unavailable|continue en arrière-plan/i.test(message);
+ const transient=/répond pas|temporair|réessay|timeout|réseau|connexion interrompue|indisponible|quota|surcharg|demande a expiré|failed to fetch|network|connection|too many|service unavailable|continue en arrière-plan|la suppression de ce fichier est en cours/i.test(message);
  return {...action,tries,lastError:message,pausedV2746:!transient,nextRetryAtV2746:transient?now()+Math.min(120000,2000*2**Math.min(6,Math.max(0,tries-1))):0};
 }
 function runnableOutboxV2746(queue,now=Date.now){
@@ -14931,6 +14941,16 @@ async function normalizeDriveSaveReceiptV2745({data,result,email,guard,metadata,
  if(!receipt?.revision||String(receipt.id)!==String(result.id)||String(receipt.clientId)!==String(result.clientId)||data.clientId&&String(receipt.clientId)!==String(data.clientId))throw Error('Le PDF sauvegardé n’a pas été confirmé dans le dossier client.');
  return {...result,...receipt,ok:true};
 }
+async function resolveDriveSaveStatusV2749({fileId,saveId,clientId,email,guard,queue,get}){
+ guard(email);if(!fileId||!saveId||!clientId)return null;
+ const [receipt,backup,record,pending]=await Promise.all([get('pdf-save-receipt',saveId),get('pdf-save-backup-v2707',saveId),get('document-pdf',fileId),queue()]);guard(email);
+ const belongs=value=>value&&(!value.owner||String(value.owner).trim().toLowerCase()===String(email).trim().toLowerCase())&&String(value.clientId||'')===String(clientId);
+ if(belongs(receipt)&&receipt.ok&&receipt.id&&receipt.revision)return {...receipt,status:'acknowledged',sourceId:fileId,saveId};
+ if(belongs(backup)&&backup.id===saveId&&backup.targetId===fileId&&backup.data)return {status:'retired',sourceId:fileId,saveId,clientId,owner:email};
+ if(belongs(record)&&record.committedSaveIdV2749===saveId&&!record.pendingSaveId&&record.revision)return {...record,status:'acknowledged',sourceId:fileId,saveId};
+ if(pending.some(action=>action.id===saveId&&action.targetId===fileId&&belongs(action))||record?.pendingSaveId===saveId)return {status:'pending'};
+ return null;
+}
 function confirmDriveSaveV2741({data,result,email,guard,get,put,confirm,dispatch,warn=()=>{}}){
  guard(email);
  if(!result?.ok||!result.id||!result.revision||data.revision&&String(result.id)!==String(data.driveId)||data.clientId&&String(result.clientId)!==String(data.clientId))throw Error('La sauvegarde Drive n’a pas été confirmée.');
@@ -14940,7 +14960,7 @@ function confirmDriveSaveV2741({data,result,email,guard,get,put,confirm,dispatch
  Promise.resolve().then(async()=>{
   guard(email);const previous=await get('document-pdf',result.id);guard(email);
   if(!previous?.pendingSaveId||previous.pendingSaveId===data.uploadId)
-   await put('document-pdf',result.id,{...previous,pendingSaveId:'',id:result.id,nom:result.nom,autoReportName:!!data.reportName||previous?.autoReportName===true,blob:data.blob,revision:result.revision,clientId:result.clientId,folderId:result.destinationId||result.parentId||data.folderId||previous?.folderId,type:'PDF',taille:data.blob.size});
+   await put('document-pdf',result.id,{...previous,pendingSaveId:'',committedSaveIdV2749:data.uploadId,id:result.id,nom:result.nom,autoReportName:!!data.reportName||previous?.autoReportName===true,blob:data.blob,revision:result.revision,clientId:result.clientId,folderId:result.destinationId||result.parentId||data.folderId||previous?.folderId,type:'PDF',taille:data.blob.size});
  }).catch(warn);
  return result;
 }
@@ -14957,7 +14977,7 @@ function publishDriveDocumentV2741({data:d,email,valid,versions,get,put,confirm,
  Promise.resolve().then(async()=>{
   valid(email);const prior=await get('document-pdf',d.fileId);valid(email);
   if(versions.get(key)!==token||Number(prior?.localEditVersionV2660||0)>version)return;
-  await put('document-pdf',d.fileId,{id:d.fileId,nom:d.name,autoReportName:d.autoReportName===true,clientId:d.clientId,clientName:d.clientName,folderId:d.folderId||prior?.folderId,revision:d.revision,taille:d.blob.size,blob:d.blob,readerPreparedVersion:d.readerPreparedVersion===2730?2730:undefined,offlineSelected:d.offlineSelected===true,offlinePrepared:d.offlineSelected===true,pendingSaveId:d.pending?d.uploadId:'',localEditVersionV2660:d.editVersion,driveUploadErrorV2740:error});valid(email);
+  await put('document-pdf',d.fileId,{id:d.fileId,nom:d.name,autoReportName:d.autoReportName===true,clientId:d.clientId,clientName:d.clientName,folderId:d.folderId||prior?.folderId,revision:d.revision,taille:d.blob.size,blob:d.blob,readerPreparedVersion:d.readerPreparedVersion===2730?2730:undefined,offlineSelected:d.offlineSelected===true,offlinePrepared:d.offlineSelected===true,pendingSaveId:d.pending?d.uploadId:'',committedSaveIdV2749:d.pending?'':d.uploadId,localEditVersionV2660:d.editVersion,driveUploadErrorV2740:error});valid(email);
   if(versions.get(key)===token)await refresh();
  }).catch(warn);
 }
@@ -14987,6 +15007,7 @@ function cdqDriveWriteV2746(name,args,email,requestId,uploadId='',guard=cdqReade
  return cdqDriveWriteFlightsV2746.run(email,JSON.stringify({name,requestId,uploadId}),()=>cdqV19Gs(name,args),valid);
 }
 window.cdqDriveWriteV2746=cdqDriveWriteV2746;
+window.cdqDriveSaveStatusV2749=(fileId,saveId,clientId)=>{const email=String(utilisateurCourantEmail||''),epoch=cdqDriveAccessEpochV2745;return resolveDriveSaveStatusV2749({fileId,saveId,clientId,email,queue:cdqV19QueueGet,get:cdqV19GetRecord,guard:owner=>{cdqReaderGuardV2520(owner);if(epoch!==cdqDriveAccessEpochV2745)throw Error('Le compte ou l’accès a changé.');}});};
 window.addEventListener('message',event=>{const d=event.data||{};if(!cdqFromPwa(event)||d.type!=='CDQ_DRIVE_PENDING_V2746'||d.email!==String(utilisateurCourantEmail||'')||!Number.isInteger(d.count)||d.count<0)return;cdqDriveBackgroundV2746.setPending('copies',d.count,d.email);});
 window.addEventListener('cdq:access-state-v2527',event=>{if(event.detail!=='ready')cdqDriveBackgroundV2746.reset();else{
  const email=String(utilisateurCourantEmail||''),epoch=cdqDriveAccessEpochV2745;
@@ -15056,7 +15077,7 @@ window.addEventListener('message',function(event){
           confirm:(...args)=>window.cdqInstantFiles2530?.confirm?.(...args),dispatch:(type,detail)=>window.dispatchEvent(new CustomEvent(type,{detail})),
           warn:error=>console.warn('CDQ cache/affichage différé; sauvegarde Drive confirmée',r.id,error)});
         cdqPostToPwa({type:'CDQ_OFFLINE_SAVE_RESULT',requestId:data.requestId,uploadId:data.uploadId,ok:true,id:r.id,revision:r.revision||'',reportName:data.reportName?r.nom:''});
-      }catch(e){cdqPostToPwa({type:'CDQ_OFFLINE_SAVE_RESULT',requestId:data.requestId,uploadId:data.uploadId,ok:false,message:e.message||String(e)});}
+      }catch(e){cdqPostToPwa({type:'CDQ_OFFLINE_SAVE_RESULT',requestId:data.requestId,uploadId:data.uploadId,ok:false,message:e.message||String(e),clientId:data.clientId,driveId:data.driveId,confirmedDeletedV2749:email===String(utilisateurCourantEmail||'')&&saveEpochV2745===cdqDriveAccessEpochV2745&&window.cdqFileDeletionV2746?.stateFor(data.clientId,data.driveId)==='confirmed'});}
     });
   }
   if(data.type==='CDQ_OFFLINE_COPY' && data.bundled===true){
@@ -15644,7 +15665,13 @@ function installLocalReportListV2713({host=window,fromPwa,owner,allowed,confirm,
  const seen=new Map(),requests=new Map();
  host.addEventListener('message',e=>{
   if(!fromPwa(e)||!allowed())return;const d=e.data||{},email=owner();if(d.email!==email)return;
-  if(d.type==='CDQ_LOCAL_REPORT_ERROR_V2713'){reportError(d.message);return;}
+  if(d.type==='CDQ_LOCAL_REPORT_PROGRESS_V2749'){
+   const status=host.cdqActivityStatusV2745,scope=String(d.uploadId||'');if(!scope||!status)return;
+   if(d.stage==='saving-local')status.start(d.message||'Sauvegarde du rapport sur cet appareil…',scope);
+   else if(status.matches?.(scope)){if(d.stage==='saved')status.completeScope(scope,d.message||'Rapport enregistré dans Drive.');else status.announce(d.message||'Envoi du rapport vers Drive…',false,scope);}return;
+  }
+  if(d.type==='CDQ_LOCAL_REPORT_ERROR_V2713'){const scope=String(d.uploadId||'');if(scope&&host.cdqActivityStatusV2745?.matches?.(scope))host.cdqActivityStatusV2745.fail(d.message,scope);return;}
+  if(d.type==='CDQ_LOCAL_REPORT_RETIRED_V2714'&&d.uploadId&&d.clientId&&d.sourceId)host.dispatchEvent(new CustomEvent('cdq:pdf-save-retired-v2707',{detail:{owner:email,clientId:d.clientId,sourceId:d.sourceId,saveId:d.uploadId}}));
   if(d.type==='CDQ_LOCAL_REPORT_SNAPSHOT_V2714'&&Array.isArray(d.localIds)&&d.localIds.every(id=>/^[\w-]{8,100}$/.test(id))){reconcile(new Set(d.localIds));return;}
   if(d.type==='CDQ_LOCAL_REPORT_RETIRED_V2714'&&/^[\w-]{8,100}$/.test(d.localId)){seen.set(email+'|'+d.localId,{retired:true});remove(d.clientId,'cdq-local-'+d.localId);return;}
   if(d.type==='CDQ_LOCAL_REPORT_RETIRE_RESULT_V2714'){
@@ -16739,7 +16766,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.14-v27.48-client-reader-fix";
+const CDQ_V20_BUILD = "2026.10.14-v27.49-fast-folders-save-progress";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -17586,7 +17613,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.14-v27.48-client-reader-fix";
+const CDQ_V21_BUILD = "2026.10.14-v27.49-fast-folders-save-progress";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -22000,7 +22027,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.14-v27.48-client-reader-fix',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.14-v27.49-fast-folders-save-progress',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23523,7 +23550,7 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
  return retry?retry.apply(this,arguments):window.cdqSynchroniserEnAttente?.();
 };})();
 </script>
-<script id="cdq-workflow-feedback-v2745">// One truthful action status. No guessed percentages or perpetual animation.
+<script id="cdq-workflow-feedback-v2745">// One truthful action status. The blue bar is indeterminate, never a percentage.
 function activityMessageV2745(text,success=false){
  const value=String(text||'').trim(),fold=value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
  if(!value)return {text:'',kind:'idle'};
@@ -23534,20 +23561,25 @@ function activityMessageV2745(text,success=false){
  return {text:value,kind:'notice'};
 }
 
-function installActivityStatusV2745({host=window,doc=document,clock=host,confirmationAfter=45000}={}){
- const P={seq:0,active:false,value:0,label:'',failed:false,kind:'idle',waiting:false};let hide=null,watch=null;
- function box(){let node=doc.getElementById('cdqGlobalProgressV2293');if(!node){node=doc.createElement('div');node.id='cdqGlobalProgressV2293';node.setAttribute('role','status');node.setAttribute('aria-live','polite');node.innerHTML='<span class="cdq-progress-label"></span>';const files=doc.getElementById('filesContainer');if(files?.parentNode)files.parentNode.insertBefore(node,files);else doc.body.append(node);}return node;}
- function paint(){const node=box();node.querySelector('.cdq-progress-label').textContent=P.label;node.classList.toggle('show',!!P.label);node.classList.toggle('failed',P.failed);node.dataset.activityKind=P.kind;node.setAttribute('aria-busy',String(P.active));}
+function installActivityStatusV2745({host=window,doc=document,clock=host,confirmationAfter=45000,noticeAfter=8000}={}){
+ const P={seq:0,active:false,value:0,label:'',failed:false,kind:'idle',waiting:false,scope:null,visible:false};let hide=null,watch=null;
+ function box(){let node=doc.getElementById('cdqGlobalProgressV2293');if(!node){node=doc.createElement('div');node.id='cdqGlobalProgressV2293';const files=doc.getElementById('filesContainer');if(files?.parentNode)files.parentNode.insertBefore(node,files);else doc.body.append(node);}node.setAttribute('role','status');node.setAttribute('aria-live','polite');if(!node.querySelector('.cdq-progress-label'))node.innerHTML='<span class="cdq-progress-label"></span>';if(!node.querySelector('.cdq-progress-track')){const track=doc.createElement('span');track.className='cdq-progress-track';track.setAttribute('aria-hidden','true');track.innerHTML='<span class="cdq-progress-fill"></span>';node.append(track);}return node;}
+ function paint(){const node=box();node.querySelector('.cdq-progress-label').textContent=P.label;node.classList.toggle('show',P.visible&&!!P.label);node.classList.toggle('failed',P.failed);node.dataset.activityKind=P.kind;node.setAttribute('aria-busy',String(P.active));}
  function clearHide(){if(hide!==null)clock.clearTimeout(hide);hide=null;if(watch!==null)clock.clearTimeout(watch);watch=null;}
- function message(text,kind){clearHide();P.label=String(text||'');P.kind=kind;P.active=kind==='working';P.waiting=false;P.failed=kind==='error';paint();if(['success','notice'].includes(kind))hide=clock.setTimeout(()=>{hide=null;P.label='';P.kind='idle';paint();},2500);if(P.active){const seq=P.seq;watch=clock.setTimeout(()=>{watch=null;if(seq!==P.seq||!P.active)return;P.active=false;P.waiting=true;P.kind='pending';P.label+=' — confirmation en attente.';paint();},confirmationAfter);}}
- function start(label){P.seq++;message(label||'Chargement…','working');return P.seq;}
- function set(_value,label){if(label)message(label,P.active?'working':P.kind);return P.seq;}
- function done(label,seq){if(seq&&seq!==P.seq||P.failed||!P.active&&!P.waiting)return;message(label||'Terminé','success');}
- function fail(label,seq){if(seq&&seq!==P.seq)return;message(label||'Erreur','error');}
- function announce(text,success){const entry=activityMessageV2745(text,success);if(entry.kind==='working')start(entry.text);else{P.seq++;message(entry.text,entry.kind);}}
- function reset(){clearHide();P.seq++;P.label='';P.kind='idle';P.active=P.failed=P.waiting=false;paint();}
+ const scoped=scope=>scope!==undefined&&scope!==null&&scope!=='';
+ const matches=scope=>scoped(scope)&&scope===P.scope;
+ const current=reference=>!scoped(reference)||(typeof reference==='number'?reference===P.seq:matches(reference));
+ function hideMessage(retain){const seq=P.seq;hide=clock.setTimeout(()=>{hide=null;if(seq!==P.seq)return;P.visible=false;if(!retain){P.label='';P.kind='idle';}paint();},retain?noticeAfter:2500);}
+ function message(text,kind){clearHide();P.label=String(text||'');P.kind=kind;P.active=kind==='working';P.waiting=kind==='pending';P.failed=kind==='error';P.visible=!!P.label;paint();if(['success','notice'].includes(kind))hideMessage(false);if(['error','pending'].includes(kind))hideMessage(true);if(P.active){const seq=P.seq;watch=clock.setTimeout(()=>{watch=null;if(seq!==P.seq||!P.active)return;message(P.label+' — confirmation en attente.','pending');},confirmationAfter);}}
+ function start(label,scope){P.seq++;P.scope=scoped(scope)?scope:null;message(label||'Chargement…','working');return P.seq;}
+ function set(_value,label,reference){if(!current(reference))return false;if(label)message(label,P.active?'working':P.kind);return P.seq;}
+ function done(label,reference,{confirmed=false}={}){if(!current(reference)||!confirmed&&(P.failed||!P.active&&!P.waiting))return false;message(label||'Terminé','success');return true;}
+ function fail(label,reference){if(!current(reference))return false;message(label||'Erreur','error');return true;}
+ function announce(text,success=false,scope){if(scoped(scope)&&!matches(scope))return false;const entry=activityMessageV2745(text,success);if(!scoped(scope)){if(entry.kind==='working')return start(entry.text);P.seq++;P.scope=null;}message(entry.text,entry.kind);return P.seq;}
+ function completeScope(scope,label){if(!matches(scope))return false;return done(label,P.seq,{confirmed:true});}
+ function reset(){clearHide();P.seq++;P.scope=null;P.label='';P.kind='idle';P.active=P.failed=P.waiting=P.visible=false;paint();}
  Object.assign(host,{cdqProgressStartV2293:start,cdqProgressSetV2293:set,cdqProgressDoneV2293:done,cdqProgressFailV2293:fail,cdqProgressStateV2293:P});
- const api={start,set,done,fail,announce,reset,state:P};host.cdqActivityStatusV2745=api;return api;
+ const api={start,set,done,fail,announce,matches,completeScope,reset,state:P};host.cdqActivityStatusV2745=api;return api;
 }
 
  (()=>{
@@ -23555,8 +23587,8 @@ function installActivityStatusV2745({host=window,doc=document,clock=host,confirm
  // Legacy loaders clear this node directly. Keep it as a hidden compatibility
  // target while all visible announcements share the one action status.
  const oldMessage=document.getElementById('message');if(oldMessage){oldMessage.hidden=true;oldMessage.setAttribute('aria-hidden','true');}
- afficherMessage=function(text,success){status.announce(text,success);};window.afficherMessage=afficherMessage;
- afficherErreur=function(error){console.error(error);status.fail(error?.message||String(error));};window.afficherErreur=afficherErreur;
+ afficherMessage=function(text,success,scope){status.announce(text,success,scope);};window.afficherMessage=afficherMessage;
+ afficherErreur=function(error,scope){console.error(error);status.fail(error?.message||String(error),scope);};window.afficherErreur=afficherErreur;
  const render=afficherContenu;afficherContenu=function(){const result=render.apply(this,arguments);if(status.state.active&&/^Chargement des fichiers/i.test(status.state.label))status.done('Fichiers prêts');return result;};window.afficherContenu=afficherContenu;
  window.cdqRowLoading23={start(id){const token=status.start('Ouverture du PDF…');let ended=false;return ()=>{if(!ended){ended=true;status.done('PDF ouvert',token);}};},finish(){}};
  window.addEventListener('cdq:drive-cleared-v2632',status.reset);
@@ -23595,8 +23627,16 @@ function createFileDeletionFenceV2746({owner,allowed,scope=()=>'',getTree=()=>nu
    t.row.dataset.cdqPendingDeleteV2746=e.token;t.row.style.setProperty('display','none','important');t.row.setAttribute('aria-hidden','true');const box=t.row.querySelector('.file-checkbox,.folder-checkbox');if(box)box.checked=false;
   }
  }
- function filterTree(client,node){
+ function filterTree(client,node,retainIdentity=false){
   if(!node||!load())return node;
+  if(retainIdentity){
+   // The lazy loader authorizes the exact cached root and folder objects.
+   // Pending rows stay in that tree for rollback; scan hides them before paint.
+   node.fichiers=(node.fichiers||[]).filter(f=>stateFor(client,f.id)!=='confirmed');
+   node.dossiers=(node.dossiers||[]).filter(d=>stateFor(client,d.id,'folder')!=='confirmed');
+   for(const child of node.dossiers)filterTree(client,child,true);
+   return node;
+  }
   return {...node,fichiers:(node.fichiers||[]).filter(f=>!stateFor(client,f.id)),dossiers:(node.dossiers||[]).filter(d=>!stateFor(client,d.id,'folder')).map(d=>filterTree(client,d))};
  }
  function begin(selection,client='',requestId='',metadata={}){
@@ -23655,7 +23695,7 @@ function installFileDeletionV2746(){
  const readable=()=>cdqAccessState==='ready'&&!!owner();
  const fence=createFileDeletionFenceV2746({owner,allowed:readable,scope:company,getTree:tree,restore,notify,durableBegin:(detail,selection,metadata)=>{const saved=queued(detail.owner);if(!saved.some(j=>j.requestId===detail.requestId))saved.push({owner:detail.owner,requestId:detail.requestId,clientId:detail.clientId,selection,method:metadata.method||'supprimerSelectionMultiple',createdAt:Date.now()});commitQueue(detail.owner,saved);}});
  window.cdqFileDeletionV2746=fence;
- const render=window.afficherContenu;if(typeof render==='function')window.afficherContenu=function(root,...args){const result=render.call(this,fence.filterTree(company(),root),...args);fence.scan();return result;};
+ const render=window.afficherContenu;if(typeof render==='function')window.afficherContenu=function(root,...args){const result=render.call(this,fence.filterTree(company(),root,true),...args);fence.scan();return result;};
  const rpc=(method,args)=>typeof window.cdqAppelServeur==='function'?window.cdqAppelServeur(method,args):new Promise((resolve,reject)=>{const run=cdqApiRun().withSuccessHandler(resolve).withFailureHandler(reject);run[method](...args);});
  function confirmed(result,selection){if(!result||result.ok===false)return {fileIds:[],folderIds:[]};const files=Array.isArray(result.fichiers)?result.fichiers:Array.isArray(result.ids)?result.ids:[],folders=Array.isArray(result.dossiers)?result.dossiers:typeof result.id==='string'?[result.id]:[];return {fileIds:files.filter(id=>selection.fileIds.includes(String(id))),folderIds:folders.filter(id=>selection.folderIds.includes(String(id)))};}
  async function locked(email,ids,task){const ordered=[...new Set(ids)].sort();const next=i=>i===ordered.length?task():typeof cdqRunDocumentV2660==='function'?cdqRunDocumentV2660(email,ordered[i],()=>next(i+1)):next(i+1);return next(0);}
