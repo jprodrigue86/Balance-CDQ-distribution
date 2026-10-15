@@ -90,7 +90,7 @@ export async function mutateDurableOutboxV2746({open,key,storeName,modifier,vali
 
 export function failedOutboxActionV2746(action,error,now=Date.now){
  const message=String(error?.message||error||'Envoi non confirmé.'),tries=Number(action.tries||0)+1;
- const transient=/répond pas|temporair|réessay|timeout|réseau|connexion interrompue|indisponible|quota|surcharg|demande a expiré|failed to fetch|network|connection|too many|service unavailable|continue en arrière-plan/i.test(message);
+ const transient=/répond pas|temporair|réessay|timeout|réseau|connexion interrompue|indisponible|quota|surcharg|demande a expiré|failed to fetch|network|connection|too many|service unavailable|continue en arrière-plan|la suppression de ce fichier est en cours/i.test(message);
  return {...action,tries,lastError:message,pausedV2746:!transient,nextRetryAtV2746:transient?now()+Math.min(120000,2000*2**Math.min(6,Math.max(0,tries-1))):0};
 }
 

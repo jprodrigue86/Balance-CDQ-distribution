@@ -32,8 +32,16 @@ export function createFileDeletionFenceV2746({owner,allowed,scope=()=>'',getTree
    t.row.dataset.cdqPendingDeleteV2746=e.token;t.row.style.setProperty('display','none','important');t.row.setAttribute('aria-hidden','true');const box=t.row.querySelector('.file-checkbox,.folder-checkbox');if(box)box.checked=false;
   }
  }
- function filterTree(client,node){
+ function filterTree(client,node,retainIdentity=false){
   if(!node||!load())return node;
+  if(retainIdentity){
+   // The lazy loader authorizes the exact cached root and folder objects.
+   // Pending rows stay in that tree for rollback; scan hides them before paint.
+   node.fichiers=(node.fichiers||[]).filter(f=>stateFor(client,f.id)!=='confirmed');
+   node.dossiers=(node.dossiers||[]).filter(d=>stateFor(client,d.id,'folder')!=='confirmed');
+   for(const child of node.dossiers)filterTree(client,child,true);
+   return node;
+  }
   return {...node,fichiers:(node.fichiers||[]).filter(f=>!stateFor(client,f.id)),dossiers:(node.dossiers||[]).filter(d=>!stateFor(client,d.id,'folder')).map(d=>filterTree(client,d))};
  }
  function begin(selection,client='',requestId='',metadata={}){
@@ -92,7 +100,7 @@ export function installFileDeletionV2746(){
  const readable=()=>cdqAccessState==='ready'&&!!owner();
  const fence=createFileDeletionFenceV2746({owner,allowed:readable,scope:company,getTree:tree,restore,notify,durableBegin:(detail,selection,metadata)=>{const saved=queued(detail.owner);if(!saved.some(j=>j.requestId===detail.requestId))saved.push({owner:detail.owner,requestId:detail.requestId,clientId:detail.clientId,selection,method:metadata.method||'supprimerSelectionMultiple',createdAt:Date.now()});commitQueue(detail.owner,saved);}});
  window.cdqFileDeletionV2746=fence;
- const render=window.afficherContenu;if(typeof render==='function')window.afficherContenu=function(root,...args){const result=render.call(this,fence.filterTree(company(),root),...args);fence.scan();return result;};
+ const render=window.afficherContenu;if(typeof render==='function')window.afficherContenu=function(root,...args){const result=render.call(this,fence.filterTree(company(),root,true),...args);fence.scan();return result;};
  const rpc=(method,args)=>typeof window.cdqAppelServeur==='function'?window.cdqAppelServeur(method,args):new Promise((resolve,reject)=>{const run=cdqApiRun().withSuccessHandler(resolve).withFailureHandler(reject);run[method](...args);});
  function confirmed(result,selection){if(!result||result.ok===false)return {fileIds:[],folderIds:[]};const files=Array.isArray(result.fichiers)?result.fichiers:Array.isArray(result.ids)?result.ids:[],folders=Array.isArray(result.dossiers)?result.dossiers:typeof result.id==='string'?[result.id]:[];return {fileIds:files.filter(id=>selection.fileIds.includes(String(id))),folderIds:folders.filter(id=>selection.folderIds.includes(String(id)))};}
  async function locked(email,ids,task){const ordered=[...new Set(ids)].sort();const next=i=>i===ordered.length?task():typeof cdqRunDocumentV2660==='function'?cdqRunDocumentV2660(email,ordered[i],()=>next(i+1)):next(i+1);return next(0);}

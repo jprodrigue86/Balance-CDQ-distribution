@@ -8,7 +8,7 @@ function cdqCreateFolderLoaderV2527(options) {
     if(next!==root||email!==owner||id!==client){
       epoch++;root=next;owner=email;client=id;
       for(const task of queue)task.reject(new Error('Le dossier actif a changé.'));
-      queue=[];pending.clear();
+      queue=[];pending.clear();active=0;backgroundActive=0;
     }
     return !!root&&!!owner&&!!client&&permitted();
   }
@@ -18,8 +18,10 @@ function cdqCreateFolderLoaderV2527(options) {
     const previous=new Map((node.dossiers||[]).map(d=>[String(d.id),d]));
     const children=(loaded.dossiers||[]).map(meta=>{
       const old=previous.get(String(meta.id));
-      if(!old||!fresh(old))return meta;
-      // Refresh this folder's metadata, while retaining its recent child listing.
+      if(!old||old.charge===false)return meta;
+      if(meta.charge===true)return merge(old,meta);
+      // A shallow root refresh is not a new listing of an already loaded child.
+      // Keep it for the client's cache window; age only schedules a fresh read.
       const {fichiers,dossiers,charge,...metadata}=meta;
       Object.assign(old,metadata);return old;
     });
@@ -44,7 +46,7 @@ function cdqCreateFolderLoaderV2527(options) {
         if(!loaded||String(loaded.id)!==String(task.node.id))throw new Error('Contenu du dossier introuvable.');
         merge(task.node,loaded);options.loaded(root);task.resolve(task.node);
       },task.reject).catch(task.reject).finally(()=>{
-        active--;if(task.background)backgroundActive--;
+        if(current===epoch){active--;if(task.background)backgroundActive--;}
         if(pending.get(task.key)===task)pending.delete(task.key);
         pump();
       });
@@ -71,6 +73,6 @@ function cdqCreateFolderLoaderV2527(options) {
     const candidates=(node?.dossiers||[]).slice().sort((a,b)=>Number(/rapport|balance/i.test(b.nom||''))-Number(/rapport|balance/i.test(a.nom||'')));
     for(const child of candidates.slice(0,8))load(child,true).catch(()=>{});
   }
-  function invalidate(){epoch++;for(const task of queue)task.reject(new Error('Actualisation du dossier.'));queue=[];pending.clear();}
+  function invalidate(){epoch++;for(const task of queue)task.reject(new Error('Actualisation du dossier.'));queue=[];pending.clear();active=0;backgroundActive=0;}
   return {load,plan,merge,invalidate};
 }

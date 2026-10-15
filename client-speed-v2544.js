@@ -161,7 +161,9 @@
     if(typeof compagnieSelectionnee==='undefined'||!compagnieSelectionnee)return;
     const id=client(),email=account();
     if(!id||!email||!ready())return;
-    try{await window.cdqClientDayCacheV2746?.open(id);}catch(_){ }
+    if(!window.cdqClientDayCacheV2746?.peek(id)){
+      try{await window.cdqClientDayCacheV2746?.open(id);}catch(_){ }
+    }
     if(!current(id,email))return;
     remember(id);
 

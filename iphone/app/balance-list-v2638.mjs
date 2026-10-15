@@ -20,7 +20,7 @@ const jobs=new Map(),receipts=new Map(),states=new Map(),failed=new Map();
 // Saves belong to their client, independently of the visible page or selection.
 const saveWaits=new Map(),changes=new Map(),satisfied=new Map(),clientTimers=new Map();
 const hydrated=new Set(),reviews=new Map(),reviewReceipts=new Map(),pausedClients=new Set();
-const previewJobs=new Map(),previews=new Map();
+const previewJobs=new Map(),previews=new Map(),waitChecks=new Map();
 const projection=createBalanceListProjectionV2746({identity:calibrationIdentity,onChange:id=>{paintRows();queuePreview(id);window.dispatchEvent(new CustomEvent('cdq:balance-list-rows-v2730',{detail:{clientId:id,local:true}}));}});
 const key=id=>calibrationIdentity().email+'|'+id;
 const journalKey=id=>'cdqBalanceListJournalV2730:'+key(id);
@@ -43,6 +43,19 @@ function persistClient(id){
 function publishBackground(){const current=calibrationIdentity().email,prefix=current+'|',keys=new Set([...saveWaits.keys(),...changes.keys(),...reviews.keys(),...jobs.keys()]);let count=0;for(const k of keys)if(k.startsWith(prefix)&&(jobs.has(k)||(saveWaits.get(k)?.size||0)>0||needsUpdate(k)))count++;window.cdqDriveBackgroundV2746?.setPending?.('balance-list',count,current);}
 const waiting=id=>{restoreClient(id);return (saveWaits.get(key(id))?.size||0)>0;};
 const needsUpdate=k=>(changes.get(k)||0)>(satisfied.get(k)||0)||(reviews.get(k)?.size||0)>0;
+async function reconcileWaits(id){
+ restoreClient(id);const k=key(id);if(!waiting(id)||!window.cdqDriveSaveStatusV2749)return;
+ if(waitChecks.has(k))return waitChecks.get(k);
+ const version=epoch,account=calibrationIdentity().email;
+ const task=(async()=>{for(const [sourceId,saveId]of [...(saveWaits.get(k)||[])]){
+  const receipt=await window.cdqDriveSaveStatusV2749(sourceId,saveId,String(id));
+  if(version!==epoch||account!==calibrationIdentity().email||!canWrite())return;
+  if(saveWaits.get(k)?.get(sourceId)!==saveId)continue;
+  const detail={...receipt,owner:account,clientId:String(id),sourceId,saveId};
+  if(receipt?.status==='acknowledged')await saved({detail});
+  else if(receipt?.status==='retired')retired(detail);
+ }})().catch(()=>{}).finally(()=>{if(waitChecks.get(k)===task)waitChecks.delete(k);});waitChecks.set(k,task);return task;
+}
 function paintRows(){
  restoreClient(client());
  const id=client(),view=id?projection.project(id,states.get(key(id))):null,listId=states.get(key(id))?.fileId||listFile(id)?.id;
@@ -197,6 +210,8 @@ async function refresh(force=false,verify=false,id=client()){
     active.followup??=active.promise.then(()=>active.version===epoch&&k===key(id)&&canWrite()?refresh(true,false,id):{status:'unavailable'});
     return active.followup;
   }
+  if(waiting(id)){const waitEpoch=epoch;await reconcileWaits(id);if(waitEpoch!==epoch||!canWrite()||k!==key(id))return {status:'unavailable'};}
+  fingerprint=clientFingerprint(id);stamp=fingerprint+'|saved:'+(changes.get(k)||0);
   if(waiting(id)){paintRows();queuePreview(id);return {status:'waiting-save',localPending:true};}
   if(!force&&!verify&&remembered(id)?.fingerprint===fingerprint&&!needsUpdate(k)&&!needsPlacement(id))return {status:'cached'};
   // Automatic checks are silent; only an explicit refresh reports progress.
@@ -253,7 +268,7 @@ function menu(){
   for(const [label,action,write] of [['Ouvrir la liste',open,false],['Actualiser la liste',()=>refresh(true),true]]){const b=document.createElement('button');b.type='button';b.textContent=label;b.disabled=write&&!canWrite();b.onclick=()=>{closeMenu();if(id===client())Promise.resolve(action()).catch(e=>paint(id,e.message,true));};p.append(b);}
   actions.append(p);actions.querySelector('[data-client-list]')?.setAttribute('aria-expanded','true');
 }
-function reset(){epoch++;owner=calibrationIdentity().email;visibleClient='';receipts.clear();states.clear();jobs.clear();failed.clear();saveWaits.clear();changes.clear();satisfied.clear();hydrated.clear();reviews.clear();reviewReceipts.clear();pausedClients.clear();projection.reset();previews.clear();previewJobs.clear();pcScan=null;for(const t of clientTimers.values())clearTimeout(t);clientTimers.clear();clearTimeout(timer);clearTimeout(scanTimer);timer=scanTimer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();paintRows();publishBackground();}
+function reset(){epoch++;owner=calibrationIdentity().email;visibleClient='';receipts.clear();states.clear();jobs.clear();failed.clear();saveWaits.clear();changes.clear();satisfied.clear();hydrated.clear();reviews.clear();reviewReceipts.clear();pausedClients.clear();projection.reset();previews.clear();previewJobs.clear();waitChecks.clear();pcScan=null;for(const t of clientTimers.values())clearTimeout(t);clientTimers.clear();clearTimeout(timer);clearTimeout(scanTimer);timer=scanTimer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();paintRows();publishBackground();}
 function sources(tree){const files=[],seen=new Set(),take=(node,pdf)=>{for(const f of node.fichiers||[]){const id=String(f.id||'');if(id&&!seen.has(id)&&!excluded(f.nom||f.name)&&!f._cdqPendingSaveV2660&&(['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].includes(f.mimeType||f.type)||pdf&&['PDF','application/pdf'].includes(f.mimeType||f.type))){seen.add(id);files.push(f);}}};take(tree,true);for(const d of tree.dossiers||[])if(/^rapports? (?:d ?)?etalonnages?$/.test(norm(d.nom||d.name)))take(d,true);return files;}
 function scheduleScan(id){
  if(scanTimer||pcScan||readerBusy()||navigator.onLine===false||window.cdqFieldWorkV2729?.available()===false)return;
@@ -267,6 +282,7 @@ function inspect(){
   const id=client();if(id!==visibleClient){visibleClient=id;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();}
   paintRows();if(!canWrite()||document.hidden)return;
   const tree=root(id);if(!id||!tree)return;
+  if(waiting(id))reconcileWaits(id);
   const fingerprint=clientFingerprint(id),job=jobs.get(key(id));
   if(job){if(fingerprint!==job.fingerprint)job.dirty=true;return;}
   const receipt=remembered(id);
@@ -302,17 +318,20 @@ function resumePaused(){for(const k of [...pausedClients,...changes.keys(),...re
 window.addEventListener('cdq:field-idle-v2729',resumePaused);
 window.cdqFieldWorkV2729?.subscribe?.(resumePaused);
 for(const event of ['cdq:copied','cdq:pdf-saved'])window.addEventListener(event,e=>saved(e));
-window.addEventListener('cdq:pdf-save-retired-v2707',e=>{
+function retired(d){
  if(owner!==calibrationIdentity().email)reset();
- const d=e.detail||{},k=key(String(d.clientId||'')),pending=saveWaits.get(k),file=String(d.sourceId||''),token=String(d.saveId||'');
- if(!canRead()||d.owner&&d.owner!==calibrationIdentity().email)return;
- const matched=pending?.has(file)?file:token?[...(pending||[])].find(([,value])=>value===token)?.[0]:undefined;if(matched!==undefined&&pending.get(matched)===token)pending.delete(matched);
+ const id=String(d.clientId||'');if(!id||!d.saveId||!canRead()||d.owner&&d.owner!==calibrationIdentity().email)return;
+ restoreClient(id);const k=key(id),pending=saveWaits.get(k),file=String(d.sourceId||''),token=String(d.saveId||'');
+ const matched=pending?.has(file)?file:token?[...(pending||[])].find(([,value])=>value===token)?.[0]:undefined,released=matched!==undefined&&pending.get(matched)===token;if(released)pending.delete(matched);
  reviews.get(k)?.delete(token);
  equipment.retire(token);
- projection.retire({...d,owner:calibrationIdentity().email,clientId:String(d.clientId||''),sourceId:file,saveId:token});
- persistClient(String(d.clientId||''));
+ const changed=projection.retire({...d,owner:calibrationIdentity().email,clientId:id,sourceId:matched||file,saveId:token});
+ if(released||changed){clearFailure(k);changes.set(k,(changes.get(k)||0)+1);const job=jobs.get(k);if(job)job.dirty=true;}
+ persistClient(id);if(!waiting(id)&&(released||changed||needsUpdate(k)))scheduleClient(id,0);
  paintRows();
-});
+}
+window.addEventListener('cdq:pdf-save-retired-v2707',e=>retired(e.detail||{}));
+for(const type of ['cdq:outbox-idle-v2707','cdq:drive-write-idle-v2746','cdq:drive-background-idle-v2746'])window.addEventListener(type,()=>{for(const k of saveWaits.keys())if(k.startsWith(owner+'|'))reconcileWaits(k.slice(owner.length+1));});
 window.addEventListener('cdq:pdf-local-saved',e=>saved(e,true));window.addEventListener('cdq:client-renamed',e=>saved(e));
 for(const event of ['cdq:deleted','cdq:moved','cdq:renamed'])window.addEventListener(event,schedule);
 window.addEventListener('cdq:reader-closed-v2703',resumePaused);
