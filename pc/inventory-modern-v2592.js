@@ -1,7 +1,7 @@
 (function inventoryModernV2592(){
 'use strict';
 function normalize(v){return String(v==null?'':v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
-if(window.cdqInventoryModernV2592)return;
+if(window.cdqInventoryModernV2592&&!window.cdqInventoryModernV2592.cdqLazyV2751)return;
 var page=null,body=null,titleEl=null,subEl=null,backBtn=null,statusEl=null,scheduled=false;
 var state={inv:null,view:'home',article:null,query:'',category:'Tous',locationFilter:'',lowOnly:false,pendingMoveKind:'',history:[],scanDataUrl:'',scanCode:'',scanArticle:null,scanUnit:null,scanBusy:false,moveKind:'',preferredLocation:'',labelDataUrl:'',labelText:'',labelBarcode:'',labelInfo:null,labelArticleId:'',labelPendingKind:'',labelRequest:'',labelBusy:false,preserveLabelScanner:false,serialServerReady:null,scanConfirmed:false,labelQuality:null};
 var photoCache=new Map(),photoObserver=null;

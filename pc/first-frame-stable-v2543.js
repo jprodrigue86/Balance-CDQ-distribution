@@ -9,7 +9,8 @@
   const labels=['Accueil','Dossier','Calibration','Calcul','Inventaire','Catalogue','Factures','Opportunités','Corbeille'];
   const paints=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   const domReady=document.readyState==='loading'?new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true})):Promise.resolve();
-  const decoded=new Map();let preparing,completedGeneration;
+  const decoded=new Map();let preparing,preparingScope,completedGeneration,completedScope;
+  const homeScope=()=>window.cdqDriveEntryV2632?.canRead()===true?String(typeof utilisateurCourantEmail==='undefined'?'':utilisateurCourantEmail).trim().toLowerCase()+'|'+String(typeof utilisateurCourantRole==='undefined'?'':utilisateurCourantRole):'locked';
   function visible(el){if(!el)return false;const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity||1)>0&&r.width>0&&r.height>0;}
   function controls(){return [...document.querySelectorAll('#appHeader,#cdqTopActionsV2204,.bottom-nav')];}
   function urls(){
@@ -75,11 +76,12 @@
     await paints();
     const prepared=snapshot();
     await permissionsReady();
-    // Client rows load independently after authorization; they no longer hold the whole interface behind the splash.
+    await window.cdqStartupPerformanceV2751.waitForHomeClients();
     let last=prepared.ready?prepared.signature:'',started=performance.now();
     for(;;){
       await Promise.all(urls().map(decode));
       await paints();
+      await window.cdqStartupPerformanceV2751.waitForHomeClients();
       const state=snapshot();
       if(!state.ready){if(performance.now()-started>10000)throw Error('Interface incomplète');last='';continue;}
       if(state.signature===last){document.documentElement.dataset.cdqStartupReadyV2652='true';return;}
@@ -87,14 +89,15 @@
     }
   }
   function wait(){
-    if(!preparing)preparing=prepare().catch(error=>{preparing=null;parent.postMessage({type:'CDQ_INTERFACE_FAILED_V2652',reason:error.message},location.origin);throw error;});
+    const scope=homeScope();
+    if(!preparing||preparingScope!==scope){preparingScope=scope;preparing=prepare().then(()=>{preparingScope=homeScope();}).catch(error=>{preparing=null;parent.postMessage({type:'CDQ_INTERFACE_FAILED_V2652',reason:error.message},location.origin);throw error;});}
     return preparing;
   }
   window.cdqStartupFrameV2652={wait};
   addEventListener('message',async event=>{
     if(event.source!==parent||event.origin!==location.origin||event.data?.type!==ARM)return;
     const generation=Number(event.data.generation)||0;
-    if(completedGeneration===generation){parent.postMessage({type:READY,generation},location.origin);return;}
-    try{await wait();completedGeneration=generation;parent.postMessage({type:READY,generation},location.origin);}catch(_){}
+    if(completedGeneration===generation&&completedScope===homeScope()){parent.postMessage({type:READY,generation},location.origin);return;}
+    try{await wait();completedGeneration=generation;completedScope=homeScope();parent.postMessage({type:READY,generation},location.origin);}catch(_){}
   });
 })();

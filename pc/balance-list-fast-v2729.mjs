@@ -1,3 +1,4 @@
+import {balanceDisplayRowsV2751,validBalanceSourceIndexV2751} from './balance-list-index-v2751.mjs';
 import {equipmentSnapshotV2697} from './equipment-list-v2697.mjs';
 import {sheetBalanceValuesV2703} from './balance-data-v2703.mjs';
 import {sheetReportConformityV2727} from './sheet-report-conformity-v2727.mjs';
@@ -36,7 +37,7 @@ function completeSheet(snapshot,file,clientId){
 
 // Two authorised folder snapshots replace N individual metadata requests and
 // the server's re-download/rebuild. Missing or changed sources abort the write.
-export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,loadSheet,library,cachedSignature,stillCurrent,onSaved=()=>{},onSourceRead=()=>{},previousState=null,hashText=hash,render=null}){
+export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,loadSheet,library,cachedSignature,stillCurrent,onSaved=()=>{},onSourceRead=()=>{},previousState=null,hashText=hash,render=null,sourceIndex=null,guardedSave=false}){
  if(!fileId)return null;const guard=()=>{if(!stillCurrent())throw Error('Le client, le compte ou une sauvegarde a changé.');};guard();
  async function snapshot(){
   const response=await rpc('obtenirContenuDossierParesseux',clientId,clientId);guard();const root=folderContent(response,clientId);
@@ -54,23 +55,28 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
   if(sorted.length>500||sorted.some(f=>!sourceRev(f)||f._cdqPendingSaveV2660||String(f.id).startsWith('cdq-local-')))throw Error('Révisions des rapports non confirmées.');
   return {name:root.nom||root.name||'',files:sorted,folders:folders.map(f=>String(f.id)),listFolderId:selected[0].folderId,list:{...selected[0].file}};
  }
- const before=await snapshot(),beforeKey=snapshotKey(before),records=[];let L,existing,old,libraryPromise;
+ const indexed=guardedSave===true&&validBalanceSourceIndexV2751(sourceIndex,clientId,fileId);
+ const before=indexed?{name:sourceIndex.name||'',files:sourceIndex.sources.map(source=>({...source.file,id:source.id,revision:source.revision,modifiedTime:source.revision,dateModification:source.revision})),folders:sourceIndex.folders,listFolderId:sourceIndex.listFolderId,list:{...sourceIndex.list,revision:sourceIndex.listRevision,modifiedTime:sourceIndex.listRevision,dateModification:sourceIndex.listRevision}}:await snapshot(),beforeKey=snapshotKey(before),records=[],signatures=new Map();let L,existing,old,libraryPromise;
  const pdfLibrary=async()=>{libraryPromise??=Promise.resolve().then(library);L=await libraryPromise;guard();return L;};
  await groups(before.files,async file=>{
-  guard();let signature=cachedSignature?.(file),parsed=signatureValues(signature);
+  guard();let signature=indexed?sourceIndex.sources.find(source=>source.id===String(file.id))?.signature:cachedSignature?.(file),parsed=signatureValues(signature);
   if(!parsed){if(sheet(file)){const returned=await loadSheet(file.id,clientId,sourceRev(file));guard();const snapshot=completeSheet(returned,file,clientId),values=sheetBalanceValuesV2703(snapshot.onglets[0].valeurs);signature=values==='null'?values:JSON.stringify([...JSON.parse(values),sheetReportConformityV2727(snapshot)]);}
    else{const record=await loadPdf(file.id,sourceRev(file));guard();if(!record?.blob||record.id&&String(record.id)!==String(file.id)||rev(record)!==sourceRev(file)||record.clientId&&String(record.clientId)!==String(clientId))throw Error('Un rapport a changé pendant la préparation.');signature=await equipmentSnapshotV2697(record.blob,await pdfLibrary());}
    guard();onSourceRead(file,signature);}
-  guard();parsed=signatureValues(signature);if(!parsed)throw Error('Données de balance incomplètes.');const {values}=parsed;if(values===null)return;
+  guard();parsed=signatureValues(signature);if(!parsed)throw Error('Données de balance incomplètes.');const {values}=parsed;signatures.set(String(file.id),signature);if(values===null)return;
   const [fabricant,modele,capacite,echelon,identification,conformity]=values;records.push({id:String(file.id),source:file.nom||file.name||'',revision:sourceRev(file),fabricant,modele,capacite,echelon,identification,conformity});
  });
- const seen=new Set(),rows=records.sort((a,b)=>(Date.parse(b.revision)||0)-(Date.parse(a.revision)||0)||a.id.localeCompare(b.id)).filter(r=>{const id=norm(r.identification);if(id&&seen.has(id))return false;if(id)seen.add(id);return true;}).sort((a,b)=>String(a.identification||a.source).localeCompare(String(b.identification||b.source),'fr',{numeric:true}));
+ const rows=balanceDisplayRowsV2751(records);
  const digest=await hashText(JSON.stringify([String(clientId),before.name,rows.map(r=>[r.fabricant,r.modele,r.capacite,r.echelon,r.identification,r.conformity])]));guard();
  // A confirmed revision/digest receipt survives an app restart. Rechecking an
  // unchanged list needs only its two fresh folder snapshots, without fetching
  // or parsing the same list PDF again. A remote list edit invalidates receipt.
  let unchanged=previousState?.fileId===String(fileId)&&String(previousState.clientId||'')===String(clientId)&&previousState.updatedAt===sourceRev(before.list)&&previousState.listStamp===JSON.stringify(fileKey(before.list))&&previousState.digest===digest;
- if(!unchanged){
+ if(indexed){
+  // A value-identical update still needs fresh membership verification.
+  if(previousState?.digest===digest)return updateBalanceListFastV2729({...arguments[0],sourceIndex:null});
+  existing={id:String(fileId),clientId:String(clientId),revision:sourceIndex.listRevision};old={getAuthor:()=>sourceIndex.author||''};
+ }else if(!unchanged){
   existing=await loadPdf(fileId,sourceRev(before.list));guard();
   if(!existing?.blob||!rev(existing)||existing.id&&String(existing.id)!==String(fileId)||existing.clientId&&String(existing.clientId)!==String(clientId)||sourceRev(before.list)!==rev(existing))throw Error('La révision de la liste a changé.');
   await pdfLibrary();old=await L.PDFDocument.load(await existing.blob.arrayBuffer(),{updateMetadata:false});guard();
@@ -80,18 +86,21 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
  if(!unchanged){
   if(render)bytes=await render(rows,before.name,old.getAuthor()||'',digest);
   else if(pdfWorkV2729())bytes=(await pdfWorkV2729().request('list',{rows,name:before.name,author:old.getAuthor()||'',digest})).bytes;
-  else{bytes=await renderBalanceListV2728(rows,before.name,old.getAuthor()||'',[],L);const doc=await L.PDFDocument.load(bytes,{updateMetadata:false});doc.catalog.set(L.PDFName.of('CDQBalanceListV2728'),L.PDFString.of(digest));bytes=await doc.save({updateFieldAppearances:false});}
+  else{await pdfLibrary();bytes=await renderBalanceListV2728(rows,before.name,old.getAuthor()||'',[],L);const doc=await L.PDFDocument.load(bytes,{updateMetadata:false});doc.catalog.set(L.PDFName.of('CDQBalanceListV2728'),L.PDFString.of(digest));bytes=await doc.save({updateFieldAppearances:false});}
  }
  // Validate membership and every source revision after rendering, immediately
  // before saving, even when the existing list needs no PDF write.
- const after=await snapshot();guard();if(beforeKey!==snapshotKey(after))throw Error('Les rapports ou la liste ont changé pendant la préparation.');
- const result={status:'ready',fileId:String(fileId),clientId:String(clientId),folderId:after.listFolderId,count:rows.length,listRevision:'v2728-client',listStamp:JSON.stringify(fileKey(after.list)),digest,rows,checkedAt:new Date().toISOString(),updatedAt:sourceRev(before.list),clientSnapshot:after};
+ const after=indexed?before:await snapshot();guard();if(beforeKey!==snapshotKey(after))throw Error('Les rapports ou la liste ont changé pendant la préparation.');
+ const exhaustiveIndex={version:1,exhaustive:true,clientId:String(clientId),fileId:String(fileId),listRevision:sourceRev(before.list),list:{...before.list},name:before.name,author:old?.getAuthor?.()||sourceIndex?.author||previousState?.sourceIndexV2751?.author||'',authorKnown:!!old||sourceIndex?.authorKnown===true||previousState?.sourceIndexV2751?.authorKnown===true,folders:before.folders,listFolderId:before.listFolderId,sources:before.files.map(file=>({id:String(file.id),revision:sourceRev(file),name:file.nom||file.name||'',file:{...file},signature:signatures.get(String(file.id))}))};
+ const result={sourceIndexV2751:exhaustiveIndex,status:'ready',fileId:String(fileId),clientId:String(clientId),folderId:after.listFolderId,count:rows.length,listRevision:'v2728-client',listStamp:JSON.stringify(fileKey(after.list)),digest,rows,checkedAt:new Date().toISOString(),updatedAt:sourceRev(before.list),clientSnapshot:after};
  if(unchanged)return {...result,unchanged:true,fastV2729:true};
- guard();const saveId='list-v2729-'+crypto.randomUUID(),ack=await rpc('enregistrerPdfLecteurCDQV2520',fileId,base64(bytes),saveId,rev(existing));guard();
+ guard();const saveId='list-v2751-'+crypto.randomUUID(),ack=guardedSave===true?await rpc('cdqSaveBalanceListV2751',clientId,fileId,base64(bytes),{saveId,listRevision:rev(existing)||sourceRev(before.list),sources:exhaustiveIndex.sources.map(({id,revision})=>({id,revision})),name:'Liste de balance.pdf',sha256:Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join(''),size:bytes.length}):await rpc('enregistrerPdfLecteurCDQV2520',fileId,base64(bytes),saveId,rev(existing));guard();
+ if(guardedSave===true&&(ack?.saveId!==saveId||ack?.sourceManifestValidated!==true))throw Error('Le manifeste exhaustif des rapports n’a pas été confirmé.');
  if(ack?.ok!==true||String(ack.id)!==String(fileId)||!rev(ack))throw Error('Enregistrement de la liste non confirmé.');
  // A confirmed write may be cached immediately without another Drive download.
  try{await onSaved({...existing,...ack,revision:rev(ack),modifiedTime:rev(ack),dateModification:rev(ack),blob:new Blob([bytes],{type:'application/pdf'}),clientId,nom:'Liste de balance.pdf'});}catch{ /* A failed local cache cannot undo an acknowledged Drive upload. */ }
  guard();
- return {...result,updatedAt:rev(ack),listStamp:JSON.stringify(fileKey({...after.list,...ack,revision:rev(ack),modifiedTime:rev(ack),dateModification:rev(ack)})),fastV2729:true};
+ exhaustiveIndex.listRevision=rev(ack);exhaustiveIndex.list={...after.list,...ack,revision:rev(ack),modifiedTime:rev(ack),dateModification:rev(ack)};
+ return {...result,guardedSaveV2751:guardedSave===true,sourceManifestValidated:ack.sourceManifestValidated===true,updatedAt:rev(ack),listStamp:JSON.stringify(fileKey({...after.list,...ack,revision:rev(ack),modifiedTime:rev(ack),dateModification:rev(ack)})),fastV2729:true};
 }
 

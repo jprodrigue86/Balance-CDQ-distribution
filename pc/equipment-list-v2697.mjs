@@ -33,7 +33,7 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
   const save={...previous,fileId:id,clientId,at:Date.now(),sequence,previous:prior,ready:false};data.saves[token]=save;
   data.reports[id]={...prior,clientId:clientId||prior?.clientId||'',local:true,saveId:token,confirmedRevision:''};persist();
   const job=(async()=>{const [before,after]=await Promise.all([known===null?snapshot(rec.blob):Promise.resolve(known),snapshot(blob)]);await Promise.all(waiting);if(!valid(email,generation))throw Error('Le compte a changé.');if(data.saves[token]!==save||save.retired)return false;
-   save.ready=true;save.changed=!!(previous?.changed||before!==after||Object.values(data.saves).some(s=>s!==save&&s.fileId===id&&s.changed&&!s.acknowledged&&!s.retired));
+   save.ready=true;save.signature=after;save.changed=!!(previous?.changed||before!==after||Object.values(data.saves).some(s=>s!==save&&s.fileId===id&&s.changed&&!s.acknowledged&&!s.retired));
    if(data.reports[id]?.saveId===token)data.reports[id]={...data.reports[id],signature:after,verifiedReadV2729:!!(save.acknowledged&&data.reports[id].confirmedRevision)};
    data.saves=Object.fromEntries(Object.entries(data.saves).sort(([,a],[,b])=>b.at-a.at||b.sequence-a.sequence).slice(0,1000));persist();return save.changed;
   })();analyses.set(token,{owner:email,fileId:id,job});job.finally(()=>{if(analyses.get(token)?.job===job)analyses.delete(token);}).catch(()=>{});return job;
@@ -42,6 +42,7 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
  function decision(saveId){sync();const save=data.saves[saveId];return save?.acknowledged||save?.retired?false:save?.changed;}
  function retire(saveId){sync();const save=data.saves[saveId];if(save&&!save.acknowledged){save.retired=true;if(data.reports[save.fileId]?.saveId===saveId){let prior=save.previous,depth=0;while(prior?.local&&data.saves[prior.saveId]?.retired&&depth++<1000)prior=data.saves[prior.saveId].previous;if(prior)data.reports[save.fileId]=prior;else delete data.reports[save.fileId];}persist()}}
  function acknowledge(saveId,meta={}){sync();if(meta.owner&&String(meta.owner?.email??meta.owner).trim().toLowerCase()!==owner)return;const save=data.saves[saveId];if(save&&!save.retired){if(save.clientId&&meta.clientId&&String(meta.clientId)!==save.clientId)return;save.acknowledged=true;const report=data.reports[save.fileId];if(report?.saveId===saveId){report.confirmedRevision=String(meta.modifiedTime||meta.dateModification||meta.revision||'');report.clientId=save.clientId||String(meta.clientId||report.clientId||'');if(report.confirmedRevision){report.stamp=stamp(meta);report.local=false;report.verifiedReadV2729=!!save.ready;}}persist();}}
+ function signatureForSave(saveId,clientId=''){sync();const save=data.saves[saveId];return save&&!save.retired&&save.ready&&(!clientId||save.clientId===String(clientId))&&completeSignature(save.signature)?save.signature:null;}
  function signature(id,clientId=''){sync();const record=data.reports[id];return !clientId||record?.clientId===String(clientId)?record?.signature||'':'';}
  async function inspect(files,stillCurrent=()=>true,clientId=''){
   sync();if(scan)return scan;const email=owner,generation=epoch;if(!email)return false;
@@ -72,5 +73,5 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
  // every report again merely to recover values already read for this list.
  function rememberRead(file,signature,clientId='',persistNow=true){sync();if(!owner||!file?.id||!String(file.modifiedTime||file.dateModification||file.revision||'')||!completeSignature(signature)||data.reports[file.id]?.local)return false;data.reports[file.id]={signature,stamp:stamp(file),clientId:String(clientId||''),verifiedReadV2729:true};readDirty=true;if(persistNow)flushReads();return true;}
  function flushReads(){sync();if(readDirty){persist();readDirty=false;}}
- return {noteSave,decision,awaitDecision,acknowledge,retire,signature,confirmedSignature,rememberRead,flushReads,inspect};
+ return {noteSave,decision,awaitDecision,acknowledge,retire,signature,signatureForSave,confirmedSignature,rememberRead,flushReads,inspect};
 }

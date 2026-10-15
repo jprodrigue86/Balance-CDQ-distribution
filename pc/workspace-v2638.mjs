@@ -1,5 +1,5 @@
 import {sharedNavigationIconV2685} from './navigation-art-v2685.mjs';
-import {createCommercialWorkspace,commercialIcon,opportunityTabs} from './commercial-v2721.mjs';
+import {createCommercialWorkspace,commercialIcon,opportunityTabs} from './commercial-lazy-v2751.mjs';
 import {driveFileIconV2710} from './drive-file-icons-v2710.mjs';
 import {navigationStyleV2708} from './navigation-style-v2708.mjs';
 import {compareCornerSignals,cornerNames,wirePairLabel} from './corner-signals-v2677.mjs';
@@ -107,9 +107,9 @@ function syncNav(){
   syncHeadings();
   const nav=$('.bottom-nav');if(!nav)return;
   document.documentElement.dataset.cdqWorkspaceUnlocked=calibrationIdentity().email?'true':'false';
-  for(const [label,key] of [['Calcul','calcul'],['Catalogue','catalog'],['Opportunités','opportunities']]){
+  for(const [label,key] of [['Calcul','calcul'],['Catalogue','catalog'],['Opportunités','opportunities'],['Inventaire','inventory'],['Factures','invoices']]){
     if($('[data-workspace-route="'+key+'"]',nav))continue;
-    const b=document.createElement('button');b.type='button';b.className='bottom-nav-item';b.dataset.workspaceRoute=key;b.setAttribute('aria-label',label);b.innerHTML='<span class="cdq-workspace-icon">'+workspaceIcon(key)+'</span><small>'+label+'</small>';nav.append(b);
+    const b=document.createElement('button');b.type='button';b.className='bottom-nav-item';b.dataset.workspaceRoute=key;if(key==='invoices')b.id='cdqInvoicesNavButton';b.setAttribute('aria-label',label);b.innerHTML='<span class="cdq-workspace-icon">'+workspaceIcon(key)+'</span><small>'+label+'</small>';nav.append(b);
   }
   for(const b of $$('.bottom-nav-item',nav))if(['drive','favorites','report','opportunityBoard'].includes(b.dataset.workspaceRoute)||['Drive général','Mon Drive','Favoris','Rapport','Gestion des opportunités'].includes($('small',b)?.textContent.trim()))b.remove();
   syncHome();
