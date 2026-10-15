@@ -16,8 +16,69 @@ export function compactReportReadyV2682(pdf,L){
  }
  return true;
 }
+function stripSentJavaScriptV2750(pdf,L){
+ const N=L.PDFName.of,context=pdf.context,cache=new Map();let removed=0;
+ // Named form initialization scripts execute at document open even after the
+ // fields disappear. Preserve the other name trees (destinations, attachments).
+ pdf.catalog.lookupMaybe(N('Names'),L.PDFDict)?.delete(N('JavaScript'));
+ function scrub(value){
+  const object=context.lookup(value);if(!object)return value;
+  if(cache.has(object))return cache.get(object);
+  cache.set(object,value);
+  if(object instanceof L.PDFDict&&object.get(N('S'))===N('JavaScript')){
+   removed++;cache.set(object,undefined);let next=scrub(object.get(N('Next'))),list=context.lookup(next);
+   // OpenAction/A require one action dictionary. Retain safe following actions
+   // in order if the removed script was followed by an action array.
+   if(list instanceof L.PDFArray){
+    const items=list.asArray(),first=context.lookup(items[0]);next=items[0];
+    if(items.length>1&&first instanceof L.PDFDict){
+     const head=first.clone(context),prior=head.get(N('Next')),priorObject=context.lookup(prior);
+     head.set(N('Next'),context.obj([...(priorObject instanceof L.PDFArray?priorObject.asArray():prior?[prior]:[]),...items.slice(1)]));next=head;
+    }
+   }
+   cache.set(object,next);return next;
+  }
+  if(object instanceof L.PDFStream)scrub(object.dict);
+  else if(object instanceof L.PDFDict)for(const[key,item]of object.entries()){
+   const clean=scrub(item);if(clean===undefined)object.delete(key);else if(clean!==item)object.set(key,clean);
+  }
+  else if(object instanceof L.PDFArray)for(let i=object.size()-1;i>=0;i--){const clean=scrub(object.get(i));if(clean===undefined)object.remove(i);else object.set(i,clean);}
+  return value;
+ }
+ scrub(pdf.catalog);return removed;
+}
+// Operates only on a separately loaded outgoing copy. The authored PDF and
+// its interactive fields stay untouched. pdf-lib otherwise paints hidden
+// alternate appearances and can leave deleted widget references in /Annots.
+export function flattenForSendV2750(pdf,L){
+ const N=L.PDFName.of,form=pdf.getForm(),fields=form.getFields(),annotations=new Set(),onPage=new Set();let hiddenWidgets=0,detachedWidgets=0;
+ for(const page of pdf.getPages())for(const item of page.node.Annots()?.asArray()||[]){onPage.add(item);onPage.add(pdf.context.lookup(item));}
+ for(const field of fields){
+  const widgets=field.acroField.getWidgets(),hidden=new Set();
+  for(const widget of widgets){
+   const ref=pdf.context.getObjectRef(widget.dict);annotations.add(ref||widget.dict);
+   if(widget.getFlags()&(1|2|32)){hidden.add(widget.dict);hiddenWidgets++;}
+   else if(!onPage.has(ref)&&!onPage.has(widget.dict)){hidden.add(widget.dict);detachedWidgets++;}
+  }
+  if(!hidden.size)continue;
+  if(hidden.size===widgets.length){form.acroForm.removeField(field.acroField);continue;}
+  const kids=field.acroField.dict.lookupMaybe(N('Kids'),L.PDFArray);
+  if(!kids)throw Error('Impossible d’aplatir les apparences de ce PDF sans modifier son affichage.');
+  for(let i=kids.size()-1;i>=0;i--)if(hidden.has(pdf.context.lookup(kids.get(i))))kids.remove(i);
+ }
+ if(form.getFields().length)form.flatten({updateFieldAppearances:false});
+ for(const page of pdf.getPages()){
+  const items=page.node.Annots();
+  if(items)for(let i=items.size()-1;i>=0;i--)if(annotations.has(items.get(i)))items.remove(i);
+ }
+ // The copy has no form fields; its calculation order and form-level actions
+ // must not retain references to the removed fields.
+ pdf.catalog.delete(N('AcroForm'));
+ const javascriptActionsRemoved=stripSentJavaScriptV2750(pdf,L);
+ return {fields:fields.length,hiddenWidgets,detachedWidgets,javascriptActionsRemoved};
+}
 // Lossless cleanup only: retain every page, widget, action and appearance state.
-export function compactReportV2682(pdf,L,{predictImages=true}={}){
+export function compactReportV2682(pdf,L,{predictImages=true,pruneResources=true}={}){
  const N=L.PDFName.of,context=pdf.context,stats={unusedResources:0,unreachableObjects:0,duplicateObjects:0,predictedImages:0,imageBytesSaved:0};
  function walk(o,fn,seen=new Set()){
   if(o instanceof L.PDFRef){const id=String(o);if(seen.has(id))return;seen.add(id);walk(context.lookup(o),fn,seen);}
@@ -48,7 +109,10 @@ export function compactReportV2682(pdf,L,{predictImages=true}={}){
  for(const[,o]of context.enumerateIndirectObjects())if(o instanceof L.PDFStream&&o.dict.get(N('Subtype'))===N('Form'))add(o.dict,[o]);
  // A shared dictionary used by a pattern, Type 3 glyph or other owner is kept.
  for(const v of Object.values(context.trailerInfo))walk(v,dict=>{const r=dict.lookupMaybe(N('Resources'),L.PDFDict);if(r&&groups.has(r)&&!owners.has(dict))groups.get(r).safe=false;});
- for(const[resources,group]of groups){
+ // Arbitrary client PDFs can use escaped resource names or content syntax not
+ // covered by the template scanner. Sent copies may opt out of that scanner
+ // while retaining unreachable-object cleanup and byte-identical deduplication.
+ for(const[resources,group]of pruneResources?groups:[]){
   if(!group.safe)continue;const text=group.text.join('\n');
   for(const[category,operator]of [['XObject','Do'],['Font','Tf'],['ExtGState','gs']]){
    const entries=resources.lookupMaybe(N(category),L.PDFDict);if(!entries)continue;
@@ -109,3 +173,4 @@ export function compactReportV2682(pdf,L,{predictImages=true}={}){
  }
  collect();pdf.catalog.set(N('CDQCompactV2682'),context.obj(true));return stats;
 }
+
