@@ -1,5 +1,7 @@
 const IDENTITY=/^client_(nom|telephone|technicien|adresse|ville|province|code_postal)$/;
-export const READER_CACHE_LIMITS_V2730=Object.freeze({bytes:4*1024*1024,pixels:4000000,controls:200});
+// Multi-têtes V2 includes 293 widgets. Retain its complete drawing under the
+// existing pixel budget; the two-reader pool still bounds retained artwork.
+export const READER_CACHE_LIMITS_V2730=Object.freeze({bytes:4*1024*1024,pixels:4000000,controls:384});
 export function isCacheableReaderDraftV2730({readerPreparedVersion,initialValues,readOnly,bytes}){
   return readerPreparedVersion===2730&&!readOnly&&Number.isInteger(bytes)&&bytes>0&&bytes<=READER_CACHE_LIMITS_V2730.bytes&&
     initialValues&&typeof initialValues==='object'&&!Array.isArray(initialValues)&&Object.keys(initialValues).length>0&&

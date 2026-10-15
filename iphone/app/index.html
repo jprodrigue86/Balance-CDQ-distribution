@@ -1,6 +1,21 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="27.50" data-cdq-iphone-release="bc4d10584a0e0f99cc39d931eefa5f41f7e1be4460a0448607197883525164ec">
+<html lang="fr" data-cdq-iphone-version="27.51" data-cdq-iphone-release="b2a4051b79c00f0f3e6fe77abf97fe8edf8bcafada16987711cb73c07b3535a7">
 <head>
+<script id="cdq-durable-resume-v2751">
+window.cdqDurableResumeV2751=(function createDurableResumeV2751({native=null,read=()=>''}={}){
+ const isHeadless=()=>{try{return native?.isHeadlessV2751?.()===true;}catch{return false;}};
+ const expected=()=>{try{return String(native?.durableOwnerV2751?.()||'').trim().toLowerCase();}catch{return '';}};
+ const blocked=()=>{if(isHeadless())try{native?.recoveryBlockedV2751?.();}catch{}return false;};
+ const account=()=>String(read('cdqLastUnlockEmailV2511')||'').trim().toLowerCase();
+ function storedOwner(){return !isHeadless()||!!expected()&&account()===expected()&&!!read('cdq_auth_device_token_v2');}
+ function accepts(state){return !isHeadless()||storedOwner()&&state?.autorise===true&&String(state.email||'').trim().toLowerCase()===expected()&&['admin','technicien'].includes(String(state.role||'').trim().toLowerCase())&&!!String(state.jetonSession||'').trim();}
+ function arm(owner){
+  if(native?.armDurableV2751&&native.armDurableV2751(String(owner||''))!==true)throw Error('La reprise durable de cette sauvegarde n’a pas pu être préparée. Réessayez.');
+ }
+ return {get headless(){return isHeadless();},storedOwner,accepts,blocked,arm,unready:()=>native?.recoveryUnreadyV2751?.(),ready:owner=>{if(!isHeadless()||String(owner||'').trim().toLowerCase()===expected())native?.recoveryReadyV2751?.(owner);}};
+})({native:window.BalanceCDQBackgroundV2746,read:key=>{try{return localStorage.getItem(key)||'';}catch{return '';}}});
+</script>
+
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./app-session-v2661.js"></script>
 <script src="./iphone-update.js"></script>
@@ -476,7 +491,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.15-v27.50-send-selection-fix';
+const CDQ_PWA_BUILD = '2026.10.15-v27.51-compact-optimization';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -599,6 +614,7 @@ function cdqFreshAppUrl(reason='boot'){
 const MIN_LOADING_MS = 0;
 let cdqFirstFrameStableV2543=false;
 let cdqFirstFrameStableSourceV2543='';
+let cdqFrameAccessV2751='pending';
 let cdqFirstFrameFallbackV2543=null;
 let loadingShownAt = performance.now();
 let cdqInterfaceReadyV2648=false;
@@ -934,6 +950,11 @@ function armLoadingTimeout() {
 
 function recevoirEtatAcces(state) {
 if (!['pending','input','ready'].includes(state)) return;
+if(state!==cdqFrameAccessV2751){
+  cdqFrameAccessV2751=state;cdqFirstFrameStableV2543=false;cdqFirstFrameStableSourceV2543='';
+  clearTimeout(hideLoadingTimer);
+  if(state==='ready'){loading.style.display='grid';app.style.visibility='hidden';}
+}
 const authMask=document.getElementById('cdq-auth-bottom-mask-v2507');
 if(authMask)authMask.classList.toggle('cdq-auth-ready-v2507',state==='ready');
 const wasPending = selectorAwaitingAccess;
@@ -1038,6 +1059,7 @@ if (navigator.onLine === false) { afficherConnexionGoogle(false); return; }
 loadGeneration++;
 cdqOffline.then(controller=>controller.lock());
 cdqInterfaceReadyV2648=false;
+cdqFrameAccessV2751='pending';
 selectorReady = false;
 iframeLoaded = false;
 selectorAwaitingAccess = false;
@@ -1464,7 +1486,7 @@ if(data.type==='CDQ_PREWARM_READER_V2554'){
 
 if(data.type==='CDQ_INTERFACE_FAILED_V2652'){loadHelp.style.display='flex';document.getElementById('load-title').textContent='Préparation de l’interface';document.getElementById('load-message').textContent='Une image ou un module n’a pas pu être chargé. Réessayez le chargement.';return;}
 if(data.type==='CDQ_INTERFACE_READY_V2648'){
-  cdqInterfaceReadyV2648=true;app.style.visibility='visible';loading.style.display='none';
+  cdqInterfaceReadyV2648=true;if(cdqFrameAccessV2751!=='ready'||cdqFirstFrameStableV2543){app.style.visibility='visible';loading.style.display='none';}
   return;
 }
 if(data.type==='CDQ_SELECTOR_READY' || (data.type==='CDQ_ACCESS_STATE' && data.state!=='pending'))replyToSelector(event.source,{type:'CDQ_FIRST_FRAME_ARM_V2543',generation:loadGeneration});

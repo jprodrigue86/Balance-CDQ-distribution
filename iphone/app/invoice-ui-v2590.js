@@ -1,6 +1,6 @@
 (function invoiceUiV2590(){
 'use strict';
-if(window.cdqFacturesV2590)return;
+if(window.cdqFacturesV2590&&!window.cdqFacturesV2590.cdqLazyV2751)return;
 var CATS=['Essence','Outils','Hébergement','Réparation véhicule','Restaurant','Autre'];
 var photoSequence=0,ocrRunV2733=null;
 var page=null,busy=false,dataUrl='',ocrText='',category='',categorySource='',suggestedCategory='',requestId='',serverTech='',serverStorageMode='checking',serverStorageRevision=0,scheduled=false,savedRows=[];

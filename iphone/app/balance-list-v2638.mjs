@@ -1,3 +1,4 @@
+import {replaceBalanceSourceV2751,balanceSourceRowsV2751,balanceDisplayRowsV2751,balanceSignatureValuesV2751} from './balance-list-index-v2751.mjs';
 import {calibrationIdentity,calibrationRpc} from './calibration-feedback-v2566.mjs';
 import {createEquipmentTrackerV2697} from './equipment-list-v2697.mjs';
 import './balance-list-conformity-v2728.mjs';
@@ -20,7 +21,7 @@ const jobs=new Map(),receipts=new Map(),states=new Map(),failed=new Map();
 // Saves belong to their client, independently of the visible page or selection.
 const saveWaits=new Map(),changes=new Map(),satisfied=new Map(),clientTimers=new Map();
 const hydrated=new Set(),reviews=new Map(),reviewReceipts=new Map(),pausedClients=new Set();
-const previewJobs=new Map(),previews=new Map(),waitChecks=new Map();
+const previewJobs=new Map(),previews=new Map(),waitChecks=new Map(),warmIndexes=new Set();
 const projection=createBalanceListProjectionV2746({identity:calibrationIdentity,onChange:id=>{paintRows();queuePreview(id);window.dispatchEvent(new CustomEvent('cdq:balance-list-rows-v2730',{detail:{clientId:id,local:true}}));}});
 const key=id=>calibrationIdentity().email+'|'+id;
 const journalKey=id=>'cdqBalanceListJournalV2730:'+key(id);
@@ -36,7 +37,7 @@ function restoreClient(id){
  }catch{}
 }
 function persistClient(id){
- if(!id||!canRead())return;const k=key(id),r=states.get(k),ready=r?.status==='ready'?Object.fromEntries(['status','fileId','clientId','folderId','count','listRevision','listStamp','checkedAt','updatedAt','digest','rows'].filter(name=>r[name]!==undefined).map(name=>[name,r[name]])):null;
+ if(!id||!canRead())return;const k=key(id),r=states.get(k),ready=r?.status==='ready'?Object.fromEntries(['status','fileId','clientId','folderId','count','listRevision','listStamp','checkedAt','updatedAt','digest','rows','sourceIndexV2751','guardedSaveV2751','sourceManifestValidated'].filter(name=>r[name]!==undefined).map(name=>[name,r[name]])):null;
  try{localStorage.setItem(journalKey(id),JSON.stringify({version:1,owner:calibrationIdentity().email,clientId:String(id),changes:changes.get(k)||0,satisfied:satisfied.get(k)||0,pending:[...(saveWaits.get(k)||[])],reviews:[...(reviews.get(k)||[])],acknowledgements:[...(reviewReceipts.get(k)||[])].filter(([token])=>reviews.get(k)?.has(token)),ready}));}catch{}
  publishBackground();
 }
@@ -88,7 +89,7 @@ function scheduleClient(id,delay=150){
   if(failure?.stamp===stamp){if(!failure.retryAt)return;delay=Math.max(delay,failure.retryAt-Date.now());}
   // Authoritative list writes begin after the source's Drive ACK, even while
   // another report/task is active. The PDF worker already prioritizes input.
-  const version=epoch;clientTimers.set(k,setTimeout(()=>{clientTimers.delete(k);if(version!==epoch||waiting(id))return;pausedClients.delete(k);refresh(false,true,id).catch(()=>{});},delay));
+  const version=epoch;clientTimers.set(k,setTimeout(()=>{clientTimers.delete(k);if(version!==epoch)return;pausedClients.delete(k);refresh(false,true,id).catch(()=>{});},delay));
 }
 function temporaryFailure(error){
  const message=norm(error?.message||error);
@@ -102,13 +103,12 @@ function fail(id,stamp,error){
 }
 function clearFailure(k){failed.delete(k);if(clientTimers.has(k)){clearTimeout(clientTimers.get(k));clientTimers.delete(k);}}
 function updateConfirmedRows(id,detail,sourceId){
- const k=key(id),state=states.get(k),revision=String(detail.modifiedTime||detail.dateModification||detail.revision||'');if(!Array.isArray(state?.rows)||!revision)return;
- const signature=detail.equipmentSignature||equipment.signature?.(sourceId,id);let values;try{values=JSON.parse(signature);}catch{return;}
- if(!Array.isArray(values)||values.length!==6||!values.slice(0,5).every(v=>typeof v==='string')||!['conforming','nonconforming','unknown'].includes(values[5]))return;
- const fileId=String(detail.id||detail.fileId||sourceId),[fabricant,modele,capacite,echelon,identification,conformity]=values,prior=state.rows.find(row=>row.id===sourceId||row.id===fileId),row={id:fileId,source:detail.name||detail.nom||prior?.source||'',revision,fabricant,modele,capacite,echelon,identification,conformity};
- const rows=state.rows.filter(old=>old.id!==fileId&&old.id!==sourceId&&(!identification||norm(old.identification)!==norm(identification)));rows.push(row);rows.sort((a,b)=>String(a.identification||a.source).localeCompare(String(b.identification||b.source),'fr',{numeric:true}));states.set(k,{...state,rows,count:rows.length});
- // These exact values came from the acknowledged saved bytes, never from a
- // pending upload. The PDF's old digest remains until its own write is acked.
+ const k=key(id),state=states.get(k),revision=String(detail.modifiedTime||detail.dateModification||detail.revision||'');if(!state||!revision)return;
+ // A file's latest signature can already belong to save B when ACK A arrives.
+ const signature=equipment.signatureForSave?.(String(detail.saveId||''),id)||detail.equipmentSignature,parsed=balanceSignatureValuesV2751(signature);if(!parsed){warmIndexes.delete(k);return;}
+ const fileId=String(detail.id||detail.fileId||sourceId),index=replaceBalanceSourceV2751(state.sourceIndexV2751,{id:fileId,sourceId,revision,signature,name:detail.name||detail.nom});
+ let rows;if(index)rows=balanceDisplayRowsV2751(balanceSourceRowsV2751(index));else{warmIndexes.delete(k);rows=(state.rows||[]).filter(row=>row.id!==fileId&&row.id!==sourceId);if(parsed.values!==null){const[fabricant,modele,capacite,echelon,identification,conformity]=parsed.values;rows.push({id:fileId,source:detail.name||detail.nom||'',revision,fabricant,modele,capacite,echelon,identification,conformity});}rows=balanceDisplayRowsV2751(rows);}
+ states.set(k,{...state,sourceIndexV2751:index,rows,count:rows.length});
  equipment.rememberRead?.({...detail,id:fileId},signature,id);
  window.dispatchEvent(new CustomEvent('cdq:balance-list-rows-v2730',{detail:{clientId:String(id)}}));
 }
@@ -119,13 +119,12 @@ async function saved(event,local=false){
   if(d.owner&&String(d.owner.email||d.owner).trim().toLowerCase()!==String(calibrationIdentity().email).trim().toLowerCase())return;
   restoreClient(id);const k=key(id),file=String(d.sourceId||d.id||d.fileId||''),token=String(d.saveId||'');
   const localDetail={...d,owner:calibrationIdentity().email,clientId:id,sourceId:file};
-  if(local&&d.pending!==false){let pending=saveWaits.get(k);if(!pending)saveWaits.set(k,pending=new Map());if(token)for(const [source,savedToken]of pending)if(savedToken===token&&source!==file)pending.delete(source);pending.set(file,token);projection.saved({...localDetail,equipmentSignature:d.equipmentSignature||equipment.signature(file,id)});persistClient(id);paintRows();}
+  if(local&&d.pending!==false){let pending=saveWaits.get(k);if(!pending)saveWaits.set(k,pending=new Map());if(token)for(const [source,savedToken]of pending)if(savedToken===token&&source!==file)pending.delete(source);pending.set(file,token);projection.saved({...localDetail,equipmentSignature:equipment.signatureForSave?.(token,id)||d.equipmentSignature});persistClient(id);paintRows();}
   const pending=saveWaits.get(k);
   const matched=pending?.has(file)?file:token?[...(pending||[])].find(([,value])=>value===token)?.[0]:undefined;
   if(!local||d.pending===false){
     // An earlier acknowledgement cannot release a newer edit of this file.
-    if(matched!==undefined&&token&&pending.get(matched)!==token){equipment.acknowledge(token,d);return;}
-    if(matched!==undefined)pending.delete(matched);
+    if(matched!==undefined&&token&&pending.get(matched)===token)pending.delete(matched);
     projection.acknowledge({...localDetail,sourceId:matched||file});
     if(token){let review=reviews.get(k);if(!review)reviews.set(k,review=new Set());review.add(token);let acks=reviewReceipts.get(k);if(!acks)reviewReceipts.set(k,acks=new Map());acks.set(token,Object.fromEntries(['id','fileId','sourceId','clientId','owner','revision','modifiedTime','dateModification','version','md5Checksum','sha256Checksum'].filter(name=>d[name]!==undefined).map(name=>[name,d[name]])));}
     // Persist the acknowledged work before any PDF analysis promise. Closing
@@ -133,8 +132,8 @@ async function saved(event,local=false){
     persistClient(id);
   }
   const savedOwner=owner,savedEpoch=epoch,review=equipment.awaitDecision(token);const decision=review&&typeof review.then==='function'?(await review,equipment.decision(token)):review;if(savedOwner!==owner||savedEpoch!==epoch||!canWrite())return;
-  if(decision===false){reviews.get(k)?.delete(token);if(!local||d.pending===false)equipment.acknowledge(token,d);persistClient(id);if(!waiting(id)&&(failed.has(k)||needsUpdate(k)))scheduleClient(id);paintRows();return;}
-  if(local&&d.pending!==false){if(saveWaits.get(k)?.get(file)===token)projection.saved({...localDetail,equipmentSignature:d.equipmentSignature||equipment.signature(file,id)});persistClient(id);paintRows();return;}
+  if(decision===false){reviews.get(k)?.delete(token);if(!local||d.pending===false){equipment.acknowledge(token,d);updateConfirmedRows(id,d,matched||file);}persistClient(id);if(failed.has(k)||needsUpdate(k))scheduleClient(id);paintRows();return;}
+  if(local&&d.pending!==false){if(saveWaits.get(k)?.get(file)===token)projection.saved({...localDetail,equipmentSignature:equipment.signatureForSave?.(token,id)||d.equipmentSignature});persistClient(id);paintRows();return;}
   if(!local||d.pending===false)equipment.acknowledge(token,d);
   updateConfirmedRows(id,d,matched||file);
   reviews.get(k)?.delete(token);changes.set(k,(changes.get(k)||0)+1);persistClient(id);const job=jobs.get(k);if(job)job.dirty=true;
@@ -179,8 +178,8 @@ const receiptPrefix=()=> 'cdqBalanceListV2703:';
 function remembered(id){const k=key(id);if(receipts.has(k))return receipts.get(k);try{const r=JSON.parse(localStorage.getItem(receiptPrefix()+k)||'null');if(r){receipts.set(k,r);return r;}}catch{}return null;}
 function remember(id,fingerprint){const r={fingerprint,requestedAt:Date.now()};receipts.set(key(id),r);try{localStorage.setItem(receiptPrefix()+key(id),JSON.stringify(r));}catch{}}
 function paint(id,text,error=false){if(id!==client())return;const p=document.getElementById('cdqClientActionsV2640');if(!p||p.hidden)return;let el=p.querySelector('[data-balance-list-status]');if(!el){el=document.createElement('p');el.dataset.balanceListStatus='';el.className='cdq-workspace-status';el.setAttribute('role','status');p.append(el);}if(el.textContent!==text)el.textContent=text;el.classList.toggle('cdq-workspace-error',error);}
-function ready(id,r,notify=false){const folderId=listFolder(id)?.id||r.listFolderId||r.folderId||id;states.set(key(id),{...r,clientId:String(id),folderId});projection.confirmed(id,r.rows);persistClient(id);queuePreview(id);if(r.fileId&&r.updatedAt)window.cdqInstantFiles2530?.confirm?.({id:r.fileId,nom:'Liste de balance.pdf',type:'PDF',dateModification:r.updatedAt},id,folderId);if(notify)paint(id,'Liste à jour · '+(r.count||0)+' balance(s)'+(r.warnings?.length?' · '+r.warnings.length+' fichier(s) à vérifier':''));}
-async function call(name,id,...args){const account=calibrationIdentity().email,version=epoch;if(!canRead())throw Error('Accès Drive requis.');if(/^(?:enregistrerPdfLecteur|cdqActualiserListeBalance|cdqAssurerDossierListeBalance|deplacerElementCDQ|creerDossierDansCompagnie)/.test(name)&&!queueOwner())throw Error('La synchronisation a changé de contexte.');const r=await calibrationRpc(name,id,...args);if(version!==epoch||account!==calibrationIdentity().email||!canRead())throw Error('Le compte a changé.');return r;}
+function ready(id,r,notify=false){const folderId=listFolder(id)?.id||r.listFolderId||r.folderId||id;states.set(key(id),{...r,clientId:String(id),folderId});projection.confirmed(id,r.rows,r.sourceIndexV2751);if(r.sourceIndexV2751?.exhaustive)warmIndexes.add(key(id));persistClient(id);queuePreview(id);if(r.fileId&&r.updatedAt)window.cdqInstantFiles2530?.confirm?.({id:r.fileId,nom:'Liste de balance.pdf',type:'PDF',dateModification:r.updatedAt},id,folderId);if(notify)paint(id,'Liste à jour · '+(r.count||0)+' balance(s)'+(r.warnings?.length?' · '+r.warnings.length+' fichier(s) à vérifier':''));}
+async function call(name,id,...args){const account=calibrationIdentity().email,version=epoch;if(!canRead())throw Error('Accès Drive requis.');if(/^(?:enregistrerPdfLecteur|cdqSaveBalanceListV2751|cdqActualiserListeBalance|cdqAssurerDossierListeBalance|deplacerElementCDQ|creerDossierDansCompagnie)/.test(name)&&!queueOwner())throw Error('La synchronisation a changé de contexte.');const r=await calibrationRpc(name,id,...args);if(version!==epoch||account!==calibrationIdentity().email||!canRead())throw Error('Le compte a changé.');return r;}
 function queueOwner(){let native=window.BalanceCDQBackgroundV2746;try{if(window.cdqDriveBackgroundV2746?.isQueueOwner)return window.cdqDriveBackgroundV2746.isQueueOwner(calibrationIdentity().email)!==false;if(!native)try{native=window.parent.BalanceCDQBackgroundV2746;}catch{}return native?.isQueueOwner?.(calibrationIdentity().email)!==false;}catch{return false;}}
 async function open(){
   const id=client();if(!id||!canRead())return;restoreClient(id);
@@ -210,18 +209,19 @@ async function refresh(force=false,verify=false,id=client()){
     active.followup??=active.promise.then(()=>active.version===epoch&&k===key(id)&&canWrite()?refresh(true,false,id):{status:'unavailable'});
     return active.followup;
   }
-  if(waiting(id)){const waitEpoch=epoch;await reconcileWaits(id);if(waitEpoch!==epoch||!canWrite()||k!==key(id))return {status:'unavailable'};}
+  if(waiting(id))reconcileWaits(id);
   fingerprint=clientFingerprint(id);stamp=fingerprint+'|saved:'+(changes.get(k)||0);
-  if(waiting(id)){paintRows();queuePreview(id);return {status:'waiting-save',localPending:true};}
   if(!force&&!verify&&remembered(id)?.fingerprint===fingerprint&&!needsUpdate(k)&&!needsPlacement(id))return {status:'cached'};
   // Automatic checks are silent; only an explicit refresh reports progress.
   const progress=(text,error=false)=>{if(force)paint(id,text,error);};
   const version=epoch,change=changes.get(k)||0,pendingReviews=[...(reviews.get(k)||[])],job={fingerprint,version,dirty:false,promise:null};jobs.set(k,job);paintRows();
-  const satisfiedNow=()=>{if(!waiting(id)&&change===(changes.get(k)||0)){remember(id,fingerprint);satisfied.set(k,change);for(const token of pendingReviews)reviews.get(k)?.delete(token);}};
+  const satisfiedNow=()=>{if(change===(changes.get(k)||0)){remember(id,fingerprint);satisfied.set(k,change);for(const token of pendingReviews)reviews.get(k)?.delete(token);}};
   const updateConfirmedList=async fileId=>{
     const finish=window.cdqDriveBackgroundV2746?.begin?.('list:'+id,calibrationIdentity().email)||(()=>{});
     try{
-    const result=await updateBalanceListFastV2729({clientId:id,fileId:String(fileId),rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision),loadSheet:file=>call('obtenirSnapshotGoogleSheetHorsLigne',file,id),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true),onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,false),previousState:states.get(k),stillCurrent:()=>version===epoch&&canWrite()&&queueOwner()&&!waiting(id)&&change===(changes.get(k)||0)&&fingerprint===clientFingerprint(id),onSaved:record=>window.cdqStoreBalanceListV2729(record)});
+    const capabilities=await window.cdqDriveTransferV2751?.capabilities?.(),guardedSave=capabilities?.ok===true&&capabilities.guardedSaveV2751===true&&capabilities.sourceManifestValidation===true;
+    const updateOptions={guardedSave,sourceIndex:warmIndexes.has(k)?states.get(k)?.sourceIndexV2751:null,clientId:id,fileId:String(fileId),rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision),loadSheet:file=>call('obtenirSnapshotGoogleSheetHorsLigne',file,id),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true),onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,false),previousState:states.get(k),stillCurrent:()=>version===epoch&&canWrite()&&queueOwner()&&change===(changes.get(k)||0)&&fingerprint===clientFingerprint(id),onSaved:record=>window.cdqStoreBalanceListV2729(record)};
+    let result;try{result=await updateBalanceListFastV2729(updateOptions);}catch(error){if(!updateOptions.sourceIndex||!/(?:SOURCE_MANIFEST_CONFLICT|CONFLICT_REVISION)/.test(String(error?.message||error)))throw error;warmIndexes.delete(k);result=await updateBalanceListFastV2729({...updateOptions,sourceIndex:null});}
     equipment.flushReads?.();clearFailure(k);satisfiedNow();ready(id,result,force);return result;
     }finally{finish();}
   };
@@ -243,7 +243,7 @@ async function refresh(force=false,verify=false,id=client()){
           if(!result.fileId)throw Error('Identifiant de liste non confirmé.');
           return await updateConfirmedList(result.fileId);
         }
-        if(window.cdqEnsureListConformityV2728)result=await window.cdqEnsureListConformityV2728({result,clientId:id,clientName:root(id)?.nom||root(id)?.name||'',files:sources(root(id)||{}),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},loadPdf:file=>window.cdqLoadPdfForCalibrationV2668(file),loadSheet:file=>call('obtenirSnapshotGoogleSheetHorsLigne',file,id),rpc:(name,...args)=>call(name,...args),cachedSignature:file=>equipment.confirmedSignature?.(file),stillCurrent:()=>version===epoch&&canWrite()&&!waiting(id)&&change===(changes.get(k)||0)&&fingerprint===clientFingerprint(id)});
+        if(window.cdqEnsureListConformityV2728)result=await window.cdqEnsureListConformityV2728({result,clientId:id,clientName:root(id)?.nom||root(id)?.name||'',files:sources(root(id)||{}),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},loadPdf:file=>window.cdqLoadPdfForCalibrationV2668(file),loadSheet:file=>call('obtenirSnapshotGoogleSheetHorsLigne',file,id),rpc:(name,...args)=>call(name,...args),cachedSignature:file=>equipment.confirmedSignature?.(file),stillCurrent:()=>version===epoch&&canWrite()&&change===(changes.get(k)||0)&&fingerprint===clientFingerprint(id)});
         clearFailure(k);satisfiedNow();ready(id,result,force);return result;
       }
       if(result.status==='error')throw Error(result.message||'Actualisation impossible.');
@@ -256,7 +256,7 @@ async function refresh(force=false,verify=false,id=client()){
     if(version===epoch){fail(id,stamp,Error('Actualisation toujours en cours sur le serveur.'));progress('Actualisation en cours sur le serveur. La liste existante reste accessible.');}
     return {status:'pending'};
   }catch(e){if(version===epoch){equipment.flushReads?.();fail(id,stamp,e);progress('Actualisation interrompue. La liste existante reste accessible.',true);}return {status:'error',message:e.message};}
-  finally{if(jobs.get(k)===job)jobs.delete(k);if(version===epoch){if(!job.followup&&job.dirty&&!waiting(id))scheduleClient(id,0);paintRows();publishBackground();}}})();
+  finally{if(jobs.get(k)===job)jobs.delete(k);if(version===epoch){if(!job.followup&&job.dirty)scheduleClient(id,0);paintRows();publishBackground();}}})();
   return job.promise;
 }
 function closeMenu(){document.querySelector('[data-balance-list-menu]')?.remove();document.querySelector('[data-client-list]')?.setAttribute('aria-expanded','false');}
@@ -268,7 +268,7 @@ function menu(){
   for(const [label,action,write] of [['Ouvrir la liste',open,false],['Actualiser la liste',()=>refresh(true),true]]){const b=document.createElement('button');b.type='button';b.textContent=label;b.disabled=write&&!canWrite();b.onclick=()=>{closeMenu();if(id===client())Promise.resolve(action()).catch(e=>paint(id,e.message,true));};p.append(b);}
   actions.append(p);actions.querySelector('[data-client-list]')?.setAttribute('aria-expanded','true');
 }
-function reset(){epoch++;owner=calibrationIdentity().email;visibleClient='';receipts.clear();states.clear();jobs.clear();failed.clear();saveWaits.clear();changes.clear();satisfied.clear();hydrated.clear();reviews.clear();reviewReceipts.clear();pausedClients.clear();projection.reset();previews.clear();previewJobs.clear();waitChecks.clear();pcScan=null;for(const t of clientTimers.values())clearTimeout(t);clientTimers.clear();clearTimeout(timer);clearTimeout(scanTimer);timer=scanTimer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();paintRows();publishBackground();}
+function reset(){epoch++;owner=calibrationIdentity().email;visibleClient='';receipts.clear();states.clear();jobs.clear();failed.clear();saveWaits.clear();changes.clear();satisfied.clear();hydrated.clear();reviews.clear();reviewReceipts.clear();pausedClients.clear();projection.reset();previews.clear();previewJobs.clear();waitChecks.clear();warmIndexes.clear();pcScan=null;for(const t of clientTimers.values())clearTimeout(t);clientTimers.clear();clearTimeout(timer);clearTimeout(scanTimer);timer=scanTimer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();paintRows();publishBackground();}
 function sources(tree){const files=[],seen=new Set(),take=(node,pdf)=>{for(const f of node.fichiers||[]){const id=String(f.id||'');if(id&&!seen.has(id)&&!excluded(f.nom||f.name)&&!f._cdqPendingSaveV2660&&(['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].includes(f.mimeType||f.type)||pdf&&['PDF','application/pdf'].includes(f.mimeType||f.type))){seen.add(id);files.push(f);}}};take(tree,true);for(const d of tree.dossiers||[])if(/^rapports? (?:d ?)?etalonnages?$/.test(norm(d.nom||d.name)))take(d,true);return files;}
 function scheduleScan(id){
  if(scanTimer||pcScan||readerBusy()||navigator.onLine===false||window.cdqFieldWorkV2729?.available()===false)return;
@@ -284,6 +284,7 @@ function inspect(){
   const tree=root(id);if(!id||!tree)return;
   if(waiting(id))reconcileWaits(id);
   const fingerprint=clientFingerprint(id),job=jobs.get(key(id));
+  if(remembered(id)?.fingerprint&&remembered(id).fingerprint!==fingerprint)warmIndexes.delete(key(id));
   if(job){if(fingerprint!==job.fingerprint)job.dirty=true;return;}
   const receipt=remembered(id);
   // Verify an existing list once before remembering this schema. Identical
@@ -291,7 +292,7 @@ function inspect(){
   if(needsPlacement(id))scheduleClient(id);
   else if(!receipt&&listFile(id)){if(typeof updateBalanceListFastV2729==='function')scheduleClient(id);else remember(id,fingerprint);}
   else if(receipt?.fingerprint!==fingerprint)scheduleClient(id);
-  if(needsUpdate(key(id))&&!waiting(id))scheduleClient(id);
+  if(needsUpdate(key(id)))scheduleClient(id);
   scheduleScan(id);
 }
 // Coalesce notifications without postponing the first check when rows repaint.
@@ -327,13 +328,13 @@ function retired(d){
  equipment.retire(token);
  const changed=projection.retire({...d,owner:calibrationIdentity().email,clientId:id,sourceId:matched||file,saveId:token});
  if(released||changed){clearFailure(k);changes.set(k,(changes.get(k)||0)+1);const job=jobs.get(k);if(job)job.dirty=true;}
- persistClient(id);if(!waiting(id)&&(released||changed||needsUpdate(k)))scheduleClient(id,0);
+ persistClient(id);if(released||changed||needsUpdate(k))scheduleClient(id,0);
  paintRows();
 }
 window.addEventListener('cdq:pdf-save-retired-v2707',e=>retired(e.detail||{}));
 for(const type of ['cdq:outbox-idle-v2707','cdq:drive-write-idle-v2746','cdq:drive-background-idle-v2746'])window.addEventListener(type,()=>{for(const k of saveWaits.keys())if(k.startsWith(owner+'|'))reconcileWaits(k.slice(owner.length+1));});
 window.addEventListener('cdq:pdf-local-saved',e=>saved(e,true));window.addEventListener('cdq:client-renamed',e=>saved(e));
-for(const event of ['cdq:deleted','cdq:moved','cdq:renamed'])window.addEventListener(event,schedule);
+for(const event of ['cdq:deleted','cdq:moved','cdq:renamed','cdq:client-renamed'])window.addEventListener(event,e=>{const id=String(e.detail?.clientId||client());if(id)warmIndexes.delete(key(id));schedule();});
 window.addEventListener('cdq:reader-closed-v2703',resumePaused);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
 window.addEventListener('online',()=>{for(const [k,failure] of failed)if(k.startsWith(owner+'|')&&failure.transient){clearFailure(k);scheduleClient(k.slice(owner.length+1));}for(const k of changes.keys())if(k.startsWith(owner+'|')&&(changes.get(k)||0)>(satisfied.get(k)||0))scheduleClient(k.slice(owner.length+1));paintRows();schedule();});window.addEventListener('offline',paintRows);
