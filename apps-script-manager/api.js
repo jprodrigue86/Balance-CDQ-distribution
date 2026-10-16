@@ -12,7 +12,7 @@ const CDQ = {
   grantedScopes: '',
 };
 
-const CDQ_GOOGLE_LOGIN_HINT_V46 = 'jp.rodrigue86@gmail.com';
+const CDQ_GOOGLE_LOGIN_HINT_V46 = 'jprodrigue@groupecdq.com';
 
 const SCOPES = [
   'https://www.googleapis.com/auth/script.projects',
@@ -95,7 +95,8 @@ async function requestGoogleToken(clientId, mode = 'reuse') {
   if (!client) client = await prepareGoogleClient(clientId);
   return new Promise((resolve, reject) => {
     let settled = false;
-    const timer = setTimeout(() => finishError({message: 'La connexion Google n’a pas répondu. Touche « Se connecter à Google » pour réessayer.'}), 45000);
+    const timeoutMs = mode === 'silent' ? 45000 : 10 * 60 * 1000;
+    const timer = setTimeout(() => finishError({message: 'La connexion Google n’a pas répondu. Touche « Se connecter à Google » pour réessayer.'}), timeoutMs);
     const finishError = (err) => {
       if (settled) return;
       settled = true;
