@@ -212,6 +212,14 @@
       "expected": 1,
       "search": "  CDQ_ACCES_RPC_COURANT_ = { email:u.email, role:u.role };",
       "replacement": "  CDQ_ACCES_RPC_COURANT_ = { email:u.email, role:u.role, sessionKeyV2751:cleProprieteSessionRpcCDQ_(jetonSession) };"
+    },
+    {
+      "id": "rpc-current-cached-session-v2751",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "expected": 1,
+      "search": "  CDQ_ACCES_RPC_COURANT_ = { email:u.email, role:u.role, verifiedUserV2686:u };",
+      "replacement": "  CDQ_ACCES_RPC_COURANT_ = { email:u.email, role:u.role, verifiedUserV2686:u, sessionKeyV2751:cleProprieteSessionRpcCDQ_(jetonSession) };"
     }
   ],
   "extraFiles": [
@@ -307,6 +315,7 @@
     "lists": "La sauvegarde de liste vérifie sous ScriptLock le manifeste exhaustif des sources actuelles du client; le reçu Drive contient sourceManifestValidated:true.",
     "reports": "Tous les modèles préparés de la version publiée sont approuvés par taille et SHA-256. Les approbations antérieures et les contrôles de sécurité sont conservés.",
     "invoices": "CDQ System / Facture / Technicien - code / AAAA-MM / Catégorie. Les mois sont numériques; les six catégories sont créées ou réutilisées pour chaque mois utilisé. Les factures historiques restent à leur place et restent lisibles et supprimables.",
-    "transport": "Les URL reprenables créent uniquement un PDF temporaire privé. La finalisation RPC revalide session actuelle, rôle, Drive, protection des dossiers, appartenance au client, destination, révision, taille et SHA-256 des octets; nom et contenu sont engagés ensemble sous ScriptLock. Le verrou concerne ces RPC; les anciens chemins, travailleurs et modifications Drive externes ne forment pas un compare-and-swap universel."
+    "transport": "Les URL reprenables créent uniquement un PDF temporaire privé. La finalisation RPC revalide session actuelle, rôle, Drive, protection des dossiers, appartenance au client, destination, révision, taille et SHA-256 des octets; nom et contenu sont engagés ensemble sous ScriptLock. Le verrou concerne ces RPC; les anciens chemins, travailleurs et modifications Drive externes ne forment pas un compare-and-swap universel.",
+    "sessionContext": "Correction du 16 octobre 2026 : préserver verifiedUserV2686 et transmettre sessionKeyV2751 dans le répartiteur réel déjà optimisé; contrôles de session, de rôle et Drive inchangés."
   }
 }
