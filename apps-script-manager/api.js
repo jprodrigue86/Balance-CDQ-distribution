@@ -12,7 +12,7 @@ const CDQ = {
   grantedScopes: '',
 };
 
-const CDQ_GOOGLE_LOGIN_HINT_V46 = 'jprodrigue@groupecdq.com';
+const CDQ_GOOGLE_LOGIN_HINT_V46 = 'jp.rodrigue86@gmail.com';
 
 const SCOPES = [
   'https://www.googleapis.com/auth/script.projects',
@@ -396,106 +396,7 @@ async function updateDeployment(scriptId, deploymentId, versionNumber, descripti
   });
 }
 
-/* CDQ corporate API V50 */
-const CDQ_CORPORATE_SERVER_V50 = Object.freeze({
-  scriptId:'1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf',
-  productionDeploymentId:'AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw',
-  versionNumber:540,email:'jprodrigue@groupecdq.com',access:'ANYONE_ANONYMOUS',executeAs:'USER_DEPLOYING',
-});
-const cdqCorporateFlightsV50=new Set();
-async function verifyCorporatePrincipalV50(clientId){
-  if(!hasLiveToken())throw Error('Connectez le compte professionnel à Google.');
-  const token=CDQ.token;
-  const result=await googleFetch('https://www.googleapis.com/drive/v3/about?fields=user(emailAddress,permissionId)',clientId);
-  if(token!==CDQ.token||!hasLiveToken())throw Error('La session Google a changé pendant la vérification du compte.');
-  const email=String(result?.user?.emailAddress||'').trim().toLowerCase(),permissionId=String(result?.user?.permissionId||'').trim();
-  if(email!==CDQ_CORPORATE_SERVER_V50.email||!permissionId||permissionId.length>200||/\s/.test(permissionId))throw Error('Le compte professionnel jprodrigue@groupecdq.com n’a pas été confirmé par Google Drive.');
-  return {email,permissionId,token};
-}
-async function createCorporateDeploymentV50({scriptId,versionNumber,productionDeploymentId,clientId,stillCurrent,storage,onProgress=()=>{}}){
-  const spec=CDQ_CORPORATE_SERVER_V50;
-  if(scriptId!==spec.scriptId||versionNumber!==spec.versionNumber||productionDeploymentId!==spec.productionDeploymentId||typeof stillCurrent!=='function')throw Error('Projet ou version de migration non autorisé.');
-  const flight=scriptId+'|'+versionNumber;
-  if(cdqCorporateFlightsV50.has(flight))throw Error('La création professionnelle est déjà en cours.');
-  cdqCorporateFlightsV50.add(flight);
-  try{
-    const initial=await verifyCorporatePrincipalV50(clientId),token=initial.token;
-    const guard=()=>{if(!stillCurrent()||token!==CDQ.token||!hasLiveToken())throw Error('Le compte, le projet ou les modifications en attente ont changé.');};
-    guard();onProgress('Compte Google Drive confirmé : '+initial.email+'.');
-    async function principal(){guard();const p=await verifyCorporatePrincipalV50(clientId);guard();if(p.permissionId!==initial.permissionId)throw Error('L’identité Google Drive a changé.');return p;}
-    async function deployments(){
-      guard();const rows=[],seen=new Set(),pages=new Set();let page='';
-      do{
-        const data=await googleFetch(scriptApiUrl('/projects/'+encodeURIComponent(scriptId)+'/deployments'+(page?'?pageToken='+encodeURIComponent(page):'')),clientId);guard();
-        if(!Array.isArray(data?.deployments))throw Error('La liste complète des déploiements n’a pas été reçue.');
-        for(const d of data.deployments){if(!d?.deploymentId||seen.has(d.deploymentId))throw Error('Liste des déploiements ambiguë.');seen.add(d.deploymentId);rows.push(d);}
-        page=String(data.nextPageToken||'');if(page&&(pages.has(page)||pages.size>=100))throw Error('Pagination des déploiements non confirmée.');pages.add(page);
-      }while(page);
-      return rows;
-    }
-    function webConfig(d,label){
-      const entries=d?.entryPoints?.filter(e=>e.entryPointType==='WEB_APP')||[];
-      if(entries.length!==1||!entries[0].webApp?.entryPointConfig)throw Error(label+' : configuration d’entrée Web absente ou ambiguë.');
-      const web=entries[0].webApp,c=web.entryPointConfig;
-      if(c.executeAs!==spec.executeAs||c.access!==spec.access)throw Error(label+' : exécution ou accès Web différent du manifeste publié.');
-      const expected='https://script.google.com/macros/s/'+d.deploymentId+'/exec';
-      if(web.url!==expected)throw Error(label+' : URL Web non confirmée.');
-      return expected;
-    }
-    onProgress('Lecture des déploiements et du manifeste immuable Apps Script v540…');
-    const before=await deployments(),published=before.filter(d=>d.deploymentId===productionDeploymentId);
-    if(published.length!==1||published[0].deploymentConfig?.versionNumber!==versionNumber||published[0].deploymentConfig?.scriptId!==scriptId||published[0].deploymentConfig?.manifestFileName!=='appsscript')throw Error('Le déploiement historique ne confirme pas exactement le projet et la version publiée v540.');
-    const source=await getProjectContent(scriptId,clientId,versionNumber);guard();
-    const manifests=source?.files?.filter(f=>f.type==='JSON'&&f.name==='appsscript')||[];
-    if(source?.scriptId!==scriptId||manifests.length!==1)throw Error('Le manifeste immuable v540 n’a pas été confirmé.');
-    let manifest;try{manifest=JSON.parse(manifests[0].source);}catch{throw Error('Le manifeste immuable v540 est invalide.');}
-    if(manifest.webapp?.executeAs!==spec.executeAs||manifest.webapp?.access!==spec.access)throw Error('Le manifeste v540 doit confirmer USER_DEPLOYING et ANYONE_ANONYMOUS.');
-    onProgress('Manifeste v540 confirmé : USER_DEPLOYING / ANYONE_ANONYMOUS.');
-    webConfig(published[0],'Déploiement historique v540');
-    onProgress('Configuration Web du déploiement historique confirmée.');
-    const marker='CDQ_CORPORATE_V50|'+initial.email+'|'+initial.permissionId+'|'+scriptId+'|v'+versionNumber;
-    const key='cdqsm_corporate_deployment_v50:'+scriptId+':'+versionNumber+':'+initial.permissionId;
-    function matches(rows){const found=rows.filter(d=>d.deploymentConfig?.description===marker);if(found.length>1)throw Error('Plusieurs déploiements professionnels portent le même marqueur. Vérification manuelle requise.');return found[0]||null;}
-    function validate(d){
-      const c=d?.deploymentConfig;
-      if(!d?.deploymentId||d.deploymentId===productionDeploymentId||c?.description!==marker||c.scriptId!==scriptId||c.versionNumber!==versionNumber||c.manifestFileName!=='appsscript')throw Error('Le nouveau déploiement ne correspond pas à la demande professionnelle.');
-      return {deploymentId:d.deploymentId,url:webConfig(d,'Nouveau déploiement'),versionNumber,email:initial.email,permissionId:initial.permissionId,provisional:true};
-    }
-    function save(value){if(!storage?.getItem||!storage?.setItem)throw Error('Journal local indisponible : aucune création envoyée.');storage.setItem(key,JSON.stringify(value));if(storage.getItem(key)!==JSON.stringify(value))throw Error('Journal local non confirmé : aucune création envoyée.');}
-    let journal;try{journal=JSON.parse(storage?.getItem(key)||'null');}catch{throw Error('Journal de création illisible. Aucune nouvelle demande envoyée.');}
-    if(journal&&(journal.marker!==marker||!['sent','confirmed','rejected'].includes(journal.phase)))throw Error('Journal de création incohérent.');
-    const existing=matches(before);
-    if(existing){const result=validate(existing);if(journal?.deploymentId&&journal.deploymentId!==result.deploymentId)throw Error('Le journal et le déploiement professionnel ne correspondent pas.');await principal();save({marker,phase:'confirmed',deploymentId:result.deploymentId});return {...result,alreadyExisted:true};}
-    if(journal&&journal.phase!=='rejected')throw Error('Une demande professionnelle a déjà été émise mais son résultat n’est pas encore visible. Aucune nouvelle création envoyée. Réessayez la lecture plus tard.');
-    await principal();
-    const lastList=await deployments(),lastPublished=lastList.filter(d=>d.deploymentId===productionDeploymentId);
-    if(lastPublished.length!==1||lastPublished[0].deploymentConfig?.versionNumber!==versionNumber)throw Error('Le déploiement historique a changé pendant la préparation.');
-    webConfig(lastPublished[0],'Déploiement historique v540');
-    const appeared=matches(lastList);
-    if(appeared){const result=validate(appeared);await principal();save({marker,phase:'confirmed',deploymentId:result.deploymentId});return {...result,alreadyExisted:true};}
-    guard();save({marker,phase:'sent'});
-    onProgress('Création unique du déploiement professionnel depuis v540…');
-    guard();
-    let created,error;
-    try{
-      const headers=new Headers({'Authorization':'Bearer '+token,'Content-Type':'application/json','Accept':'application/json'});
-      const response=await cdqFetchOnceV39('https://script.googleapis.com/v1/projects/'+encodeURIComponent(scriptId)+'/deployments',{method:'POST',body:JSON.stringify({versionNumber,manifestFileName:'appsscript',description:marker})},headers,90000,'Création du serveur professionnel');
-      const data=apiErrorPayload(response.text);
-      if(!response.response.ok){const e=Error('Google HTTP '+response.response.status+' : '+String(data?.error?.message||data?.error_description||data?.raw||'Création refusée.').slice(0,1500));e.status=response.response.status;e.writeUncertain=response.response.status>=500;throw e;}
-      created=data;
-    }catch(e){error=e;}
-    guard();await principal();
-    if(error&&!error.writeUncertain&&error.status>=400&&error.status<500){save({marker,phase:'rejected'});throw error;}
-    onProgress('Recherche du résultat Google par son marqueur unique…');
-    const after=await deployments(),found=matches(after);
-    if(!found)throw Error((error?.message||'Réponse Google non confirmée.')+' Aucune nouvelle création ne sera rejouée ; la demande reste à vérifier.');
-    const result=validate(found);
-    if(created?.deploymentId&&created.deploymentId!==result.deploymentId)throw Error('La réponse Google et la liste des déploiements ne désignent pas le même résultat.');
-    await principal();save({marker,phase:'confirmed',deploymentId:result.deploymentId});
-    return {...result,reconciled:!!error,alreadyExisted:false};
-  }finally{cdqCorporateFlightsV50.delete(flight);}
-}
-/* end CDQ corporate API V50 */
+
 
 function apiNameFromDisplayName(displayName) {
   const name = String(displayName || '').trim();
