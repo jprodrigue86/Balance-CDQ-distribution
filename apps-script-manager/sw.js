@@ -1,5 +1,5 @@
-const CACHE='cdq-apps-script-manager-v49-corporate-default-account';
-const ASSETS=['./','index.html','style.css?v=49','api.js?v=49','jszip.min.js?v=23','app.js?v=49','diagnostics.js?v=49','diagnostics.css?v=49','version.json','manifest.webmanifest','icon-industrial.svg','icon-192.png','icon-512.png'];
+const CACHE='cdq-apps-script-manager-v50-corporate-server-migration';
+const ASSETS=['./','index.html','style.css?v=50','api.js?v=50','jszip.min.js?v=23','app.js?v=50','diagnostics.js?v=50','diagnostics.css?v=50','version.json','manifest.webmanifest','icon-industrial.svg','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)))});
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('cdq-apps-script-manager-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',e=>{

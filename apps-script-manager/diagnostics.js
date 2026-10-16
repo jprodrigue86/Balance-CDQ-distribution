@@ -260,19 +260,20 @@ async function saveVersionDiagnosticV43(){
     if(next)void saveVersionDiagnosticV43();
   }
 }
+async function authorizeVersionDiagnosticV43(){
+  const id=S.id||sid();
+  invalidateVersionDiagnosticV43();S.projectReadGeneration++;
+  try{
+    await requestGoogleToken(cid(),'reuse');saveLiveGoogleToken();
+    if(!diagnosticHasDriveScopeV43())throw new Error('SCOPE_NOT_GRANTED');
+    // Re-read with the newly authorized account; never upload a cached other-account report.
+    await readProject(id);
+  }catch(_){diagnosticSetTextV43('diagnosticDriveStatus','Autorisation ou lecture non confirmée. Reconnecte le compte Google qui possède ce projet, puis touche « Lire le projet ».');}
+}
 function initializeVersionDiagnosticV43(){
   const checkbox=diagnosticElementV43('diagnosticAutoDrive');
   if(checkbox){checkbox.checked=diagnosticAutoEnabledV43();checkbox.addEventListener('change',()=>{try{localStorage.setItem(CDQ_DIAGNOSTIC_AUTO_KEY_V43,checkbox.checked?'1':'0');}catch(_){};diagnosticSetTextV43('diagnosticDriveStatus',checkbox.checked?'Le prochain diagnostic CDQ sera enregistré dans ton Drive privé.':'Enregistrement automatique désactivé. Les rapports déjà créés restent dans ton Drive.');});}
-  diagnosticElementV43('diagnosticAuthorize')?.addEventListener('click',async()=>{
-    const id=S.id||sid();
-    invalidateVersionDiagnosticV43();S.projectReadGeneration++;
-    try{
-      await requestGoogleToken(cid(),'reuse');saveLiveGoogleToken();
-      if(!diagnosticHasDriveScopeV43())throw new Error('SCOPE_NOT_GRANTED');
-      // Re-read with the newly authorized account; never upload a cached other-account report.
-      await readProject(id);
-    }catch(_){diagnosticSetTextV43('diagnosticDriveStatus','Autorisation ou lecture non confirmée. Reconnecte le compte Google qui possède ce projet, puis touche « Lire le projet ».');}
-  });
+  diagnosticElementV43('diagnosticAuthorize')?.addEventListener('click',()=>authorizeVersionDiagnosticV43());
   diagnosticElementV43('diagnosticSave')?.addEventListener('click',()=>void saveVersionDiagnosticV43());
   diagnosticElementV43('diagnosticCopy')?.addEventListener('click',async()=>{
     const r=CDQ_DIAGNOSTIC_V43.report;if(!r)return;

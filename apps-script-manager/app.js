@@ -2,7 +2,7 @@
 
 const $ = id => document.getElementById(id);
 const LS = localStorage;
-const APP_VERSION = 'V49';
+const APP_VERSION = 'V50';
 const CDQ_PRODUCTION_SCRIPT_ID = '1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf';
 const CDQ_PRODUCTION_DEPLOYMENT_ID = 'AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw';
 const CDQ_PRODUCTION_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw/exec';
@@ -442,6 +442,84 @@ async function runQuickDeployAction() {
   }
 }
 
+/* CDQ corporate UI V50 */
+const cdqCorporateUiV50={normal:0,busy:null,proof:null,checking:null,failed:null,disabled:new Map()};
+function corporateContextV50(){return {id:S.id,generation:S.projectReadGeneration,clientId:cid(),token:CDQ.token};}
+function corporateSameContextV50(a){return !!a&&a.id===S.id&&a.generation===S.projectReadGeneration&&a.clientId===cid()&&a.token===CDQ.token&&hasLiveToken();}
+function corporateCleanStateV50(){
+  return S.id===CDQ_PRODUCTION_SCRIPT_ID&&S.files.length>0&&!S.deployBusy&&!S.draft.size&&!S.pkg.size&&!S.pendingBuild&&!S.bundleAlreadyApplied&&!S.bundleTargetBuild&&!S.bundleUrl&&!S.redeploySource&&!pendingChangeCount()&&!String(packageEditor.value||'').trim()&&!LS.getItem(PENDING_BUNDLE_KEY_V41);
+}
+function corporateStatusV50(text){const el=$('corporateServerStatusV50');if(el)el.textContent=text;}
+function corporateNormalOperationV50(fn){return function(...args){
+  if(cdqCorporateUiV50.busy)throw Error('La création du serveur professionnel est en cours.');
+  cdqCorporateUiV50.normal++;
+  updateCorporateServerUiV50();
+  let finished=false;
+  const done=()=>{if(finished)return;finished=true;cdqCorporateUiV50.normal--;updateCorporateServerUiV50();};
+  try{const result=fn.apply(this,args);if(result&&typeof result.then==='function')return Promise.resolve(result).finally(done);done();return result;}catch(error){done();throw error;}
+};}
+function updateCorporateServerUiV50(){
+  const button=$('createCorporateServerV50'),verify=$('verifyCorporateServerV50');if(!button||!verify)return;
+  const basic=corporateCleanStateV50()&&cdqCorporateUiV50.normal===0&&hasLiveToken();
+  if(cdqCorporateUiV50.proof&&!corporateSameContextV50(cdqCorporateUiV50.proof.context))cdqCorporateUiV50.proof=null;
+  button.disabled=!!cdqCorporateUiV50.busy||!basic||!cdqCorporateUiV50.proof;
+  verify.disabled=!!cdqCorporateUiV50.busy||!!cdqCorporateUiV50.checking||!basic;
+  const controls=['quickApply','quickConnect','quickChooseZip','connect','disconnect','refreshProjects','loadProject','projectSelect','scriptIdInput','clientId','fileEditor','packageEditor','localFiles','browseFiles','pastePackage','parsePackage','clearPackage','saveDraft','revertFile','writeChanges','confirmWrite','createVersion','deployVersion','backupNow','diagnosticAuthorize','diagnosticSave'];
+  if(cdqCorporateUiV50.busy){for(const id of controls){const el=$(id);if(el){if(!cdqCorporateUiV50.disabled.has(id))cdqCorporateUiV50.disabled.set(id,el.disabled);el.disabled=true;}}}
+  else if(cdqCorporateUiV50.disabled.size){for(const [id,disabled]of cdqCorporateUiV50.disabled){const el=$(id);if(el)el.disabled=disabled;}cdqCorporateUiV50.disabled.clear();}
+}
+async function refreshCorporatePrincipalV50(){
+  if(cdqCorporateUiV50.busy||cdqCorporateUiV50.normal||!corporateCleanStateV50()||!hasLiveToken())return;
+  const context=corporateContextV50(),ticket={};cdqCorporateUiV50.checking=ticket;cdqCorporateUiV50.proof=null;
+  updateCorporateServerUiV50();corporateStatusV50('Vérification du compte par Google Drive…');
+  try{const principal=await verifyCorporatePrincipalV50(context.clientId);
+    if(!corporateSameContextV50(context)||!corporateCleanStateV50()||cdqCorporateUiV50.normal||cdqCorporateUiV50.checking!==ticket)return;
+    cdqCorporateUiV50.proof={context,email:principal.email,permissionId:principal.permissionId};
+    corporateStatusV50('Compte professionnel confirmé : '+principal.email+'. Version source : Apps Script v540.');
+  }catch(error){if(corporateSameContextV50(context))corporateStatusV50(error.message);}
+  finally{if(cdqCorporateUiV50.checking===ticket)cdqCorporateUiV50.checking=null;updateCorporateServerUiV50();}
+}
+async function runCorporateServerCreationV50(){
+  if(cdqCorporateUiV50.busy||cdqCorporateUiV50.normal||!corporateCleanStateV50()||!cdqCorporateUiV50.proof||!corporateSameContextV50(cdqCorporateUiV50.proof.context))return;
+  const context=corporateContextV50(),proof=cdqCorporateUiV50.proof,ticket={},messages=[];
+  cdqCorporateUiV50.busy=ticket;
+  const current=()=>cdqCorporateUiV50.busy===ticket&&corporateSameContextV50(context)&&corporateCleanStateV50()&&cdqCorporateUiV50.normal===0;
+  const output=$('corporateServerUrlV50'),copy=$('copyCorporateServerV50');output.value='';copy.disabled=true;
+  updateCorporateServerUiV50();
+  try{
+    const result=await createCorporateDeploymentV50({scriptId:context.id,versionNumber:540,productionDeploymentId:CDQ_PRODUCTION_DEPLOYMENT_ID,clientId:context.clientId,stillCurrent:current,storage:LS,onProgress:text=>{messages.push(text);corporateStatusV50(messages.join('\n'));}});
+    if(!current()||result.email!==proof.email||result.permissionId!==proof.permissionId||result.versionNumber!==540||result.provisional!==true)throw Error('Le résultat professionnel ne correspond plus au contexte vérifié.');
+    output.value=result.url;copy.disabled=false;
+    messages.push('URL provisoire confirmée par Google — '+result.email+' — Apps Script v540.');
+    corporateStatusV50(messages.join('\n'));
+  }catch(error){messages.push('Arrêt : '+error.message);corporateStatusV50(messages.join('\n'));}
+  finally{if(cdqCorporateUiV50.busy===ticket)cdqCorporateUiV50.busy=null;updateQuickUi();}
+}
+// The exclusive lease covers already-running normal work as well as clicks
+// made while the corporate deployment request is awaiting Google.
+readProject=corporateNormalOperationV50(readProject);
+refreshProjectList=corporateNormalOperationV50(refreshProjectList);
+restoreBackup=corporateNormalOperationV50(restoreBackup);
+importBundleManifestV24=corporateNormalOperationV50(importBundleManifestV24);
+importPhoneFiles=corporateNormalOperationV50(importPhoneFiles);
+preparePackage=corporateNormalOperationV50(preparePackage);
+maybeImportBundleV24=corporateNormalOperationV50(maybeImportBundleV24);
+prepareLatestBundleV41=corporateNormalOperationV50(prepareLatestBundleV41);
+writeProjectChanges=corporateNormalOperationV50(writeProjectChanges);
+createVersionOnly=corporateNormalOperationV50(createVersionOnly);
+deployNewVersion=corporateNormalOperationV50(deployNewVersion);
+writePendingAndDeploy=corporateNormalOperationV50(writePendingAndDeploy);
+handleGoogleConnect=corporateNormalOperationV50(handleGoogleConnect);
+handleGoogleDisconnect=corporateNormalOperationV50(handleGoogleDisconnect);
+draftCurrent=corporateNormalOperationV50(draftCurrent);
+revertCurrentFile=corporateNormalOperationV50(revertCurrentFile);
+runAction=corporateNormalOperationV50(runAction);
+requestGoogleToken=corporateNormalOperationV50(requestGoogleToken);
+authorizeVersionDiagnosticV43=corporateNormalOperationV50(authorizeVersionDiagnosticV43);
+startVersionDiagnosticV43=corporateNormalOperationV50(startVersionDiagnosticV43);
+saveVersionDiagnosticV43=corporateNormalOperationV50(saveVersionDiagnosticV43);
+/* end CDQ corporate UI V50 */
+
 function updateQuickUi() {
   if (quickGoogleStatus) {
     const connected = hasLiveToken();
@@ -499,6 +577,7 @@ function updateQuickUi() {
     else packageNote.textContent='Le package chargé apparaîtra ici avec sa version et le nombre de modifications.';
   }
   updateIndustrialRailV34();
+  updateCorporateServerUiV50();
 }
 
 function updateIndustrialRailV34(){
@@ -2315,8 +2394,8 @@ $('copyFile').addEventListener('click', () => {
 
 $('browseFiles').addEventListener('click', () => $('localFiles').click());
 $('localFiles').addEventListener('change', e => importPhoneFiles(e.target.files));
-$('pastePackage').addEventListener('click', () => {
-  navigator.clipboard.readText()
+$('pastePackage').addEventListener('click', corporateNormalOperationV50(() => {
+  return navigator.clipboard.readText()
     .then(text => {
       packageEditor.value = text;
       stat('Package collé.', 'ok');
@@ -2325,7 +2404,7 @@ $('pastePackage').addEventListener('click', () => {
       packageEditor.focus();
       stat('Appuie longuement puis colle.', 'warn');
     });
-});
+}));
 $('parsePackage').addEventListener('click', preparePackage);
 $('clearPackage').addEventListener('click', () => {
   LS.removeItem(PENDING_BUNDLE_KEY_V41);
@@ -2355,6 +2434,12 @@ $('confirmWrite').addEventListener('click', () => {
 });
 
 $('createVersion').addEventListener('click', () => runAction(createVersionOnly, 'Création de version…'));
+$('verifyCorporateServerV50').addEventListener('click', refreshCorporatePrincipalV50);
+$('createCorporateServerV50').addEventListener('click', runCorporateServerCreationV50);
+$('copyCorporateServerV50').addEventListener('click', () => {
+  const value=$('corporateServerUrlV50').value;
+  if(value)navigator.clipboard.writeText(value).then(()=>corporateStatusV50('URL provisoire copiée.')).catch(()=>corporateStatusV50('Sélectionnez et copiez l’URL provisoire.'));
+});
 $('deployVersion').addEventListener('click', runQuickDeployAction);
 $('backupNow').addEventListener('click', () => runAction(async () => {
   const id = sid();
@@ -2434,7 +2519,7 @@ window.addEventListener('appinstalled', updateInstallState);
   await renderBackups();
   detectEmbeddedBrowser();
   updateInstallState();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=49').catch(() => {});
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js?v=50').catch(() => {});
   try {
     await prepareGoogleClient(cid());
     $('connect').disabled = false;
