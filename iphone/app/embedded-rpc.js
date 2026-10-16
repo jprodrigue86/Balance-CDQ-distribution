@@ -2,16 +2,25 @@
 /* Local UI; only authenticated data calls cross the Apps Script iframe. */
 (() => {
   'use strict';
+  const endpoint='https://script.google.com/macros/s/AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw/exec';
   // The installed shell owns one connection, opened before Selector parses.
   // Reuse it only through a direct, same-origin parent; web/legacy frames keep
   // their own checked connection and cannot borrow an unrelated parent's RPC.
   try{
-    if(window.parent!==window && window.parent.location.origin===location.origin && window.parent.cdqEmbeddedRpcV2529){
+    if(window.parent!==window && window.parent.location.origin===location.origin && window.parent.cdqEmbeddedRpcV2529?.endpoint===endpoint){
       window.google={script:{run:window.parent.cdqEmbeddedRpcV2529.run}};
+      window.cdqReadHistoricalUploadReceiptV2752=input=>{
+        const read=window.parent.cdqEmbeddedRpcV2529.readHistoricalUploadReceipt;
+        if(typeof read!=='function')return Promise.reject(Error('La connexion au reçu historique n’est pas prête. Le PDF local reste en attente.'));
+        return read(input);
+      };
       return;
     }
   }catch(_){}
-  const endpoint='https://script.google.com/macros/s/AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw/exec';
+  // Fixed historical read origin. Publication may replace the main endpoint;
+  // this connection can only ask the old creator for an existing exact receipt.
+  const historicalEndpointV2752='https://script.google.com/macros/s/AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw/exec';
+  const historicalReadsV2752=new Set();
   const allowed=new Set(['cdqRpc','reprendreActivationCDQ','creerDefiConnexionGoogleCDQ','verifierJetonGoogleCDQ','obtenirEtatAcces','connecterAvecCodeAcces','restaurerSessionApresBiometrie','reprendreSessionCourteCDQV2524']);
   const channel=crypto.randomUUID(), pending=new Map();
   let frame, peer, peerRelay=null, peerOrigin='', serial=0, failed='', sessionToken='',authEpoch=0;
@@ -101,17 +110,56 @@
       };
     }});
   }
-  function trusted(event){
-    if(!frame||!event.source)return false;
+  function trusted(event,targetFrame=frame){
+    if(!targetFrame||!event.source)return false;
     let origin;try{origin=new URL(event.origin);}catch(_){return false;}
     const host=origin.hostname;
     if(origin.protocol!=='https:'||origin.port||!(host==='script.google.com'||host==='script.googleusercontent.com'||host.endsWith('-script.googleusercontent.com')))return false;
     let source=event.source;
     for(let i=0;source&&i<8;i++){
-      if(source===frame.contentWindow)return true;
+      if(source===targetFrame.contentWindow)return true;
       try{const parent=source.parent;if(parent===source)break;source=parent;}catch(_){break;}
     }
     return false;
+  }
+  function readHistoricalUploadReceiptV2752(input){
+    return new Promise((resolve,reject)=>{
+      const epoch=authEpoch,token=sessionToken,readChannel=crypto.randomUUID();
+      let target,remote,relay,origin='',sent=false,done=false,timer,cancel;
+      const finish=(ok,value)=>{
+        if(done)return;done=true;clearTimeout(timer);
+        window.removeEventListener('message',receive);window.removeEventListener('offline',offline);
+        historicalReadsV2752.delete(cancel);target?.remove();
+        if(ok)resolve(value);else reject(Error(String(value||'Le reçu historique reste à confirmer.')));
+      };
+      const current=()=>{
+        if(epoch!==authEpoch||!token||token!==sessionToken){finish(false,'Le compte CDQ a changé. Le PDF local reste en attente.');return false;}
+        return true;
+      };
+      function offline(){finish(false,'Connexion interrompue. Le PDF local reste en attente.');}
+      function receive(event){
+        const data=event.data;
+        if(done||!data||data.protocol!==1||data.channel!==readChannel||!trusted(event,target)||!current())return;
+        if(data.type==='CDQ_EMBEDDED_READY'){
+          if(remote&&remote!==event.source)return;
+          if(!remote){try{const parent=event.source.parent;relay=parent!==target.contentWindow?parent:null;}catch(_){}}
+          remote=event.source;origin=event.origin;if(sent)return;sent=true;
+          try{remote.postMessage({type:'CDQ_EMBEDDED_CALL',protocol:1,channel:readChannel,id:'1',name:'cdqRpc',args:['cdqHistoricalUploadReceiptV2752',[request],token]},origin);}catch(error){finish(false,error.message);}
+        }else if(data.type==='CDQ_EMBEDDED_RESULT'&&sent&&(event.source===remote||event.source===relay)&&event.origin===origin&&String(data.id)==='1'&&typeof data.ok==='boolean')finish(data.ok,data.ok?data.value:data.error);
+      }
+      let request;try{request=JSON.parse(JSON.stringify(input));}catch(_){finish(false,'Métadonnée de reçu historique invalide.');return;}
+      if(!current())return;
+      if(navigator.onLine===false){offline();return;}
+      if(historicalReadsV2752.size>=4){finish(false,'La lecture des reçus historiques est déjà en cours.');return;}
+      cancel=()=>finish(false,'Compte CDQ déconnecté. Le PDF local reste en attente.');historicalReadsV2752.add(cancel);
+      try{
+        target=document.createElement('iframe');target.hidden=true;target.tabIndex=-1;target.title='Vérification du reçu CDQ historique';target.setAttribute('aria-hidden','true');
+        target.src=historicalEndpointV2752+'?cdq_native_bridge=1&channel='+encodeURIComponent(readChannel);
+        window.addEventListener('message',receive);window.addEventListener('offline',offline);
+        timer=setTimeout(()=>finish(false,'La lecture du reçu historique a expiré. Le PDF local reste en attente.'),55000);
+        (document.body||document.documentElement).append(target);
+      }catch(error){finish(false,error.message);}
+    });
   }
   const bootTimer=setTimeout(()=>{if(!peer)fail(unavailable);},30000);
   window.addEventListener('message',event=>{
@@ -154,9 +202,11 @@
       if(job.sent)settle(id,false,'Connexion interrompue. Vérifiez le résultat avant de relancer une écriture.');
   });
   window.google={script:{run:runner()}};
-  window.cdqEmbeddedRpcV2529={run:window.google.script.run,
+  window.cdqReadHistoricalUploadReceiptV2752=readHistoricalUploadReceiptV2752;
+  window.cdqEmbeddedRpcV2529={run:window.google.script.run,readHistoricalUploadReceipt:readHistoricalUploadReceiptV2752,
     resetSession(){
       ++authEpoch;sessionToken='';batchUntilV2687=0;
+      for(const cancel of [...historicalReadsV2752])cancel();
       clearTimeout(batchTimerV2687);batchTimerV2687=null;
       bootstrapV2687=null;
       for(const [id,job] of [...pending.entries()]){
@@ -165,6 +215,7 @@
       }
     },
     prepareSession:token=>new Promise((resolve,reject)=>runner(resolve,reject,undefined,true).obtenirEtatAcces(token,''))};
+  Object.defineProperties(window.cdqEmbeddedRpcV2529,{endpoint:{value:endpoint,enumerable:true},historicalEndpointV2752:{value:historicalEndpointV2752,enumerable:true}});
   window.dispatchEvent?.(new Event('cdq:rpc-ready-v2529'));
   function consumeBootstrapV2687(job){
     const boot=bootstrapV2687;

@@ -20,9 +20,9 @@ export async function pdfActionBase64V2751(action){
 export function confirmedBinaryPdfSaveV2751(receipt,action,email,hash){
  return !!(receipt?.ok&&receipt.id===action.targetId&&receipt.owner===email&&receipt.revision&&receipt.byteSha256===hash&&receipt.sha256Encoding==='hex-bytes-v1'&&receipt.uploadId===action.id);
 }
-export function createDriveTransferV2751({rpc,get,put,owner,guard,context=()=>0,fetch:fetcher=globalThis.fetch,flight=(_id,run)=>run()}){
+export function createDriveTransferV2751({rpc,get,put,owner,guard,context=()=>0,fetch:fetcher=globalThis.fetch,flight=(_id,run)=>run(),historicalReceipt}){
  const caps=new Map();
- const same=(a,b)=>a&&a.owner===b.owner&&a.uploadId===b.uploadId&&a.operation===b.operation&&a.fileId===b.fileId&&a.clientId===b.clientId&&a.destinationId===b.destinationId&&a.expectedRevision===b.expectedRevision&&a.name===b.name&&a.sha256===b.sha256&&a.size===b.size;
+ const same=(a,b)=>a&&a.owner===b.owner&&a.uploadId===b.uploadId&&a.operation===b.operation&&a.fileId===b.fileId&&a.clientId===b.clientId&&a.destinationId===b.destinationId&&a.expectedRevision===b.expectedRevision&&a.name===b.name&&a.sha256===b.sha256&&a.size===b.size&&a.sourceId===b.sourceId&&a.family===b.family&&a.sha256Encoding===b.sha256Encoding;
  function scope(){const email=owner(),epoch=context();const valid=()=>{guard(email);if(epoch!==context()||owner()!==email)throw Error('Le compte ou l’accès a changé.');};valid();return {email,valid};}
  async function capabilities(){
   const {email,valid}=scope(),key=email+'|'+context();
@@ -52,17 +52,31 @@ export function createDriveTransferV2751({rpc,get,put,owner,guard,context=()=>0,
    valid();let state=await get('pdf-transfer-v2751',action.id);valid();
    if(state&&!same(state,meta))throw Error('Cet envoi appartient à un autre contenu ou une autre destination.');
    function receipt(result){
-    valid();if(!result?.ok||!result.id||!result.revision||result.uploadId!==meta.uploadId||result.sha256Encoding!=='hex-bytes-v1'||result.sha256!==hash||Number(result.size)!==blob.size||meta.clientId&&String(result.clientId)!==String(meta.clientId)||meta.destinationId&&String(result.destinationId)!==String(meta.destinationId)||meta.operation==='save'&&String(result.id)!==String(meta.fileId))throw Error('La sauvegarde Drive n’a pas été confirmée.');
+    valid();if(!result?.ok||!result.id||!result.revision||String(result.name||result.nom||'')!==meta.name||result.uploadId!==meta.uploadId||result.sha256Encoding!=='hex-bytes-v1'||result.sha256!==hash||Number(result.size)!==blob.size||meta.clientId&&String(result.clientId)!==String(meta.clientId)||meta.destinationId&&String(result.destinationId)!==String(meta.destinationId)||meta.operation==='save'&&String(result.id)!==String(meta.fileId))throw Error('La sauvegarde Drive n’a pas été confirmée.');
     return {...result,owner:email,byteSha256:hash};
    }
    if(state?.receipt)return receipt(state.receipt);
    async function persist(value){valid();if(await put('pdf-transfer-v2751',action.id,value)===false)throw Error('Le PDF n’a pas pu être conservé. L’envoi reste en attente.');valid();state=value;}
    if(!state)await persist({...meta,phase:'prepared'});
    async function finalize(){const result=receipt(await rpc('cdqFinalizeUploadV2751',[meta.uploadId]));valid();await persist({...meta,phase:'confirmed',receipt:result});return result;}
+   let migratedJournalV2752=false;
    if(state.phase==='uploaded'||state.phase==='put-started'){
-    try{return await finalize();}catch(error){valid();if(!/(?:UPLOAD_INCOMPLETE|UPLOAD_EXPIRED|CDQ_UPLOAD_PENDING_V2751|staging.*(?:incomplet|absent))/i.test(String(error?.message||error)))throw error;}
+    try{return await finalize();}catch(error){valid();const message=String(error?.message||error);if(!/(?:UPLOAD_INCOMPLETE|UPLOAD_EXPIRED|CDQ_UPLOAD_PENDING_V2751|staging.*(?:incomplet|absent))/i.test(message))throw error;migratedJournalV2752=/CDQ_UPLOAD_ACCOUNT_MIGRATION_V2752/.test(message);}
    }
-   const begun=await rpc('cdqBeginUploadV2751',[meta]);valid();
+   let begun;try{begun=await rpc('cdqBeginUploadV2751',[meta]);valid();}catch(error){
+    valid();const message=String(error?.message||error),migrationConflict=/UPLOAD_RECEIPT_LEGACY\s*:/.test(message)||migratedJournalV2752&&/CONFLICT_REVISION\s*:/.test(message);
+    if(!migrationConflict)throw error;
+    const unconfirmed=()=>Error('UPLOAD_RECEIPT_LEGACY_UNCONFIRMED : le reçu historique ne peut pas être confirmé. Le PDF local reste en attente.');
+    if(typeof historicalReceipt!=='function')throw unconfirmed();
+    // One bounded read on the fixed historical deployment; never resend bytes
+    // or call its begin/finalize methods to obtain a receipt.
+    let historical;try{historical=await historicalReceipt({...meta});}catch(lookupError){valid();const pending=unconfirmed();pending.cause=lookupError;throw pending;}valid();
+    // Do not leak CONFLICT_REVISION into the ordinary conflict-copy recovery:
+    // an unconfirmed historical commit must remain queued without a new copy.
+    if(historical?.ok!==true||historical.committed!==true)throw unconfirmed();
+    if(historical.actor!==email)throw Error('Le reçu historique appartient à un autre compte.');
+    const result=receipt(historical.receipt);await persist({...meta,phase:'confirmed',receipt:result});return result;
+   }
    if(begun?.receipt||begun?.committed){const result=receipt(begun.receipt||begun);await persist({...meta,phase:'confirmed',receipt:result});return result;}
    if(!begun?.ok||begun.uploadId!==meta.uploadId)throw Error('La préparation de l’envoi Drive n’a pas été confirmée.');
    if(begun.uploaded===true){await persist({...meta,phase:'uploaded'});return finalize();}
