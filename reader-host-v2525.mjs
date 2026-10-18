@@ -1,5 +1,12 @@
+import {validatedPdfSaveInfoV2753} from './pdf-work-v2729.mjs';
 import {createReaderEquipmentGateV2746} from './reader-equipment-edits-v2746.mjs';
 import {recognizeBundledReaderSourceV2730} from './reader-bundled-source-v2730.mjs';
+import {createBundledOpeningV2753} from './reader-bundled-opening-v2753.mjs';
+import {validatedReaderStaticArtworkV2753} from './reader-static-artwork-binding-v2753.mjs';
+
+// Filled only by the final package builder; source checkouts use worker OPEN.
+const BUNDLED_OPENING_PIN_V2753=Object.freeze({"build":"2026.10.16-v27.53-fast-report","manifestSha256":"3f104449cd8f2f18277b11b44e83f8f04c1bcad9137b6240d46f29ef4af183b6","normalizerSha256":"b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"});
+const bundledOpeningV2753=createBundledOpeningV2753({pin:BUNDLED_OPENING_PIN_V2753});
 
 let active=null;
 export const currentReader=()=>active;
@@ -89,7 +96,10 @@ async function openReaderInternal(data,context){
   // Prepare the PDF while the retained viewer/worker/sandbox is becoming ready,
   // rather than starting this only after the iframe's READY round trip.
   const {work,workEpoch}=context,route=readerRouteV2730(data,sourceBlob);
-  const pdfPreparation=data.readerPreparedVersion===2730?Promise.resolve({blob:sourceBlob,preparedVersion:2730}):(async()=>{
+  const pdfPreparation=(async()=>{
+    const derived=await bundledOpeningV2753.prepare(sourceBlob,{epoch:workEpoch,getEpoch:()=>work?.stats().epoch,checkCurrent:guardContext});guardContext();
+    if(derived)return {blob:derived.blob,preparedVersion:2730,normalized:true};
+    if(data.readerPreparedVersion===2730)return {blob:sourceBlob,preparedVersion:2730};
     // Only the packaged catalog can establish missing local provenance. A
     // remote name, revision or metadata flag never substitutes for these bytes.
     const {REPORT_TEMPLATES}=await import('./report-templates-v2636.mjs');guardContext();
@@ -97,7 +107,8 @@ async function openReaderInternal(data,context){
     if(canonical)return {blob:sourceBlob,preparedVersion:2730};
     if(!work)return null;
     const result=await work.requestBlob('open',sourceBlob,{summary:false},{epoch:workEpoch,valid});guardContext();
-    return {blob:new Blob([result.bytes],{type:'application/pdf'}),normalized:true};
+    const artwork=validatedReaderStaticArtworkV2753(result.info?.staticArtworkV2753);
+    return {blob:new Blob([result.bytes],{type:'application/pdf'}),normalized:true,...(artwork&&artwork.bytesLength===result.bytes.byteLength?{staticArtworkV2753:artwork}:{})};
   })().catch(error=>({error}));
   let prepared=null;
   if(route&&preparedReaderV2730?.route===route){prepared=preparedReaderV2730;preparedReaderV2730=null;}
@@ -189,7 +200,7 @@ async function openReaderInternal(data,context){
       if(!guard&&!window.BalanceCDQNative&&!/BalanceCDQAndroid\//i.test(navigator.userAgent)){history.pushState({cdqReader:marker},'',location.href);guard=true;window.addEventListener('popstate',pop);}
       const result=pdfPreparation?await pdfPreparation:null;if(closed)return;if(result?.error){openingFailed(result.error);return;}
       if(!valid()){openingFailed(Error('Le compte ou l’accès Drive a changé.'));return;}
-      tell({type:'CDQ_READER_OPEN',readerRequestId:marker,blob:sourceBlob,preparedBlob:result?.blob,readerPreparedVersion:result?.preparedVersion===2730?2730:undefined,readerNormalizedV2730:result?.normalized===true,preparedEpoch:workEpoch,initialValues:data.initialValues,name:data.name,theme:data.theme,fileId:data.onSave?String(data.fileId||'local-copy'):'',readOnly:!!data.readOnly,autoReportName:data.autoReportName===true,desktop:!!data.workspaceSource?.document.documentElement.classList.contains('cdq-desktop-v2676')});
+      tell({type:'CDQ_READER_OPEN',readerRequestId:marker,blob:sourceBlob,preparedBlob:result?.blob,readerPreparedVersion:result?.preparedVersion===2730?2730:undefined,readerNormalizedV2730:result?.normalized===true,preparedEpoch:workEpoch,staticArtworkV2753:result?.staticArtworkV2753,initialValues:data.initialValues,name:data.name,theme:data.theme,fileId:data.onSave?String(data.fileId||'local-copy'):'',readOnly:!!data.readOnly,autoReportName:data.autoReportName===true,desktop:!!data.workspaceSource?.document.documentElement.classList.contains('cdq-desktop-v2676')});
     }
     if(m.type==='CDQ_READER_OPENED'&&m.readerRequestId===marker){opened=true;clearTimeout(timer);data.onOpened?.();if(prefillValues)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});if(pendingClose)requestClose();prepareSecondEngineV2731(handle,frame,valid);}
     if(m.type==='CDQ_READER_CLOSE')close(m.reusable===true);
@@ -201,7 +212,7 @@ async function openReaderInternal(data,context){
     }
     if(m.type==='CDQ_READER_SAVE'&&data.onSave&&!data.readOnly){
       if(!/^save-[\w-]{8,80}$/.test(String(m.requestId||''))||!(m.blob instanceof Blob)||m.blob.type!=='application/pdf'||m.blob.size<8||m.blob.size>32*1024*1024)return;
-      if(!saves.has(m.requestId))saves.set(m.requestId,Promise.resolve().then(()=>data.onSave(m.blob,m.requestId,m.name,{readerPreparedVersion:m.readerPreparedVersion===2730?2730:undefined})));
+      if(!saves.has(m.requestId))saves.set(m.requestId,Promise.resolve().then(()=>data.onSave(m.blob,m.requestId,m.name,{readerPreparedVersion:m.readerPreparedVersion===2730?2730:undefined,pdfSaveInfoV2753:m.pdfSaveInfoV2753?validatedPdfSaveInfoV2753(m.pdfSaveInfoV2753):null})));
       try{const result=await saves.get(m.requestId);equipmentDispositionV2746='saved';tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:true,queued:!!result?.queued});}
       catch(e){saves.delete(m.requestId);tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:false,error:e.message||String(e)});}
     }

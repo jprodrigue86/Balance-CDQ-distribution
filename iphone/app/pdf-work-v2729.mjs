@@ -1,9 +1,25 @@
+import {validatedReaderStaticArtworkV2753} from './reader-static-artwork-binding-v2753.mjs';
+
+const copyPdfWorkInfoV2753=info=>{
+ const value={...info},artwork=validatedReaderStaticArtworkV2753(info.staticArtworkV2753);
+ if(artwork)value.staticArtworkV2753=artwork;else delete value.staticArtworkV2753;
+ return value;
+};
+// Only the trusted reader's same-pass save result may skip a second PDF read.
+// Malformed or old messages use the ordinary inspection path instead.
+export function validatedPdfSaveInfoV2753(value){
+ if(!value||typeof value!=='object'||Array.isArray(value)||typeof value.name!=='string'||value.name.length>200||value.name&&(!/\.pdf$/i.test(value.name)||/[\u0000-\u001f\u007f/\\]/.test(value.name))||!['conforming','nonconforming','unknown'].includes(value.conformity)||typeof value.equipment!=='string'||value.equipment.length>2500)return null;
+ let equipment;try{equipment=JSON.parse(value.equipment);}catch{return null;}
+ if(equipment!==null&&(!Array.isArray(equipment)||equipment.length!==6||!equipment.slice(0,5).every(item=>typeof item==='string'&&item.length<=400)||equipment[5]!==value.conformity))return null;
+ const artwork=validatedReaderStaticArtworkV2753(value.staticArtworkV2753);
+ return {name:value.name,equipment:value.equipment,conformity:value.conformity,...(artwork?{staticArtworkV2753:artwork}:{})};
+}
 // One worker per installed shell, reused by the reader, names and list scans.
 const hashPdfWorkBytesV2729=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join('');
 export function createPdfWorkV2729({workerFactory=()=>new Worker(new URL('./pdf-work-worker-v2729.mjs',import.meta.url),{type:'module'}),fallback=null,timeoutMs=60000,openCacheLimit=16*1024*1024,hashBytes=hashPdfWorkBytesV2729}={}){
  const jobs=new Map(),openCache=new Map(),openInflight=new Map(),cacheLimit=Math.min(16*1024*1024,Math.max(0,Number(openCacheLimit)||0));let worker=null,serial=0,epoch=0,unavailable=false,lastStats=null,fallbackEngine=null,fallbackQueue=[],fallbackPump=null,preparedBytes=0,preparedHits=0;
  const priority=job=>job.payload?.prime?3:['open','save','prefill'].includes(job.type)?0:job.type==='list'?1:2;
- const copyResult=result=>({...result,...(result.bytes instanceof Uint8Array?{bytes:result.bytes.slice()}:{}),...(result.info?{info:{...result.info}}:{}),...(result.stats?{stats:{...result.stats}}:{})});
+ const copyResult=result=>({...result,...(result.bytes instanceof Uint8Array?{bytes:result.bytes.slice()}:{}),...(result.info?{info:copyPdfWorkInfoV2753(result.info)}:{}),...(result.stats?{stats:{...result.stats}}:{})});
  function current(job){if(job.generation!==epoch||jobs.get(job.id)!==job)throw Error('Le compte a changé.');if(!job.valid())throw Error('Le contexte a changé.');}
  function cachedOpen(key){const entry=openCache.get(key);if(!entry)return null;openCache.delete(key);openCache.set(key,entry);preparedHits++;return {...entry.result,...(lastStats?{stats:{...lastStats}}:{}),cacheHit:true,serviceCacheHit:true};}
  function cacheOpen(key,result){
@@ -20,7 +36,7 @@ export function createPdfWorkV2729({workerFactory=()=>new Worker(new URL('./pdf-
   if(jobs.get(job.id)!==job||job.generation!==epoch)return;
   const group=job.group,followers=group?.leader===job?[...group.followers]:[];group?.followers.delete(job);if(group?.leader===job&&openInflight.get(job.openKey)===group)openInflight.delete(job.openKey);
   let failure=error;if(!failure){try{current(job);if(!result||typeof result!=='object')throw Error('Réponse PDF invalide.');if(job.openKey&&!job.cached)cacheOpen(job.openKey,result);}catch(problem){failure=problem;}}
-  jobs.delete(job.id);clearTimeout(job.timer);if(failure)job.reject(failure);else{if(!job.cached)lastStats=result.stats||lastStats;job.resolve(job.type==='open'?copyResult(result):result);}
+  jobs.delete(job.id);clearTimeout(job.timer);if(failure)job.reject(failure);else{if(!job.cached)lastStats=result.stats||lastStats;job.resolve(job.type==='open'?copyResult(result):{...result,...(result.info?{info:copyPdfWorkInfoV2753(result.info)}:{})});}
   // Resolve every subscriber with its own bytes before any caller can mutate
   // a shared promise's result. Each subscriber retains its own context check.
   for(const follower of followers)finish(follower,result,error);

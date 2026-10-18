@@ -1,5 +1,5 @@
 import {nameFromReport,nextNumberedReportNameV2731} from './report-name-v2648.mjs';
-import {pdfWorkV2729} from './pdf-work-v2729.mjs';
+import {pdfWorkV2729,validatedPdfSaveInfoV2753} from './pdf-work-v2729.mjs';
 import {openSheet} from './sheet-launcher-v2526.mjs';
 import {REPORT_NAMES,bundledTemplate,bundledCreationTemplate} from './report-templates-v2636.mjs';
 import {fillInFrame} from './pdf-fill-client-v2523.mjs';
@@ -339,8 +339,11 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       const c=await get('copies',id);if(!c||c.removed||c.email!==email)throw new Error('Copie locale retirée ou introuvable.');
       // Repeated reader requests are idempotent. Resolve only after IndexedDB commits.
       if(c.readerRequestId!==readerRequestId){
-        const worker=pdfWorkV2729(),inspection=worker?await worker.inspect(blob):null;
-        const reportName=inspection?.name||await nameFromReport(blob,c.name);
+        // The reader's repaired bytes already carry their exact name, equipment
+        // and conformity. A background list scan must not delay this local ACK.
+        const samePass=provenance.pdfSaveInfoV2753?validatedPdfSaveInfoV2753(provenance.pdfSaveInfoV2753):null;
+        const worker=samePass?null:pdfWorkV2729(),inspection=samePass||(worker?await worker.inspect(blob):null);
+        const reportName=inspection?inspection.name||c.name:await nameFromReport(blob,c.name);
         if(!canSave())throw Error('Le compte a changé.');
         const updated={...c,equipmentSignature:inspection?.equipment,readerPreparedVersion:provenance.readerPreparedVersion===2730?2730:undefined,initialValues:null,autoReportName:c.autoReportName||reportName!==c.name,blob,name:reportName,readerRequestId,editVersion:(c.editVersion||0)+1,uploadId:'pdf_'+crypto.randomUUID(),status:'pending',error:''};
         await put('copies',updated);if(canSave()&&!await confirmedDeletionV2749(updated)){clearRetryV2740(id);rememberNames(updated);reportProgressV2749(updated,'saving-local','Rapport enregistré sur cet appareil.');notifyDocument(updated);}
@@ -355,13 +358,19 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
     try{if(window.BalanceCDQBackgroundV2746?.isQueueOwner?.(current.email)===false)return;}catch{return;}
     // A complete draft is already durable. Scanning and detaching every other
     // pending PDF must not compete with this reader's first canvas and fields.
-    if(!targetId&&[...readers.values()].some(reader=>reader.opening&&reader.epoch===stamp&&reader.email===current.email))return;
+    if(!targetId&&[...readers.values()].some(reader=>reader.opening&&reader.epoch===stamp&&reader.email===current.email&&reader.accessVersion===accessVersion))return;
     const copies=targetId?[await get('copies',targetId)].filter(Boolean):await all('copies');if(!currentSync())return;
     if(!targetId){pendingWork.clear();for(const copy of copies)notePending(copy);send({type:'CDQ_DRIVE_PENDING_V2746',email:current.email,count:pendingWork.size});}
     for(let c of copies){
-      if((c.removed&&!c.cancelledDriveId)||c.email!==current.email||inflight.has(c.id)||retryTimersV2740.has(c.id)||pausedSyncV2740.has(c.id)||readers.get(c.id)?.opening)continue;
+      if((c.removed&&!c.cancelledDriveId)||c.email!==current.email||inflight.has(c.id)||retryTimersV2740.has(c.id)||pausedSyncV2740.has(c.id)||readers.get(c.id)?.opening&&readers.get(c.id)?.accessVersion===accessVersion)continue;
+      // A newly opened report is durable already. Its first explicit save
+      // supplies final bytes; sending a blank copy now would race that save
+      // through a second begin/PUT/finalize sequence. This hold lives only in
+      // the active reader map: closing or reloading resumes the draft normally.
+      const activeDraftReader=readers.get(c.id);
+      if(!c.driveId&&!c.readerRequestId&&activeDraftReader?.epoch===stamp&&activeDraftReader.email===current.email&&activeDraftReader.accessVersion===accessVersion)continue;
       if(c.initialValues&&Object.keys(c.initialValues).length){
-        // Materialize only after the visible reader has opened. An interrupted
+        // Materialize only after the unsaved visible reader has closed. An interrupted
         // draft restarts this work from its persisted identity on the next run.
         if(!identityDownloads.has(c.id)){
           const id=c.id,identity=JSON.stringify(c.initialValues),version=c.editVersion||0;
@@ -404,7 +413,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         continue;
       }
       if(c.uploadId&&c.uploadId!==c.syncedUploadId&&!/^[a-zA-Z0-9_-]{8,100}$/.test(c.uploadId)){c={...c,uploadId:'pdf_'+crypto.randomUUID()};await put('copies',c);if(!currentSync())return;}
-      if(inflight.has(c.id)||retryTimersV2740.has(c.id)||pausedSyncV2740.has(c.id)||readers.get(c.id)?.opening)continue;
+      if(inflight.has(c.id)||retryTimersV2740.has(c.id)||pausedSyncV2740.has(c.id)||readers.get(c.id)?.opening&&readers.get(c.id)?.accessVersion===accessVersion)continue;
       c=await get('copies',c.id);if(!currentSync())return;
       if(!c||(c.removed&&!c.cancelledDriveId)||inflight.has(c.id)||retryTimersV2740.has(c.id)||pausedSyncV2740.has(c.id))continue;
       const tombstone=await confirmedDeletionV2749(c);
@@ -415,6 +424,9 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         c=await serialCopy(c.id,async()=>{const latest=await get('copies',c.id);if(!currentSync()||!latest||latest.removed||latest.driveId||latest.initialValues)return latest;if(latest.creationTransferV2751)return latest;
           const bytes=await latest.blob.arrayBuffer();if(!currentSync())return latest;const updated={...latest,creationTransferV2751:{pdfBytesV2664:bytes,name:latest.name,uploadId:latest.uploadId||''}};await put('copies',updated);return updated;},true);if(!currentSync()||!c||c.removed)continue;
       }
+      // Another targeted resume (for example save followed by close) can win
+      // while creation bytes are being frozen through the per-copy queue.
+      if(!currentSync()||inflight.has(c.id)||retryTimersV2740.has(c.id)||pausedSyncV2740.has(c.id))continue;
       const message=nextSync(c,current.protocol);if(!message)continue;
       const job={type:message.type,uploadId:message.uploadId||'',driveId:message.driveId||'',clientId:c.destination?.clientId,epoch:stamp};inflight.set(c.id,job);sentJobsV2740.set(c.id,job);
       job.timer=setTimeout(()=>{
@@ -517,7 +529,15 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         if(!current.canWrite||!/^[\w-]{8,100}$/.test(String(data.localId||'')))throw Error('Retrait non autorisé.');
         const c=await get('copies',data.localId);if(stamp!==epoch||session!==current)return;
         if(c&&c.email!==current.email)throw Error('Cette copie appartient à un autre compte.');
-        if(c&&!c.removed){if(c.kind==='prepared'||c.kind==='sheet'||c.driveId)throw Error('Ce fichier est déjà dans Drive. Actualisez la liste avant de le supprimer.');await retireCopyV2714(c,'user');}
+        if(c&&!c.removed){
+          if(c.driveId&&c.kind!=='sheet'){
+            // A creation receipt can arrive between selecting a local row and
+            // confirming its removal. Preserve its bytes/outbox until the
+            // caller obtains a confirmed deletion for the actual Drive id.
+            send({type:'CDQ_LOCAL_REPORT_RETIRE_RESULT_V2714',email:current.email,requestId:data.requestId,localId:data.localId,ok:false,code:'CDQ_LOCAL_REPORT_REMOTE_V2753',driveId:c.filledDriveId||c.driveId,clientId:c.destination.clientId});return;
+          }
+          if(c.kind==='prepared'||c.kind==='sheet')throw Error('Ce fichier est déjà dans Drive. Actualisez la liste avant de le supprimer.');await retireCopyV2714(c,'user');
+        }
         if(stamp===epoch&&session===current){send({type:'CDQ_LOCAL_REPORT_RETIRE_RESULT_V2714',email:current.email,requestId:data.requestId,localId:data.localId,ok:true});await notifySnapshotV2714();}
       }catch(e){if(stamp===epoch&&session===current)send({type:'CDQ_LOCAL_REPORT_RETIRE_RESULT_V2714',email:current.email,requestId:data.requestId,localId:data.localId,ok:false,message:e.message});}return;
     }
@@ -617,7 +637,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       const reader=readers.get(c.id);if(reader?.epoch===stamp){const handle=await reader.handle;if(stamp!==epoch||current!==session||!current.canWrite)return;handle?.prefill?.(values);}
       // Preserve the late coordinates on disk too. Saved answers are never replaced.
       if(!c.readerRequestId&&Object.keys(values).length){
-        if(c.initialValues){await put('copies',{...c,initialValues:{...c.initialValues,...values}});sync(false,c.id).catch(()=>{});return;}
+        if(c.initialValues||!c.driveId&&readers.get(c.id)?.epoch===stamp&&readers.get(c.id)?.accessVersion===readAccessVersion){await put('copies',{...c,initialValues:{...c.initialValues,...values}});sync(false,c.id).catch(()=>{});return;}
         const blob=await fillInFrame(values,{blob:c.blob,strict:false,onlyEmpty:true});
         if(stamp!==epoch||current!==session)return;
         const latest=await get('copies',c.id);if(latest?.readerRequestId)return;
@@ -659,7 +679,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         if(data.open===true){
           let opening=readers.get(c.id)?.openedPromise;
           if(!opening){
-            const reader={epoch:stamp,email:current.email,handle:null,opening:true,openedPromise:null};readers.set(c.id,reader);
+            const reader={epoch:stamp,accessVersion,email:current.email,handle:null,opening:true,openedPromise:null};readers.set(c.id,reader);
             opening=reader.openedPromise=new Promise((resolve,reject)=>{
               let settled=false;
               const finish=(error=null)=>{
@@ -671,7 +691,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
               if(!currentCreation()){finish(Error('Le compte a changé.'));return;}
               try{reader.handle=Promise.resolve(openPdf({blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,initialValues:c.initialValues||null,name:c.name,fileId:c.id,modeleId:c.modeleId,autoReportName:c.autoReportName===true,readOnly:false,
                 ...equipmentHooks(c,current,stamp),onOpened:()=>finish(),onError:error=>finish(error||Error('Ouverture du rapport impossible.')),
-                onClose:()=>{if(readers.get(c.id)===reader)readers.delete(c.id);finish(Error('Le lecteur a été fermé avant l’ouverture du rapport.'));},
+                onClose:()=>{if(readers.get(c.id)===reader)readers.delete(c.id);finish(Error('Le lecteur a été fermé avant l’ouverture du rapport.'));if(currentCreation())sync(false,c.id).catch(()=>{});},
                 onSave:(blob,requestId,name,provenance)=>saveCopy(c.id,current.email,blob,requestId,provenance)}));
                 reader.handle.catch(finish);
               }catch(error){finish(error);}

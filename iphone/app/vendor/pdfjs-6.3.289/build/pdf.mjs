@@ -15865,10 +15865,23 @@ class PDFPageProxy {
     recordImages = false,
     recordOperations = false,
     operationsFilter = null,
-    cdqFirstPaintLeaseV2731 = null
+    cdqFirstPaintLeaseV2731 = null,
+    cdqAnnotationOnlyV2753 = false
   }) {
     this._stats?.time("Overall");
     const intentArgs = this._transport.getRenderingIntent(intent, annotationMode, printAnnotationStorage, isEditing);
+    if (typeof cdqAnnotationOnlyV2753 !== "boolean") {
+      throw new Error("Invalid template annotation rendering flag");
+    }
+    if (cdqAnnotationOnlyV2753) {
+      if (this._pageIndex !== 0 || this.isPureXfa || intent !== "display" || annotationMode !== AnnotationMode.ENABLE_FORMS ||
+          !(annotationCanvasMap instanceof Map) || isEditing || printAnnotationStorage ||
+          pageColors || background || recordImages || recordOperations || operationsFilter) {
+        throw new Error("Template annotation rendering requires the first ordinary form display");
+      }
+      intentArgs.cdqAnnotationOnlyV2753 = true;
+      intentArgs.cacheKey += "_cdq_annotation_only_v2753";
+    }
     const {
       renderingIntent,
       cacheKey
@@ -16123,7 +16136,8 @@ class PDFPageProxy {
     renderingIntent,
     cacheKey,
     annotationStorageSerializable,
-    modifiedIds
+    modifiedIds,
+    cdqAnnotationOnlyV2753 = false
   }) {
     const {
       map,
@@ -16135,7 +16149,8 @@ class PDFPageProxy {
       intent: renderingIntent,
       cacheKey,
       annotationStorage: map,
-      modifiedIds
+      modifiedIds,
+      cdqAnnotationOnlyV2753
     }, undefined, transfer);
     const reader = readableStream.getReader();
     const intentState = this._intentStates.get(cacheKey);
