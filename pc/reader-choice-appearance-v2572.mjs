@@ -62,18 +62,21 @@ function preserveNativeMultiHeadV2737(pdf,L,approved){
  return true;
 }
 
-export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
+export async function normalizeEditableFormOnOpen(bytes,providedLibrary,onPrepared){
   const data=bytes instanceof Uint8Array?bytes:new Uint8Array(bytes);
   const L=providedLibrary||await pdfLibrary();
   const {PDFDocument,PDFName}=L;
   const pdf=await PDFDocument.load(data,{updateMetadata:false});
+  // Observe this exact repaired document before choosing original bytes or
+  // serialization. The callback can finish an asynchronous read-only digest.
+  const prepared=async changed=>{if(typeof onPrepared==='function')await onPrepared(pdf);return changed?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;};
   const correctedFamilyV2736=approvedReportFamilyV2735(pdf,L);
   if(correctedFamilyV2736){
     const nativeMulti=preserveNativeMultiHeadV2737(pdf,L,correctedFamilyV2736);
     const changed=normalizeTableColumnV2737(pdf,L)|(!nativeMulti&&normalizeMeasurementRulesV2736(pdf,L,correctedFamilyV2736))|normalizeReportVisualV2736(pdf,L,correctedFamilyV2736)|applyEquipmentHeaderGapV2736(pdf,L,correctedFamilyV2736)|compactApprovedFloorToleranceV2739(pdf,L,correctedFamilyV2736);
-    return changed?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;
+    return prepared(changed);
   }
-  if(approvedReportFamilyV2731(pdf,L))return data;
+  if(approvedReportFamilyV2731(pdf,L))return prepared(false);
   const form=pdf.getForm();
   const floorChanged=normalizeFloorStatusV2691(pdf,L),precisionChanged=normalizePrecisionEquipmentV2691(pdf,L);
   const presentationChanged=await normalizeReportPresentationV2695(pdf,L);
@@ -83,7 +86,7 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
     const fontsChanged=await normalizePrecisionFontsV2700(pdf,L);
     const layoutChanged=(await normalizeReportLayoutV2704(pdf,L))|(await normalizeReportLayoutV2713(pdf,L))|(await normalizeReportMicroV2716(pdf,L))|(await normalizeReportTypographyV2719(pdf,L))|(await normalizeReportLayoutV2721(pdf,L))|(await normalizeReportMicroV2725(pdf,L))|(await normalizeReportCorrectionsV2728(pdf,L));
     const headingChanged=pruneInvisibleReportHeadingV2730(pdf,L);
-    return floorChanged||precisionChanged||calculationsChanged||decimalsChanged||presentationChanged||fontsChanged||layoutChanged||headingChanged?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;
+    return prepared(floorChanged||precisionChanged||calculationsChanged||decimalsChanged||presentationChanged||fontsChanged||layoutChanged||headingChanged);
   }
   normalizeReportLayoutV2677(pdf,L);
   const changed=normalizePrecisionAppearanceV2665(pdf,L)|repairReportFormV2676(pdf,L)|compactToleranceActions(pdf,L)|centerSingleLineAppearances(pdf,L)|await alignStatusAppearances(pdf,L);
@@ -95,17 +98,20 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary){
   const fontsChanged=await normalizePrecisionFontsV2700(pdf,L);
   const layoutChanged=(await normalizeReportLayoutV2704(pdf,L))|(await normalizeReportLayoutV2713(pdf,L))|(await normalizeReportMicroV2716(pdf,L))|(await normalizeReportTypographyV2719(pdf,L))|(await normalizeReportLayoutV2721(pdf,L))|(await normalizeReportMicroV2725(pdf,L))|(await normalizeReportCorrectionsV2728(pdf,L));
   const headingChanged=pruneInvisibleReportHeadingV2730(pdf,L);
-  if(!changed&&!vesselChanged&&!floorChanged&&!precisionChanged&&!equipmentChanged&&!calculationsChanged&&!finalCalculationsChanged&&!decimalsChanged&&!presentationChanged&&!finalPresentationChanged&&!fontsChanged&&!layoutChanged&&!headingChanged&&!rawNeedsAppearanceRepair(data))return data;
+  if(!changed&&!vesselChanged&&!floorChanged&&!precisionChanged&&!equipmentChanged&&!calculationsChanged&&!finalCalculationsChanged&&!decimalsChanged&&!presentationChanged&&!finalPresentationChanged&&!fontsChanged&&!layoutChanged&&!headingChanged&&!rawNeedsAppearanceRepair(data))return prepared(false);
   form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
   compactReportV2682(pdf,L);
-  return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
+  return prepared(true);
 }
 
-export async function saveEditableFormAppearance(bytes,providedLibrary){
+export async function saveEditableFormAppearance(bytes,providedLibrary,onPrepared){
   const L=providedLibrary||await pdfLibrary();
   const {PDFDocument,PDFName,PDFArray,StandardFonts}=L;
   const pdf=await PDFDocument.load(bytes,{updateMetadata:false});
   const form=pdf.getForm();
+  // Extract save metadata from this already-loaded, repaired document. The
+  // optional observer never changes the serialized PDF or its appearances.
+  const persist=async()=>{if(typeof onPrepared==='function')await onPrepared(pdf);return pdf.save({updateFieldAppearances:false,useObjectStreams:true});};
   // PDF.js saves a dynamically added technician as /V, but does not serialize
   // the dropdown's updated items into /Opt. Keep that exact saved value valid
   // for the next editable opening and other PDF viewers, without replacing the
@@ -130,11 +136,11 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
     if(display?.getText&&driver?.getText&&String(display.getText()||'')!==String(driver.getText()||''))normalizeCamionDisplayV2741(pdf,L);
     normalizeReportVisualV2736(pdf,L,correctedFamilyV2736);
     form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
-    return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
+    return persist();
   }
   if(approvedReportFamilyV2731(pdf,L)){
     form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));
-    return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
+    return persist();
   }
   normalizeFloorStatusV2691(pdf,L);
   normalizeReportLayoutV2677(pdf,L);
@@ -214,7 +220,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary){
   await normalizeReportMicroV2725(pdf,L);
   await normalizeReportCorrectionsV2728(pdf,L);
   pruneInvisibleReportHeadingV2730(pdf,L);
-  return pdf.save({updateFieldAppearances:false,useObjectStreams:true});
+  return persist();
 }
 
 // Backward-compatible export used by older tests/modules.

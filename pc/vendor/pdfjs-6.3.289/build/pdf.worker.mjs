@@ -59471,8 +59471,19 @@ class Page {
     cacheKey,
     pageIndex = this.pageIndex,
     annotationStorage = null,
-    modifiedIds = null
+    modifiedIds = null,
+    cdqAnnotationOnlyV2753 = false
   }) {
+    if (typeof cdqAnnotationOnlyV2753 !== "boolean") {
+      throw new Error("Invalid template annotation rendering flag");
+    }
+    if (cdqAnnotationOnlyV2753 && (this.pageIndex !== 0 || pageIndex !== 0 ||
+        intent !== (RenderingIntentFlag.DISPLAY | RenderingIntentFlag.ANNOTATIONS_FORMS) ||
+        typeof cacheKey !== "string" || !cacheKey.endsWith("_cdq_annotation_only_v2753") ||
+        this.xfaFactory || annotationStorage !== null ||
+        modifiedIds !== null && (!(modifiedIds instanceof Set) || modifiedIds.size !== 0))) {
+      throw new Error("Template annotation rendering requires a pristine first form display");
+    }
     const contentStreamPromise = this.getContentStream();
     const resourcesPromise = this.loadResources(RESOURCES_KEYS_OPERATOR_LIST);
     const partialEvaluator = this._createPartialEvaluator(handler, pageIndex);
@@ -59525,12 +59536,14 @@ class Page {
         pageIndex,
         cacheKey
       });
-      await partialEvaluator.getOperatorList({
-        stream: contentStream,
-        task,
-        resources,
-        operatorList: opList
-      });
+      if (!cdqAnnotationOnlyV2753) {
+        await partialEvaluator.getOperatorList({
+          stream: contentStream,
+          task,
+          resources,
+          operatorList: opList
+        });
+      }
       return opList;
     });
     let [pageOpList, annotations, newAnnotations] = await Promise.all([pageListPromise, this._parsedAnnotations, newAnnotationsPromise]);
@@ -65002,7 +65015,8 @@ class WorkerMessageHandler {
       intent,
       cacheKey,
       annotationStorage,
-      modifiedIds
+      modifiedIds,
+      cdqAnnotationOnlyV2753 = false
     }, sink) {
       pdfManager.getPage(pageId).then(function (page) {
         const task = new WorkerTask(`GetOperatorList: page ${pageIndex}`);
@@ -65016,7 +65030,8 @@ class WorkerMessageHandler {
           cacheKey,
           annotationStorage,
           modifiedIds,
-          pageIndex
+          pageIndex,
+          cdqAnnotationOnlyV2753
         }).then(opListInfo => {
           if (start) {
             info(`${task.name}; time=${Date.now() - start}ms, len=${opListInfo.length}`);
