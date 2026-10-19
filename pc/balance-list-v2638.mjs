@@ -22,7 +22,99 @@ const jobs=new Map(),receipts=new Map(),states=new Map(),failed=new Map();
 const saveWaits=new Map(),changes=new Map(),satisfied=new Map(),clientTimers=new Map();
 const hydrated=new Set(),reviews=new Map(),reviewReceipts=new Map(),pausedClients=new Set();
 const previewJobs=new Map(),previews=new Map(),waitChecks=new Map(),warmIndexes=new Set();
-const projection=createBalanceListProjectionV2746({identity:calibrationIdentity,onChange:id=>{paintRows();queuePreview(id);window.dispatchEvent(new CustomEvent('cdq:balance-list-rows-v2730',{detail:{clientId:id,local:true}}));}});
+const engineListsV2754=new Map(),engineImportsV2754=new Map(),engineListFlightsV2754=new Map(),enginePendingRowsV2754=new Map(),engineDataAcksV2754=new Map(),engineRetiredRequestsV2754=new Map();
+const engineV2754=()=>window.cdqReportEngineSelectorV2754?.enabled?window.cdqReportEngineSelectorV2754:null;
+function engineRowsV2754(items){return balanceDisplayRowsV2751((items||[]).map(row=>({...row,id:String(row.fileId||row.id||row.reportId),source:row.source||row.name||'',revision:row.pdf?.driveRevision||row.revision,conformity:row.conformity||({'Conforme':'conforming','Non conforme':'nonconforming'})[row.conformite]||'unknown',local:row.pdf?.status!=='confirmed'&&row.pdf?.status!=='legacy'})));}
+function engineCurrentV2754(id){
+ const api=engineV2754(),entry=engineListsV2754.get(key(id));if(!api||!entry?.fingerprint||entry.invalidated)return false;
+ const fingerprint=clientFingerprint(id);if(fingerprint===entry.fingerprint)return true;
+ try{
+  const managed=new Map(entry.managed||[]),before=JSON.parse(entry.fingerprint),after=JSON.parse(fingerprint);
+  if(!managed.size)return false;
+  // Only exact engine-confirmed file revisions may bypass a source scan. An
+  // external edit of one of those files still invalidates the imported index.
+  for(const row of after)if(managed.has(row[0])&&(row[1]!=='PDF'||row[2]!==managed.get(row[0])))return false;
+  const external=rows=>rows.filter(row=>!managed.has(row[0]));
+  return JSON.stringify(external(before))===JSON.stringify(external(after));
+ }catch{return false;}
+}
+function engineMergedRowsV2754(id,items){
+ const pending=[...(enginePendingRowsV2754.get(key(id))||new Map()).values()];
+ const reportIds=new Set(pending.map(row=>row.reportId)),fileIds=new Set(pending.map(row=>row.id));
+ return balanceDisplayRowsV2751(engineRowsV2754(items).filter(row=>!reportIds.has(row.reportId)&&!fileIds.has(row.id)).concat(pending));
+}
+async function refreshEngineListV2754(id,{repair=false,hydrate=false}={}){
+ const api=engineV2754(),k=key(id),stamp=epoch,account=calibrationIdentity().email;
+ if(!api||!engineListsV2754.has(k)&&!hydrate)return null;
+ if(engineListFlightsV2754.has(k)){const flight=engineListFlightsV2754.get(k);if(repair&&!flight.repair){await flight.promise;return refreshEngineListV2754(id,{repair,hydrate});}flight.dirty=true;return flight.promise;}
+ const flight={dirty:false,repair,promise:null};
+ flight.promise=api.call('list',{clientId:String(id),...(repair?{repair:true}:{})}).then(result=>{
+  if(stamp!==epoch||account!==calibrationIdentity().email||!canRead())return null;
+  if(!result?.baselineComplete||!Array.isArray(result.items)){const entry=engineListsV2754.get(k);if(entry)entry.invalidated=true;return null;}
+  const old=states.get(k)||{},rows=engineMergedRowsV2754(id,result.items),pdf=result.pdf,entry=engineListsV2754.get(k)||{fingerprint:clientFingerprint(id)},managed=new Map(entry.managed||[]);
+  for(const row of result.items)if(row.reportId&&row.pdf?.fileId&&row.pdf?.driveRevision)managed.set(String(row.pdf.fileId),String(row.pdf.driveRevision));
+  const baseline={...entry,reportId:result.reportId||entry.reportId,managed:[...managed],pdf,polls:pdf?.status==='confirmed'?0:entry.polls||0};engineListsV2754.set(k,baseline);
+  // The imported legacy source index belongs to the preceding PDF. Retaining
+  // it here would make projection.project prefer stale rows over engine data.
+  const record={...old,status:'ready',rows,count:rows.length,clientId:String(id),folderId:result.destinationId||old.folderId,sourceIndexV2751:null,fileId:pdf?.fileId||'',updatedAt:pdf?.driveRevision||'',enginePdfV2754:pdf,engineBaselineV2754:baseline};
+  states.set(k,record);projection.confirmed(id,rows,null);persistClient(id);paintRows();
+  window.dispatchEvent(new CustomEvent('cdq:balance-list-rows-v2730',{detail:{clientId:String(id),engine:2754,pending:pdf?.status!=='confirmed'}}));
+  if(pdf?.status==='confirmed'&&pdf.fileId)window.cdqInstantFiles2530?.confirm?.({id:pdf.fileId,nom:'Liste de balance.pdf',type:'PDF',revision:pdf.driveRevision,dateModification:pdf.driveRevision},id,old.folderId);
+  clearFailure(k);
+  if(['pending','running'].includes(pdf?.status)&&baseline.polls<5&&canWrite()){baseline.polls++;scheduleClient(id,Math.min(15000,1500*2**(baseline.polls-1)));}
+  return record;
+ }).finally(()=>{if(engineListFlightsV2754.get(k)===flight)engineListFlightsV2754.delete(k);if(flight.dirty&&stamp===epoch&&account===calibrationIdentity().email&&canRead())refreshEngineListV2754(id).catch(()=>{});});
+ engineListFlightsV2754.set(k,flight);return flight.promise;
+}
+async function importEngineIndexV2754(id,state){
+ const api=engineV2754(),index=state?.sourceIndexV2751,k=key(id);
+ if(!api||!index?.exhaustive||!Array.isArray(index.sources)||!canWrite()||!queueOwner())return null;
+ const stamp=epoch,account=calibrationIdentity().email,listIdentity=JSON.stringify([state.fileId,state.folderId,state.updatedAt]),sources=index.sources.map(({id,revision,signature,name})=>({id,revision,signature,name})).sort((a,b)=>String(a.id).localeCompare(String(b.id))),hash=JSON.stringify(sources),prior=engineListsV2754.get(k),fingerprint=clientFingerprint(id);
+ if(prior?.hash===hash&&!prior.invalidated&&prior.fingerprint===fingerprint)return refreshEngineListV2754(id);
+ if(engineImportsV2754.has(k))return engineImportsV2754.get(k);
+ const rows=balanceSourceRowsV2751(index);if(!rows)return null;
+ const promise=api.call('importIndex',{clientId:String(id),listFileId:state.fileId,listRevision:state.updatedAt,listDestinationId:state.folderId,clientName:root(id)?.nom||root(id)?.name||'',sources,rows}).then(result=>{
+  if(stamp!==epoch||account!==calibrationIdentity().email||!canWrite()||!result?.baselineComplete)return null;
+  const current=states.get(k);if(!current||JSON.stringify([current.fileId,current.folderId,current.updatedAt])!==listIdentity||clientFingerprint(id)!==fingerprint)return null;
+  // Activation follows a complete index whose source revisions GAS verified
+  // against Drive. Until this acknowledgement the legacy list remains active.
+  engineListsV2754.set(k,{hash,fingerprint,managed:prior?.managed||[],pdf:result.pdf});
+  states.set(k,{...current,engineBaselineV2754:engineListsV2754.get(k)});persistClient(id);
+  return refreshEngineListV2754(id);
+ }).finally(()=>{if(engineImportsV2754.get(k)===promise)engineImportsV2754.delete(k);});
+ engineImportsV2754.set(k,promise);return promise;
+}
+async function reconcileEngineSourcesV2754(id){
+ const k=key(id),state=states.get(k);if(!canWrite()||engineCurrentV2754(id)||!state?.fileId)return state;
+ const version=epoch,account=calibrationIdentity().email,fingerprint=clientFingerprint(id),current=()=>version===epoch&&account===calibrationIdentity().email&&canWrite()&&fingerprint===clientFingerprint(id);
+ const result=await updateBalanceListFastV2729({clientId:id,fileId:state.fileId,indexOnly:true,rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision),loadSheet:(file,clientId)=>call('obtenirSnapshotGoogleSheetHorsLigne',file,clientId),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true),onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,false),previousState:state,stillCurrent:current});
+ if(!current())throw Error('Le compte, le client ou les sources ont changé.');
+ states.set(k,{...state,...result,engineBaselineV2754:engineListsV2754.get(k)});return importEngineIndexV2754(id,states.get(k));
+}
+function engineDataSavedV2754(event){
+ const d=event.detail||{},id=String(d.clientId||'');if(!id||d.owner!==calibrationIdentity().email||!canRead())return;
+ restoreClient(id);const k=key(id),state=states.get(k);if(d.saveId&&engineRetiredRequestsV2754.get(k)?.has(String(d.saveId)))return;
+ const pendingBefore=enginePendingRowsV2754.get(k)?.get(d.reportId),acceptedBefore=engineDataAcksV2754.get(k)?.get(d.reportId);
+ if(d.dataSaved&&d.saveId&&(pendingBefore&&pendingBefore.saveId!==d.saveId||!pendingBefore&&acceptedBefore&&acceptedBefore!==d.saveId))return;
+ if(d.reportId&&d.saveId){let acks=engineDataAcksV2754.get(k);if(!acks)engineDataAcksV2754.set(k,acks=new Map());const prior=enginePendingRowsV2754.get(k)?.get(d.reportId);if(!d.dataSaved)acks.delete(d.reportId);else if(!prior||prior.saveId===d.saveId)acks.set(d.reportId,String(d.saveId));}
+ if(d.fields){
+  const value=name=>String(d.fields[name]?.value??''),source=String(d.sourceId||d.reportId),row={id:source,reportId:d.reportId,source:d.name||'',revision:d.pdf?.driveRevision||'',fabricant:value('base_balance_fabricant'),modele:value('base_balance_modele'),capacite:value('capacite_maximale'),echelon:value('echelon'),identification:value('identification_balance'),conformity:'unknown',local:d.pdf?.status!=='confirmed',saveId:d.saveId};
+  let pending=enginePendingRowsV2754.get(k);if(!pending)enginePendingRowsV2754.set(k,pending=new Map());
+  // An earlier ACK must never remove a newer local response snapshot.
+  const prior=pending.get(d.reportId);if(!d.dataSaved||!prior||prior.saveId===d.saveId)pending.set(d.reportId,row);
+  if(d.dataSaved&&(!prior||prior.saveId===d.saveId))pending.delete(d.reportId);
+  if(state){const rows=balanceDisplayRowsV2751((state.rows||[]).filter(item=>item.id!==source&&item.reportId!==d.reportId).concat(pending.get(d.reportId)||row));states.set(k,{...state,sourceIndexV2751:engineListsV2754.has(k)?null:state.sourceIndexV2751,rows,count:rows.length,enginePendingRowsV2754:[...pending.values()]});}persistClient(id);paintRows();
+  window.dispatchEvent(new CustomEvent('cdq:balance-list-rows-v2730',{detail:{clientId:id,engine:2754,local:true}}));
+ }
+ if(engineListsV2754.has(k)&&d.dataSaved)refreshEngineListV2754(id).catch(()=>{});
+}
+window.addEventListener('cdq:report-data-saved-v2754',engineDataSavedV2754);
+window.addEventListener('cdq:report-pdf-confirmed-v2754',event=>{
+ const d=event.detail||{},id=String(d.clientId||'');if(d.owner!==calibrationIdentity().email||!id||!canRead())return;
+ const entry=engineListsV2754.get(key(id));if(entry&&d.pdf?.fileId&&d.pdf?.driveRevision){const managed=new Map(entry.managed||[]);managed.set(String(d.pdf.fileId),String(d.pdf.driveRevision));entry.managed=[...managed];const state=states.get(key(id));if(state)states.set(key(id),{...state,engineBaselineV2754:entry});persistClient(id);}
+ refreshEngineListV2754(id).catch(()=>{});
+});
+const projection=createBalanceListProjectionV2746({identity:calibrationIdentity,onChange:id=>{paintRows();if(!engineListsV2754.has(key(id)))queuePreview(id);window.dispatchEvent(new CustomEvent('cdq:balance-list-rows-v2730',{detail:{clientId:id,local:true}}));}});
 const key=id=>calibrationIdentity().email+'|'+id;
 const journalKey=id=>'cdqBalanceListJournalV2730:'+key(id);
 function restoreClient(id){
@@ -33,15 +125,18 @@ function restoreClient(id){
   if(Array.isArray(value.pending))saveWaits.set(k,new Map(value.pending.filter(row=>Array.isArray(row)&&row.length===2&&row.every(v=>typeof v==='string'))));
   if(Array.isArray(value.reviews))reviews.set(k,new Set(value.reviews.filter(token=>typeof token==='string')));
   if(Array.isArray(value.acknowledgements)){const acks=new Map(value.acknowledgements.filter(row=>Array.isArray(row)&&typeof row[0]==='string'&&row[1]?.clientId===String(id)));reviewReceipts.set(k,acks);for(const [token,detail] of acks)if(reviews.get(k)?.has(token))equipment.acknowledge(token,detail);}
-  if(value.ready?.status==='ready'&&value.ready.clientId===String(id)&&typeof value.ready.fileId==='string')states.set(k,value.ready);
+  if(value.ready?.status==='ready'&&value.ready.clientId===String(id)&&typeof value.ready.fileId==='string'){states.set(k,value.ready);if(value.ready.engineBaselineV2754?.fingerprint)engineListsV2754.set(k,value.ready.engineBaselineV2754);if(Array.isArray(value.ready.enginePendingRowsV2754))enginePendingRowsV2754.set(k,new Map(value.ready.enginePendingRowsV2754.filter(row=>row?.reportId).map(row=>[row.reportId,row])));if(Array.isArray(value.ready.engineDataAcksV2754))engineDataAcksV2754.set(k,new Map(value.ready.engineDataAcksV2754.filter(row=>Array.isArray(row)&&row.length===2&&row.every(value=>typeof value==='string'))));if(Array.isArray(value.ready.engineRetiredRequestsV2754))engineRetiredRequestsV2754.set(k,new Set(value.ready.engineRetiredRequestsV2754.filter(token=>typeof token==='string')));}
+  if(Array.isArray(value.enginePendingRowsV2754))enginePendingRowsV2754.set(k,new Map(value.enginePendingRowsV2754.filter(row=>row?.reportId).map(row=>[row.reportId,row])));
+  if(Array.isArray(value.engineDataAcksV2754))engineDataAcksV2754.set(k,new Map(value.engineDataAcksV2754.filter(row=>Array.isArray(row)&&row.length===2&&row.every(value=>typeof value==='string'))));
+  if(Array.isArray(value.engineRetiredRequestsV2754))engineRetiredRequestsV2754.set(k,new Set(value.engineRetiredRequestsV2754.filter(token=>typeof token==='string')));
  }catch{}
 }
 function persistClient(id){
- if(!id||!canRead())return;const k=key(id),r=states.get(k),ready=r?.status==='ready'?Object.fromEntries(['status','fileId','clientId','folderId','count','listRevision','listStamp','checkedAt','updatedAt','digest','rows','sourceIndexV2751','guardedSaveV2751','sourceManifestValidated'].filter(name=>r[name]!==undefined).map(name=>[name,r[name]])):null;
- try{localStorage.setItem(journalKey(id),JSON.stringify({version:1,owner:calibrationIdentity().email,clientId:String(id),changes:changes.get(k)||0,satisfied:satisfied.get(k)||0,pending:[...(saveWaits.get(k)||[])],reviews:[...(reviews.get(k)||[])],acknowledgements:[...(reviewReceipts.get(k)||[])].filter(([token])=>reviews.get(k)?.has(token)),ready}));}catch{}
+ if(!id||!canRead())return;const k=key(id),r=states.get(k),ready=r?.status==='ready'?{...Object.fromEntries(['status','fileId','clientId','folderId','count','listRevision','listStamp','checkedAt','updatedAt','digest','rows','sourceIndexV2751','guardedSaveV2751','sourceManifestValidated','enginePdfV2754','engineBaselineV2754','enginePendingRowsV2754'].filter(name=>r[name]!==undefined).map(name=>[name,r[name]])),enginePendingRowsV2754:[...(enginePendingRowsV2754.get(k)||new Map()).values()],engineDataAcksV2754:[...(engineDataAcksV2754.get(k)||[])],engineRetiredRequestsV2754:[...(engineRetiredRequestsV2754.get(k)||[])]}:null;
+ try{localStorage.setItem(journalKey(id),JSON.stringify({version:1,owner:calibrationIdentity().email,clientId:String(id),changes:changes.get(k)||0,satisfied:satisfied.get(k)||0,pending:[...(saveWaits.get(k)||[])],reviews:[...(reviews.get(k)||[])],acknowledgements:[...(reviewReceipts.get(k)||[])].filter(([token])=>reviews.get(k)?.has(token)),enginePendingRowsV2754:[...(enginePendingRowsV2754.get(k)||new Map()).values()],engineDataAcksV2754:[...(engineDataAcksV2754.get(k)||[])],engineRetiredRequestsV2754:[...(engineRetiredRequestsV2754.get(k)||[])],ready}));}catch{}
  publishBackground();
 }
-function publishBackground(){const current=calibrationIdentity().email,prefix=current+'|',keys=new Set([...saveWaits.keys(),...changes.keys(),...reviews.keys(),...jobs.keys()]);let count=0;for(const k of keys)if(k.startsWith(prefix)&&(jobs.has(k)||(saveWaits.get(k)?.size||0)>0||needsUpdate(k)))count++;window.cdqDriveBackgroundV2746?.setPending?.('balance-list',count,current);}
+function publishBackground(){const current=calibrationIdentity().email,prefix=current+'|',keys=new Set([...saveWaits.keys(),...changes.keys(),...reviews.keys(),...jobs.keys(),...engineListsV2754.keys()]);let count=0;for(const k of keys)if(k.startsWith(prefix)&&(jobs.has(k)||(saveWaits.get(k)?.size||0)>0||needsUpdate(k)||engineV2754()&&['pending','running'].includes(engineListsV2754.get(k)?.pdf?.status)))count++;window.cdqDriveBackgroundV2746?.setPending?.('balance-list',count,current);}
 const waiting=id=>{restoreClient(id);return (saveWaits.get(key(id))?.size||0)>0;};
 const needsUpdate=k=>(changes.get(k)||0)>(satisfied.get(k)||0)||(reviews.get(k)?.size||0)>0;
 async function reconcileWaits(id){
@@ -59,7 +154,7 @@ async function reconcileWaits(id){
 }
 function paintRows(){
  restoreClient(client());
- const id=client(),view=id?projection.project(id,states.get(key(id))):null,listId=states.get(key(id))?.fileId||listFile(id)?.id;
+ const id=client(),view=id?projected(id):null,listId=states.get(key(id))?.fileId||listFile(id)?.id;
  for(const row of document.querySelectorAll('.file-row')){row.querySelector('[data-balance-list-working]')?.remove();row.querySelector('[data-balance-list-local-status]')?.remove();if(row.dataset.balanceListBusy!=='false')row.dataset.balanceListBusy='false';
   // Local projection remains available without adding a wide status beside
   // the file title. Drive progress already has its shared indicator.
@@ -67,7 +162,7 @@ function paintRows(){
   else delete row.dataset.balanceListLocalUpdatedAt;
  }
 }
-function projected(id){restoreClient(id);return projection.project(id,states.get(key(id)));}
+function projected(id){restoreClient(id);const state=states.get(key(id)),view=projection.project(id,state),pending=engineListsV2754.has(key(id))&&['pending','running'].includes(state?.enginePdfV2754?.status);return pending?{...view,localPending:true,projectionStamp:JSON.stringify([view.projectionStamp,state.enginePdfV2754.revision,state.enginePdfV2754.status])}:view;}
 function queuePreview(id){
  if(!id||!canRead())return Promise.resolve(null);const k=key(id),view=projected(id),prior=previews.get(k);if(!view.localPending||!view.complete){previews.delete(k);return Promise.resolve(null);}if(prior?.stamp===view.projectionStamp)return Promise.resolve(prior.record);
  const active=previewJobs.get(k);if(active){active.dirty=true;return active.promise;}
@@ -178,7 +273,7 @@ const receiptPrefix=()=> 'cdqBalanceListV2703:';
 function remembered(id){const k=key(id);if(receipts.has(k))return receipts.get(k);try{const r=JSON.parse(localStorage.getItem(receiptPrefix()+k)||'null');if(r){receipts.set(k,r);return r;}}catch{}return null;}
 function remember(id,fingerprint){const r={fingerprint,requestedAt:Date.now()};receipts.set(key(id),r);try{localStorage.setItem(receiptPrefix()+key(id),JSON.stringify(r));}catch{}}
 function paint(id,text,error=false){if(id!==client())return;const p=document.getElementById('cdqClientActionsV2640');if(!p||p.hidden)return;let el=p.querySelector('[data-balance-list-status]');if(!el){el=document.createElement('p');el.dataset.balanceListStatus='';el.className='cdq-workspace-status';el.setAttribute('role','status');p.append(el);}if(el.textContent!==text)el.textContent=text;el.classList.toggle('cdq-workspace-error',error);}
-function ready(id,r,notify=false){const folderId=listFolder(id)?.id||r.listFolderId||r.folderId||id;states.set(key(id),{...r,clientId:String(id),folderId});projection.confirmed(id,r.rows,r.sourceIndexV2751);if(r.sourceIndexV2751?.exhaustive)warmIndexes.add(key(id));persistClient(id);queuePreview(id);if(r.fileId&&r.updatedAt)window.cdqInstantFiles2530?.confirm?.({id:r.fileId,nom:'Liste de balance.pdf',type:'PDF',dateModification:r.updatedAt},id,folderId);if(notify)paint(id,'Liste à jour · '+(r.count||0)+' balance(s)'+(r.warnings?.length?' · '+r.warnings.length+' fichier(s) à vérifier':''));}
+function ready(id,r,notify=false){const folderId=listFolder(id)?.id||r.listFolderId||r.folderId||id;states.set(key(id),{...r,clientId:String(id),folderId});projection.confirmed(id,r.rows,r.sourceIndexV2751);if(r.sourceIndexV2751?.exhaustive)warmIndexes.add(key(id));persistClient(id);queuePreview(id);if(r.fileId&&r.updatedAt)window.cdqInstantFiles2530?.confirm?.({id:r.fileId,nom:'Liste de balance.pdf',type:'PDF',dateModification:r.updatedAt},id,folderId);if(notify)paint(id,'Liste à jour · '+(r.count||0)+' balance(s)'+(r.warnings?.length?' · '+r.warnings.length+' fichier(s) à vérifier':''));if(r.sourceIndexV2751?.exhaustive)importEngineIndexV2754(id,states.get(key(id))).catch(()=>{});}
 async function call(name,id,...args){const account=calibrationIdentity().email,version=epoch;if(!canRead())throw Error('Accès Drive requis.');if(/^(?:enregistrerPdfLecteur|cdqSaveBalanceListV2751|cdqActualiserListeBalance|cdqAssurerDossierListeBalance|deplacerElementCDQ|creerDossierDansCompagnie)/.test(name)&&!queueOwner())throw Error('La synchronisation a changé de contexte.');const r=await calibrationRpc(name,id,...args);if(version!==epoch||account!==calibrationIdentity().email||!canRead())throw Error('Le compte a changé.');return r;}
 function queueOwner(){let native=window.BalanceCDQBackgroundV2746;try{if(window.cdqDriveBackgroundV2746?.isQueueOwner)return window.cdqDriveBackgroundV2746.isQueueOwner(calibrationIdentity().email)!==false;if(!native)try{native=window.parent.BalanceCDQBackgroundV2746;}catch{}return native?.isQueueOwner?.(calibrationIdentity().email)!==false;}catch{return false;}}
 async function open(){
@@ -196,7 +291,12 @@ async function refresh(force=false,verify=false,id=client()){
   if(!id||!canWrite()||!queueOwner()||navigator.onLine===false)return {status:'unavailable'};
   if(owner!==calibrationIdentity().email)reset();
   restoreClient(id);
-  const k=key(id),active=jobs.get(k);let fingerprint=clientFingerprint(id);
+  const k=key(id);
+  // Once imported, only the Worker may publish this list, including forced
+  // refresh and a missing/trashed original folder. Never create a second
+  // folder or render a competing legacy list before the server repair check.
+  if(engineV2754()&&engineListsV2754.has(k)){const version=epoch,change=changes.get(k)||0;try{await reconcileWaits(id);let result=await refreshEngineListV2754(id,{repair:canWrite()});if(result&&version===epoch){result=await reconcileEngineSourcesV2754(id)||result;remember(id,clientFingerprint(id));if(!waiting(id)&&!(enginePendingRowsV2754.get(k)?.size))satisfied.set(k,change);persistClient(id);publishBackground();return result;}}catch(error){return {status:'error',message:error.message,code:error.code};}return {status:'pending'};}
+  const active=jobs.get(k);let fingerprint=clientFingerprint(id);
   let stamp=fingerprint+'|saved:'+(changes.get(k)||0);
   const failure=failed.get(k);
   if(force)failed.delete(k);
@@ -268,9 +368,10 @@ function menu(){
   for(const [label,action,write] of [['Ouvrir la liste',open,false],['Actualiser la liste',()=>refresh(true),true]]){const b=document.createElement('button');b.type='button';b.textContent=label;b.disabled=write&&!canWrite();b.onclick=()=>{closeMenu();if(id===client())Promise.resolve(action()).catch(e=>paint(id,e.message,true));};p.append(b);}
   actions.append(p);actions.querySelector('[data-client-list]')?.setAttribute('aria-expanded','true');
 }
-function reset(){epoch++;owner=calibrationIdentity().email;visibleClient='';receipts.clear();states.clear();jobs.clear();failed.clear();saveWaits.clear();changes.clear();satisfied.clear();hydrated.clear();reviews.clear();reviewReceipts.clear();pausedClients.clear();projection.reset();previews.clear();previewJobs.clear();waitChecks.clear();warmIndexes.clear();pcScan=null;for(const t of clientTimers.values())clearTimeout(t);clientTimers.clear();clearTimeout(timer);clearTimeout(scanTimer);timer=scanTimer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();paintRows();publishBackground();}
+function reset(){epoch++;owner=calibrationIdentity().email;visibleClient='';receipts.clear();states.clear();jobs.clear();failed.clear();saveWaits.clear();changes.clear();satisfied.clear();hydrated.clear();reviews.clear();reviewReceipts.clear();pausedClients.clear();projection.reset();previews.clear();previewJobs.clear();waitChecks.clear();warmIndexes.clear();engineListsV2754.clear();engineImportsV2754.clear();engineListFlightsV2754.clear();enginePendingRowsV2754.clear();engineDataAcksV2754.clear();engineRetiredRequestsV2754.clear();pcScan=null;for(const t of clientTimers.values())clearTimeout(t);clientTimers.clear();clearTimeout(timer);clearTimeout(scanTimer);timer=scanTimer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();paintRows();publishBackground();}
 function sources(tree){const files=[],seen=new Set(),take=(node,pdf)=>{for(const f of node.fichiers||[]){const id=String(f.id||'');if(id&&!seen.has(id)&&!excluded(f.nom||f.name)&&!f._cdqPendingSaveV2660&&(['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].includes(f.mimeType||f.type)||pdf&&['PDF','application/pdf'].includes(f.mimeType||f.type))){seen.add(id);files.push(f);}}};take(tree,true);for(const d of tree.dossiers||[])if(/^rapports? (?:d ?)?etalonnages?$/.test(norm(d.nom||d.name)))take(d,true);return files;}
 function scheduleScan(id){
+ if(engineCurrentV2754(id))return;
  if(scanTimer||pcScan||readerBusy()||navigator.onLine===false||window.cdqFieldWorkV2729?.available()===false)return;
  const version=epoch;scanTimer=setTimeout(()=>{scanTimer=0;if(version!==epoch||client()!==id||readerBusy()||document.hidden||!canWrite())return;
   const task=equipment.inspect(sources(root(id)||{}),()=>client()===id&&epoch===version&&canWrite()&&!readerBusy()&&!document.hidden,id);pcScan=task;
@@ -299,20 +400,37 @@ function inspect(){
 function schedule(){if(timer)return;timer=setTimeout(()=>{timer=0;inspect();},150);}
 // The structured last-confirmed list is available synchronously on a cold app
 // start. Consumers can show these rows while a separate cloud update resumes.
-function snapshot(id=client()){if(!id||!canRead())return null;restoreClient(id);const k=key(id),ready=states.get(k),tree=root(id),view=projection.project(id,ready);return ready?.status==='ready'||view.localPending?{...view,pending:view.localPending||waiting(id)||needsUpdate(k)||jobs.has(k)||!!tree&&remembered(id)?.fingerprint!==clientFingerprint(id)}:null;}
+function snapshot(id=client()){if(!id||!canRead())return null;restoreClient(id);const k=key(id),ready=states.get(k),tree=root(id),view=projected(id);return ready?.status==='ready'||view.localPending?{...view,pending:view.localPending||waiting(id)||needsUpdate(k)||jobs.has(k)||!!tree&&remembered(id)?.fingerprint!==clientFingerprint(id)}:null;}
 async function flushBackground(){if(!canWrite()||!queueOwner())return [];const current=calibrationIdentity().email,prefix='cdqBalanceListJournalV2730:'+current+'|';try{for(let i=0;i<localStorage.length;i++){const name=localStorage.key(i);if(name?.startsWith(prefix))restoreClient(name.slice(prefix.length));}}catch{}
- const ids=[...new Set([...changes.keys(),...reviews.keys(),...saveWaits.keys()].filter(k=>k.startsWith(current+'|')&&(needsUpdate(k)||(saveWaits.get(k)?.size||0)>0)).map(k=>k.slice(current.length+1)))];return Promise.all(ids.slice(0,2).map(id=>refresh(false,true,id)));
+ const ids=[...new Set([...changes.keys(),...reviews.keys(),...saveWaits.keys(),...engineListsV2754.keys()].filter(k=>k.startsWith(current+'|')&&(needsUpdate(k)||(saveWaits.get(k)?.size||0)>0||['pending','running'].includes(engineListsV2754.get(k)?.pdf?.status))).map(k=>k.slice(current.length+1)))];return Promise.all(ids.slice(0,2).map(id=>refresh(false,true,id)));
 }
-window.cdqBalanceListV2638={refresh,open,menu,inspect,snapshot,localPreview,flushBackground};
+function sendState(id=client()){
+ if(!id||!canRead())return {ready:false,stamp:''};restoreClient(id);const k=key(id),accepted=[...(engineDataAcksV2754.get(k)||new Map()).values()].flatMap(token=>[token,'fields_'+token]),tokens=new Set(accepted),view=projection.project(id,states.get(k));
+ const pending=(enginePendingRowsV2754.get(k)?.size||0)>0||[...(saveWaits.get(k)||new Map()).values()].some(token=>!tokens.has(token))||[...(reviews.get(k)||new Set())].some(token=>!tokens.has(token))||projection.sendPending(id,accepted);
+ const ready=engineCurrentV2754(id)&&!pending&&!jobs.has(k)&&!engineImportsV2754.has(k);
+ return {ready,stamp:JSON.stringify([epoch,calibrationIdentity().email,String(id),changes.get(k)||0,[...(saveWaits.get(k)||[])],[...(reviews.get(k)||[])],[...(enginePendingRowsV2754.get(k)||[])],[...(engineDataAcksV2754.get(k)||[])],view.projectionStamp,clientFingerprint(id)])};
+}
+async function prepareSend(id,list={}){
+ id=String(id||'');const version=epoch,account=calibrationIdentity().email,valid=()=>version===epoch&&account===calibrationIdentity().email&&canWrite();
+ if(!id||!valid()||!engineV2754())return {ready:false,stamp:''};restoreClient(id);const k=key(id);
+ // Join work already running; sending itself never enters the legacy PDF
+ // writer, creates a folder, or builds an on-device preview.
+ await reconcileWaits(id);if(!valid())return {ready:false,stamp:''};
+ for(const task of [jobs.get(k)?.promise,engineImportsV2754.get(k),engineListFlightsV2754.get(k)?.promise]){if(task)await task;if(!valid())return {ready:false,stamp:''};}
+ for(const saved of list.acceptedSaves||[]){if(!saved.reportId||!saved.requestId)continue;const pending=enginePendingRowsV2754.get(k)?.get(saved.reportId);if(pending&&pending.saveId!==saved.requestId)continue;let acks=engineDataAcksV2754.get(k);if(!acks)engineDataAcksV2754.set(k,acks=new Map());acks.set(saved.reportId,saved.requestId);if(pending)enginePendingRowsV2754.get(k).delete(saved.reportId);}
+ await refreshEngineListV2754(id,{hydrate:true});if(!valid())return {ready:false,stamp:''};await reconcileEngineSourcesV2754(id);if(!valid())return {ready:false,stamp:''};persistClient(id);return sendState(id);
+}
+window.cdqBalanceListV2638={refresh,open,menu,inspect,snapshot,localPreview,flushBackground,prepareSend,sendState};
 window.addEventListener('cdq:report-equipment-edited-v2746',event=>{if(owner!==calibrationIdentity().email)reset();if(canWrite())projection.edit(event.detail);});
 window.addEventListener('cdq:report-equipment-edit-ended-v2746',event=>{if(canRead())projection.ended(event.detail);});
+function retireEngineRowsV2754(id,accept){const k=key(id),pending=enginePendingRowsV2754.get(k);if(!pending)return;let retired=engineRetiredRequestsV2754.get(k);if(!retired)engineRetiredRequestsV2754.set(k,retired=new Set());for(const [reportId,row]of pending)if(accept(row)){pending.delete(reportId);if(row.saveId)retired.add(String(row.saveId));}const state=states.get(k);if(state)states.set(k,{...state,enginePendingRowsV2754:[...pending.values()]});}
 function deletionDetail(detail){const id=String(detail?.clientId||''),ids=new Set([...(detail?.ids||[]),...(detail?.descendantIds||[])]),requested=new Set([...(detail?.requestedIds||[]),...(detail?.requestedDescendantIds||[])]),folders=new Set(detail?.folderIds||[]),requestedFolders=new Set(detail?.requestedFolderIds||detail?.folderIds||[]);
  const walk=(node,inside=false,requestedInside=false)=>{if(!node)return;const selected=inside||folders.has(String(node.id)),asked=requestedInside||requestedFolders.has(String(node.id));if(selected||asked)for(const file of node.fichiers||[]){if(selected)ids.add(String(file.id));if(asked)requested.add(String(file.id));}for(const folder of node.dossiers||[])walk(folder,selected,asked);};walk(root(id));return {...detail,clientId:id,ids:[...ids],requestedIds:[...requested]};
 }
 for(const type of ['cdq:delete-pending-v2746','cdq:delete-local-v2746'])window.addEventListener(type,event=>{if(canWrite()){projection.deletion(deletionDetail(event.detail),'pending');publishBackground();}});
 window.addEventListener('cdq:delete-rollback-v2746',event=>{if(canRead()){const d=deletionDetail(event.detail);projection.deletion({...d,requestedIds:d.ids,ids:[]},'settled');}});
 window.addEventListener('cdq:delete-settled-v2746',event=>{if(canRead())projection.deletion(deletionDetail(event.detail),'settled');});
-window.addEventListener('cdq:deleted',event=>{if(!canWrite()||event.detail?.owner!==calibrationIdentity().email||!event.detail?.clientId)return;const d=deletionDetail(event.detail);projection.deletion(d,'confirmed');const k=key(d.clientId);clearFailure(k);changes.set(k,(changes.get(k)||0)+1);persistClient(d.clientId);const job=jobs.get(k);if(job)job.dirty=true;scheduleClient(d.clientId,0);});
+window.addEventListener('cdq:deleted',event=>{if(!canWrite()||event.detail?.owner!==calibrationIdentity().email||!event.detail?.clientId)return;const d=deletionDetail(event.detail),removed=new Set(d.ids.map(String));retireEngineRowsV2754(d.clientId,row=>removed.has(String(row.id))||removed.has(String(row.reportId)));projection.deletion(d,'confirmed');const k=key(d.clientId);clearFailure(k);changes.set(k,(changes.get(k)||0)+1);persistClient(d.clientId);const job=jobs.get(k);if(job)job.dirty=true;scheduleClient(d.clientId,0);});
 window.addEventListener('cdq:access-ready',()=>{if(owner!==calibrationIdentity().email)reset();schedule();});
 window.addEventListener('cdq:drive-cleared-v2632',reset);window.addEventListener('cdq:drive-ready-v2632',schedule);
 function resumePaused(){for(const k of [...pausedClients,...changes.keys(),...reviews.keys()])if(k.startsWith(owner+'|')&&(pausedClients.has(k)||needsUpdate(k)))scheduleClient(k.slice(owner.length+1));schedule();}
@@ -323,8 +441,10 @@ function retired(d){
  if(owner!==calibrationIdentity().email)reset();
  const id=String(d.clientId||'');if(!id||!d.saveId||!canRead()||d.owner&&d.owner!==calibrationIdentity().email)return;
  restoreClient(id);const k=key(id),pending=saveWaits.get(k),file=String(d.sourceId||''),token=String(d.saveId||'');
+ let retiredTokens=engineRetiredRequestsV2754.get(k);if(!retiredTokens)engineRetiredRequestsV2754.set(k,retiredTokens=new Set());retiredTokens.add(token.startsWith('fields_')?token.slice(7):token);
  const matched=pending?.has(file)?file:token?[...(pending||[])].find(([,value])=>value===token)?.[0]:undefined,released=matched!==undefined&&pending.get(matched)===token;if(released)pending.delete(matched);
  reviews.get(k)?.delete(token);
+ retireEngineRowsV2754(id,row=>row.saveId===token||'fields_'+row.saveId===token);
  equipment.retire(token);
  const changed=projection.retire({...d,owner:calibrationIdentity().email,clientId:id,sourceId:matched||file,saveId:token});
  if(released||changed){clearFailure(k);changes.set(k,(changes.get(k)||0)+1);const job=jobs.get(k);if(job)job.dirty=true;}
@@ -334,7 +454,7 @@ function retired(d){
 window.addEventListener('cdq:pdf-save-retired-v2707',e=>retired(e.detail||{}));
 for(const type of ['cdq:outbox-idle-v2707','cdq:drive-write-idle-v2746','cdq:drive-background-idle-v2746'])window.addEventListener(type,()=>{for(const k of saveWaits.keys())if(k.startsWith(owner+'|'))reconcileWaits(k.slice(owner.length+1));});
 window.addEventListener('cdq:pdf-local-saved',e=>saved(e,true));window.addEventListener('cdq:client-renamed',e=>saved(e));
-for(const event of ['cdq:deleted','cdq:moved','cdq:renamed','cdq:client-renamed'])window.addEventListener(event,e=>{const id=String(e.detail?.clientId||client());if(id)warmIndexes.delete(key(id));schedule();});
+for(const event of ['cdq:deleted','cdq:moved','cdq:renamed','cdq:client-renamed'])window.addEventListener(event,e=>{const id=String(e.detail?.clientId||client());if(id){warmIndexes.delete(key(id));const entry=engineListsV2754.get(key(id));if(entry){entry.invalidated=true;const state=states.get(key(id));if(state)states.set(key(id),{...state,engineBaselineV2754:entry});persistClient(id);}}schedule();});
 window.addEventListener('cdq:reader-closed-v2703',resumePaused);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)schedule();});
 window.addEventListener('online',()=>{for(const [k,failure] of failed)if(k.startsWith(owner+'|')&&failure.transient){clearFailure(k);scheduleClient(k.slice(owner.length+1));}for(const k of changes.keys())if(k.startsWith(owner+'|')&&(changes.get(k)||0)>(satisfied.get(k)||0))scheduleClient(k.slice(owner.length+1));paintRows();schedule();});window.addEventListener('offline',paintRows);

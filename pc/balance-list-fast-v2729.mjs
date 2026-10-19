@@ -37,7 +37,7 @@ function completeSheet(snapshot,file,clientId){
 
 // Two authorised folder snapshots replace N individual metadata requests and
 // the server's re-download/rebuild. Missing or changed sources abort the write.
-export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,loadSheet,library,cachedSignature,stillCurrent,onSaved=()=>{},onSourceRead=()=>{},previousState=null,hashText=hash,render=null,sourceIndex=null,guardedSave=false}){
+export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,loadSheet,library,cachedSignature,stillCurrent,onSaved=()=>{},onSourceRead=()=>{},previousState=null,hashText=hash,render=null,sourceIndex=null,guardedSave=false,indexOnly=false}){
  if(!fileId)return null;const guard=()=>{if(!stillCurrent())throw Error('Le client, le compte ou une sauvegarde a changé.');};guard();
  async function snapshot(){
   const response=await rpc('obtenirContenuDossierParesseux',clientId,clientId);guard();const root=folderContent(response,clientId);
@@ -72,18 +72,18 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
  // unchanged list needs only its two fresh folder snapshots, without fetching
  // or parsing the same list PDF again. A remote list edit invalidates receipt.
  let unchanged=previousState?.fileId===String(fileId)&&String(previousState.clientId||'')===String(clientId)&&previousState.updatedAt===sourceRev(before.list)&&previousState.listStamp===JSON.stringify(fileKey(before.list))&&previousState.digest===digest;
- if(indexed){
+ if(!indexOnly&&indexed){
   // A value-identical update still needs fresh membership verification.
   if(previousState?.digest===digest)return updateBalanceListFastV2729({...arguments[0],sourceIndex:null});
   existing={id:String(fileId),clientId:String(clientId),revision:sourceIndex.listRevision};old={getAuthor:()=>sourceIndex.author||''};
- }else if(!unchanged){
+ }else if(!indexOnly&&!unchanged){
   existing=await loadPdf(fileId,sourceRev(before.list));guard();
   if(!existing?.blob||!rev(existing)||existing.id&&String(existing.id)!==String(fileId)||existing.clientId&&String(existing.clientId)!==String(clientId)||sourceRev(before.list)!==rev(existing))throw Error('La révision de la liste a changé.');
   await pdfLibrary();old=await L.PDFDocument.load(await existing.blob.arrayBuffer(),{updateMetadata:false});guard();
   unchanged=old.catalog.get(L.PDFName.of('CDQBalanceListV2728'))?.decodeText?.()===digest;
  }
  let bytes;
- if(!unchanged){
+ if(!indexOnly&&!unchanged){
   if(render)bytes=await render(rows,before.name,old.getAuthor()||'',digest);
   else if(pdfWorkV2729())bytes=(await pdfWorkV2729().request('list',{rows,name:before.name,author:old.getAuthor()||'',digest})).bytes;
   else{await pdfLibrary();bytes=await renderBalanceListV2728(rows,before.name,old.getAuthor()||'',[],L);const doc=await L.PDFDocument.load(bytes,{updateMetadata:false});doc.catalog.set(L.PDFName.of('CDQBalanceListV2728'),L.PDFString.of(digest));bytes=await doc.save({updateFieldAppearances:false});}
@@ -93,6 +93,7 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
  const after=indexed?before:await snapshot();guard();if(beforeKey!==snapshotKey(after))throw Error('Les rapports ou la liste ont changé pendant la préparation.');
  const exhaustiveIndex={version:1,exhaustive:true,clientId:String(clientId),fileId:String(fileId),listRevision:sourceRev(before.list),list:{...before.list},name:before.name,author:old?.getAuthor?.()||sourceIndex?.author||previousState?.sourceIndexV2751?.author||'',authorKnown:!!old||sourceIndex?.authorKnown===true||previousState?.sourceIndexV2751?.authorKnown===true,folders:before.folders,listFolderId:before.listFolderId,sources:before.files.map(file=>({id:String(file.id),revision:sourceRev(file),name:file.nom||file.name||'',file:{...file},signature:signatures.get(String(file.id))}))};
  const result={sourceIndexV2751:exhaustiveIndex,status:'ready',fileId:String(fileId),clientId:String(clientId),folderId:after.listFolderId,count:rows.length,listRevision:'v2728-client',listStamp:JSON.stringify(fileKey(after.list)),digest,rows,checkedAt:new Date().toISOString(),updatedAt:sourceRev(before.list),clientSnapshot:after};
+ if(indexOnly)return {...result,indexOnly:true};
  if(unchanged)return {...result,unchanged:true,fastV2729:true};
  guard();const saveId='list-v2751-'+crypto.randomUUID(),ack=guardedSave===true?await rpc('cdqSaveBalanceListV2751',clientId,fileId,base64(bytes),{saveId,listRevision:rev(existing)||sourceRev(before.list),sources:exhaustiveIndex.sources.map(({id,revision})=>({id,revision})),name:'Liste de balance.pdf',sha256:Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),b=>b.toString(16).padStart(2,'0')).join(''),size:bytes.length}):await rpc('enregistrerPdfLecteurCDQV2520',fileId,base64(bytes),saveId,rev(existing));guard();
  if(guardedSave===true&&(ack?.saveId!==saveId||ack?.sourceManifestValidated!==true))throw Error('Le manifeste exhaustif des rapports n’a pas été confirmé.');

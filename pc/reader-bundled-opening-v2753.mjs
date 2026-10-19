@@ -38,20 +38,20 @@ export function createBundledOpeningV2753({pin,manifest=BUNDLED_OPENING_MANIFEST
   return manifest;
  }
  const trusted=()=>verified??=(verify().catch(()=>null));
- async function derivative(meta){
+ async function derivative(meta,budgetMs=fetchBudgetMs){
   const key=meta.sha256,hit=cache.get(key);if(hit){cache.delete(key);cache.set(key,hit);return hit.blob;}
   if(pending.has(key))return pending.get(key);
   // A missing service-worker asset must never turn a local report opening
   // into an unbounded download. Fall back to the existing worker repair.
   const controller=new AbortController();let timer;
   const job=Promise.resolve().then(async()=>{try{
-   const received=await Promise.race([Promise.resolve().then(()=>loadBytes(meta.path,meta.bytes,{signal:controller.signal})),new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('Bundled opening asset timed out'));},Math.min(1000,Math.max(1,Number(fetchBudgetMs)||200)));})]),bytes=received instanceof Uint8Array?received.slice():null;if(!pdf(bytes)||bytes.length!==meta.bytes||await hashBytes(bytes)!==meta.sha256)return null;
+   const received=await Promise.race([Promise.resolve().then(()=>loadBytes(meta.path,meta.bytes,{signal:controller.signal})),new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('Bundled opening asset timed out'));},Math.min(1000,Math.max(1,Number(budgetMs)||200)));})]),bytes=received instanceof Uint8Array?received.slice():null;if(!pdf(bytes)||bytes.length!==meta.bytes||await hashBytes(bytes)!==meta.sha256)return null;
    const blob=new Blob([bytes],{type:'application/pdf'});
    if(blob.size<=limit){cache.set(key,{blob,bytes:blob.size});size+=blob.size;while(size>limit&&cache.size){const oldest=cache.keys().next().value;size-=cache.get(oldest).bytes;cache.delete(oldest);}}
    return blob;
   }catch{controller.abort();return null;}finally{clearTimeout(timer);pending.delete(key);}});pending.set(key,job);return job;
  }
- return {async prepare(blob,{epoch,getEpoch,checkCurrent=()=>{}}={}){
+ return {async prepare(blob,{epoch,getEpoch,checkCurrent=()=>{},fetchBudgetMs:requestBudgetMs}={}){
   if(!Number.isInteger(epoch)||epoch<0||typeof getEpoch!=='function')return null;
   const guard=()=>{if(getEpoch()!==epoch)throw Error('Le compte ou l’accès Drive a changé.');checkCurrent();};guard();
   if(!(blob instanceof Blob)||blob.size<8||blob.size>32*1024*1024)return null;
@@ -61,7 +61,7 @@ export function createBundledOpeningV2753({pin,manifest=BUNDLED_OPENING_MANIFEST
   if(!pdf(bytes)||bytes.length!==blob.size)return null;
   let sourceSha;try{sourceSha=await hashBytes(bytes);}catch{guard();return null;}guard();
   const match=candidates.find(value=>value.source.sha256===sourceSha);if(!match)return null;
-  const normalized=await derivative(match.normalized);guard();
+  const normalized=await derivative(match.normalized,requestBudgetMs);guard();
   return normalized?{blob:normalized,normalized:true,preparedEpoch:epoch,sourceSha256:sourceSha,normalizedSha256:match.normalized.sha256}:null;
  }};
 }
