@@ -1,9 +1,9 @@
 {
   "schema": "cdq-script-bundle-v3",
   "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
-  "version": "V27.53",
-  "build": "2026.10.16-v27.53-fast-report",
-  "title": "Balance CDQ V27.53 — ouverture, sauvegarde et suppression rapides",
+  "version": "V27.54",
+  "build": "2026.10.18-v27.54-data-engine",
+  "title": "Balance CDQ V27.54 — moteur de rapports et sauvegarde des données",
   "requiresBuild": [
     "2026.10.02-v26.38-workspace-drive-security",
     "2026.10.02-v26.45-direct-access",
@@ -25,11 +25,12 @@
     "2026.10.11-v27.32-invoice-folders",
     "2026.10.15-v27.51-compact-optimization",
     "2026.10.16-v27.52-regression-fixes",
-    "2026.10.16-v27.53-fast-report"
+    "2026.10.16-v27.53-fast-report",
+    "2026.10.18-v27.54-data-engine"
   ],
   "patches": [
     {
-      "id": "application-build-v2753",
+      "id": "application-build-v2754",
       "file": "Code.gs",
       "op": "replace_build_any",
       "from": [
@@ -53,9 +54,10 @@
         "2026.10.11-v27.32-invoice-folders",
         "2026.10.15-v27.51-compact-optimization",
         "2026.10.16-v27.52-regression-fixes",
-        "2026.10.16-v27.53-fast-report"
+        "2026.10.16-v27.53-fast-report",
+        "2026.10.18-v27.54-data-engine"
       ],
-      "to": "2026.10.16-v27.53-fast-report"
+      "to": "2026.10.18-v27.54-data-engine"
     },
     {
       "id": "obtenirEtatAcces-direct-v2645",
@@ -272,112 +274,190 @@
       "expected": 1,
       "search": "function restaurerSelectionMultiple(fichierIds, dossierIds, idCompagnie) {",
       "replacement": "function restaurerSelectionMultiple(fichierIds, dossierIds, idCompagnie) {\n  return cdqDeleteSelectionV2752_(fichierIds, dossierIds, idCompagnie, false); // CDQ verified Drive deletion V27.52"
+    },
+    {
+      "id": "report-engine-archive-collected-proof-v2754",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "expected": 1,
+      "search": "  return Utilities.zip(blobs, nettoyerNomArchive_(dossier.getName()) + '.zip');",
+      "replacement": "  if(cdqArchivePlanV2754)cdqReportEngineArchiveCollectedV2754_(cdqArchivePlanV2754);\n  return Utilities.zip(blobs, nettoyerNomArchive_(dossier.getName()) + '.zip');"
+    },
+    {
+      "id": "report-engine-archive-collector-args-v2754",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "expected": 1,
+      "search": "function collecterDossierPourArchive_(dossier, prefixe, mode, blobs) {",
+      "replacement": "function collecterDossierPourArchive_(dossier, prefixe, mode, blobs, cdqArchivePlanV2754) {"
+    },
+    {
+      "id": "report-engine-archive-blob-proof-v2754",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "expected": 1,
+      "search": "    const blob = obtenirBlobSelonMode_(fichier, mode);",
+      "replacement": "    const blob = obtenirBlobSelonMode_(fichier, mode);\n    if(cdqArchivePlanV2754)cdqReportEngineArchiveBlobV2754_(fichier,blob,cdqArchivePlanV2754,dossier.getId());"
+    },
+    {
+      "id": "report-engine-archive-recursive-plan-v2754",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "expected": 1,
+      "search": "    collecterDossierPourArchive_(sous, prefix + nomSous, mode, blobs);",
+      "replacement": "    collecterDossierPourArchive_(sous, prefix + nomSous, mode, blobs, cdqArchivePlanV2754);"
+    },
+    {
+      "id": "report-engine-archive-builder-args-v2754",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "expected": 1,
+      "search": "function preparerDossierPourEnvoi_(dossierId, mode) {",
+      "replacement": "function preparerDossierPourEnvoi_(dossierId, mode, cdqArchivePlanV2754) {"
+    },
+    {
+      "id": "report-engine-archive-builder-plan-v2754",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "expected": 1,
+      "search": "  collecterDossierPourArchive_(dossier, '', mode, blobs);",
+      "replacement": "  collecterDossierPourArchive_(dossier, '', mode, blobs, cdqArchivePlanV2754);"
+    },
+    {
+      "id": "report-engine-archive-selected-plan-v2754",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "expected": 1,
+      "search": "      piecesJointes.push(preparerDossierPourEnvoi_(id, mode));",
+      "replacement": "      piecesJointes.push(preparerDossierPourEnvoi_(id, mode, cdqArchiveGuardV2754));"
+    },
+    {
+      "id": "report-engine-archive-before-build-v2754",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "expected": 1,
+      "search": "  const total = fichiersIds.length + dossiersIds.length;\n  const piecesJointes = [];",
+      "replacement": "  const cdqArchiveGuardV2754 = cdqReportEngineArchiveGuardV2754_(dossiersIds, idCompagnie);\n  const total = fichiersIds.length + dossiersIds.length;\n  const piecesJointes = [];"
+    },
+    {
+      "id": "report-engine-archive-before-send-v2754",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "expected": 1,
+      "search": "    message: echecs.length ? 'Envoi des éléments préparés...' : 'Envoi du courriel...'\n  });\n\n  GmailApp.sendEmail(email, sujet, corps, {",
+      "replacement": "    message: echecs.length ? 'Envoi des éléments préparés...' : 'Envoi du courriel...'\n  });\n\n  cdqReportEngineArchiveGuardV2754_(dossiersIds, idCompagnie, cdqArchiveGuardV2754);\n  GmailApp.sendEmail(email, sujet, corps, {"
     }
   ],
   "extraFiles": [
     {
       "name": "CDQBootstrapV2687.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQBootstrapV2687.gs",
-      "sha256": "484cba74d13a6b3282232656d4991267a2246cc7bed850076cea8c35a46bdecd"
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQBootstrapV2687.gs",
+      "sha256": "ac60e30643d84291248ffbb54b804a2d12e86b870ce72deca926182a0c55e3ed"
     },
     {
       "name": "CDQCalibrationIndexV2658.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQCalibrationIndexV2658.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQCalibrationIndexV2658.gs",
       "sha256": "e854b5ad81dfd61e91eff0e2cc8187e799c1287c6dfaa250f1e0561890fa9f72"
     },
     {
       "name": "CDQCalibrationV2566.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQCalibrationV2566.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQCalibrationV2566.gs",
       "sha256": "f5c9150d0a2d846dbc9dccf6b505629a8fd2b58361b74423d0167bcb41877fcb"
     },
     {
       "name": "CDQCreatedReportDeletionV2753.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQCreatedReportDeletionV2753.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQCreatedReportDeletionV2753.gs",
       "sha256": "30b28def764f9ec5f51e3bd1216e3bfc3a0bed43e00914b9fcf9742cc052244e"
     },
     {
+      "name": "CDQDataEngineV2754.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQDataEngineV2754.gs",
+      "sha256": "5cc7a288651edade3645072cc01bcbeb46092d82e5cc8d4560a1d863df7ec499"
+    },
+    {
       "name": "CDQDeletionV2752.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQDeletionV2752.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQDeletionV2752.gs",
       "sha256": "1df28080f80acc21a5441106f95d7b6ed2b63577c5dfc6a44db6d7b2d0fb9c3e"
     },
     {
       "name": "CDQDirectAccessV2645.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQDirectAccessV2645.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQDirectAccessV2645.gs",
       "sha256": "f77794ff1ae7d051ed615a42e867b20a5b8d98d0983b918274725a0ed56e89bb"
     },
     {
       "name": "CDQDriveGateV2620.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQDriveGateV2620.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQDriveGateV2620.gs",
       "sha256": "cd8a261c5289132c5663bca7c248374a05f9010db1a9daa6e6486615bcbb818d"
     },
     {
       "name": "CDQEmbedded.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQEmbedded.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQEmbedded.gs",
       "sha256": "c8863bb7311b372b92489a9f93a6d6f180e752de13a5ef4cdb5ae733a1a7c344"
     },
     {
       "name": "CDQFileMoveV2677.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQFileMoveV2677.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQFileMoveV2677.gs",
       "sha256": "42aea740135acd08b06dd8627822b3d0d2adbbdd2a87f4d8f58f50cb2bf0d62a"
     },
     {
       "name": "CDQInvoicesV2590.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQInvoicesV2590.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQInvoicesV2590.gs",
       "sha256": "ee72f8e4cf6167ba74e66d58f6db854cff001f097f7581206c0454566fea3dc7"
     },
     {
       "name": "CDQPerformance.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQPerformance.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQPerformance.gs",
       "sha256": "f6aabb2dc613e16ed2649dd5e9dd9263202eea2b9eb197807f03b0c81c3868db"
     },
     {
       "name": "CDQReportConformityV2727.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQReportConformityV2727.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQReportConformityV2727.gs",
       "sha256": "42c1b3c8360d64189ad648c1a8bcc17e5e947383811e2da59070b463e1f5f441"
     },
     {
       "name": "CDQReportFastV2642.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQReportFastV2642.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQReportFastV2642.gs",
       "sha256": "d998ec9d3f905d177a2455b395a9f0db305680a7331ba978f97515045cbf42c1"
     },
     {
       "name": "CDQSessionResume.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQSessionResume.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQSessionResume.gs",
       "sha256": "9a255b2c1ab8cf0df1d902f5813526440832bd03a6ecbe5f84b0565d1449c576"
     },
     {
       "name": "CDQStartupV2686.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQStartupV2686.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQStartupV2686.gs",
       "sha256": "1dad6fbdaad58b9e0e9968ce0d4296114cf02db3ec434986cc4f08aa7a2a2b71"
     },
     {
       "name": "CDQTransportV2751.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQTransportV2751.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQTransportV2751.gs",
       "sha256": "60513d507a917f2456cb702c59f8e305cf3fb27198f51b19ded9b8dc61953326"
     },
     {
       "name": "CDQTrashV2718.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQTrashV2718.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQTrashV2718.gs",
       "sha256": "a7d4422145a4d2a1f5cc662ac17c400d9478cd8d8233c579005073442266aacd"
     },
     {
       "name": "CDQWorkspaceV2638.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.53/files/CDQWorkspaceV2638.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.54/files/CDQWorkspaceV2638.gs",
       "sha256": "e142b83da2a635930db5ae4b12f676c6094b0842b7cbc53d177f7eceb34d5800"
     }
   ],
   "removeFiles": [],
   "audit": {
-    "androidAppRecommended": "27.53",
+    "androidAppRecommended": "27.54",
     "calibration": "Lecture paginée des feuilles et PDF des clients, dossiers actifs inclus. Position confirmée par lot, reprise après erreur et redémarrage à zéro; accès et portée des dossiers contrôlés. Aucun PDF conservé automatiquement hors ligne.",
     "catalogue": "55 modèles, dont 35 procédures documentées; les références incertaines restent à confirmer.",
     "interface": "Reprise du même task Android avec une session valide et les accès actuels.",
     "preservation": "Les quinze modules V27.32 sont vérifiés avant traitement; quatorze restent identiques, et seul CDQPerformance reçoit les deux ajouts de lecture V27.53 explicitement bornés. Le transport V27.51 conserve ses gardes et reçus; ses dossiers temporaires privés sont isolés par compte serveur. Le module de suppression V27.52 vérifie les capacités Drive et les résultats par identifiant, sans contourner les droits.",
-    "install": "ÉCRIRE + DÉPLOYER le serveur V27.53 puis vérifier sa capacité avec une session Google/CDQ autorisée avant activation du transport binaire.",
+    "install": "Configurer les propriétés privées, déployer le service de données et le serveur Google V27.54, vérifier leur santé et leurs sources exactes, puis publier les clients.",
     "lists": "La sauvegarde de liste vérifie sous ScriptLock le manifeste exhaustif des sources actuelles du client; le reçu Drive contient sourceManifestValidated:true.",
     "reports": "Tous les modèles préparés de la version publiée sont approuvés par taille et SHA-256. Les approbations antérieures et les contrôles de sécurité sont conservés.",
     "invoices": "CDQ System / Facture / Technicien - code / AAAA-MM / Catégorie. Les mois sont numériques; les six catégories sont créées ou réutilisées pour chaque mois utilisé. Les factures historiques restent à leur place et restent lisibles et supprimables.",
-    "transport": "Les URL reprenables créent uniquement un PDF temporaire privé. La finalisation RPC revalide session actuelle, rôle, Drive, protection des dossiers, appartenance au client, destination, révision, taille et SHA-256 des octets; nom et contenu sont engagés ensemble sous ScriptLock. Le verrou concerne ces RPC; les anciens chemins, travailleurs et modifications Drive externes ne forment pas un compare-and-swap universel."
+    "transport": "Les URL reprenables créent uniquement un PDF temporaire privé. La finalisation RPC revalide session actuelle, rôle, Drive, protection des dossiers, appartenance au client, destination, révision, taille et SHA-256 des octets; nom et contenu sont engagés ensemble sous ScriptLock. Le verrou concerne ces RPC; les anciens chemins, travailleurs et modifications Drive externes ne forment pas un compare-and-swap universel.",
+    "reportEngine": "Données versionnées, publication du PDF final séparée et contrôle du compte et du client. Les secrets de service sont configurés dans les propriétés privées Google et Cloudflare."
   },
   "createdReportListingOverlayV2753": {
     "kind": "created-report-listing-two-literals-v2753",
@@ -391,5 +471,15 @@
       "created-report-list-fields-v2753",
       "created-report-list-hint-v2753"
     ]
-  }
+  },
+  "servicePatchInventoryV2754": [
+    {
+      "id": "report-engine-service-post-v2754",
+      "file": "CDQBootstrapV2687.gs",
+      "op": "replace_literal_if_present",
+      "expected": 1,
+      "search": "function doPost(e) {",
+      "replacement": "function doPost(e) {\n  if(cdqReportEngineIsServiceV2754_(e))return cdqReportEngineServiceV2754_(e);"
+    }
+  ]
 }

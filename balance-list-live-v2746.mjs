@@ -65,5 +65,6 @@ export function createBalanceListProjectionV2746({identity,storage=globalThis.lo
   const sorted=balanceDisplayRowsV2751([...rows.values()]);
   const localPending=s.drafts.size>0||s.saved.size>0||s.deleted.size>0;return {...(base||{status:'local',clientId:String(id)}),rows:sorted,count:sorted.length,localPending,localUpdatedAt:at?new Date(at).toISOString():'',unsaved:s.drafts.size>0,durablePending:s.saved.size>0||[...s.deleted.values()].some(row=>row.pending),complete:base?.status==='ready',projectionStamp:JSON.stringify([base?.digest||'',sorted,localPending,at])};
  }
- return {edit,saved,acknowledge,ended,retire,deletion,confirmed,project,reset(){owner='';clients.clear();serial=0;}};
+ function sendPending(id,accepted=[]){const s=state(id),tokens=new Set(accepted);return s.drafts.size>0||[...s.saved.values()].some(row=>!tokens.has(row.saveId))||[...s.deleted.values()].some(row=>row.pending);}
+ return {edit,saved,acknowledge,ended,retire,deletion,confirmed,project,sendPending,reset(){owner='';clients.clear();serial=0;}};
 }

@@ -7,8 +7,8 @@
     "sha256": "dd95fbfff8106cc8381f579d5342916feb1d30d8394babaebd63d24412bb9a5d"
   },
   "opening": {
-    "build": "2026.10.16-v27.53-fast-report",
-    "manifestSha256": "3f104449cd8f2f18277b11b44e83f8f04c1bcad9137b6240d46f29ef4af183b6",
+    "build": "2026.10.18-v27.54-data-engine",
+    "manifestSha256": "50f4b499493ceffde7037e97e4b72404411f9e4247fdf56e14b6ab3e1f1e5f32",
     "normalizerFingerprint": "b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"
   },
   "renderer": {

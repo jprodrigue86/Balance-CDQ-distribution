@@ -1,5 +1,7 @@
 import {trialReportMetadataFamilyV2743} from './reader-trial-reports-v2743.mjs';
 import {refreshResultGeometryV2743,restoreBlankResultConclusionV2743} from './reader-result-geometry-v2743.mjs';
+import {captureReportFieldsV2754,restoreReportFieldsV2754,reportFieldsV2754,reportContextV2754} from './report-engine-client-v2754.mjs';
+import {matchReportTemplateV2754} from './report-engine-match-v2754.mjs';
 import {approvedReportMetadataFamilyV2735} from './reader-approved-reports-v2735.mjs';
 import {createReaderEquipmentEmitterV2746} from './reader-equipment-edits-v2746.mjs';
 import {refreshReaderCamionDisplayV2741} from './reader-camion-display-v2741.mjs';
@@ -68,6 +70,7 @@ const visualRefreshV2730=createReaderVisualRefreshV2730(()=>{
   tableColumnV2737?.refresh();cdqRestorePrecisionToleranceV2726();refreshResults();applyFieldTypography();
 },{defer:()=>opening});
 const touchedIdentity=new Set();let lateIdentity=null;
+let reportEngineV2754=null,reportSnapshotV2754=null,snapshotUpdatesV2754=[],engineDefaultsAppliedV2754=false;
 let initialValuesV2730=null,initialAppliedV2730=false,initialUpdatesV2730=[],initialPreparedDraftV2730=false;
 function initializeSandboxIdentityV2730(data,values,document,locked,preparedDraft=false){
   const updates=[];if(locked)return updates;
@@ -85,6 +88,16 @@ function initializeSandboxIdentityV2730(data,values,document,locked,preparedDraf
     }
   }
   return updates;
+}
+function restoreSnapshotV2754(){
+  for(const {id,name,...state}of snapshotUpdatesV2754){
+    if(state.items)viewer.eventBus.dispatch('updatefromsandbox',{source:window,detail:{id,items:state.items}});
+    const definition=cdqFieldDefinitionsV2581(name).find(item=>item.id===id),button=['checkbox','radiobutton'].includes(definition?.type);
+    viewer.eventBus.dispatch('updatefromsandbox',{source:window,detail:{id,...state,...(button?{value:state.value?definition.exportValues||'Yes':'Off'}:{}),...(state.noView!==undefined||state.noPrint!==undefined?{display:state.noView?(state.noPrint?1:3):(state.noPrint?2:0)}:{})}});
+    doc.annotationStorage.setValue(id,state);
+    if(state.formattedValue!==undefined)formattedFields.set(id,state.formattedValue);
+    for(const definition of cdqFieldDefinitionsV2581(name))if(definition.id===id){definition.value=button?(state.value?definition.exportValues||'Yes':'Off'):state.value;if(state.items)definition.items=state.items;}
+  }
 }
 function restoreInitialIdentityV2730(){
   for(const update of initialUpdatesV2730){
@@ -345,7 +358,7 @@ async function resetClosedDocumentV2730(){
         closedCanvasV2730={...candidate,document:doc,task};
       }else await destroyReaderDocumentV2730(task);
     }else await destroyReaderDocumentV2730(task);
-    resetDocumentFieldsV2730();opening=false;fileId='';readOnly=false;autoReportName=false;initialValuesV2730=null;initialPreparedDraftV2730=false;closedViewportV2730=null;status('Ouverture…');
+    resetDocumentFieldsV2730();opening=false;fileId='';readOnly=false;autoReportName=false;initialValuesV2730=null;initialPreparedDraftV2730=false;reportEngineV2754=null;reportSnapshotV2754=null;snapshotUpdatesV2754=[];engineDefaultsAppliedV2754=false;closedViewportV2730=null;status('Ouverture…');
     await Promise.all([pdfWorker.promise,sandboxReady]);tell({type:'CDQ_READER_READY'});
   }catch{tell({type:'CDQ_READER_RESET_FAILED_V2730'});}
 }
@@ -357,6 +370,18 @@ async function requestClose(){
   if(!dirty||readOnly){close();return;}
   $('closeError').textContent='';if(!$('closeDialog').open)$('closeDialog').showModal();
   $('keepEditing').focus();
+}
+async function outputSnapshotV2754(){
+  if(decimalGuard&&!decimalGuard.validateAll())throw Error('Corrigez les décimales de la mesure avant d’enregistrer.');
+  const current=doc,generation=documentGenerationV2730;
+  commitActive();await new Promise(resolve=>setTimeout(resolve,120));
+  await scripting.dispatchWillSave();await new Promise(resolve=>setTimeout(resolve,0));await visualRefreshV2730.flush();
+  if(current!==doc||generation!==documentGenerationV2730||closed)throw Error('Le rapport a changé pendant son enregistrement.');
+  const fields=captureReportFieldsV2754(fieldDefinitions,cdqStoredFieldStateV2581,definition=>{
+    const state=doc.annotationStorage.getValue(definition.id,definition)||definition;
+    return {...definition,...state,...(formattedFields.has(definition.id)?{formattedValue:formattedFields.get(definition.id)}:{})};
+  });
+  return {reportSnapshotV2754:fields};
 }
 async function output(){
   const work=pdfWorkV2729(),workEpoch=work.stats().epoch;
@@ -383,14 +408,17 @@ async function save(external=false){
   try{
     // A lost local acknowledgement retries the exact durable payload. Reusing
     // its request id must not serialize and repair the whole PDF again.
-    const prepared=lastAttempt?.version===version?lastAttempt:await output();
+    const dataOnly=!!reportEngineV2754&&hosted&&!!fileId&&!external;
+    const reusable=lastAttempt?.version===version&&(dataOnly?!!lastAttempt.reportSnapshotV2754:!!lastAttempt.blob);
+    const prepared=reusable?lastAttempt:dataOnly?await outputSnapshotV2754():await output();
     const {blob,pdfSaveInfoV2753}=prepared,snapshot=version;
     if(external||!hosted||!fileId){const receipt=await downloadPdf(blob,name);busy(false);status(receipt);if(closeAfterSave){closeAfterSave=false;close();}return;}
     const requestId=lastAttempt?.version===snapshot?lastAttempt.id:'save-'+crypto.randomUUID();
-    lastAttempt={id:requestId,version:snapshot,blob,pdfSaveInfoV2753};
+    lastAttempt={id:requestId,version:snapshot,...prepared};
     pending={id:requestId,version:snapshot};
     pending.timer=setTimeout(()=>{if(pending?.id!==requestId)return;pending=null;fail(new Error('La sauvegarde n’a pas encore été confirmée. Le PDF reste ouvert; réessayez ou téléchargez vos réponses.'));},90000);
-    tell({type:'CDQ_READER_SAVE',blob,name,requestId,readerPreparedVersion:2730,pdfSaveInfoV2753});
+    if(dataOnly)tell({type:'CDQ_READER_SAVE_SNAPSHOT_V2754',reportSnapshotV2754:prepared.reportSnapshotV2754,name,requestId});
+    else tell({type:'CDQ_READER_SAVE',blob,name,requestId,readerPreparedVersion:2730,pdfSaveInfoV2753});
   }catch(e){fail(e);}
 }
 async function open(data){
@@ -409,6 +437,7 @@ async function open(data){
   const checkLease=()=>{if(!readerOpeningLeaseIsCurrentV2730({generation,currentGeneration:documentGenerationV2730,epoch:workEpoch,currentEpoch:work.stats().epoch,closed}))throw Error('Le compte ou le rapport a changé pendant son ouverture.');if(reuse&&(!sameReaderViewportV2730(retained?.viewport,readerViewportV2730(viewer))||!readerCanvasGeometryMatchesV2730(retained?.artwork,viewer.getPageView(0))))throw Error('Les dimensions du lecteur ont changé.');};
   visualRefreshV2730.reset();delete $('viewer').dataset.cdqFamily;delete $('viewer').dataset.cdqTemplatePaintV2753;opening=true;closed=false;autoReportName=data.autoReportName===true;
   $('viewer').inert=true;$('viewer').style.opacity='0';name=String(data.name||name);fileId=String(data.fileId||'');readOnly=!!data.readOnly;
+  reportEngineV2754=reportContextV2754(data.reportEngineV2754);reportSnapshotV2754=data.reportSnapshotV2754?reportFieldsV2754(data.reportSnapshotV2754):null;snapshotUpdatesV2754=[];engineDefaultsAppliedV2754=false;
   initialValuesV2730=data.initialValues||null;initialAppliedV2730=false;initialUpdatesV2730=[];initialPreparedDraftV2730=data.readerPreparedVersion===2730&&isCacheableReaderDraftV2730({...data,bytes:blob.size});
   $('name').textContent=name;$('empty').style.display='none';status('Ouverture du PDF…');
   const preparedBlob=data.preparedBlob instanceof Blob?data.preparedBlob:data.readerPreparedVersion===2730?blob:null;
@@ -460,6 +489,10 @@ async function open(data){
         // becomes available only after the canvas, widgets and calculations.
         const [metadata]=await Promise.all([readReaderMetadataV2724(doc),viewer.firstPagePromise]);checkLease();
         const {fields,actions,typography,firstPageHasAnnotations}=metadata;fieldDefinitions=fields;
+        if(!reportEngineV2754&&!readOnly&&data.reportEngineImportV2754&&artworkEpochV2753===workEpoch){
+          const template=matchReportTemplateV2754({staticArtworkV2753,fields});
+          if(template)reportEngineV2754=reportContextV2754({...data.reportEngineImportV2754,template,family:template.modeleId});
+        }
          // Select only the exact approved Suspendue field schema before restoring
          // the original cyan widget appearance in CSS; never repaint the page.
          $('viewer').dataset.cdqFamily=approvedReportMetadataFamilyV2735(fields)||'';
@@ -479,6 +512,8 @@ async function open(data){
         if(reuse&&(fields?.size||fields&&Object.keys(fields).length||actions)&&!scripting.ready)throw Error('Les calculs du PDF n’ont pas pu redémarrer.');
         if(fields?.size||fields&&Object.keys(fields).length||actions){const deadline=Date.now()+12000;while(!scripting.ready){checkLease();if(Date.now()>deadline)throw Error('Les calculs du PDF n’ont pas pu démarrer. Fermez le document puis réessayez.');await new Promise(r=>setTimeout(r,25));}await awaitReaderPageActionsV2731(scripting,viewer.currentPageNumber,{pdfjsVersion:api.version,checkLease});}
         if(initialAppliedV2730){restoreInitialIdentityV2730();dirty=true;version++;}
+        if(reportSnapshotV2754||engineDefaultsAppliedV2754)restoreSnapshotV2754();
+        if(engineDefaultsAppliedV2754&&!readOnly){dirty=true;version++;}
         cdqRestoreInteractiveFieldsV2581();choices.refresh();
         if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;
         readerCalibration?.refresh();
@@ -490,7 +525,7 @@ async function open(data){
         if(canvasCandidateV2730)canvasCandidateV2730.viewport=readerViewportV2730(viewer);
         if(reuse&&!canRetainReaderCanvasV2730(canvasCandidateV2730,{epoch:workEpoch,document:doc,pageView:viewer.getPageView(0),controls:$('viewer').querySelectorAll('input,textarea,select,button').length,viewport:retained.viewport}))throw Error('Le rendu du rapport a changé pendant son ouverture.');
         opening=false;busy(false);$('viewer').style.opacity='';$('viewer').dataset.ready='true';status(readOnly?'Consultation seulement':'');
-        cdqScheduleWidthFitV2753();applyLateIdentity();tell({type:'CDQ_READER_OPENED',readerRequestId:data.readerRequestId});return;
+        cdqScheduleWidthFitV2753();applyLateIdentity();tell({type:'CDQ_READER_OPENED',readerRequestId:data.readerRequestId,reportEngineV2754});return;
       }catch(error){
         if(generation!==documentGenerationV2730)return;
         if(!reuse||attempt!==0||work.stats().epoch!==workEpoch)throw error;
@@ -585,6 +620,7 @@ window.addEventListener('message',async e=>{
     if(!d.ok){fail(new Error(d.error||'Enregistrement impossible. Le PDF reste ouvert.'));return;}
     if(discarding){busy(false);close();return;}
     lastAttempt=null;savedVersion=snapshot;dirty=version!==savedVersion;busy(false);await scripting.dispatchDidSave();
+    if(d.reportEngineV2754)reportEngineV2754=reportContextV2754(d.reportEngineV2754)||reportEngineV2754;
     status(d.queued?'Conservé sur cet appareil — synchronisation en attente.':'✓ Enregistré dans le dossier client');
     if(closeAfterSave&&!dirty){close();}else closeAfterSave=false;
   }
@@ -603,9 +639,11 @@ try{
       const sandboxDocument=doc,generation=documentGenerationV2730,epoch=pdfWorkV2729().stats().epoch,values=initialValuesV2730,locked=readOnly,preparedDraft=initialPreparedDraftV2730;
       const sandbox=await sandboxReady;
       if(doc!==sandboxDocument||!readerOpeningLeaseIsCurrentV2730({generation,currentGeneration:documentGenerationV2730,epoch,currentEpoch:pdfWorkV2729().stats().epoch,closed}))throw Error('Le compte ou le rapport a changé pendant son ouverture.');
+      const defaults=!reportSnapshotV2754&&['cuve3','tremie3'].includes(reportEngineV2754?.family)?{points_test:{value:'3 points'}}:null;
+      snapshotUpdatesV2754=reportSnapshotV2754||defaults?restoreReportFieldsV2754(reportSnapshotV2754||defaults,{objects:data.objects,storage:sandboxDocument.annotationStorage}):[];engineDefaultsAppliedV2754=!!defaults&&snapshotUpdatesV2754.length>0;
       const updates=initializeSandboxIdentityV2730(data,values,sandboxDocument,locked,preparedDraft);initialAppliedV2730||=updates.length>0;initialUpdatesV2730=updates;
       sandbox.create(data);
-      restoreInitialIdentityV2730();
+      restoreInitialIdentityV2730();restoreSnapshotV2754();
     },
     dispatchEventInSandbox(event){return dispatchReaderSandboxEventV2731(sandboxReady,event);},
     async destroySandbox(){(await sandboxReady).nukeSandbox();sandboxReady=sandboxModule.QuickJSSandbox(assets+'wasm/');sandboxReady.catch(()=>{});}

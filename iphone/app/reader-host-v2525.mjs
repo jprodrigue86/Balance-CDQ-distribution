@@ -1,3 +1,4 @@
+import {reportContextV2754,reportFieldsV2754} from './report-engine-client-v2754.mjs';
 import {validatedPdfSaveInfoV2753} from './pdf-work-v2729.mjs';
 import {createReaderEquipmentGateV2746} from './reader-equipment-edits-v2746.mjs';
 import {recognizeBundledReaderSourceV2730} from './reader-bundled-source-v2730.mjs';
@@ -5,7 +6,7 @@ import {createBundledOpeningV2753} from './reader-bundled-opening-v2753.mjs';
 import {validatedReaderStaticArtworkV2753} from './reader-static-artwork-binding-v2753.mjs';
 
 // Filled only by the final package builder; source checkouts use worker OPEN.
-const BUNDLED_OPENING_PIN_V2753=Object.freeze({"build":"2026.10.16-v27.53-fast-report","manifestSha256":"3f104449cd8f2f18277b11b44e83f8f04c1bcad9137b6240d46f29ef4af183b6","normalizerSha256":"b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"});
+const BUNDLED_OPENING_PIN_V2753=Object.freeze({"build":"2026.10.18-v27.54-data-engine","manifestSha256":"50f4b499493ceffde7037e97e4b72404411f9e4247fdf56e14b6ab3e1f1e5f32","normalizerSha256":"b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"});
 const bundledOpeningV2753=createBundledOpeningV2753({pin:BUNDLED_OPENING_PIN_V2753});
 
 let active=null;
@@ -77,9 +78,21 @@ export function openReader(data){
   // Bind provenance, access mode and the flat identity sidecar to the same
   // immutable Blob before queuing or hashing. The caller may refresh its record.
   const request={...data};
+  request.reportEngineV2754=(typeof request.onSaveSnapshot==='function'||request.readOnly&&request.reportSnapshotV2754)?reportContextV2754(request.reportEngineV2754):null;
+  if(request.reportSnapshotV2754)request.reportSnapshotV2754=reportFieldsV2754(request.reportSnapshotV2754);
   if(request.initialValues&&typeof request.initialValues==='object')request.initialValues={...request.initialValues};
   const work=window.cdqPdfWorkV2729,context={sourceBlob:request.blob,poolEpoch:poolEpochV2730,work,workEpoch:work?.stats().epoch};
-  const result=openQueue.then(()=>openReaderInternal(request,context));openQueue=result.catch(()=>{});return result;
+  const result=openQueue.then(async()=>{
+    if(request.reportEngineV2754&&request.reportSnapshotV2754){
+      const {bundledTemplate}=await import('./report-templates-v2636.mjs');
+      const template=await bundledTemplate(request.reportEngineV2754.template.modeleId);
+      if(template.sha256!==request.reportEngineV2754.template.sha256)throw Error('Le modèle de ce rapport doit être récupéré avant son ouverture.');
+      // A pinned local template plus answers replaces PDF normalization on
+      // reopen. Its immutable bytes are still verified by bundledTemplate.
+      request.blob=template.blob;request.readerPreparedVersion=2730;context.sourceBlob=template.blob;
+    }
+    return openReaderInternal(request,context);
+  });openQueue=result.catch(()=>{});return result;
 }
 async function openReaderInternal(data,context){
   const valid=()=>context.poolEpoch===poolEpochV2730&&(!context.work||(window.cdqPdfWorkV2729===context.work&&context.work.stats().epoch===context.workEpoch));
@@ -97,7 +110,7 @@ async function openReaderInternal(data,context){
   // rather than starting this only after the iframe's READY round trip.
   const {work,workEpoch}=context,route=readerRouteV2730(data,sourceBlob);
   const pdfPreparation=(async()=>{
-    const derived=await bundledOpeningV2753.prepare(sourceBlob,{epoch:workEpoch,getEpoch:()=>work?.stats().epoch,checkCurrent:guardContext});guardContext();
+    const derived=await bundledOpeningV2753.prepare(sourceBlob,{epoch:workEpoch,getEpoch:()=>work?.stats().epoch,checkCurrent:guardContext,...(data.reportEngineV2754&&data.reportSnapshotV2754?{fetchBudgetMs:1000}:{})});guardContext();
     if(derived)return {blob:derived.blob,preparedVersion:2730,normalized:true};
     if(data.readerPreparedVersion===2730)return {blob:sourceBlob,preparedVersion:2730};
     // Only the packaged catalog can establish missing local provenance. A
@@ -200,15 +213,28 @@ async function openReaderInternal(data,context){
       if(!guard&&!window.BalanceCDQNative&&!/BalanceCDQAndroid\//i.test(navigator.userAgent)){history.pushState({cdqReader:marker},'',location.href);guard=true;window.addEventListener('popstate',pop);}
       const result=pdfPreparation?await pdfPreparation:null;if(closed)return;if(result?.error){openingFailed(result.error);return;}
       if(!valid()){openingFailed(Error('Le compte ou l’accès Drive a changé.'));return;}
-      tell({type:'CDQ_READER_OPEN',readerRequestId:marker,blob:sourceBlob,preparedBlob:result?.blob,readerPreparedVersion:result?.preparedVersion===2730?2730:undefined,readerNormalizedV2730:result?.normalized===true,preparedEpoch:workEpoch,staticArtworkV2753:result?.staticArtworkV2753,initialValues:data.initialValues,name:data.name,theme:data.theme,fileId:data.onSave?String(data.fileId||'local-copy'):'',readOnly:!!data.readOnly,autoReportName:data.autoReportName===true,desktop:!!data.workspaceSource?.document.documentElement.classList.contains('cdq-desktop-v2676')});
+      tell({type:'CDQ_READER_OPEN',readerRequestId:marker,blob:sourceBlob,preparedBlob:result?.blob,readerPreparedVersion:result?.preparedVersion===2730?2730:undefined,readerNormalizedV2730:result?.normalized===true,preparedEpoch:workEpoch,staticArtworkV2753:result?.staticArtworkV2753,initialValues:data.initialValues,reportEngineV2754:data.reportEngineV2754,reportEngineImportV2754:typeof data.onSaveSnapshot==='function'?data.reportEngineImportV2754:null,reportSnapshotV2754:data.reportSnapshotV2754,name:data.name,theme:data.theme,fileId:data.onSave||data.onSaveSnapshot?String(data.fileId||'local-copy'):'',readOnly:!!data.readOnly,autoReportName:data.autoReportName===true,desktop:!!data.workspaceSource?.document.documentElement.classList.contains('cdq-desktop-v2676')});
     }
-    if(m.type==='CDQ_READER_OPENED'&&m.readerRequestId===marker){opened=true;clearTimeout(timer);data.onOpened?.();if(prefillValues)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});if(pendingClose)requestClose();prepareSecondEngineV2731(handle,frame,valid);}
+    if(m.type==='CDQ_READER_OPENED'&&m.readerRequestId===marker){opened=true;clearTimeout(timer);if(data.reportEngineImportV2754&&m.reportEngineV2754){const imported=reportContextV2754(m.reportEngineV2754),candidate=data.reportEngineImportV2754;if(imported&&imported.reportId===candidate.reportId&&imported.fileId===candidate.fileId&&imported.clientId===candidate.clientId&&imported.destinationId===candidate.destinationId)data.reportEngineV2754=imported;}data.onOpened?.({reportEngineV2754:data.reportEngineV2754});if(prefillValues)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});if(pendingClose)requestClose();prepareSecondEngineV2731(handle,frame,valid);}
     if(m.type==='CDQ_READER_CLOSE')close(m.reusable===true);
     if(m.type==='CDQ_READER_EQUIPMENT_EDIT_V2746'){equipmentGateV2746.accept(m);return;}
     if(m.type==='CDQ_READER_CLOSE_CANCELLED_V2640'){data.workspaceSource?.cdqWorkspaceV2638?.readerCancelled();for(const waiter of closeWaiters){clearTimeout(waiter.timer);waiter.reject(Error('Le rapport courant reste ouvert. Enregistrez-le ou fermez-le avant d’ouvrir le suivant.'));}closeWaiters=[];}
     if(m.type==='CDQ_READER_DISCARD'&&/^discard-[\w-]{8,80}$/.test(String(m.requestId||''))){
       try{await data.onDiscard?.();equipmentDispositionV2746='discard';tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:true});}
       catch(e){tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:false,error:e.message||String(e)});}
+    }
+    if(m.type==='CDQ_READER_SAVE_SNAPSHOT_V2754'&&data.onSaveSnapshot&&data.reportEngineV2754&&!data.readOnly){
+      if(!valid()||!/^save-[\w-]{8,80}$/.test(String(m.requestId||'')))return;
+      try{
+        if(!saves.has(m.requestId)){
+          const fields=reportFieldsV2754(m.reportSnapshotV2754);
+          saves.set(m.requestId,Promise.resolve().then(()=>data.onSaveSnapshot(fields,m.requestId,m.name,data.reportEngineV2754)));
+        }
+        const result=await saves.get(m.requestId);if(!valid())throw Error('Le compte ou l’accès Drive a changé.');
+        equipmentDispositionV2746='saved';
+        tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:true,queued:result?.queued!==false,reportEngineV2754:result?.reportEngineV2754});
+      }catch(e){saves.delete(m.requestId);tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:false,error:e.message||String(e)});}
+      return;
     }
     if(m.type==='CDQ_READER_SAVE'&&data.onSave&&!data.readOnly){
       if(!/^save-[\w-]{8,80}$/.test(String(m.requestId||''))||!(m.blob instanceof Blob)||m.blob.type!=='application/pdf'||m.blob.size<8||m.blob.size>32*1024*1024)return;

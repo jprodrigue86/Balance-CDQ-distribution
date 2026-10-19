@@ -1,7 +1,7 @@
 // The caller supplies the storage policy: RAM, a temporary client cache,
 // explicit offline selection, or durable work awaiting Drive.
 export function completedWorkCopyV2664(c) {
-  return !!c && c.kind !== 'prepared' && c.kind !== 'sheet' && !!c.driveId &&
+  return !!c && !c.reportEngineV2754 && c.kind !== 'prepared' && c.kind !== 'sheet' && !!c.driveId &&
     c.status === 'synced' && !c.error && (c.uploadId || '') === (c.syncedUploadId || '');
 }
 
