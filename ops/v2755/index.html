@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; frame-src https://script.google.com https://*.googleusercontent.com https://accounts.google.com; connect-src https://accounts.google.com; img-src 'self' data: https://*.googleusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <title>Contrôle CDQ · opérateur 27.55</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="module" src="./operator.mjs"></script>
+</head>
+<body>
+<main id="operator-app">
+  <header><p class="eyebrow">Balance CDQ · outil opérateur 27.55</p><h1>Contrôle et réparation d’une liste</h1><p>Connexion du créateur, lecture du moteur et réparation d’un PDF précisément identifié.</p></header>
+  <p id="status" role="status" aria-live="polite">Renseignez l’application Google à contrôler.</p>
+  <section aria-labelledby="connection-title">
+    <h2 id="connection-title">1. Connexion CDQ</h2>
+    <label for="endpoint">URL de l’application Google déployée</label>
+    <input id="endpoint" type="url" autocomplete="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec">
+    <button id="prepare-google" type="button">Préparer la connexion Google</button>
+    <div id="google-button" aria-label="Choix du compte Google"></div>
+    <p id="identity"></p>
+    <div id="pin-panel" hidden>
+      <label for="creator-pin">Votre NIP personnel à 4 chiffres</label>
+      <input id="creator-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="current-password">
+      <button id="unlock" type="button">Ouvrir la session CDQ</button>
+      <p class="hint">Cette opération utilise votre NIP existant. Elle ne le remplace pas.</p>
+    </div>
+  </section>
+  <section aria-labelledby="capabilities-title">
+    <h2 id="capabilities-title">2. Santé Google et capacités du moteur</h2>
+    <button id="capabilities" type="button" disabled>Lire la santé Google et les capacités</button>
+    <pre id="google-health-output" aria-label="Diagnostic Google authentifié">Aucune observation.</pre>
+    <pre id="capabilities-output" aria-label="Réponse complète des capacités">Aucune observation.</pre>
+  </section>
+  <section aria-labelledby="repair-title">
+    <h2 id="repair-title">3. Inspection d’une réparation préparée</h2>
+    <p>Importez le fichier JSON privé dont l’identité, la révision, la taille et le SHA256 ont été relus dans Drive. Aucun identifiant de client n’est fourni par cette page.</p>
+    <label for="preparation-file">Fichier de préparation privé</label>
+    <input id="preparation-file" type="file" accept="application/json,.json">
+    <p id="preparation-summary" class="hint">Aucune préparation importée.</p>
+    <pre id="preparation-output" aria-label="Opération préparée">Aucune opération.</pre>
+    <button id="inspect" type="button" disabled>Inspecter l’état sans modifier la liste</button>
+    <pre id="inspection-output" aria-label="État réel de la liste">Aucune observation.</pre>
+    <label class="check"><input id="reviewed" type="checkbox" disabled>J’ai relu les quatre valeurs du PDF courant dans Drive et l’inspection concorde.</label>
+    <button id="repair" type="button" class="repair" disabled>Réparer cette liste avec sauvegarde de la copie exacte</button>
+    <button id="readback" type="button" disabled>Relire l’état après la demande</button>
+    <pre id="repair-output" aria-label="Réponse de réparation">Aucune réparation demandée.</pre>
+    <p id="completion" class="hint"></p>
+  </section>
+  <section aria-labelledby="evidence-title">
+    <h2 id="evidence-title">4. Observations de cette session</h2>
+    <p>Le fichier contient les réponses métier et leurs horodatages. La version Google et les empreintes du déploiement doivent être attestées séparément par le relevé Manager.</p>
+    <button id="download" type="button" disabled>Télécharger les observations privées</button>
+    <pre id="evidence-output" aria-label="Observations exportables">Aucune observation.</pre>
+  </section>
+  <footer>Les identifiants de connexion restent en mémoire dans cette page. Ils ne sont ni affichés, ni exportés, ni enregistrés dans le navigateur.</footer>
+  <div id="bridge-host" hidden></div>
+</main>
+</body>
+</html>
