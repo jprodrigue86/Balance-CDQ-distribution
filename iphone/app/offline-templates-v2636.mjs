@@ -5,7 +5,7 @@ import {pdfWorkV2729,validatedPdfSaveInfoV2753} from './pdf-work-v2729.mjs';
 import {openSheet} from './sheet-launcher-v2526.mjs';
 import {REPORT_NAMES,bundledTemplate,bundledCreationTemplate} from './report-templates-v2636.mjs';
 import {fillInFrame} from './pdf-fill-client-v2523.mjs';
-import {sessionCopyStorageV2664} from './pdf-session-storage-v2664.mjs';
+import {sessionCopyStorageV2664,confirmedLocalCopyV2755} from './pdf-session-storage-v2664.mjs';
 import {localReportVisibleV2714,retiredLocalReportV2714} from './local-report-hygiene-v2714.mjs';
 // Only chosen offline PDFs and unconfirmed work persist; confirmed work stays in RAM.
 const DB_NAME = 'cdq-offline-templates-v1';
@@ -26,6 +26,30 @@ export function validDestination(d) {
 }
 export function validPdf(blob) {
   return blob instanceof Blob && blob.type==='application/pdf' && blob.size>5 && blob.size<=32*1024*1024;
+}
+export function localOnlyRetirementV2755(copy,email,now=Date.now()) {
+  if(!email || copy?.email !== email || copy.kind === 'sheet' || !confirmedLocalCopyV2755(copy))
+    throw Error('Des modifications restent sur cet appareil. Synchronisez-les avant de retirer cette copie.');
+  // This is a local storage decision, never a report/Drive deletion request.
+  return {...copy,removed:true,status:'retired',retiredAt:now,retirementReason:'offline-local-only',
+    blob:null,templateBlob:null,creationTransferV2751:null,reportSnapshotV2754:null,reportPayloadV2754:null,
+    offlineSelected:false,offlinePrepared:false,engineDeletionV2754:false,cancelledDriveId:'',error:''};
+}
+export function validEngineReceiptV2755(copy,data) {
+  const revision=data?.reportRevision,pdf=data?.pdf;
+  return !!copy?.reportEngineV2754 && data?.requestId===copy.id &&
+    (!data.reportId||data.reportId===copy.reportEngineV2754.reportId) &&
+    identifier(data.id) && Number.isSafeInteger(revision) && revision>0 &&
+    revision>=Number(copy.reportRevisionV2754||0) && pdf?.status==='confirmed' &&
+    pdf.fileId===data.id && pdf.revision===revision &&
+    (!pdf.driveRevision||!data.revision||pdf.driveRevision===data.revision);
+}
+export function offlineScopeMatchesV2755(copy,scope,email) {
+  if(copy?.email!==email||copy.removed||copy.destination?.clientId!==scope.clientId)return false;
+  const files=new Set(scope.fileIds||[]),folders=new Set(scope.folderIds||[]);
+  return [copy.id,copy.driveId,copy.filledDriveId].some(id=>files.has(id)) ||
+    folders.has(scope.clientId)||folders.has(copy.destination.folderId)||
+    (copy.destination.ancestorIds||[]).some(id=>folders.has(id));
 }
 export function validTemplate(t) {
   return !!t && known(t.modeleId) && validPdf(t.blob) && identifier(t.templateId);
@@ -69,8 +93,9 @@ export function applyResult(copy,data) {
   if(!copy||copy.removed||data.requestId!==copy.id)return copy;
   const c={...copy};
   if(data.type==='CDQ_REPORT_ENGINE_SAVE_V2754_RESULT'){
+    if(data.reportId&&data.reportId!==c.reportEngineV2754?.reportId)return copy;
     if(!data.ok){c.error=data.message||'La publication du PDF reste en attente.';return c;}
-    if(!identifier(data.id)||!Number.isSafeInteger(data.reportRevision)||data.reportRevision<1||data.pdf?.status!=='confirmed'||data.pdf.revision!==data.reportRevision)return copy;
+    if(!validEngineReceiptV2755(copy,data))return copy;
     c.driveId=data.id;c.filledDriveId=data.id;c.revision=data.revision||'';c.reportRevisionV2754=data.reportRevision;
     c.reportEngineV2754={...c.reportEngineV2754,fileId:data.id,baseRevision:data.reportRevision,...(data.revision?{expectedDriveRevision:data.revision}:{})};
     if(c.reportPayloadV2754&&c.uploadId!==data.uploadId)c.reportPayloadV2754={...c.reportPayloadV2754,fileId:data.id,baseRevision:data.reportRevision,...(data.revision?{expectedDriveRevision:data.revision}:{})};
@@ -246,7 +271,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       sync(false,id).catch(()=>{});return {queued:true,reportEngineV2754:copy.reportEngineV2754};
     },true);
   }
-  function notifyLocalReportV2713(c){if(session?.email===c?.email&&c?.kind!=='prepared'&&c?.kind!=='sheet'&&c?.readerRequestId&&!c.removed)send({type:'CDQ_LOCAL_REPORT_UPDATED_V2713',email:c.email,localId:c.id,driveId:c.driveId||'',...engineDataV2754(c),blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,equipmentSignature:c.equipmentSignature,name:c.name,clientId:c.destination.clientId,folderId:c.destination.folderId,uploadId:c.uploadId,editVersion:c.editVersion||0,error:String(c.error||'').slice(0,350),pending:!c.driveId||c.uploadId!==c.syncedUploadId});}
+  function notifyLocalReportV2713(c){if(session?.email===c?.email&&c?.kind!=='prepared'&&c?.kind!=='sheet'&&c?.readerRequestId&&!c.removed)send({type:'CDQ_LOCAL_REPORT_UPDATED_V2713',email:c.email,localId:c.id,driveId:c.driveId||'',...engineDataV2754(c),blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,equipmentSignature:c.equipmentSignature,name:c.name,clientId:c.destination.clientId,folderId:c.destination.folderId,ancestorIds:c.destination.ancestorIds||[],uploadId:c.uploadId,editVersion:c.editVersion||0,error:String(c.error||'').slice(0,350),pending:!c.driveId||c.uploadId!==c.syncedUploadId});}
   async function notifySnapshotV2714(){const current=session,stamp=epoch;if(!current)return;const copies=await all('copies');if(stamp!==epoch||session!==current)return;send({type:'CDQ_LOCAL_REPORT_SNAPSHOT_V2714',email:current.email,localIds:copies.filter(c=>c.email===current.email&&localReportVisibleV2714(c)).map(c=>c.id)});}
   async function retireCopyV2714(c,reason){
     const current=session,stamp=epoch;if(!current?.canWrite||c.email!==current.email)throw Error('Retrait non autorisé.');
@@ -259,7 +284,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
     if(archived.engineDeletionV2754)queueMicrotask(()=>sync(false,c.id).catch(()=>{}));
   }
   function notifyRetiredV2749(c){if(session?.email===c.email&&c.removed&&c.retiredAt)send({type:'CDQ_LOCAL_REPORT_RETIRED_V2714',...reportIdentityV2749(c),driveId:c.filledDriveId||c.driveId||'',retirementReason:c.retirementReason});}
-  function notifyDocument(c){notifyLocalReportV2713(c);if(session?.email===c?.email&&c?.driveId&&!c.removed)send({type:'CDQ_OFFLINE_DOCUMENT_UPDATED',email:c.email,fileId:c.driveId,localId:c.kind?'':c.id,sourceId:c.kind?c.driveId:'cdq-local-'+c.id,...engineDataV2754(c),blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,equipmentSignature:c.equipmentSignature,revision:c.revision,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',error:String(c.error||'').slice(0,350),pending:c.uploadId!==c.syncedUploadId});}
+  function notifyDocument(c){notifyLocalReportV2713(c);if(session?.email===c?.email&&c?.driveId&&!c.removed)send({type:'CDQ_OFFLINE_DOCUMENT_UPDATED',email:c.email,fileId:c.driveId,localId:c.kind?'':c.id,sourceId:c.kind?c.driveId:'cdq-local-'+c.id,...engineDataV2754(c),blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,equipmentSignature:c.equipmentSignature,revision:c.revision,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,ancestorIds:c.destination.ancestorIds||[],autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',error:String(c.error||'').slice(0,350),pending:c.uploadId!==c.syncedUploadId});}
   function button(parent,label,fn) {
     const b=document.createElement('button');b.type='button';b.textContent=label;
     b.style.cssText='padding:12px 16px;margin:6px 8px 6px 0;border:1px solid #7896a5;border-radius:9px;background:#193545;color:white;font:inherit';
@@ -328,10 +353,10 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         const row=document.createElement('div');content.append(row);text(row,'● '+c.name+(c.uploadId!==c.syncedUploadId?' — modifications en attente':''));
         if(c.error)text(row,c.error);
         button(row,'Ouvrir',()=>{if(stamp!==epoch||!allowed(email))throw Error('Déverrouillez CDQ.');return openPdf({...engineReaderV2754(c,c.email),blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,name:c.name,fileId:c.driveId,readOnly:!p.canWrite,onSave:p.canWrite?(blob,id,name,provenance)=>saveCopy(c.id,email,blob,id,provenance):null});});
-        button(row,'Retirer du mode hors ligne',()=>serial(async()=>{
+        button(row,'Retirer du mode hors ligne',()=>serialCopy(c.id,async()=>{
           if(stamp!==epoch||!allowed(email))throw Error('Déverrouillez CDQ.');
-          const latest=await get('copies',c.id);if(latest.uploadId!==latest.syncedUploadId||inflight.has(c.id))throw Error('Synchronisez les modifications avant de retirer ce PDF.');
-          await put('copies',{...latest,removed:true,blob:null});
+          const latest=await get('copies',c.id);if(inflight.has(c.id)||readers.has(c.id))throw Error('Fermez ce document et terminez sa synchronisation avant de le retirer.');
+          await put('copies',localOnlyRetirementV2755(latest,email));
           if(session?.email===email)send({type:'CDQ_OFFLINE_DOCUMENT_REMOVED',fileId:c.driveId,email});await refresh();
         }));
       }
@@ -564,6 +589,40 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
     if(data.type==='CDQ_OFFLINE_FLUSH_BACKGROUND_V2746'){
       if(current.canWrite)await sync();return;
     }
+    if(data.type==='CDQ_OFFLINE_REMOVE_SCOPE_V2755'){
+      const reply=payload=>{if(stamp===epoch&&session===current)send({type:'CDQ_OFFLINE_DOCUMENT_RESULT',requestId:data.requestId,...payload});};
+      try{
+        const fileIds=data.fileIds||[],folderIds=data.folderIds||[];
+        if(data.email!==current.email||!identifier(data.clientId)||
+          !Array.isArray(fileIds)||!Array.isArray(folderIds)||fileIds.length>500||folderIds.length>500||
+          !fileIds.every(identifier)||!folderIds.every(identifier)||!fileIds.length&&!folderIds.length)
+          throw Error('Sélection hors ligne invalide.');
+        const localCopies=await all('copies'),targets=localCopies.filter(copy=>offlineScopeMatchesV2755(copy,data,current.email));
+        // Only this explicit absence result permits retiring an old Selector-
+        // only mirror. A blocked or foreign-client canonical copy is not absent.
+        const unmatchedFileIds=fileIds.filter(id=>!localCopies.some(copy=>copy.email===current.email&&!copy.removed&&[copy.id,copy.driveId,copy.filledDriveId].includes(id)));
+        if(stamp!==epoch||session!==current)return;
+        const removed=[],blocked=[];
+        for(const target of targets){
+          if(stamp!==epoch||session!==current)return;
+          await serialCopy(target.id,async()=>{
+            const copy=await get('copies',target.id);
+            if(stamp!==epoch||session!==current||!copy||!offlineScopeMatchesV2755(copy,data,current.email))return;
+            try{
+              if(inflight.has(copy.id)||readers.has(copy.id))throw Error('Ce document est ouvert ou sa synchronisation est en cours.');
+              const retired=copy.kind==='sheet'?{...copy,removed:true}:localOnlyRetirementV2755(copy,current.email);
+              await put('copies',retired);
+              if(stamp!==epoch||session!==current)return;
+              clearRetryV2740(copy.id);sentJobsV2740.delete(copy.id);
+              removed.push({localId:copy.id,fileId:copy.filledDriveId||copy.driveId||'',kind:copy.kind||'report'});
+              if(copy.kind!=='sheet')send({type:'CDQ_OFFLINE_DOCUMENT_REMOVED',fileId:copy.filledDriveId||copy.driveId,email:current.email,localId:copy.id});
+            }catch(error){blocked.push({localId:copy.id,fileId:copy.driveId||'',name:copy.name||'',message:error.message});}
+          },true);
+        }
+        reply({ok:true,localOnly:true,removed,blocked,unmatchedFileIds});
+        await notifySnapshotV2714();refresh().catch(()=>{});
+      }catch(error){reply({ok:false,message:error.message});}return;
+    }
     if(data.type==='CDQ_OFFLINE_REPORT_RETIRE_TARGET_V2714'){
       try{
         if(!current.canWrite||!identifier(data.localId))throw Error('Retrait non autorisé.');
@@ -619,7 +678,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       const reply=payload=>{if(stamp===epoch&&current===session&&validReadStamp(readStamp)){if(readStamp?.collection)readStamp.replied=true;send({type:'CDQ_OFFLINE_DOCUMENT_RESULT',requestId:data.requestId,...payload});}};
       try{
         if(data.type==='CDQ_OFFLINE_SHEET_LIST'){
-          const sheets=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='sheet'&&!c.removed).map(c=>({fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,account:c.account||'',confirmed:c.confirmed===true}));
+          const sheets=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='sheet'&&!c.removed).map(c=>({fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,folderId:c.destination.folderId,ancestorIds:c.destination.ancestorIds||[],account:c.account||'',confirmed:c.confirmed===true}));
           reply({ok:true,sheets});return;
         }
         if(!identifier(data.fileId))throw Error('Identifiant Google Sheets invalide.');
@@ -630,7 +689,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         }else{
           if(!identifier(data.clientId))throw Error('Compagnie absente.');
           await put('copies',{id,email:current.email,kind:'sheet',driveId:data.fileId,name:String(data.name||'Google Sheets').slice(0,500),account:String(data.account||'').slice(0,320),confirmed:data.confirmed===true,
-            destination:{clientId:data.clientId,folderId:data.folderId||old?.destination?.folderId||'',name:String(data.clientName||'Compagnie').slice(0,500)},createdAt:old?.createdAt||Date.now(),removed:false});
+            destination:{clientId:data.clientId,folderId:data.folderId||old?.destination?.folderId||'',ancestorIds:Array.isArray(data.ancestorIds)?data.ancestorIds.filter(identifier).slice(0,100):old?.destination?.ancestorIds||[],name:String(data.clientName||'Compagnie').slice(0,500)},createdAt:old?.createdAt||Date.now(),removed:false});
         }
         reply({ok:true});await refresh();
       }catch(e){reply({ok:false,message:e.message});}
@@ -641,7 +700,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       try{
         if(data.type==='CDQ_OFFLINE_DOCUMENT_LIST'){
           const removed=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&c.removed).map(c=>c.driveId);
-          const documents=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&!c.removed).map(c=>({fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,...engineDataV2754(c),revision:c.revision,blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId}));
+          const documents=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&!c.removed).map(c=>({fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,...engineDataV2754(c),revision:c.revision,blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,ancestorIds:c.destination.ancestorIds||[],autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId}));
           if(stamp===epoch)reply({ok:true,offlineSelectionVersion:2664,removed,documents});return;
         }
         if(!identifier(data.fileId))throw Error('Identifiant PDF invalide.');
@@ -649,7 +708,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         if(stamp!==epoch||current!==session||!validReadStamp(readStamp))return;
         if(data.type==='CDQ_OFFLINE_DOCUMENT_GET'){
           if(data.legacyPending&&c&&!c.removed)throw Error('Une ancienne sauvegarde attend sa synchronisation. Reconnectez CDQ avant de modifier ce PDF.');
-          reply({ok:true,document:c&&!c.removed?{fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,...engineDataV2754(c),revision:c.revision,blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId}:null});return;
+          reply({ok:true,document:c&&!c.removed?{fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,...engineDataV2754(c),revision:c.revision,blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,ancestorIds:c.destination.ancestorIds||[],autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId}:null});return;
         }
         if(data.type==='CDQ_OFFLINE_DOCUMENT_EDIT'){
           if(!current.canWrite||!c||c.removed)throw Error('PDF hors ligne indisponible.');
@@ -671,12 +730,13 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
         }
         if(c&&(c.uploadId!==c.syncedUploadId||inflight.has(id)))throw Error('Des modifications de ce PDF attendent leur synchronisation dans les documents de l’application.');
         if(data.type==='CDQ_OFFLINE_DOCUMENT_REMOVE'){
-          await put('copies',{...c,id,email:current.email,kind:'prepared',driveId:data.fileId,removed:true,blob:null});
+          const retired=c&&!c.removed?localOnlyRetirementV2755(c,current.email):{...c,id,email:current.email,kind:'prepared',driveId:data.fileId,removed:true,blob:null};
+          await put('copies',retired);
         }else{
           await verifyPdf(data.blob);if(stamp!==epoch||current!==session)return;
           if(!identifier(data.clientId)||!data.revision)throw Error('Compagnie ou révision PDF absente.');
           await put('copies',{id,email:current.email,kind:'prepared',driveId:data.fileId,revision:data.revision,blob:data.blob,name:String(data.name||'Rapport.pdf'),
-            destination:{clientId:data.clientId,folderId:data.folderId||c?.destination?.folderId||'',name:String(data.clientName||'Compagnie')},createdAt:Date.now(),status:'synced',uploadId:'',syncedUploadId:'',editVersion:c?(c.editVersion||0)+1:0});
+            destination:{clientId:data.clientId,folderId:data.folderId||c?.destination?.folderId||'',ancestorIds:Array.isArray(data.ancestorIds)?data.ancestorIds.filter(identifier).slice(0,100):c?.destination?.ancestorIds||[],name:String(data.clientName||'Compagnie')},createdAt:Date.now(),status:'synced',uploadId:'',syncedUploadId:'',editVersion:c?(c.editVersion||0)+1:0});
           if(warmPdf&&!documentReaderWarmed){documentReaderWarmed=true;warmPdf(data);}
         }
         if(stamp===epoch){reply({ok:true});await refresh();}
@@ -774,7 +834,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
     }
     if(data.type==='CDQ_REPORT_ENGINE_DATA_SAVED_V2754'){
       const job=inflight.get(data.requestId),copy=await get('copies',data.requestId);
-      if(!job||job.epoch!==stamp||job.uploadId!==data.uploadId||!copy||copy.removed||copy.email!==current.email||stamp!==epoch||session!==current||!data.ok||!Number.isSafeInteger(data.reportRevision))return;
+      if(!job||job.type!=='CDQ_REPORT_ENGINE_SAVE_V2754'||job.epoch!==stamp||job.uploadId!==data.uploadId||!copy?.reportEngineV2754||copy.removed||copy.email!==current.email||stamp!==epoch||session!==current||!data.ok||!Number.isSafeInteger(data.reportRevision)||data.reportRevision<1||data.reportRevision<Number(copy.reportRevisionV2754||0)||data.reportId&&data.reportId!==copy.reportEngineV2754.reportId)return;
       // This receipt updates the row; it does not retire the pending PDF work.
       const context={...copy.reportEngineV2754,baseRevision:data.reportRevision,...(data.pdf?.fileId?{fileId:data.pdf.fileId}:{}),...(data.pdf?.driveRevision?{expectedDriveRevision:data.pdf.driveRevision}:{})};
       const updated={...copy,reportEngineV2754:context,reportRevisionV2754:data.reportRevision,enginePdfV2754:data.pdf||{status:'pending'}};
@@ -784,10 +844,11 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
     if(['CDQ_OFFLINE_COPY_RESULT','CDQ_OFFLINE_SAVE_RESULT','CDQ_REPORT_ENGINE_SAVE_V2754_RESULT'].includes(data.type)){
       const job=inflight.get(data.requestId)||sentJobsV2740.get(data.requestId);
       if(!job||job.epoch!==stamp||job.type+'_RESULT'!==data.type||(job.uploadId&&job.uploadId!==data.uploadId))return;
-      clearTimeout(job.timer);inflight.delete(data.requestId);
       const copy=await get('copies',data.requestId);if(!copy||copy.removed||copy.email!==current.email||stamp!==epoch||session!==current||!validReadStamp(readStamp))return;
+      if(data.type==='CDQ_REPORT_ENGINE_SAVE_V2754_RESULT'&&data.reportId&&data.reportId!==copy.reportEngineV2754?.reportId)return;
+      clearTimeout(job.timer);inflight.delete(data.requestId);
       // A malformed success cannot restart the same request in a tight loop.
-      if(data.ok&&!identifier(data.id))data={...data,ok:false,message:'Confirmation Drive invalide. Réessayez la synchronisation.'};
+      if(data.ok&&(!identifier(data.id)||data.type==='CDQ_REPORT_ENGINE_SAVE_V2754_RESULT'&&!validEngineReceiptV2755(copy,data)))data={...data,ok:false,message:'Confirmation Drive invalide. Vérifiez la synchronisation de ce rapport.'};
       // This exact server response confirms the original creation is no longer
       // at its destination. Network and permission failures remain pending.
       if(!data.ok&&data.type==='CDQ_OFFLINE_COPY_RESULT'&&String(data.message||'').trim()==='Le rapport a été déplacé ou supprimé.'){
@@ -846,7 +907,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       const retirementKeys=[...new Set(retirementTargets)].map(id=>'prepared:'+session.email+':'+id);
       for(const key of retirementKeys)readRetirementVersions.set(key,(readRetirementVersions.get(key)||0)+1);
       let job;
-      if(['CDQ_OFFLINE_RETRY_SYNC_V2741','CDQ_OFFLINE_FLUSH_BACKGROUND_V2746','CDQ_REPORT_ENGINE_SEND_STATE_V2754'].includes(data.type)){
+      if(['CDQ_OFFLINE_RETRY_SYNC_V2741','CDQ_OFFLINE_FLUSH_BACKGROUND_V2746','CDQ_REPORT_ENGINE_SEND_STATE_V2754','CDQ_OFFLINE_REMOVE_SCOPE_V2755'].includes(data.type)){
         job=handleNow(data,stamp);
       }else if(['CDQ_OFFLINE_CREATE_LOCAL','CDQ_OFFLINE_PREFILL_V2642','CDQ_OFFLINE_COPY_RESULT','CDQ_OFFLINE_SAVE_RESULT','CDQ_OFFLINE_SYNC_PENDING_V2746','CDQ_REPORT_ENGINE_SAVE_V2754_RESULT','CDQ_REPORT_ENGINE_DATA_SAVED_V2754'].includes(data.type)){
         const accessVersion=readAccessVersion,foreground=session&&appliedSession===session&&!pendingAccessTransitions;

@@ -1,3 +1,4 @@
+import {restoreNativeWidgetPaletteV2755} from './reader-native-widget-palette-v2755.mjs';
 import {staticArtworkFingerprintV2753} from './static-artwork-fingerprint-v2753.mjs';
 import {normalizeEditableFormOnOpen,saveEditableFormAppearance} from './reader-choice-appearance-v2572.mjs';
 import {equipmentValuesV2697} from './equipment-list-v2697.mjs';
@@ -51,10 +52,13 @@ export function createPdfWorkEngineV2729({limit=96*1024*1024,worker=false}={}){
   if(!['open','save','prefill'].includes(type))throw Error('Traitement PDF inconnu.');
   let result,preparedInfo,preparedArtwork;
   const observePrepared=async pdf=>{
+   const palettePreparationV2755=restoreNativeWidgetPaletteV2755(pdf,L,{checkCurrent:current});
+   const paletteRestoredV2755=palettePreparationV2755===null?null:await palettePreparationV2755;
    if(type==='save'||!foreground)preparedInfo=loadedSummary(pdf,L);
    // Unsupported graphs are ordinary native-renderer misses. A cache hint
    // must never make a valid PDF fail to open or save.
    try{preparedArtwork=await staticArtworkFingerprintV2753(pdf,L,{pageIndex:0});}catch{preparedArtwork=undefined;}
+   return paletteRestoredV2755;
   };
   if(type==='prefill'){
    if(!Object.keys(payload.values||{}).every(name=>/^client_/.test(name)))throw Error('Les mesures utilisent le calculateur PDF approuvé.');

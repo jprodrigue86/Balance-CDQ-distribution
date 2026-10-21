@@ -1,8 +1,17 @@
 // The caller supplies the storage policy: RAM, a temporary client cache,
 // explicit offline selection, or durable work awaiting Drive.
+export function confirmedLocalCopyV2755(c) {
+  if(!c || c.removed || !c.driveId || c.status !== 'synced' || c.error ||
+    (c.uploadId || '') !== (c.syncedUploadId || ''))return false;
+  if(!c.reportEngineV2754)return true;
+  const pdf=c.enginePdfV2754,revision=Number(c.reportRevisionV2754);
+  return pdf?.status === 'confirmed' && pdf.fileId === c.driveId &&
+    Number.isSafeInteger(revision) && revision > 0 && Number(pdf.revision) === revision;
+}
+
 export function completedWorkCopyV2664(c) {
-  return !!c && !c.reportEngineV2754 && c.kind !== 'prepared' && c.kind !== 'sheet' && !!c.driveId &&
-    c.status === 'synced' && !c.error && (c.uploadId || '') === (c.syncedUploadId || '');
+  return confirmedLocalCopyV2755(c) && c.kind !== 'prepared' && c.kind !== 'sheet' &&
+    c.offlineSelected !== true && c.offlinePrepared !== true;
 }
 
 export function decodePdfRecordV2664(raw){

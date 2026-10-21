@@ -68,8 +68,8 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary,onPrepar
   const {PDFDocument,PDFName}=L;
   const pdf=await PDFDocument.load(data,{updateMetadata:false});
   // Observe this exact repaired document before choosing original bytes or
-  // serialization. The callback can finish an asynchronous read-only digest.
-  const prepared=async changed=>{if(typeof onPrepared==='function')await onPrepared(pdf);return changed?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;};
+  // serialization. Only a verified palette-restoration marker forces a save.
+  const prepared=async changed=>{const observed=typeof onPrepared==='function'?await onPrepared(pdf):null;return changed||observed?.nativeWidgetPaletteRestoredV2755===true?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;};
   const correctedFamilyV2736=approvedReportFamilyV2735(pdf,L);
   if(correctedFamilyV2736){
     const nativeMulti=preserveNativeMultiHeadV2737(pdf,L,correctedFamilyV2736);
@@ -110,7 +110,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary,onPrepare
   const pdf=await PDFDocument.load(bytes,{updateMetadata:false});
   const form=pdf.getForm();
   // Extract save metadata from this already-loaded, repaired document. The
-  // optional observer never changes the serialized PDF or its appearances.
+  // observer may restore only the authenticated native widget MK palette.
   const persist=async()=>{if(typeof onPrepared==='function')await onPrepared(pdf);return pdf.save({updateFieldAppearances:false,useObjectStreams:true});};
   // PDF.js saves a dynamically added technician as /V, but does not serialize
   // the dropdown's updated items into /Opt. Keep that exact saved value valid

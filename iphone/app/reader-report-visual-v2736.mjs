@@ -82,7 +82,8 @@ export function normalizeReportVisualV2736(pdf,L){
 
 let canvasContext;
 export function refreshReportVisualV2736({surface,fields}){
-  if(!surface||!reportVisualFamilyV2736(fields))return;
+  const familyV2755=surface?reportVisualFamilyV2736(fields):null;
+  if(!surface||!familyV2755)return;
   for(const input of surface.querySelectorAll('.buttonWidgetAnnotation.checkBox input')){
     if(!rowResult.test(input.name||''))continue;
     const section=input.closest('section'),badge=section?.querySelector('.cdq-result-indicator');if(!section)continue;
@@ -99,7 +100,7 @@ export function refreshReportVisualV2736({surface,fields}){
     let metrics=measure(size),factor=Math.min(1,Math.max(1,rect.height-1)/Math.max(1,metrics.actualBoundingBoxAscent+metrics.actualBoundingBoxDescent),Math.max(1,rect.width-2)/Math.max(1,metrics.width));
     const effective=size*factor;if(factor<1)metrics=measure(effective);
     const ascent=metrics.fontBoundingBoxAscent??effective*.92,descent=metrics.fontBoundingBoxDescent??effective*.24;
-    plans.push({field,label,size:effective,lineHeight:ascent+descent,shift:(metrics.actualBoundingBoxAscent-metrics.actualBoundingBoxDescent-ascent+descent)/2});
+    plans.push({field,label,size:effective,lineHeight:familyV2755==='precision'?ascent+descent:Math.max(ascent+descent,metrics.actualBoundingBoxAscent+metrics.actualBoundingBoxDescent),shift:(metrics.actualBoundingBoxAscent-metrics.actualBoundingBoxDescent-ascent+descent)/2});
   }
   for(const {field,label,size,lineHeight,shift}of plans){
     field.dataset.cdqGlyphsV2736='true';field.style.setProperty('font-size',size+'px','important');field.style.setProperty('overflow','hidden','important');

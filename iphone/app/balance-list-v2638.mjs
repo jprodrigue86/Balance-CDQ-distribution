@@ -24,9 +24,10 @@ const hydrated=new Set(),reviews=new Map(),reviewReceipts=new Map(),pausedClient
 const previewJobs=new Map(),previews=new Map(),waitChecks=new Map(),warmIndexes=new Set();
 const engineListsV2754=new Map(),engineImportsV2754=new Map(),engineListFlightsV2754=new Map(),enginePendingRowsV2754=new Map(),engineDataAcksV2754=new Map(),engineRetiredRequestsV2754=new Map();
 const engineV2754=()=>window.cdqReportEngineSelectorV2754?.enabled?window.cdqReportEngineSelectorV2754:null;
+const listConflictNoticeV2755='La copie Drive reste consultable. La liste doit être vérifiée avant sa mise à jour.';
 function engineRowsV2754(items){return balanceDisplayRowsV2751((items||[]).map(row=>({...row,id:String(row.fileId||row.id||row.reportId),source:row.source||row.name||'',revision:row.pdf?.driveRevision||row.revision,conformity:row.conformity||({'Conforme':'conforming','Non conforme':'nonconforming'})[row.conformite]||'unknown',local:row.pdf?.status!=='confirmed'&&row.pdf?.status!=='legacy'})));}
 function engineCurrentV2754(id){
- const api=engineV2754(),entry=engineListsV2754.get(key(id));if(!api||!entry?.fingerprint||entry.invalidated)return false;
+ const api=engineV2754(),entry=engineListsV2754.get(key(id));if(!api||!entry?.fingerprint||entry.invalidated||entry.reconciliationRequired)return false;
  const fingerprint=clientFingerprint(id);if(fingerprint===entry.fingerprint)return true;
  try{
   const managed=new Map(entry.managed||[]),before=JSON.parse(entry.fingerprint),after=JSON.parse(fingerprint);
@@ -48,20 +49,35 @@ async function refreshEngineListV2754(id,{repair=false,hydrate=false}={}){
  if(!api||!engineListsV2754.has(k)&&!hydrate)return null;
  if(engineListFlightsV2754.has(k)){const flight=engineListFlightsV2754.get(k);if(repair&&!flight.repair){await flight.promise;return refreshEngineListV2754(id,{repair,hydrate});}flight.dirty=true;return flight.promise;}
  const flight={dirty:false,repair,promise:null};
- flight.promise=api.call('list',{clientId:String(id),...(repair?{repair:true}:{})}).then(result=>{
+ flight.promise=api.call('list',{clientId:String(id),...(repair?{repair:true}:{})}).catch(async error=>{
+  // A verified ownership conflict must keep the engine authoritative while
+  // leaving the current Drive PDF readable. Never use the legacy writer.
+  if(!repair||!(/CONFLICT_EXTERNAL_DRIVE/.test(String(error?.code||'')+' '+String(error?.message||'')))||stamp!==epoch||account!==calibrationIdentity().email||!canRead())throw error;
+  const result=await api.call('list',{clientId:String(id)});
+  if(!result?.baselineComplete||!Array.isArray(result.items))throw error;
+  return {...result,reconciliationRequired:true,pdf:{...result.pdf,status:'conflict',errorCode:'CONFLICT_EXTERNAL_DRIVE'}};
+ }).then(result=>{
   if(stamp!==epoch||account!==calibrationIdentity().email||!canRead())return null;
-  if(!result?.baselineComplete||!Array.isArray(result.items)){const entry=engineListsV2754.get(k);if(entry)entry.invalidated=true;return null;}
-  const old=states.get(k)||{},rows=engineMergedRowsV2754(id,result.items),pdf=result.pdf,entry=engineListsV2754.get(k)||{fingerprint:clientFingerprint(id)},managed=new Map(entry.managed||[]);
+  if(result?.ok!==true||result.baselineComplete!==true||!Array.isArray(result.items)){
+   const entry=engineListsV2754.get(k),unmanaged=result?.ok===true&&result.baselineComplete===false&&result.found!==true&&result.kind!=='list'&&!result.reportId;
+   if(entry)entry.invalidated=true;
+   // Only explicit, well-formed absence of engine ownership may select the
+   // historical route. Incomplete managed data never authorizes a writer.
+   if(!unmanaged||entry)throw Object.assign(Error('La vérification de la liste est incomplète. La copie existante reste consultable.'),{code:'ENGINE_LIST_INCOMPLETE'});
+   return null;
+  }
+  const old=states.get(k)||{},rows=engineMergedRowsV2754(id,result.items),entry=engineListsV2754.get(k)||{fingerprint:clientFingerprint(id)},reconciliationRequired=typeof result.reconciliationRequired==='boolean'?result.reconciliationRequired:!repair&&!!entry.reconciliationRequired,pdf=reconciliationRequired?{...result.pdf,status:'conflict',errorCode:'CONFLICT_EXTERNAL_DRIVE'}:result.pdf,managed=new Map(entry.managed||[]);
   for(const row of result.items)if(row.reportId&&row.pdf?.fileId&&row.pdf?.driveRevision)managed.set(String(row.pdf.fileId),String(row.pdf.driveRevision));
-  const baseline={...entry,reportId:result.reportId||entry.reportId,managed:[...managed],pdf,polls:pdf?.status==='confirmed'?0:entry.polls||0};engineListsV2754.set(k,baseline);
+  const baseline={...entry,reportId:result.reportId||entry.reportId,managed:[...managed],pdf,reconciliationRequired,polls:pdf?.status==='confirmed'?0:entry.polls||0};engineListsV2754.set(k,baseline);
   // The imported legacy source index belongs to the preceding PDF. Retaining
   // it here would make projection.project prefer stale rows over engine data.
-  const record={...old,status:'ready',rows,count:rows.length,clientId:String(id),folderId:result.destinationId||old.folderId,sourceIndexV2751:null,fileId:pdf?.fileId||'',updatedAt:pdf?.driveRevision||'',enginePdfV2754:pdf,engineBaselineV2754:baseline};
+  const record={...old,status:'ready',rows,count:rows.length,clientId:String(id),folderId:result.destinationId||old.folderId,sourceIndexV2751:null,fileId:pdf?.fileId||'',updatedAt:pdf?.driveRevision||'',reconciliationRequired,enginePdfV2754:pdf,engineBaselineV2754:baseline};
   states.set(k,record);projection.confirmed(id,rows,null);persistClient(id);paintRows();
   window.dispatchEvent(new CustomEvent('cdq:balance-list-rows-v2730',{detail:{clientId:String(id),engine:2754,pending:pdf?.status!=='confirmed'}}));
   if(pdf?.status==='confirmed'&&pdf.fileId)window.cdqInstantFiles2530?.confirm?.({id:pdf.fileId,nom:'Liste de balance.pdf',type:'PDF',revision:pdf.driveRevision,dateModification:pdf.driveRevision},id,old.folderId);
   clearFailure(k);
-  if(['pending','running'].includes(pdf?.status)&&baseline.polls<5&&canWrite()){baseline.polls++;scheduleClient(id,Math.min(15000,1500*2**(baseline.polls-1)));}
+  if(reconciliationRequired)paint(id,result.repairQueued?'La copie Drive reste consultable. La nouvelle liste est en préparation.':listConflictNoticeV2755);
+  if((['pending','running'].includes(pdf?.status)||result.repairQueued&&['pending','running'].includes(result.pdf?.status))&&baseline.polls<5&&canWrite()){baseline.polls++;scheduleClient(id,Math.min(15000,1500*2**(baseline.polls-1)));}
   return record;
  }).finally(()=>{if(engineListFlightsV2754.get(k)===flight)engineListFlightsV2754.delete(k);if(flight.dirty&&stamp===epoch&&account===calibrationIdentity().email&&canRead())refreshEngineListV2754(id).catch(()=>{});});
  engineListFlightsV2754.set(k,flight);return flight.promise;
@@ -85,7 +101,7 @@ async function importEngineIndexV2754(id,state){
  engineImportsV2754.set(k,promise);return promise;
 }
 async function reconcileEngineSourcesV2754(id){
- const k=key(id),state=states.get(k);if(!canWrite()||engineCurrentV2754(id)||!state?.fileId)return state;
+ const k=key(id),state=states.get(k);if(!canWrite()||engineCurrentV2754(id)||state?.reconciliationRequired||!state?.fileId)return state;
  const version=epoch,account=calibrationIdentity().email,fingerprint=clientFingerprint(id),current=()=>version===epoch&&account===calibrationIdentity().email&&canWrite()&&fingerprint===clientFingerprint(id);
  const result=await updateBalanceListFastV2729({clientId:id,fileId:state.fileId,indexOnly:true,rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision),loadSheet:(file,clientId)=>call('obtenirSnapshotGoogleSheetHorsLigne',file,clientId),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true),onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,false),previousState:state,stillCurrent:current});
  if(!current())throw Error('Le compte, le client ou les sources ont changé.');
@@ -132,7 +148,7 @@ function restoreClient(id){
  }catch{}
 }
 function persistClient(id){
- if(!id||!canRead())return;const k=key(id),r=states.get(k),ready=r?.status==='ready'?{...Object.fromEntries(['status','fileId','clientId','folderId','count','listRevision','listStamp','checkedAt','updatedAt','digest','rows','sourceIndexV2751','guardedSaveV2751','sourceManifestValidated','enginePdfV2754','engineBaselineV2754','enginePendingRowsV2754'].filter(name=>r[name]!==undefined).map(name=>[name,r[name]])),enginePendingRowsV2754:[...(enginePendingRowsV2754.get(k)||new Map()).values()],engineDataAcksV2754:[...(engineDataAcksV2754.get(k)||[])],engineRetiredRequestsV2754:[...(engineRetiredRequestsV2754.get(k)||[])]}:null;
+ if(!id||!canRead())return;const k=key(id),r=states.get(k),ready=r?.status==='ready'?{...Object.fromEntries(['status','fileId','clientId','folderId','count','listRevision','listStamp','checkedAt','updatedAt','digest','rows','sourceIndexV2751','guardedSaveV2751','sourceManifestValidated','enginePdfV2754','engineBaselineV2754','enginePendingRowsV2754','reconciliationRequired'].filter(name=>r[name]!==undefined).map(name=>[name,r[name]])),enginePendingRowsV2754:[...(enginePendingRowsV2754.get(k)||new Map()).values()],engineDataAcksV2754:[...(engineDataAcksV2754.get(k)||[])],engineRetiredRequestsV2754:[...(engineRetiredRequestsV2754.get(k)||[])]}:null;
  try{localStorage.setItem(journalKey(id),JSON.stringify({version:1,owner:calibrationIdentity().email,clientId:String(id),changes:changes.get(k)||0,satisfied:satisfied.get(k)||0,pending:[...(saveWaits.get(k)||[])],reviews:[...(reviews.get(k)||[])],acknowledgements:[...(reviewReceipts.get(k)||[])].filter(([token])=>reviews.get(k)?.has(token)),enginePendingRowsV2754:[...(enginePendingRowsV2754.get(k)||new Map()).values()],engineDataAcksV2754:[...(engineDataAcksV2754.get(k)||[])],engineRetiredRequestsV2754:[...(engineRetiredRequestsV2754.get(k)||[])],ready}));}catch{}
  publishBackground();
 }
@@ -279,7 +295,7 @@ function queueOwner(){let native=window.BalanceCDQBackgroundV2746;try{if(window.
 async function open(){
   const id=client();if(!id||!canRead())return;restoreClient(id);
   const tree=root(id),file=listFile(id),known=states.get(key(id)),fileId=file?.id||(!tree||tree.charge===false||listFolder(id)?.charge===false?known?.fileId:'');
-  if(projected(id).localPending){const preview=await localPreview(id);if(preview&&await window.cdqOpenBalanceListPreviewV2746?.(preview))return true;}
+  if(!known?.reconciliationRequired&&projected(id).localPending){const preview=await localPreview(id);if(preview&&await window.cdqOpenBalanceListPreviewV2746?.(preview))return true;}
   // Existing PDF is immediately readable, including during an update.
   if(fileId)return window.cdqOpenPdfV2520?.(fileId,{nom:'Liste de balance.pdf'});
   if(navigator.onLine===false){paint(id,'Aucune liste disponible hors ligne.',true);return;}
@@ -292,10 +308,20 @@ async function refresh(force=false,verify=false,id=client()){
   if(owner!==calibrationIdentity().email)reset();
   restoreClient(id);
   const k=key(id);
-  // Once imported, only the Worker may publish this list, including forced
+  // A fresh installation has no local import marker. Ask the authoritative
+  // engine before any legacy placement, scan or write; an unavailable answer
+  // must not authorize a competing producer.
+  let hydratedEngineV2755=null;
+  const authorityV2755=engineV2754(),authorityEpochV2755=epoch,authorityOwnerV2755=calibrationIdentity().email;
+  if(authorityV2755&&!engineListsV2754.has(k)){
+    try{hydratedEngineV2755=await refreshEngineListV2754(id,{hydrate:true,repair:canWrite()});}
+    catch(error){return {status:'error',message:error.message,code:error.code};}
+    if(authorityEpochV2755!==epoch||authorityOwnerV2755!==calibrationIdentity().email||authorityV2755!==engineV2754()||!canWrite()||!queueOwner())return {status:'unavailable'};
+  }
+  // Once imported, only the engine may publish this list, including forced
   // refresh and a missing/trashed original folder. Never create a second
   // folder or render a competing legacy list before the server repair check.
-  if(engineV2754()&&engineListsV2754.has(k)){const version=epoch,change=changes.get(k)||0;try{await reconcileWaits(id);let result=await refreshEngineListV2754(id,{repair:canWrite()});if(result&&version===epoch){result=await reconcileEngineSourcesV2754(id)||result;remember(id,clientFingerprint(id));if(!waiting(id)&&!(enginePendingRowsV2754.get(k)?.size))satisfied.set(k,change);persistClient(id);publishBackground();return result;}}catch(error){return {status:'error',message:error.message,code:error.code};}return {status:'pending'};}
+  if(engineV2754()&&engineListsV2754.has(k)){const version=epoch,change=changes.get(k)||0;try{await reconcileWaits(id);let result=hydratedEngineV2755||await refreshEngineListV2754(id,{repair:canWrite()});if(result&&version===epoch){result=await reconcileEngineSourcesV2754(id)||result;remember(id,clientFingerprint(id));if(!waiting(id)&&!(enginePendingRowsV2754.get(k)?.size))satisfied.set(k,change);persistClient(id);publishBackground();return result;}}catch(error){return {status:'error',message:error.message,code:error.code};}return {status:'pending'};}
   const active=jobs.get(k);let fingerprint=clientFingerprint(id);
   let stamp=fingerprint+'|saved:'+(changes.get(k)||0);
   const failure=failed.get(k);
@@ -355,7 +381,14 @@ async function refresh(force=false,verify=false,id=client()){
     }
     if(version===epoch){fail(id,stamp,Error('Actualisation toujours en cours sur le serveur.'));progress('Actualisation en cours sur le serveur. La liste existante reste accessible.');}
     return {status:'pending'};
-  }catch(e){if(version===epoch){equipment.flushReads?.();fail(id,stamp,e);progress('Actualisation interrompue. La liste existante reste accessible.',true);}return {status:'error',message:e.message};}
+  }catch(e){
+    // The server can acquire ownership between the cold check and the legacy
+    // save. Resolve that exact race through the engine, with no legacy retry.
+    if(version===epoch&&engineV2754()&&/ENGINE_LIST_MANAGED/.test(String(e?.code||'')+' '+String(e?.message||''))){
+      try{const managed=await refreshEngineListV2754(id,{hydrate:true,repair:canWrite()});if(managed&&version===epoch){clearFailure(k);remember(id,clientFingerprint(id));persistClient(id);return managed;}}
+      catch(error){e=error;}
+    }
+    if(version===epoch){equipment.flushReads?.();fail(id,stamp,e);progress('Actualisation interrompue. La liste existante reste accessible.',true);}return {status:'error',message:e.message,code:e.code};}
   finally{if(jobs.get(k)===job)jobs.delete(k);if(version===epoch){if(!job.followup&&job.dirty)scheduleClient(id,0);paintRows();publishBackground();}}})();
   return job.promise;
 }

@@ -1,5 +1,6 @@
 // This adapter runs inside the authenticated Selector. Google sessions and
 // server signing keys stay in their existing authority boundaries.
+import {listConsultationDescriptorV2755} from './list-consultation-v2755.mjs';
 export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoch,currentClient=()=>'',post,instant,background,loadClient,loadTemplate,publish=()=>{},isOnline=()=>globalThis.navigator?.onLine!==false}){
   let capability=null,capabilityFlight=null,clientFlight=null,lease=0;const pendingReports=new Set(),legacyScopes=new Map();
   const valid=(email,stamp)=>email===owner()&&stamp===epoch()&&canRead();
@@ -49,7 +50,10 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     }
     if(!record){
       if(!(await capabilities())?.ready)return null;
-      const result=await call('read',{fileId:String(fileId),clientId:expectedClient});if(result.deleted)deleted();record=await rememberRead(result);if(!record){if(result.legacyScope)legacyScopes.set(String(fileId),result.legacyScope);return null;}
+      const result=await call('read',{fileId:String(fileId),clientId:expectedClient});if(result.deleted)deleted();
+      const consultation=listConsultationDescriptorV2755(result,String(fileId),expectedClient);
+      if(consultation){legacyScopes.delete(String(fileId));return consultation;}
+      record=await rememberRead(result);if(!record){if(result.legacyScope)legacyScopes.set(String(fileId),result.legacyScope);return null;}
     }
     if(record.deleted)deleted();
     const context=record.context;if(expectedClient&&context.clientId!==expectedClient)throw Object.assign(Error('Le rapport appartient à un autre client.'),{code:'SCOPE_MISMATCH'});
@@ -60,7 +64,7 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
   async function handle(data){
     if(data.type!=='CDQ_REPORT_ENGINE_SAVE_V2754'||data.email!==owner()||!canWrite())return false;
     const email=owner(),stamp=epoch(),attempt=++lease;
-    const reply=(type,value)=>{if(valid(email,stamp))post({type,email,requestId:data.requestId,uploadId:data.uploadId,...value});};
+    const reply=(type,value)=>{if(valid(email,stamp))post({...value,type,email,requestId:data.requestId,uploadId:data.uploadId,reportId:data.payload.reportId});};
     publish('cdq:report-data-saved-v2754',{owner:email,clientId:data.payload.clientId,reportId:data.payload.reportId,sourceId:data.payload.fileId||data.payload.reportId,saveId:data.payload.requestId,name:data.payload.name,fields:data.payload.fields,dataSaved:false,pending:true});
     try{
       let result=await call('save',data.payload);reply('CDQ_REPORT_ENGINE_DATA_SAVED_V2754',{...result,reportRevision:result.revision});publish('cdq:report-data-saved-v2754',{owner:email,clientId:data.payload.clientId,reportId:data.payload.reportId,sourceId:result.pdf?.fileId||data.payload.fileId||data.requestId,saveId:data.payload.requestId,name:data.payload.name,fields:data.payload.fields,revision:result.revision,pdf:result.pdf,dataSaved:true,row:result.row});

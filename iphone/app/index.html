@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="27.54" data-cdq-iphone-release="a577a444e82e565a073471e21ea3d0f0b4778f49bda948f5f5fb7e6eec03b255">
+<html lang="fr" data-cdq-iphone-version="27.55" data-cdq-iphone-release="f488348c147b9d7cfb0866a591bfc0fc9a1dcf0978533e7502d715b7812d78ef">
 <head>
 <script id="cdq-durable-resume-v2751">
 window.cdqDurableResumeV2751=(function createDurableResumeV2751({native=null,read=()=>''}={}){
@@ -491,7 +491,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.18-v27.54-data-engine';
+const CDQ_PWA_BUILD = '2026.10.19-v27.55-corrections';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1530,7 +1530,7 @@ if(data.type==='CDQ_GOOGLE_AUTH_ERROR'){
   document.getElementById('load-message').textContent=String(data.message||'La connexion Google a échoué. Réessayez.');
 }
 if(data.type==='CDQ_GOOGLE_AUTH_HIDE')masquerConnexionGoogleV42();
-if(String(data.type||'').startsWith('CDQ_OFFLINE_')||data.type==='CDQ_LOCAL_REPORT_OPEN_V2713')cdqOffline.then(controller=>controller.handle(data));
+if(String(data.type||'').startsWith('CDQ_OFFLINE_')||data.type==='CDQ_LOCAL_REPORT_OPEN_V2713'||['CDQ_REPORT_ENGINE_DATA_SAVED_V2754','CDQ_REPORT_ENGINE_SAVE_V2754_RESULT','CDQ_REPORT_ENGINE_DELETE_V2754_RESULT','CDQ_REPORT_ENGINE_SEND_STATE_V2754'].includes(data.type))cdqOffline.then(controller=>controller.handle(data));
 if(data.type==='CDQ_ACCESS_STATE' && data.state!=='ready')cdqOffline.then(controller=>controller.lock());
 if((data.type==='CDQ_ACCESS_STATE' && data.state==='ready') || (data.type==='CDQ_SELECTOR_READY' && data.accessState==='ready')){
   cdqWarmPdfReaderV2554();

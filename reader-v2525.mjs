@@ -1,3 +1,4 @@
+import {prepareCamionCanvasBoundaryV2755,installCamionCanvasBoundaryV2755,prepareTrainCalendarBoundaryV2755,installTrainCalendarBoundaryV2755} from './reader-canvas-boundary-v2755.mjs';
 import {trialReportMetadataFamilyV2743} from './reader-trial-reports-v2743.mjs';
 import {refreshResultGeometryV2743,restoreBlankResultConclusionV2743} from './reader-result-geometry-v2743.mjs';
 import {captureReportFieldsV2754,restoreReportFieldsV2754,reportFieldsV2754,reportContextV2754} from './report-engine-client-v2754.mjs';
@@ -477,8 +478,14 @@ async function open(data){
           // Keep the original RGB pixels on the Canvas2D path. In particular,
           // avoid transferring OffscreenCanvas bitmaps back into a software
           // canvas before result badges sample those same page pixels.
+          const camionCanvasPreparationV2755=prepareCamionCanvasBoundaryV2755({sourceBytes,staticArtwork:staticArtworkV2753,preparedEpoch:artworkEpochV2753,epoch:workEpoch,pdfjsVersion:api.version,checkCurrent:checkLease});
+          const camionCanvasBoundaryV2755=camionCanvasPreparationV2755===null?null:await camionCanvasPreparationV2755;checkLease();
+          const trainCalendarPreparationV2755=camionCanvasBoundaryV2755===null?prepareTrainCalendarBoundaryV2755({sourceBytes,staticArtwork:staticArtworkV2753,preparedEpoch:artworkEpochV2753,epoch:workEpoch,pdfjsVersion:api.version,checkCurrent:checkLease}):null;
+          const trainCalendarBoundaryV2755=trainCalendarPreparationV2755===null?null:await trainCalendarPreparationV2755;checkLease();
           const task=documentTask=attemptTask=api.getDocument({data:sourceBytes,worker:pdfWorker,standardFontDataUrl:assets+'standard_fonts/',cMapUrl:assets+'cmaps/',cMapPacked:true,wasmUrl:assets+'wasm/',isEvalSupported:false,enableXfa:false,enableHWA:false,isOffscreenCanvasSupported:false});
           const parsed=await task.promise;checkLease();doc=parsed;
+          installCamionCanvasBoundaryV2755(parsed,camionCanvasBoundaryV2755);
+          installTrainCalendarBoundaryV2755(parsed,trainCalendarBoundaryV2755);
           if(eligible)protectReaderSnapshotsV2730(doc);
           qaFirstPaintOwnerV2731=Object.freeze({document:doc,generation,epoch:workEpoch,paint:preparedPaintV2753});
           firstPaint=documentPaintV2730=cancellableReaderPaintV2730(firstReaderPaintV2682(viewer.eventBus));viewer.setDocument(doc);viewer.linkService.setDocument(doc);
