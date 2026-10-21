@@ -256,7 +256,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfUnleased,acqu
   const validReadStamp=readStamp=>!readStamp||(readStamp.access===readAccessVersion&&readStamp.retirement===(readRetirementVersions.get(readStamp.key)||0));
   const allowed=email=>localEmail===email||session?.email===email;
   const engineDataV2754=c=>c?.reportEngineV2754?{reportEngineV2754:c.reportEngineV2754,reportSnapshotV2754:c.reportSnapshotV2754,enginePdfV2754:c.enginePdfV2754,reportRevisionV2754:c.reportRevisionV2754||0,engineAcceptedV2757:c.engineAcceptedV2757}:{};
-  function engineReaderV2754(c,email){return {editCopyV2756:c,...engineDataV2754(c),onSaveSnapshot:c.reportEngineV2754&&(session?.canWrite||profile?.canWrite)?(fields,requestId,name)=>saveSnapshotCopyV2754(c.id,email,fields,requestId,name):null};}
+  function engineReaderV2754(c,email){return {saveProgressOwnerV2758:email,editCopyV2756:c,...engineDataV2754(c),onSaveSnapshot:c.reportEngineV2754&&(session?.canWrite||profile?.canWrite)?(fields,requestId,name)=>saveSnapshotCopyV2754(c.id,email,fields,requestId,name):null};}
   async function attachEngineV2754(copy,template,current){
     if(current.reportEngineV2754!==true||!template.bundled)return copy;
     const {REPORT_ENGINE_TEMPLATES_V2754}=await import('./report-engine-templates-v2754.mjs'),meta=REPORT_ENGINE_TEMPLATES_V2754[engineFamilyAliasV2754[copy.modeleId]||copy.modeleId];
