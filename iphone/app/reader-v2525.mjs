@@ -1,3 +1,4 @@
+import {createReaderSaveProgressV2758} from './reader-save-progress-v2758.mjs';
 import {installReaderEditLeaseV2756} from './file-edit-session-v2756.mjs';
 import {installVerifiedRangeV2756} from './verified-range-v2756.mjs';
 import {installFirstTapV2756} from './first-tap-v2756.mjs';
@@ -68,6 +69,7 @@ const tell=data=>{if(hosted&&parentOrigin)parent.postMessage(data,parentOrigin)}
 let api,viewer,scripting,doc,touch,form,documentTask,pdfWorker,sandboxReady,sandboxModule,readerUIV2730,readOnly=false,dirty=false,version=0,savedVersion=0,saving=false;
 let canvasCandidateV2730=null,closedCanvasV2730=null,closedViewportV2730=null,documentPaintV2730=null,documentGenerationV2730=0,resetPromiseV2730=Promise.resolve();
 const destroyedReaderTasksV2730=new WeakMap();
+const readerSaveProgressV2758=createReaderSaveProgressV2758();
 let lastAttempt=null,fieldDefinitions=null,nativeInput,readerCalibration=null,choices=null,decimalGuard=null,tableColumnV2737=null;
 const visualRefreshV2730=createReaderVisualRefreshV2730(()=>{
   if(!doc||closed)return;
@@ -327,11 +329,17 @@ const readerEquipmentV2746=createReaderEquipmentEmitterV2746({surface:$('viewer'
     return input?.value??cdqStoredFieldStateV2581(fieldName).value;
   },send:tell});
 const status=value=>{const el=$('status');el.textContent=value;el.dataset.active=String(!!value);};
+function renderReaderSaveProgressV2758(requestId,initial=false){
+  const value=readerSaveProgressV2758.text({requestId,version,dirty,closed,opening,saving});
+  if(!value||!initial&&$('status').textContent!==readerSaveProgressV2758.lastDisplayed())return false;
+  if(!editGuardV2756.check())return false;
+  status(value);readerSaveProgressV2758.displayed(value);return true;
+}
 function busy(value){saving=value;$('viewer').inert=value;$('savingMask').hidden=!value;for(const id of ['save','saveClose','doneFields','dismissKeyboard','discard','file'])$(id).disabled=value||!doc||readOnly;}
 function fail(error){busy(false);status(error.message||String(error));$('closeError').textContent=error.message||String(error);closeAfterSave=false;}
 function modified(){if(!readOnly&&!opening){dirty=true;version++;status('');}}
 function resetDocumentFieldsV2730(){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};
-  readerEquipmentV2746.reset();
+  readerEquipmentV2746.reset();readerSaveProgressV2758.reset();
   tableColumnV2737?.dispose();tableColumnV2737=null;visualRefreshV2730.reset();choices?.cancel();form?.reset();touch?.reset();cdqKeyboardFieldV2550(false);menu(true);
   documentPaintV2730?.dispose();documentPaintV2730=null;
   doc=null;documentTask=null;fieldDefinitions=null;readerCalibration=null;formattedFields.clear();fieldTypography.clear();touchedIdentity.clear();lateIdentity=null;
@@ -366,7 +374,7 @@ async function resetClosedDocumentV2730(){
     await Promise.all([pdfWorker.promise,sandboxReady]);tell({type:'CDQ_READER_READY'});
   }catch{tell({type:'CDQ_READER_RESET_FAILED_V2730'});}
 }
-function close(){if(closed)return;clearReaderTemplatePaintV2753();qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};closedViewportV2730=readerViewportV2730(viewer);closed=true;documentGenerationV2730++;dirty=false;$('viewer').inert=true;$('viewer').style.opacity='0';try{$('closeDialog').close()}catch(_){};tell({type:'CDQ_READER_CLOSE',reusable:hosted});if(hosted)resetPromiseV2730=resetClosedDocumentV2730();else history.back();}
+function close(){if(closed)return;readerSaveProgressV2758.close();clearReaderTemplatePaintV2753();qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};closedViewportV2730=readerViewportV2730(viewer);closed=true;documentGenerationV2730++;dirty=false;$('viewer').inert=true;$('viewer').style.opacity='0';try{$('closeDialog').close()}catch(_){};tell({type:'CDQ_READER_CLOSE',reusable:hosted});if(hosted)resetPromiseV2730=resetClosedDocumentV2730();else history.back();}
 async function requestClose(){
   if(saving){status('Enregistrement en cours…');return;}
   if(decimalGuard&&!decimalGuard.validate())return;
@@ -374,6 +382,23 @@ async function requestClose(){
   if(!dirty||readOnly){close();return;}
   $('closeError').textContent='';if(!$('closeDialog').open)$('closeDialog').showModal();
   $('keepEditing').focus();
+}
+// V27.58: older snapshots can contain the current field format beside a
+// stale widget format. For one text widget with the same value, both describe
+// the same annotation. Restore the canonical format without changing answers,
+// template actions, widget flags, choices, buttons or multi-widget fields.
+function coherentReportFormatsV2758(fields,objects){
+  let coherent=fields;
+  for(const [name,state]of Object.entries(fields||{})){
+    const raw=objects instanceof Map?objects.get(name):objects?.[name];
+    const defs=raw?Array.isArray(raw)?raw:[raw]:[];
+    if(defs.length!==1||defs[0]?.type!=='text'||!Array.isArray(state.widgets)||state.widgets.length!==1)continue;
+    const widget=state.widgets[0];
+    if(widget.id!==defs[0].id||widget.value!==state.value||typeof state.formattedValue!=='string'||typeof widget.formattedValue!=='string'||widget.formattedValue===state.formattedValue)continue;
+    if(coherent===fields)coherent={...fields};
+    coherent[name]={...state,widgets:[{...widget,formattedValue:state.formattedValue}]};
+  }
+  return coherent;
 }
 async function outputSnapshotV2754(){
   if(decimalGuard&&!decimalGuard.validateAll())throw Error('Corrigez les décimales de la mesure avant d’enregistrer.');
@@ -383,7 +408,10 @@ async function outputSnapshotV2754(){
   if(current!==doc||generation!==documentGenerationV2730||closed)throw Error('Le rapport a changé pendant son enregistrement.');
   const fields=captureReportFieldsV2754(fieldDefinitions,cdqStoredFieldStateV2581,definition=>{
     const state=doc.annotationStorage.getValue(definition.id,definition)||definition;
-    return {...definition,...state,...(formattedFields.has(definition.id)?{formattedValue:formattedFields.get(definition.id)}:{})};
+    // PDF.js updates annotationStorage before external sandbox listeners. Its
+    // internal listener removes detail.id, so the display cache may be older.
+    const formattedValue=state.formattedValue??formattedFields.get(definition.id);
+    return {...definition,...state,...(formattedValue!==undefined?{formattedValue}:{})};
   });
   return {reportSnapshotV2754:fields};
 }
@@ -422,6 +450,7 @@ async function save(external=false){
     const requestId=lastAttempt?.version===snapshot?lastAttempt.id:'save-'+crypto.randomUUID();
     lastAttempt={id:requestId,version:snapshot,...prepared};
     pending={id:requestId,version:snapshot};
+    readerSaveProgressV2758.begin(requestId,snapshot,reportEngineV2754);
     pending.timer=setTimeout(()=>{if(pending?.id!==requestId)return;pending=null;fail(new Error('La sauvegarde n’a pas encore été confirmée. Le PDF reste ouvert; réessayez ou téléchargez vos réponses.'));},90000);
     if(dataOnly)tell({type:'CDQ_READER_SAVE_SNAPSHOT_V2754',reportSnapshotV2754:prepared.reportSnapshotV2754,name,requestId});
     else tell({type:'CDQ_READER_SAVE',blob,name,requestId,readerPreparedVersion:2730,pdfSaveInfoV2753});
@@ -448,6 +477,7 @@ async function open(data){
   $('name').textContent=name;$('empty').style.display='none';status('Ouverture du PDF…');
   const preparedBlob=data.preparedBlob instanceof Blob?data.preparedBlob:data.readerPreparedVersion===2730?blob:null;
   readerEquipmentV2746.configure(String(data.readerRequestId||data.readerSession||''));
+  readerSaveProgressV2758.open({owner:data.saveProgressOwnerV2758,readerRequestId:String(data.readerRequestId||data.readerSession||''),readerPhaseV2757:data.readerPhaseV2757||0});
   let sourceBytes,retained=closedCanvasV2730,reuse=false,preparedPaintV2753=null;
   let staticArtworkV2753=data.preparedEpoch===workEpoch?data.staticArtworkV2753:null,artworkEpochV2753=data.preparedEpoch;
   const preparedInfoV2753=info=>{staticArtworkV2753=info.staticArtworkV2753||null;artworkEpochV2753=workEpoch;};
@@ -628,13 +658,16 @@ window.addEventListener('message',async e=>{
   if(d.type==='CDQ_READER_THEME'){applyReaderTheme(d.theme);return;}
   if(d.type==='CDQ_READER_PREFILL_V2642'&&String(d.fileId||'')===fileId){lateIdentity={...lateIdentity,...d.values};applyLateIdentity();return;}
   if(d.type==='CDQ_READER_REQUEST_CLOSE'){requestClose();return;}
+  if(d.type==='CDQ_READER_SAVE_PROGRESS_V2758'){if(!closed&&!opening&&readerSaveProgressV2758.accept(d))renderReaderSaveProgressV2758(d.requestId);return;}
   if(d.type==='CDQ_READER_SAVED'&&pending&&d.requestId===pending.id){
     clearTimeout(pending.timer);const snapshot=pending.version,discarding=pending.discard;pending=null;
     if(!d.ok){fail(new Error(d.error||'Enregistrement impossible. Le PDF reste ouvert.'));return;}
     if(discarding){busy(false);close();return;}
+    const progressTrackedV2758=readerSaveProgressV2758.acknowledge(d.requestId,snapshot),savedGenerationV2758=documentGenerationV2730;
     lastAttempt=null;savedVersion=snapshot;dirty=version!==savedVersion;busy(false);await scripting.dispatchDidSave();
+    if(closed||savedGenerationV2758!==documentGenerationV2730)return;
     if(d.reportEngineV2754)reportEngineV2754=reportContextV2754(d.reportEngineV2754)||reportEngineV2754;
-    status(d.queued?'Conservé sur cet appareil — synchronisation en attente.':'✓ Enregistré dans le dossier client');
+    if(progressTrackedV2758)renderReaderSaveProgressV2758(d.requestId,true);else status(d.queued?'Conservé sur cet appareil — synchronisation en attente.':'✓ Enregistré dans le dossier client');
     if(closeAfterSave&&!dirty){close();}else closeAfterSave=false;
   }
   if(d.type==='CDQ_READER_OPEN'&&api&&viewer)try{await open(d)}catch(err){opening=false;fail(err);tell({type:'CDQ_READER_OPEN_FAILED_V2731',readerRequestId:d.readerRequestId,error:String(err?.message||err).slice(0,500)});}
@@ -653,7 +686,7 @@ try{
       const sandbox=await sandboxReady;
       if(doc!==sandboxDocument||!readerOpeningLeaseIsCurrentV2730({generation,currentGeneration:documentGenerationV2730,epoch,currentEpoch:pdfWorkV2729().stats().epoch,closed}))throw Error('Le compte ou le rapport a changé pendant son ouverture.');
       const defaults=!reportSnapshotV2754&&['cuve3','tremie3'].includes(reportEngineV2754?.family)?{points_test:{value:'3 points'}}:null;
-      snapshotUpdatesV2754=reportSnapshotV2754||defaults?restoreReportFieldsV2754(reportSnapshotV2754||defaults,{objects:data.objects,storage:sandboxDocument.annotationStorage}):[];engineDefaultsAppliedV2754=!!defaults&&snapshotUpdatesV2754.length>0;
+      snapshotUpdatesV2754=reportSnapshotV2754||defaults?restoreReportFieldsV2754(coherentReportFormatsV2758(reportSnapshotV2754||defaults,data.objects),{objects:data.objects,storage:sandboxDocument.annotationStorage}):[];engineDefaultsAppliedV2754=!!defaults&&snapshotUpdatesV2754.length>0;
       const updates=initializeSandboxIdentityV2730(data,values,sandboxDocument,locked,preparedDraft);initialAppliedV2730||=updates.length>0;initialUpdatesV2730=updates;
       sandbox.create(data);
       restoreInitialIdentityV2730();restoreSnapshotV2754();

@@ -89,3 +89,17 @@ export function createLocalReaderEditSessionsV2756({acquire,open,currentOwner,is
   close(){for(const entry of readers.values())stop(entry);}
  };
 }
+
+// A deadline invalidates publication, not a server write already in progress.
+// Late lease receipts are released by the caller instead of reviving an open.
+export function createReaderOpeningAttemptV2757({valid=()=>true,deadlineMs=45000,now=()=>performance.now(),setTimer=setTimeout,clearTimer=clearTimeout,onPhase=()=>{}}={}){
+ const started=now();let cancelled=null,timer,abort;
+ const stopped=new Promise((_,reject)=>{abort=reject;});stopped.catch(()=>{});
+ const fail=(message,code='READER_OPEN_CANCELLED')=>Object.assign(Error(message),{code});
+ const check=()=>{if(cancelled)throw cancelled;if(!valid())throw fail('Le compte, le client ou le fichier a changé.');};
+ const cancel=error=>{if(cancelled)return;cancelled=error||fail('Ouverture annulée.');clearTimer(timer);abort(cancelled);};
+ timer=setTimer(()=>cancel(fail('La vérification du fichier prend trop de temps. Fermez puis rouvrez le PDF pour réessayer.','READER_OPEN_TIMEOUT')),deadlineMs);
+ return {check,cancel,phase(name){check();try{onPhase({phase:name,elapsedMs:Math.round(now()-started)});}catch{}},finish(){check();clearTimer(timer);},
+  async wait(task,late=()=>{}){check();const operation=Promise.resolve().then(()=>{check();return task();});operation.then(value=>{if(cancelled||!valid())Promise.resolve(late(value)).catch(()=>{});},()=>{});const value=await Promise.race([operation,stopped]);check();return value;}
+ };
+}
