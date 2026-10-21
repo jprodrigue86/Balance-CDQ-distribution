@@ -77,15 +77,49 @@ export function publicationConfirmed(state, repair) {
 export function safeError(error) {
   return String(error?.message||error||'Opération interrompue.').replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g,'[identifiant masqué]').replace(/(?:[a-f0-9]{8}-[a-f0-9-]{27,}){2,}/gi,'[identifiant masqué]').slice(0,700);
 }
+function requireCurrentAuthentication(isCurrent) {
+  if(typeof isCurrent!=='function'||!isCurrent())throw Object.assign(new Error('Cette connexion Google a été remplacée. Reprenez la connexion courante.'),{code:'CDQ_AUTH_STALE'});
+}
+export async function openCreatorGoogleSession({call,credential,challenge,isCurrent,now=Date.now}) {
+  let ticket='';
+  const current=()=>requireCurrentAuthentication(isCurrent);
+  async function exchange(name,args,failure) {
+    current();
+    let value;
+    try{value=await call(name,args);}
+    catch{current();throw new Error(failure+' Préparez une nouvelle connexion Google.');}
+    current();
+    return value;
+  }
+  try{
+    current();
+    check(object(challenge)&&typeof challenge.challengeId==='string'&&challenge.challengeId.length>0&&challenge.challengeId.length<=200&&Number.isFinite(challenge.expiresAt)&&challenge.expiresAt>now(),'Connexion Google expirée. Préparez un nouveau challenge.');
+    check(typeof credential==='string'&&credential.length>0&&credential.length<=6000,'Preuve Google absente ou invalide. Préparez une nouvelle connexion Google.');
+    const proof=await exchange('verifierJetonGoogleCDQ',[credential,challenge.challengeId],'La preuve Google a été refusée ou sa réponse est inconnue.');
+    current();credential='';
+    check(proof?.ok===true&&typeof proof.ticket==='string'&&proof.ticket.length>0&&proof.ticket.length<=300&&typeof proof.email==='string'&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(proof.email)&&proof.role==='admin','Le serveur n’a pas confirmé le compte administrateur Google.');
+    ticket=proof.ticket;
+    const email=proof.email;
+    const creator=await exchange('connecterAvecCodeAcces',[email,'',ticket,'',{creatorRecovery:true,action:'state'}],'La vérification du créateur a été refusée ou sa réponse est inconnue.');
+    current();
+    check(creator?.creatorRecovery===true&&creator.email===email,'Le serveur n’a pas confirmé ce compte comme créateur.');
+    // The legacy hasPin field does not participate in Google direct sign-in.
+    const direct=await exchange('obtenirEtatAcces',['',ticket],'La connexion Google directe a été refusée ou sa réponse est inconnue.');
+    current();
+    check(direct?.autorise===true&&direct.email===email&&direct.role==='admin'&&direct.ouvertureDirecte===true&&typeof direct.jetonSession==='string'&&direct.jetonSession.length>0&&direct.jetonSession.length<=512,'Ce déploiement n’a pas confirmé une session créateur Google directe. Préparez une nouvelle connexion Google.');
+    return {email,session:direct.jetonSession};
+  }finally{credential='';ticket='';}
+}
 export function validateCall(name,args) {
   check(Array.isArray(args),'Arguments RPC invalides.');
   if(name==='creerDefiConnexionGoogleCDQ'){check(args.length===0,'Le challenge ne prend aucun argument.');return;}
   if(name==='verifierJetonGoogleCDQ'){check(args.length===2&&typeof args[0]==='string'&&args[0].length>0&&args[0].length<=6000&&typeof args[1]==='string'&&args[1].length>0&&args[1].length<=200,'Preuve Google invalide.');return;}
   if(name==='connecterAvecCodeAcces'){
-    check(args.length===5&&typeof args[0]==='string'&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(args[0])&&typeof args[2]==='string'&&args[2].length>0&&args[2].length<=300&&args[3]==='','Récupération créateur invalide.');
+    check(args.length===5&&typeof args[0]==='string'&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(args[0])&&args[1]===''&&typeof args[2]==='string'&&args[2].length>0&&args[2].length<=300&&args[3]==='','Vérification du créateur invalide.');
     closed(args[4],['creatorRecovery','action'],'Récupération');
-    check(args[4].creatorRecovery===true&&((args[4].action==='state'&&args[1]==='')||(args[4].action==='unlock'&&typeof args[1]==='string'&&/^\d{4}$/.test(args[1]))),'Seuls la vérification du créateur et le déverrouillage par NIP existant sont autorisés.');return;
+    check(args[4].creatorRecovery===true&&args[4].action==='state','Seule la vérification du créateur est autorisée.');return;
   }
+  if(name==='obtenirEtatAcces'){check(args.length===2&&args[0]===''&&typeof args[1]==='string'&&args[1].length>0&&args[1].length<=300,'La connexion Google directe exige uniquement un ticket Google et aucun identifiant d’appareil.');return;}
   check(name==='cdqRpc'&&args.length===3&&Array.isArray(args[1])&&typeof args[2]==='string'&&args[2].length>0&&args[2].length<=512,'Appel opérateur non autorisé.');
   if(args[0]==='obtenirDiagnosticApplication'){check(args[1].length===0,'Le diagnostic ne prend aucun argument.');return;}
   check(args[0]==='cdqReportEngineV2754'&&args[1].length===2,'Appel opérateur non autorisé.');
@@ -137,13 +171,13 @@ async function loadGoogleIdentity(){
 }
 export function mountOperator(doc=document,win=window){
   const $=id=>doc.getElementById(id);
-  let bridge=null,session='',ticket='',email='',challenge=null,preparation=null,inspected=null,capabilities=null,repairResult=null,busy=false,generation=0;
+  let bridge=null,session='',email='',challenge=null,preparation=null,inspected=null,capabilities=null,repairResult=null,busy=false,generation=0;
   const observations={schema:'cdq-independent-operator-observations-v2755-v1',startedAt:new Date().toISOString(),target:null,authenticatedPrincipal:null,googleHealth:null,capabilities:null,preparation:null,inspections:[],repair:null,enginePublicationConfirmed:false,googleVersionVerification:'independent-manager-readback-required'};
   const message=(text,error=false)=>{$('status').textContent=text;$('status').className=error?'error':'';};
   const show=(id,value)=>{$(id).textContent=JSON.stringify(value,null,2);};
   const exportable=()=>{show('evidence-output',observations);$('download').disabled=!observations.capabilities;};
   function refresh(){
-    $('prepare-google').disabled=busy; $('unlock').disabled=busy||!ticket;
+    $('prepare-google').disabled=busy;
     $('endpoint').disabled=busy||!!session;
     $('capabilities').disabled=busy||!session;
     $('preparation-file').disabled=busy||!session;
@@ -152,44 +186,34 @@ export function mountOperator(doc=document,win=window){
     $('repair').disabled=busy||!session||!capabilities||!inspected||!$('reviewed').checked;
     $('readback').disabled=busy||!session||!preparation||!observations.repair;
   }
-  async function run(action){if(busy)return;busy=true;refresh();try{await action();}catch(error){message(safeError(error),true);}finally{busy=false;refresh();exportable();}}
+  async function run(action){if(busy)return;busy=true;refresh();try{await action();}catch(error){if(error?.code!=='CDQ_AUTH_STALE')message(safeError(error),true);}finally{busy=false;refresh();exportable();}}
   async function rpc(action,payload){check(session,'Ouvrez une session CDQ.');return bridge.call('cdqRpc',['cdqReportEngineV2754',[action,payload],session]);}
   function clearRepair(){inspected=null;$('reviewed').checked=false;repairResult=null;observations.repair=null;observations.enginePublicationConfirmed=false;$('completion').textContent='';}
   $('prepare-google').addEventListener('click',()=>run(async()=>{
     const target=validateEndpoint($('endpoint').value.trim());
-    generation++;const current=generation;session='';ticket='';email='';challenge=null;capabilities=null;preparation=null;clearRepair();
-    $('pin-panel').hidden=true;$('creator-pin').value='';$('identity').textContent='';$('google-button').replaceChildren();
+    generation++;const current=generation;const isCurrent=()=>current===generation;session='';email='';challenge=null;capabilities=null;preparation=null;clearRepair();
+    $('identity').textContent='';$('google-button').replaceChildren();
     if(bridge)bridge.dispose();$('bridge-host').replaceChildren();
     const iframe=doc.createElement('iframe');iframe.title='Connexion CDQ autorisée';$('bridge-host').append(iframe);
     bridge=createBridge({hostWindow:win,iframe,endpoint:target,channel:crypto.randomUUID()+'-'+crypto.randomUUID()});
+    const authBridge=bridge;
     observations.target={endpoint:target};observations.authenticatedPrincipal=null;delete observations.authenticatedAt;observations.googleHealth=null;observations.capabilities=null;observations.preparation=null;observations.inspections=[];
     for(const id of ['google-health-output','capabilities-output','preparation-output','inspection-output','repair-output'])$(id).textContent='Aucune observation.';
-    message('Connexion au bridge Google existant…');await bridge.ready;
-    challenge=await bridge.call('creerDefiConnexionGoogleCDQ',[]);
+    message('Connexion au bridge Google existant…');await authBridge.ready;requireCurrentAuthentication(isCurrent);
+    const nextChallenge=await authBridge.call('creerDefiConnexionGoogleCDQ',[]);requireCurrentAuthentication(isCurrent);challenge=nextChallenge;
     closed(challenge,['challengeId','nonce','clientId','expiresAt'],'Challenge Google');
-    check(typeof challenge.challengeId==='string'&&challenge.challengeId.length<=200&&typeof challenge.nonce==='string'&&challenge.nonce.length>0&&typeof challenge.clientId==='string'&&/^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(challenge.clientId)&&Number.isFinite(challenge.expiresAt)&&challenge.expiresAt>Date.now(),'Challenge Google invalide ou expiré.');
-    await loadGoogleIdentity();
+    check(typeof challenge.challengeId==='string'&&challenge.challengeId.length>0&&challenge.challengeId.length<=200&&typeof challenge.nonce==='string'&&challenge.nonce.length>0&&typeof challenge.clientId==='string'&&/^[A-Za-z0-9_-]+\.apps\.googleusercontent\.com$/.test(challenge.clientId)&&Number.isFinite(challenge.expiresAt)&&challenge.expiresAt>Date.now(),'Challenge Google invalide ou expiré.');
+    await loadGoogleIdentity();requireCurrentAuthentication(isCurrent);
     globalThis.google.accounts.id.initialize({client_id:challenge.clientId,nonce:challenge.nonce,auto_select:false,ux_mode:'popup',context:'signin',callback:response=>{if(current!==generation)return;void run(async()=>{
-      check(challenge&&challenge.expiresAt>Date.now()&&typeof response?.credential==='string','Connexion Google expirée. Préparez un nouveau challenge.');
-      message('Vérification du compte Google par CDQ…');
-      const proof=await bridge.call('verifierJetonGoogleCDQ',[response.credential,challenge.challengeId]);
-      response=null;challenge=null;
-      check(proof?.ok===true&&typeof proof.ticket==='string'&&proof.ticket.length<=300&&typeof proof.email==='string'&&proof.role==='admin','Le serveur n’a pas confirmé le compte administrateur.');
-      ticket=proof.ticket;email=proof.email;
-      const state=await bridge.call('connecterAvecCodeAcces',[email,'',ticket,'',{creatorRecovery:true,action:'state'}]);
-      check(state?.creatorRecovery===true&&state.email===email,'Le serveur n’a pas confirmé le créateur.');
-      check(state.hasPin===true,'Le créateur doit disposer d’un NIP existant. Cet outil ne crée ni ne remplace de NIP.');
-      $('google-button').replaceChildren();$('identity').textContent='Compte créateur confirmé : '+email;$('pin-panel').hidden=false;$('creator-pin').focus();message('Entrez votre NIP personnel pour ouvrir la session CDQ.');
+      requireCurrentAuthentication(isCurrent);
+      const credential=response?.credential;const attemptChallenge=challenge;response=null;challenge=null;$('google-button').replaceChildren();
+      message('Vérification du compte Google et du créateur par CDQ…');
+      const granted=await openCreatorGoogleSession({call:(name,args)=>authBridge.call(name,args),credential,challenge:attemptChallenge,isCurrent});
+      requireCurrentAuthentication(isCurrent);
+      session=granted.session;email=granted.email;observations.authenticatedPrincipal=email;observations.authenticatedAt=new Date().toISOString();$('identity').textContent='Compte créateur connecté : '+email;message('Session CDQ ouverte avec Google. Vous pouvez lire les capacités du moteur.');
     });}});
     globalThis.google.accounts.id.renderButton($('google-button'),{type:'standard',theme:'outline',size:'large',text:'signin_with',shape:'rectangular'});
     message('Choisissez votre compte Google créateur avec le bouton de connexion.');
-  }));
-  $('unlock').addEventListener('click',()=>run(async()=>{
-    const pin=$('creator-pin').value;$('creator-pin').value='';check(/^\d{4}$/.test(pin),'Entrez les quatre chiffres du NIP existant.');
-    message('Vérification du NIP par CDQ…');
-    const state=await bridge.call('connecterAvecCodeAcces',[email,pin,ticket,'',{creatorRecovery:true,action:'unlock'}]);
-    check(state?.autorise===true&&state.creatorRecovered===true&&state.email===email&&state.role==='admin'&&typeof state.jetonSession==='string'&&state.jetonSession.length>0,'Session créateur non confirmée.');
-    session=state.jetonSession;ticket='';observations.authenticatedPrincipal=email;observations.authenticatedAt=new Date().toISOString();$('pin-panel').hidden=true;message('Session CDQ ouverte. Vous pouvez lire les capacités du moteur.');
   }));
   $('capabilities').addEventListener('click',()=>run(async()=>{
     capabilities=null;inspected=null;$('reviewed').checked=false;observations.capabilities=null;observations.googleHealth=null;
@@ -225,6 +249,6 @@ export function mountOperator(doc=document,win=window){
   $('download').addEventListener('click',()=>{const blob=new Blob([JSON.stringify(observations,null,2)+'\n'],{type:'application/json'});const url=URL.createObjectURL(blob);const anchor=doc.createElement('a');anchor.href=url;anchor.download='cdq-operator-observations-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json';anchor.click();setTimeout(()=>URL.revokeObjectURL(url),1000);});
   if(win.location.origin!==PUBLIC_ORIGIN){message('Servez cet outil sur l’origine GitHub CDQ autorisée avant toute connexion.',true);$('prepare-google').disabled=true;}
   else refresh();
-  return {dispose(){generation++;bridge?.dispose();session='';ticket='';challenge=null;}};
+  return {dispose(){generation++;bridge?.dispose();session='';email='';challenge=null;}};
 }
 if(typeof document!=='undefined'&&document.getElementById('operator-app'))mountOperator();

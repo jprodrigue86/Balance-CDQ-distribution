@@ -6,8 +6,8 @@
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; frame-src https://script.google.com https://*.googleusercontent.com https://accounts.google.com; connect-src https://accounts.google.com; img-src 'self' data: https://*.googleusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
   <title>Contrôle CDQ · opérateur 27.55</title>
-  <link rel="stylesheet" href="./styles.css">
-  <script type="module" src="./operator.mjs"></script>
+  <link rel="stylesheet" href="./styles.css?v=google-only-20261021">
+  <script type="module" src="./operator.mjs?v=google-only-20261021"></script>
 </head>
 <body>
 <main id="operator-app">
@@ -20,12 +20,7 @@
     <button id="prepare-google" type="button">Préparer la connexion Google</button>
     <div id="google-button" aria-label="Choix du compte Google"></div>
     <p id="identity"></p>
-    <div id="pin-panel" hidden>
-      <label for="creator-pin">Votre NIP personnel à 4 chiffres</label>
-      <input id="creator-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="current-password">
-      <button id="unlock" type="button">Ouvrir la session CDQ</button>
-      <p class="hint">Cette opération utilise votre NIP existant. Elle ne le remplace pas.</p>
-    </div>
+    <p class="hint">Votre compte Google créateur ouvre directement la session CDQ.</p>
   </section>
   <section aria-labelledby="capabilities-title">
     <h2 id="capabilities-title">2. Santé Google et capacités du moteur</h2>
