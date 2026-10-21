@@ -180,16 +180,16 @@ function paintRows(){
 }
 function projected(id){restoreClient(id);const state=states.get(key(id)),view=projection.project(id,state),pending=engineListsV2754.has(key(id))&&['pending','running'].includes(state?.enginePdfV2754?.status);return pending?{...view,localPending:true,projectionStamp:JSON.stringify([view.projectionStamp,state.enginePdfV2754.revision,state.enginePdfV2754.status])}:view;}
 function queuePreview(id){
- if(!id||!canRead())return Promise.resolve(null);const k=key(id),view=projected(id),prior=previews.get(k);if(!view.localPending||!view.complete){previews.delete(k);return Promise.resolve(null);}if(prior?.stamp===view.projectionStamp)return Promise.resolve(prior.record);
+ if(!id||!canRead())return Promise.resolve(null);const k=key(id),view=projected(id),prior=previews.get(k);if(!view.complete||view.reconciliationRequired){previews.delete(k);return Promise.resolve(null);}if(prior?.stamp===view.projectionStamp)return Promise.resolve(prior.record);
  const active=previewJobs.get(k);if(active){active.dirty=true;return active.promise;}
  const version=epoch,account=calibrationIdentity().email,stamp=view.projectionStamp,job={dirty:false,promise:null};
  job.promise=Promise.resolve().then(async()=>{
   const valid=()=>version===epoch&&account===calibrationIdentity().email&&canRead()&&projected(id).projectionStamp===stamp;
   if(!valid())return null;
-  const warnings=[view.unsaved?'Modifications locales non enregistrées dans le rapport.':'Modifications locales; synchronisation Drive en attente.'];let bytes;
+  const warnings=view.localPending?[view.unsaved?'Modifications locales non enregistrées dans le rapport.':'Modifications locales; synchronisation Drive en attente.']:[];let bytes;
   if(window.cdqPdfWorkV2729?.request){bytes=(await window.cdqPdfWorkV2729.request('list',{rows:view.rows,name:root(id)?.nom||root(id)?.name||'',author:'',digest:'local-'+stamp,warnings},{valid})).bytes;}
   else{await window.cdqPreparePdfLibV2684();if(!valid())return null;bytes=await renderBalanceListV2728(view.rows,root(id)?.nom||root(id)?.name||'','',warnings,window.PDFLib);}
-  if(!valid())return null;const record={owner:account,clientId:String(id),sourceListId:String(view.fileId),blob:new Blob([bytes],{type:'application/pdf'}),name:'Liste de balance — modifications locales.pdf',localUpdatedAt:view.localUpdatedAt};previews.set(k,{stamp,record});return record;
+  if(!valid())return null;const record={owner:account,clientId:String(id),sourceListId:String(view.fileId),blob:new Blob([bytes],{type:'application/pdf'}),name:view.localPending?'Liste de balance — modifications locales.pdf':'Liste de balance.pdf',localUpdatedAt:view.localUpdatedAt};previews.set(k,{stamp,record});return record;
  }).catch(()=>null).finally(()=>{if(previewJobs.get(k)===job)previewJobs.delete(k);if(version===epoch&&job.dirty)queuePreview(id);});previewJobs.set(k,job);return job.promise;
 }
 async function localPreview(id=client()){if(!id||!canRead())return null;let result=await queuePreview(id);const view=projected(id),cached=previews.get(key(id));if(cached?.stamp===view.projectionStamp)return cached.record;if(view.localPending&&view.complete)result=await queuePreview(id);return result;}
@@ -295,7 +295,8 @@ function queueOwner(){let native=window.BalanceCDQBackgroundV2746;try{if(window.
 async function open(){
   const id=client();if(!id||!canRead())return;restoreClient(id);
   const tree=root(id),file=listFile(id),known=states.get(key(id)),fileId=file?.id||(!tree||tree.charge===false||listFolder(id)?.charge===false?known?.fileId:'');
-  if(!known?.reconciliationRequired&&projected(id).localPending){const preview=await localPreview(id);if(preview&&await window.cdqOpenBalanceListPreviewV2746?.(preview))return true;}
+  if(!known?.reconciliationRequired&&projected(id).complete){
+    if(engineV2754())refreshEngineListV2754(id,{hydrate:true}).then(()=>queuePreview(id)).catch(()=>{});const preview=await localPreview(id);if(preview&&await window.cdqOpenBalanceListPreviewV2746?.(preview))return true;}
   // Existing PDF is immediately readable, including during an update.
   if(fileId)return window.cdqOpenPdfV2520?.(fileId,{nom:'Liste de balance.pdf'});
   if(navigator.onLine===false){paint(id,'Aucune liste disponible hors ligne.',true);return;}

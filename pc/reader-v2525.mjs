@@ -1,3 +1,6 @@
+import {installReaderEditLeaseV2756} from './file-edit-session-v2756.mjs';
+import {installVerifiedRangeV2756} from './verified-range-v2756.mjs';
+import {installFirstTapV2756} from './first-tap-v2756.mjs';
 import {prepareCamionCanvasBoundaryV2755,installCamionCanvasBoundaryV2755,prepareTrainCalendarBoundaryV2755,installTrainCalendarBoundaryV2755} from './reader-canvas-boundary-v2755.mjs';
 import {preparePcReaderCanvasBarrierV2754,installPcReaderCanvasBarrierV2754} from './reader-canvas-barrier-v2754.mjs';
 import {trialReportMetadataFamilyV2743} from './reader-trial-reports-v2743.mjs';
@@ -403,7 +406,9 @@ async function finishDocument(){
   closeAfterSave=true;
   await save();
 }
+const editGuardV2756=installReaderEditLeaseV2756({document,viewer:$('viewer'),status});
 async function save(external=false){
+  if(!external&&!editGuardV2756.check())return;
   if(!doc||saving||readOnly&&!external)return;
   if(!readOnly&&decimalGuard&&!decimalGuard.validateAll())return;
   busy(true);$('closeError').textContent='';status(external?'Téléchargement…':'Enregistrement…');
@@ -438,7 +443,7 @@ async function open(data){
   let generation=++documentGenerationV2730;
   const checkLease=()=>{if(!readerOpeningLeaseIsCurrentV2730({generation,currentGeneration:documentGenerationV2730,epoch:workEpoch,currentEpoch:work.stats().epoch,closed}))throw Error('Le compte ou le rapport a changé pendant son ouverture.');if(reuse&&(!sameReaderViewportV2730(retained?.viewport,readerViewportV2730(viewer))||!readerCanvasGeometryMatchesV2730(retained?.artwork,viewer.getPageView(0))))throw Error('Les dimensions du lecteur ont changé.');};
   visualRefreshV2730.reset();delete $('viewer').dataset.cdqFamily;delete $('viewer').dataset.cdqTemplatePaintV2753;opening=true;closed=false;autoReportName=data.autoReportName===true;
-  $('viewer').inert=true;$('viewer').style.opacity='0';name=String(data.name||name);fileId=String(data.fileId||'');readOnly=!!data.readOnly;
+  $('viewer').inert=true;$('viewer').style.opacity='0';name=String(data.name||name);fileId=String(data.fileId||'');readOnly=!!data.readOnly;editGuardV2756.reset();if(data.editLeaseMsV2756!==undefined)editGuardV2756.update(data.editLeaseMsV2756);
   reportEngineV2754=reportContextV2754(data.reportEngineV2754);reportSnapshotV2754=data.reportSnapshotV2754?reportFieldsV2754(data.reportSnapshotV2754):null;snapshotUpdatesV2754=[];engineDefaultsAppliedV2754=false;
   initialValuesV2730=data.initialValues||null;initialAppliedV2730=false;initialUpdatesV2730=[];initialPreparedDraftV2730=data.readerPreparedVersion===2730&&isCacheableReaderDraftV2730({...data,bytes:blob.size});
   $('name').textContent=name;$('empty').style.display='none';status('Ouverture du PDF…');
@@ -622,6 +627,7 @@ $('file').onchange=()=>{if(doc){status('Fermez le PDF actuel avant d’en ouvrir
 window.addEventListener('message',async e=>{
   if(!hosted||e.source!==parent||!parentOrigin||e.origin!==parentOrigin)return;
   const d=e.data||{};
+  if(d.type==='CDQ_READER_EDIT_LEASE_V2756'&&String(d.fileId||'')===fileId){editGuardV2756.update(d.remainingMs);return;}
   if(d.type==='CDQ_READER_THEME'){applyReaderTheme(d.theme);return;}
   if(d.type==='CDQ_READER_PREFILL_V2642'&&String(d.fileId||'')===fileId){lateIdentity={...lateIdentity,...d.values};applyLateIdentity();return;}
   if(d.type==='CDQ_READER_REQUEST_CLOSE'){requestClose();return;}
@@ -704,6 +710,16 @@ try{
   });
   // A technician can stop at the last reading without moving to another field.
   // Commit complete numbers or the explicit skip/overload tokens; partial input stays editable.
+  installFirstTapV2756(document);
+  installVerifiedRangeV2756({surface:$('viewer'),names:()=>fieldDefinitions instanceof Map?[...fieldDefinitions.keys()]:Object.keys(fieldDefinitions||{}),enabled:()=>!!doc&&!readOnly&&!opening&&!saving&&!closed,
+    write:(name,value)=>{
+      for(const definition of cdqFieldDefinitionsV2581(name)){
+        if(!definition.id||definition.readOnly)continue;
+        definition.value=value;doc.annotationStorage.setValue(definition.id,{value});
+        eventBus.dispatch('updatefromsandbox',{source:window,detail:{id:definition.id,value}});
+        eventBus.dispatch('dispatcheventinsandbox',{source:viewer,detail:{id:definition.id,name:'Keystroke',value,willCommit:true,commitKey:1,selStart:0,selEnd:value.length}});
+      }
+    },changed:()=>{dirty=true;version++;readerEquipmentV2746.changed();visualRefreshV2730.schedule();}});
   let liveCalculationTimer=0;
   $('viewer').addEventListener('input',e=>{
     const field=e.target,value=String(field.value??'');

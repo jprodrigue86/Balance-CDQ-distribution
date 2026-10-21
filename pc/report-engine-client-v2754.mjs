@@ -143,7 +143,12 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
     });if(record.pending)queueMicrotask(()=>syncRecord(record));return record;
   },async remember({context,fields,name,pdf,serverRevision}){
     const account=getAccount(),meta=reportContextV2754(context),stamp=generation;if(!account||!meta)throw Error('Identité du rapport invalide.');const id=key(account,meta.reportId);
-    return serial(id,async()=>{const old=await storage.get(id);if(stamp!==generation||account!==getAccount())throw Error('Le compte a changé.');if(old?.deleted||old?.pending&&!old.dataSaved)return old;const revision=Number(serverRevision??meta.baseRevision)||0;if(old&&old.serverRevision>revision)return old;
+    return serial(id,async()=>{const old=await storage.get(id);if(stamp!==generation||account!==getAccount())throw Error('Le compte a changé.');
+      const moved=old&&(old.context.clientId!==meta.clientId||old.context.destinationId!==meta.destinationId),revision=Number(serverRevision??meta.baseRevision)||0;
+      // Serial with saves: a location refresh may never consume an outbox item,
+      // including one accepted by the server but still awaiting its Drive PDF.
+      if(moved&&!old.deleted&&(old.pending||old.blocked||old.dataSaved===false||old.serverRevision>revision))throw Object.assign(Error('Ce rapport a changé de dossier alors que des réponses locales sont en attente. Elles restent conservées; terminez leur vérification avant de rouvrir le fichier.'),{code:'REPORT_LOCATION_CONFLICT'});
+      if(old?.deleted||old?.pending&&!old.dataSaved)return old;if(old&&old.serverRevision>revision)return old;
       const normalized=reportFieldsV2754(fields),publication=pdf||{status:'confirmed',fileId:meta.fileId,revision},pending=publication.status!=='confirmed'||Number(publication.revision)!==revision,record={key:id,account,context:{...meta,baseRevision:revision},fields:normalized,name,serverRevision:revision,dataSaved:true,pending,blocked:false,error:'',savedAt:Date.now(),pdf:publication,payload:{...meta,baseRevision:revision,requestId:crypto.randomUUID(),name,fields:normalized}};
       await storage.commit(record,pending);notify(record);if(pending)queueMicrotask(()=>syncRecord(record));return record;
     });

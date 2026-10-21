@@ -1,3 +1,4 @@
+import {createLocalReaderEditSessionsV2756} from './file-edit-session-v2756.mjs';
 import {reportContextV2754,reportFieldsV2754,reportPayloadV2754} from './report-engine-client-v2754.mjs';
 import {equipmentValuesV2697} from './equipment-list-v2697.mjs';
 import {nameFromReport,nextNumberedReportNameV2731,identificationReportName} from './report-name-v2648.mjs';
@@ -145,7 +146,7 @@ function download(blob,name) {
   const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();
   setTimeout(()=>URL.revokeObjectURL(url),30000);
 }
-export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFile=openSheet,storage=nativeStorage}) {
+export function createOfflineTemplates({send,unlock,openPdf:openPdfUnleased,acquireFileEdit,warmPdf,openSheetFile=openSheet,storage=nativeStorage}) {
   let session=null,appliedSession=null,appliedOnline=null,localEmail='',profile=null,chain=Promise.resolve(),epoch=0,documentReaderWarmed=false;
   let readAccessVersion=0,readAccountVersion=0,pendingAccessTransitions=0;
   const retirementJobs=new Map(),readRetirementVersions=new Map(),confirmedDeletedV2749=new Map();
@@ -198,6 +199,9 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
     },count===1?2000:8000);
     retryTimersV2740.set(id,timer);
   }
+  const localEditSessionsV2756=createLocalReaderEditSessionsV2756({acquire:acquireFileEdit,open:openPdfUnleased,currentOwner:()=>session?.email||localEmail});
+  const openPdf=async data=>{const copy=data.editCopyV2756?await get('copies',data.editCopyV2756.id)||data.editCopyV2756:null;return copy?localEditSessionsV2756.open(copy,data):openPdfUnleased(data);};
+  window.addEventListener('online',()=>localEditSessionsV2756.online());
   const readers=new Map(),creationDownloads=new Map(),identityDownloads=new Map();
   const destinationNames=new Map(),destinationJobs=new Map();
   const nameKey=(email,folderId)=>email+':'+folderId;
@@ -222,7 +226,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   async function put(store,value){
     const pending=store==='copies'&&value?.email&&value.kind!=='sheet'&&(!value.removed&&(!value.driveId||value.uploadId!==value.syncedUploadId)||value.removed&&(value.engineDeletionV2754&&!value.engineDeleteConfirmedV2754||value.cancelledDriveId&&!value.cancelledDeleteConfirmed));
     if(pending&&typeof window.BalanceCDQBackgroundV2746?.armDurableV2751==='function'&&window.BalanceCDQBackgroundV2746.armDurableV2751(value.email)===false)throw Error('La reprise durable de cette sauvegarde n’a pas pu être préparée. Réessayez.');
-    const result=await storeCopy(store,value);if(store==='copies')notePending(value);return result;
+    const result=await storeCopy(store,value);if(store==='copies'){notePending(value);localEditSessionsV2756.update(value);}return result;
   }
   function equipmentHooks(c,current,stamp){
     let readerSession='',sequence=-1;
@@ -246,7 +250,7 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
   const validReadStamp=readStamp=>!readStamp||(readStamp.access===readAccessVersion&&readStamp.retirement===(readRetirementVersions.get(readStamp.key)||0));
   const allowed=email=>localEmail===email||session?.email===email;
   const engineDataV2754=c=>c?.reportEngineV2754?{reportEngineV2754:c.reportEngineV2754,reportSnapshotV2754:c.reportSnapshotV2754,enginePdfV2754:c.enginePdfV2754,reportRevisionV2754:c.reportRevisionV2754||0}:{};
-  function engineReaderV2754(c,email){return {...engineDataV2754(c),onSaveSnapshot:c.reportEngineV2754&&(session?.canWrite||profile?.canWrite)?(fields,requestId,name)=>saveSnapshotCopyV2754(c.id,email,fields,requestId,name):null};}
+  function engineReaderV2754(c,email){return {editCopyV2756:c,...engineDataV2754(c),onSaveSnapshot:c.reportEngineV2754&&(session?.canWrite||profile?.canWrite)?(fields,requestId,name)=>saveSnapshotCopyV2754(c.id,email,fields,requestId,name):null};}
   async function attachEngineV2754(copy,template,current){
     if(current.reportEngineV2754!==true||!template.bundled)return copy;
     const {REPORT_ENGINE_TEMPLATES_V2754}=await import('./report-engine-templates-v2754.mjs'),meta=REPORT_ENGINE_TEMPLATES_V2754[engineFamilyAliasV2754[copy.modeleId]||copy.modeleId];
@@ -971,6 +975,6 @@ export function createOfflineTemplates({send,unlock,openPdf,warmPdf,openSheetFil
       }
       return job.catch(e=>{status.textContent=e.message||String(e);});
     },
-    lock(){epoch++;confirmedDeletedV2749.clear();session=null;appliedSession=null;appliedOnline=null;localEmail='';for(const job of inflight.values())clearTimeout(job.timer);inflight.clear();resetRetriesV2740();sentJobsV2740.clear();requested.clear();readers.clear();creationDownloads.clear();identityDownloads.clear();destinationNames.clear();pendingWork.clear();copyIdentities.clear();sessionStorage.clear();panel.hidden=true;},refresh};
+    lock(){localEditSessionsV2756.close();epoch++;confirmedDeletedV2749.clear();session=null;appliedSession=null;appliedOnline=null;localEmail='';for(const job of inflight.values())clearTimeout(job.timer);inflight.clear();resetRetriesV2740();sentJobsV2740.clear();requested.clear();readers.clear();creationDownloads.clear();identityDownloads.clear();destinationNames.clear();pendingWork.clear();copyIdentities.clear();sessionStorage.clear();panel.hidden=true;},refresh};
 }
 
