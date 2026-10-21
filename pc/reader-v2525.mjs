@@ -1,3 +1,4 @@
+import {prepareCamionCanvasBoundaryV2755,installCamionCanvasBoundaryV2755,prepareTrainCalendarBoundaryV2755,installTrainCalendarBoundaryV2755} from './reader-canvas-boundary-v2755.mjs';
 import {preparePcReaderCanvasBarrierV2754,installPcReaderCanvasBarrierV2754} from './reader-canvas-barrier-v2754.mjs';
 import {trialReportMetadataFamilyV2743} from './reader-trial-reports-v2743.mjs';
 import {refreshResultGeometryV2743,restoreBlankResultConclusionV2743} from './reader-result-geometry-v2743.mjs';
@@ -479,8 +480,14 @@ async function open(data){
           // avoid transferring OffscreenCanvas bitmaps back into a software
           // canvas before result badges sample those same page pixels.
           const pcCanvasBarrierV2754=await preparePcReaderCanvasBarrierV2754({sourceBytes,staticArtwork:staticArtworkV2753,preparedEpoch:artworkEpochV2753,epoch:workEpoch,pdfjsVersion:api.version,checkCurrent:checkLease});checkLease();
+          const camionCanvasPreparationV2755=prepareCamionCanvasBoundaryV2755({sourceBytes,staticArtwork:staticArtworkV2753,preparedEpoch:artworkEpochV2753,epoch:workEpoch,pdfjsVersion:api.version,checkCurrent:checkLease});
+          const camionCanvasBoundaryV2755=camionCanvasPreparationV2755===null?null:await camionCanvasPreparationV2755;checkLease();
+          const trainCalendarPreparationV2755=camionCanvasBoundaryV2755===null?prepareTrainCalendarBoundaryV2755({sourceBytes,staticArtwork:staticArtworkV2753,preparedEpoch:artworkEpochV2753,epoch:workEpoch,pdfjsVersion:api.version,checkCurrent:checkLease}):null;
+          const trainCalendarBoundaryV2755=trainCalendarPreparationV2755===null?null:await trainCalendarPreparationV2755;checkLease();
           const task=documentTask=attemptTask=api.getDocument({data:sourceBytes,worker:pdfWorker,standardFontDataUrl:assets+'standard_fonts/',cMapUrl:assets+'cmaps/',cMapPacked:true,wasmUrl:assets+'wasm/',isEvalSupported:false,enableXfa:false,enableHWA:false,isOffscreenCanvasSupported:false});
           const parsed=await task.promise;checkLease();doc=parsed;
+          installCamionCanvasBoundaryV2755(parsed,camionCanvasBoundaryV2755);
+          installTrainCalendarBoundaryV2755(parsed,trainCalendarBoundaryV2755);
           installPcReaderCanvasBarrierV2754(parsed,pcCanvasBarrierV2754);
           if(eligible)protectReaderSnapshotsV2730(doc);
           qaFirstPaintOwnerV2731=Object.freeze({document:doc,generation,epoch:workEpoch,paint:preparedPaintV2753});
