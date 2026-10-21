@@ -1,4 +1,4 @@
-// Complete native fills for the exact approved Camion artwork. The readback
+// Isolate native fills for the exact approved Camion artwork. Each boundary
 // discards one pixel; it never rewrites, retains or replays any image data.
 // Decoration is local to the main canvas and lasts only for its render task.
 export const CAMION_CANVAS_BOUNDARY_POLICY_V2755=Object.freeze({
@@ -6,7 +6,7 @@ export const CAMION_CANVAS_BOUNDARY_POLICY_V2755=Object.freeze({
   sourceSha256:'ff40bd121e4e53ac75dac859a86e803a2d3c34f89c2c306b6b206e330a0e5b5e',sourceBytes:984346,
   artworkAlgorithm:'cdq-static-artwork-graph-sha256-v1',
   artworkFingerprint:'8929ce6b5b81e7a692e2c3d5336b7fb98a5149034eacc5af99fc501db5450639',
-  boundary:'after-native-main-fill',readbackWidth:1,readbackHeight:1
+  boundary:'before-and-after-native-main-fill',readbackWidth:1,readbackHeight:1
 });
 const policy=CAMION_CANVAS_BOUNDARY_POLICY_V2755;
 const preparedIdentities=new WeakSet(),installedDocuments=new WeakSet(),installedPages=new WeakSet(),activeContexts=new WeakMap();
@@ -58,6 +58,10 @@ function attachContext(context,lease){
     const fill=context.fill,readback=context.getImageData;
     entry={leases:new Set(),restore:null};
     entry.restore=replaceOwnMethod(context,'fill',function(...args){
+      // Flush preceding native strokes before this fill as well as the fill
+      // itself, so browser paint batching cannot join either boundary.
+      if(this===context&&entry.leases.size&&context.canvas.width>0&&context.canvas.height>0)
+        Reflect.apply(readback,context,[0,0,policy.readbackWidth,policy.readbackHeight]);
       const result=Reflect.apply(fill,this,args);
       // Method borrowing and all non-owned canvases keep their native behavior.
       if(this===context&&entry.leases.size&&context.canvas.width>0&&context.canvas.height>0)
@@ -137,7 +141,7 @@ export const TRAIN_CALENDAR_BOUNDARY_POLICY_V2755=Object.freeze({
   sourceSha256:'3cdaad61a08a8daee5a321f7b44eae8a97ba94be888662e40ce898397814be26',sourceBytes:999286,
   artworkAlgorithm:'cdq-static-artwork-graph-sha256-v1',
   artworkFingerprint:'c948b549aa160df41fcf7b17d1a9c0ba54a67268772fccbb286e669e31518ab1',
-  boundary:'after-native-calendar-outer-fill',constructPath:91,paintOperation:23,
+  boundary:'before-and-after-native-calendar-outer-fill',constructPath:91,paintOperation:23,
   fillStyle:'#0e06ad',lineCap:'butt',globalAlpha:1,globalCompositeOperation:'source-over',
   lineWidths:Object.freeze([1,6]),readbackWidth:1,readbackHeight:1,
   // Original Float32 drawing instructions from the approved source Form.
@@ -209,6 +213,8 @@ function attachTrainContext(context,lease){
     const fill=context.fill,readback=context.getImageData;
     entry={leases:new Set(),restore:null};
     entry.restore=replaceOwnMethod(context,'fill',function(...args){
+      if(this===context&&context.canvas.width>0&&context.canvas.height>0&&trainFillSelected(context,entry,args))
+        Reflect.apply(readback,context,[0,0,trainPolicy.readbackWidth,trainPolicy.readbackHeight]);
       const result=Reflect.apply(fill,this,args);
       if(this===context&&context.canvas.width>0&&context.canvas.height>0&&trainFillSelected(context,entry,args))
         Reflect.apply(readback,context,[0,0,trainPolicy.readbackWidth,trainPolicy.readbackHeight]);

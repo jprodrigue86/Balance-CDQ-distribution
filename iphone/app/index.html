@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="27.55" data-cdq-iphone-release="f488348c147b9d7cfb0866a591bfc0fc9a1dcf0978533e7502d715b7812d78ef">
+<html lang="fr" data-cdq-iphone-version="27.56" data-cdq-iphone-release="7552d8e07317b8f51cc739614bd8bc6c441d6104bd2488e93cf2d4f53d9d3fd6">
 <head>
 <script id="cdq-durable-resume-v2751">
 window.cdqDurableResumeV2751=(function createDurableResumeV2751({native=null,read=()=>''}={}){
@@ -491,7 +491,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.19-v27.55-corrections';
+const CDQ_PWA_BUILD = '2026.10.21-v27.56-client-speed';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -628,6 +628,7 @@ let backendBuild = '';
 const cdqOffline = import('./offline-templates-v2636.mjs').then(module=>module.createOfflineTemplates({
 send:data=>replyToSelector(selectorWindow,data),
 openPdf:data=>cdqAfficherPdf(data),
+acquireFileEdit:(...args)=>{const source=document.getElementById('app')?.contentWindow;if(typeof source?.cdqAcquireFileEditV2756!=='function')throw Error('Déverrouillez CDQ pour modifier ce fichier.');return source.cdqAcquireFileEditV2756(...args);},
 warmPdf:()=>{
 if(document.querySelector('link[data-cdq-reader-preload-v2682]'))return;
 for(const name of ['reader-v2525.mjs','vendor/pdfjs-6.3.289/build/pdf.mjs','vendor/pdfjs-6.3.289/web/pdf_viewer.mjs']){
@@ -1424,6 +1425,7 @@ function cdqOpenSheetDefaultAccountV2297(data){
   return true;
 }
 function cdqHandleDefaultGoogleAccountV2297(data,source){
+  if(data.type==='CDQ_READER_EDIT_LEASE_V2756'){const ctx=cdqPdfV2304Context;if(ctx&&ctx.source===source&&ctx.fileId===data.fileId&&ctx.readerSession===data.readerSession)import('./reader-host-v2525.mjs').then(module=>{if(cdqPdfV2304Context===ctx){const reader=module.currentReader();if(reader?.fileId===ctx.fileId)reader.editLease?.(data.remainingMs);}});return true;}
   if(data.type==='CDQ_DEFAULT_GOOGLE_ACCOUNT_GET'){
     cdqReplyDefaultGoogleAccountV2297(source);
     return true;

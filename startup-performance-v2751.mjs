@@ -43,15 +43,24 @@ export function createLazyPageV2751({load,current,owner=()=>'',report=()=>{}}){
 // Preserve the callback runner protocol; defer only its final dispatch. The
 // original runner still owns session routing and all access checks.
 export function wrapRpcRunnerV2751(original,budget,{report=()=>{}}={}){
-  function wrapped(){let success,failure,userObject,hasUser=false,proxy;
+  function wrapped(){let success,failure,userObject,started,hasUser=false,proxy;
     proxy=new Proxy({}, {get(_,name){
+      if(name==='withStartHandler')return fn=>(started=fn,proxy);
       if(name==='withSuccessHandler')return fn=>(success=fn,proxy);
       if(name==='withFailureHandler')return fn=>(failure=fn,proxy);
       if(name==='withUserObject')return value=>(userObject=value,hasUser=true,proxy);
       if(typeof name!=='string'||name==='then')return undefined;
-      return(...args)=>{const ok=success,fail=failure,value=userObject,hasValue=hasUser;
-        const send=()=>new Promise((resolve,reject)=>{try{let runner=original().withSuccessHandler((...values)=>resolve(values)).withFailureHandler((...values)=>reject({rpcValues:values}));if(hasValue)runner=runner.withUserObject(value);runner[name](...args);}catch(error){reject(error);}});
+      return(...args)=>{const ok=success,fail=failure,value=userObject,hasValue=hasUser,onStart=started;
+        const send=()=>new Promise((resolve,reject)=>{try{onStart?.();let runner=original().withSuccessHandler((...values)=>resolve(values)).withFailureHandler((...values)=>reject({rpcValues:values}));if(hasValue)runner=runner.withUserObject(value);runner[name](...args);}catch(error){reject(error);}});
         const options={write:/^(?:enregistrer|sauvegarder|creer|supprimer|renommer|deplacer|dupliquer|envoyer|restaurer|retirer|ajouter|modifier|definir|cdq(?:Enregistrer|Creer|Supprimer|Restaurer|Renommer|Deplacer|Dupliquer|Envoyer|Retirer|Ajouter|Modifier|Inventory(?:Create|Move|Save|Set|Delete)))/i.test(name)};
+        // The engine multiplexes reads and writes through one RPC name.
+        // Treat an actual save/delete as a write, and receipt polling as
+        // background work, so polling cannot occupy every foreground slot.
+        if(name==='cdqReportEngineV2754'){
+          const action=String(args[0]||''),payload=args[1]||{};
+          options.write=['save','delete','restore','importIndex','editAcquire','editRenew','editRelease'].includes(action)||action==='list'&&payload.repair===true||action==='status'&&payload.restore===true;
+          if(action==='status'&&!options.write)options.kind='background';
+        }
         if(/^(?:actualiserContenuClient|cdqStartupMaintenanceV2686)$/.test(name))options.kind='background';
         budget.run(send,options).then(values=>{if(typeof ok==='function')ok(...values);},error=>{
           const values=error?.rpcValues||(hasValue?[error,value]:[error]);

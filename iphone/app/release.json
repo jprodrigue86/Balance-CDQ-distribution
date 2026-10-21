@@ -1,11 +1,11 @@
 {
   "platform": "iphone-pwa",
-  "version": "27.55",
-  "release": "f488348c147b9d7cfb0866a591bfc0fc9a1dcf0978533e7502d715b7812d78ef",
+  "version": "27.56",
+  "release": "7552d8e07317b8f51cc739614bd8bc6c441d6104bd2488e93cf2d4f53d9d3fd6",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.19-v27.55-corrections",
-  "androidSelectorSha256": "a99be403ac8a5e560b0066d4fb7d024b2ae3c23bcad8e6f5f2d5fa53a5b0ac9b",
-  "generatedFrom": "scripts/pipeline-v2755.mjs",
+  "androidSourceBuild": "2026.10.21-v27.56-client-speed",
+  "androidSelectorSha256": "92546f5a2bb45594dc4bce443c711c1c929a352ca811c1851f4ea2d43b8e22ae",
+  "generatedFrom": "scripts/pipeline-v2756.mjs",
   "files": 891,
   "componentBaseVersion": "27.54",
   "componentBaseRelease": "a577a444e82e565a073471e21ea3d0f0b4778f49bda948f5f5fb7e6eec03b255"

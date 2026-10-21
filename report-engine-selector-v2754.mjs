@@ -34,17 +34,19 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     }
     if(record){
       if(record.deleted)deleted();
-      if(expectedClient&&record.context.clientId!==expectedClient)throw Object.assign(Error('Le rapport appartient à un autre client.'),{code:'SCOPE_MISMATCH'});
+      const movedClient=expectedClient&&record.context.clientId!==expectedClient;
+      if(movedClient&&(record.pending||record.blocked||record.dataSaved===false))throw Object.assign(Error('Ce rapport a changé de dossier alors que des réponses locales sont en attente. Elles restent conservées; terminez leur vérification avant de rouvrir le fichier.'),{code:'REPORT_LOCATION_CONFLICT'});
+      if(movedClient&&!isOnline())throw Object.assign(Error('Connectez-vous pour vérifier le nouvel emplacement de ce rapport.'),{code:'SCOPE_MISMATCH'});
       if(isOnline()){
         try{
-          const result=await call('read',{reportId:record.context.reportId,clientId:record.context.clientId,...(record.context.fileId?{fileId:record.context.fileId}:{})});
+          const result=await call('read',{...(movedClient?{}:{reportId:record.context.reportId}),clientId:expectedClient||record.context.clientId,fileId:String(fileId)});
           if(result.deleted)deleted();
           if(result.found===false){if(!(record.pending&&!record.dataSaved))throw Object.assign(Error('Ce rapport n’est plus présent sur le serveur.'),{code:'REPORT_NOT_FOUND'});}
           else{const refreshed=await rememberRead(result);if(!refreshed)throw Object.assign(Error('Les réponses serveur de ce rapport sont incomplètes.'),{code:'INVALID_REPORT_RESPONSE'});record=refreshed;}
         }catch(error){
           // Only a transport outage can use the durable local copy. Account,
           // permission, revision and deletion errors must remain visible.
-          if(error.code||!/network|offline|réseau|failed to fetch|load failed|internet|timed?\s*out|timeout/i.test(String(error.message||'')))throw error;
+          if(movedClient||error.code||!/network|offline|réseau|failed to fetch|load failed|internet|timed?\s*out|timeout/i.test(String(error.message||'')))throw error;
         }
       }
     }

@@ -136,7 +136,7 @@
     snapshotTimer = setTimeout(() => snapshot(''), 80);
   }
   window.cdqPersistDocumentContextV2618 = kind => { snapshot(kind || '', true); return true; };
-  window.cdqNativeDocumentReturnedV2618 = kind => { restoreAfterDocument(kind || ''); return true; };
+  window.cdqNativeDocumentReturnedV2618 = kind => { if(kind==='sheet')window.dispatchEvent(new CustomEvent('cdq:sheet-returned-v2756'));restoreAfterDocument(kind || ''); return true; };
   document.addEventListener('pointerdown', () => { interaction++; }, {capture:true, passive:true});
   document.addEventListener('click', scheduleSnapshot, true);
   document.addEventListener('change', scheduleSnapshot, true);
