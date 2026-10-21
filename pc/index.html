@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.56" data-cdq-pc-release="dba0d6d6e043cb19f07b6186a23b5ef6fd99904523e48fee62b47029a2e74cb5">
+<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.57" data-cdq-pc-release="f080e6899ba37c9d4333932397dae3d4019714a836d8615e92dd0654d0bc46c7">
 <head>
 <script id="cdq-durable-resume-v2751">
 window.cdqDurableResumeV2751=(function createDurableResumeV2751({native=null,read=()=>''}={}){
@@ -490,7 +490,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.21-v27.56-client-speed';
+const CDQ_PWA_BUILD = '2026.10.21-v27.57-pdf-flow';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1424,6 +1424,8 @@ function cdqOpenSheetDefaultAccountV2297(data){
   return true;
 }
 function cdqHandleDefaultGoogleAccountV2297(data,source){
+  if(data.type==='CDQ_READER_OPENING_STATUS_V2757'){const ctx=cdqPdfV2304Context;if(ctx&&ctx.source===source&&ctx.fileId===data.fileId&&ctx.readerSession===data.readerSession)cdqOpeningBarV2757(ctx,data.text);return true;}
+  if(data.type==='CDQ_CANCEL_READER_PREVIEW_V2757'){const ctx=cdqPdfV2304Context;if(ctx&&ctx.source===source&&ctx.fileId===data.fileId&&ctx.readerSession===data.readerSession&&ctx.readerPhaseV2757===data.readerPhaseV2757&&(ctx.previewV2757||!ctx.openedV2757)){ctx.cancelledV2757=true;ctx.barV2757?.remove();cdqPdfV2304Context=null;import('./reader-host-v2525.mjs').then(module=>{const reader=module.currentReader();if(reader?.readerSessionV2757===ctx.readerSession&&reader?.readerPhaseV2757===ctx.readerPhaseV2757)reader.disposePreviewV2757(false);});}return true;}
   if(data.type==='CDQ_READER_EDIT_LEASE_V2756'){const ctx=cdqPdfV2304Context;if(ctx&&ctx.source===source&&ctx.fileId===data.fileId&&ctx.readerSession===data.readerSession)import('./reader-host-v2525.mjs').then(module=>{if(cdqPdfV2304Context===ctx){const reader=module.currentReader();if(reader?.fileId===ctx.fileId)reader.editLease?.(data.remainingMs);}});return true;}
   if(data.type==='CDQ_DEFAULT_GOOGLE_ACCOUNT_GET'){
     cdqReplyDefaultGoogleAccountV2297(source);
@@ -1641,36 +1643,50 @@ function cdqAfficherPdf(data){
   if(!data.workspaceSource&&source?.document.documentElement.classList.contains('cdq-desktop-v2676'))data={...data,workspaceSource:source};
   return import('./reader-host-v2525.mjs').then(m=>m.openReader(data));
 }
+function cdqOpeningBarV2757(ctx,text){
+ if(ctx.cancelledV2757||cdqPdfV2304Context!==ctx)return;
+ if(!text){ctx.barV2757?.remove();ctx.barV2757=null;return;}
+ if(!ctx.barV2757){
+  const bar=document.createElement('section');bar.setAttribute('role','status');bar.style.cssText='position:fixed;left:12px;right:12px;bottom:14px;z-index:2147483600;background:#101820;color:white;padding:12px;display:flex;align-items:center;gap:12px;border:1px solid #58bfff;border-radius:10px';
+  const label=document.createElement('span'),button=document.createElement('button');button.type='button';button.textContent='Fermer';button.style.cssText='margin-left:auto;min-height:44px';
+  button.onclick=()=>{if(cdqPdfV2304Context!==ctx||ctx.cancelledV2757||ctx.openedV2757&&!ctx.previewV2757)return;replyToSelector(ctx.source,{type:'CDQ_READER_OPEN_CANCEL_V2757',fileId:ctx.fileId,readerSession:ctx.readerSession,readerPhaseV2757:ctx.readerPhaseV2757});};
+  bar.append(label,button);ctx.barV2757=bar;document.body.append(bar);
+ }
+ ctx.barV2757.firstChild.textContent=String(text).slice(0,700);
+}
 function cdqAfficherPdfV2304(data,source){
-  if(cdqPdfV2304Context)return false;
-  const ctx={source,fileId:String(data.fileId||''),readerSession:String(data.readerSession||''),pending:new Map()};cdqPdfV2304Context=ctx;
-  cdqAfficherPdf({...data,workspaceSource:source,
-    onOpened:info=>{if(info?.reportEngineV2754)data.reportEngineV2754=info.reportEngineV2754;replyToSelector(source,{type:'CDQ_PDF_OPENED_V2523',fileId:ctx.fileId,readerSession:ctx.readerSession,reportEngineV2754:data.reportEngineV2754});},
+  const previous=cdqPdfV2304Context;
+  if(previous&&!(data.replacePreviewV2757&&previous.previewV2757&&previous.source===source&&previous.fileId===String(data.fileId||'')&&previous.readerSession===String(data.readerSession||'')&&previous.readerPhaseV2757===data.priorPhaseV2757))return false;
+  const ctx={source,fileId:String(data.fileId||''),readerSession:String(data.readerSession||''),readerPhaseV2757:data.readerPhaseV2757,previewV2757:data.previewV2757===true&&data.readOnly===true,openedV2757:false,cancelledV2757:false,barV2757:null,pending:new Map()};cdqPdfV2304Context=ctx;
+  previous?.barV2757?.remove();
+  cdqOpeningBarV2757(ctx,data.openingStatusV2757||'');
+  cdqAfficherPdf({...data,isCurrentOpeningV2757:()=>!ctx.cancelledV2757&&cdqPdfV2304Context===ctx,workspaceSource:source,
+    onOpened:info=>{if(ctx.cancelledV2757||cdqPdfV2304Context!==ctx)return;ctx.openedV2757=true;if(info?.reportEngineV2754)data.reportEngineV2754=info.reportEngineV2754;replyToSelector(source,{type:'CDQ_PDF_OPENED_V2523',fileId:ctx.fileId,readerSession:ctx.readerSession,readerPhaseV2757:ctx.readerPhaseV2757,reportEngineV2754:data.reportEngineV2754});},
     onEquipmentEdit:detail=>{
       if(cdqPdfV2304Context!==ctx||data.readOnly)return;
       const values=validateReaderEquipmentValuesV2746(detail.values);if(!values)return;
-      replyToSelector(source,{type:'CDQ_PDF_EQUIPMENT_EDIT_V2746',fileId:ctx.fileId,readerSession:ctx.readerSession,sequence:detail.sequence,values});
+      replyToSelector(source,{type:'CDQ_PDF_EQUIPMENT_EDIT_V2746',fileId:ctx.fileId,readerSession:ctx.readerSession,readerPhaseV2757:ctx.readerPhaseV2757,sequence:detail.sequence,values});
     },
     onEquipmentEditEnded:detail=>{
       if(cdqPdfV2304Context!==ctx)return;
-      replyToSelector(source,{type:'CDQ_PDF_EQUIPMENT_EDIT_ENDED_V2746',fileId:ctx.fileId,readerSession:ctx.readerSession,reason:detail.reason});
+      replyToSelector(source,{type:'CDQ_PDF_EQUIPMENT_EDIT_ENDED_V2746',fileId:ctx.fileId,readerSession:ctx.readerSession,readerPhaseV2757:ctx.readerPhaseV2757,reason:detail.reason});
     },
-    onClose:()=>{if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession});},
-    onError:error=>{if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession,error:error.message});},
+    onClose:()=>{ctx.barV2757?.remove();if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession,readerPhaseV2757:ctx.readerPhaseV2757});},
+    onError:error=>{ctx.barV2757?.remove();if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession,readerPhaseV2757:ctx.readerPhaseV2757,error:error.message});},
     onDiscard:data.readerProtocol>=2520?()=>new Promise((resolve,reject)=>{
       const requestId='discard-'+crypto.randomUUID(),timer=setTimeout(()=>{ctx.pending.delete(requestId);reject(new Error('La fermeture n’a pas été confirmée.'));},12000);
-      ctx.pending.set(requestId,{resolve,reject,timer});replyToSelector(source,{type:'CDQ_PDF_DISCARD_REQUEST_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession,requestId});
+      ctx.pending.set(requestId,{resolve,reject,timer});replyToSelector(source,{type:'CDQ_PDF_DISCARD_REQUEST_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession,readerPhaseV2757:ctx.readerPhaseV2757,requestId});
     }):null,
     onSaveSnapshot:data.readOnly||!data.reportEngineV2754&&!data.reportEngineImportV2754?null:(fields,requestId,name)=>new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>{ctx.pending.delete(requestId);reject(Error('La conservation des réponses n’a pas été confirmée.'));},85000);
-      ctx.pending.set(requestId,{resolve,reject,timer});replyToSelector(source,{type:'CDQ_PDF_SAVE_SNAPSHOT_V2754',fileId:ctx.fileId,readerSession:ctx.readerSession,requestId,name,reportSnapshotV2754:fields});
+      ctx.pending.set(requestId,{resolve,reject,timer});replyToSelector(source,{type:'CDQ_PDF_SAVE_SNAPSHOT_V2754',fileId:ctx.fileId,readerSession:ctx.readerSession,readerPhaseV2757:ctx.readerPhaseV2757,requestId,name,reportSnapshotV2754:fields});
     }),
     onSave:data.readOnly?null:(blob,requestId,name,provenance)=>new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>{ctx.pending.delete(requestId);reject(new Error('La sauvegarde n’a pas été confirmée.'));},85000);
       ctx.pending.set(requestId,{resolve,reject,timer});
-      replyToSelector(source,{type:'CDQ_PDF_SAVE_REQUEST_V2304',fileId:ctx.fileId,readerSession:ctx.readerSession,requestId,blob,name,readerPreparedVersion:provenance?.readerPreparedVersion});
+      replyToSelector(source,{type:'CDQ_PDF_SAVE_REQUEST_V2304',fileId:ctx.fileId,readerSession:ctx.readerSession,readerPhaseV2757:ctx.readerPhaseV2757,requestId,blob,name,readerPreparedVersion:provenance?.readerPreparedVersion});
     })
-  }).catch(error=>{if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession,error:error.message});});
+  }).catch(error=>{ctx.barV2757?.remove();if(cdqPdfV2304Context===ctx)cdqPdfV2304Context=null;replyToSelector(source,{type:'CDQ_PDF_CLOSED_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession,readerPhaseV2757:ctx.readerPhaseV2757,error:error.message});});
   return true;
 }
 function cdqPdfSaveResultV2304(data,source){

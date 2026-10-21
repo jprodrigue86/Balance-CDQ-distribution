@@ -40,6 +40,9 @@ export function validEngineReceiptV2755(copy,data) {
   const revision=data?.reportRevision,pdf=data?.pdf;
   return !!copy?.reportEngineV2754 && data?.requestId===copy.id &&
     (!data.reportId||data.reportId===copy.reportEngineV2754.reportId) &&
+    (!data.email||data.email===copy.email) &&
+    (!data.clientId||data.clientId===copy.destination?.clientId) &&
+    (!data.saveRequestIdV2757||data.uploadId==='fields_'+data.saveRequestIdV2757) &&
     identifier(data.id) && Number.isSafeInteger(revision) && revision>0 &&
     revision>=Number(copy.reportRevisionV2754||0) && pdf?.status==='confirmed' &&
     pdf.fileId===data.id && pdf.revision===revision &&
@@ -73,7 +76,9 @@ export function nextSync(copy,protocol=0) {
   if(copy.removed)return null;
   if(copy.reportEngineV2754){
     if(!copy.reportSnapshotV2754||!copy.reportPayloadV2754||copy.uploadId===copy.syncedUploadId)return null;
-    return {type:'CDQ_REPORT_ENGINE_SAVE_V2754',requestId:copy.id,uploadId:copy.uploadId,payload:copy.reportPayloadV2754};
+    const accepted=copy.engineAcceptedV2757;
+    const statusOnly=accepted?.uploadId===copy.uploadId&&accepted.requestId===copy.reportPayloadV2754.requestId&&Number.isSafeInteger(accepted.revision)&&accepted.revision>0;
+    return {type:'CDQ_REPORT_ENGINE_SAVE_V2754',requestId:copy.id,uploadId:copy.uploadId,payload:copy.reportPayloadV2754,...(statusOnly?{statusOnlyV2757:true,acceptedRevisionV2757:accepted.revision}:{})};
   }
   if(copy.initialValues&&Object.keys(copy.initialValues).length)return null;
   if(copy.kind==='sheet')return null;
@@ -101,6 +106,7 @@ export function applyResult(copy,data) {
     c.reportEngineV2754={...c.reportEngineV2754,fileId:data.id,baseRevision:data.reportRevision,...(data.revision?{expectedDriveRevision:data.revision}:{})};
     if(c.reportPayloadV2754&&c.uploadId!==data.uploadId)c.reportPayloadV2754={...c.reportPayloadV2754,fileId:data.id,baseRevision:data.reportRevision,...(data.revision?{expectedDriveRevision:data.revision}:{})};
     c.syncedUploadId=data.uploadId;c.status=c.uploadId===data.uploadId?'synced':'pending';c.error='';c.enginePdfV2754=data.pdf;
+    c.engineAcceptedV2757={uploadId:data.uploadId,requestId:data.saveRequestIdV2757||String(data.uploadId||'').replace(/^fields_/,''),revision:data.reportRevision};
   } else if(data.type==='CDQ_OFFLINE_COPY_RESULT') {
     if(!data.ok){c.error=data.message||'La copie reste sur cet appareil.';return c;}
     if(!identifier(data.id))return copy;
@@ -249,7 +255,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfUnleased,acqu
   const serialCopy=(id,fn,foreground=false)=>{const key=String(id),previous=copyJobs.get(key)||Promise.resolve();const p=(foreground?Promise.resolve():chain).then(()=>previous.catch(()=>{})).then(fn);copyJobs.set(key,p);p.finally(()=>{if(copyJobs.get(key)===p)copyJobs.delete(key);}).catch(()=>{});return p;};
   const validReadStamp=readStamp=>!readStamp||(readStamp.access===readAccessVersion&&readStamp.retirement===(readRetirementVersions.get(readStamp.key)||0));
   const allowed=email=>localEmail===email||session?.email===email;
-  const engineDataV2754=c=>c?.reportEngineV2754?{reportEngineV2754:c.reportEngineV2754,reportSnapshotV2754:c.reportSnapshotV2754,enginePdfV2754:c.enginePdfV2754,reportRevisionV2754:c.reportRevisionV2754||0}:{};
+  const engineDataV2754=c=>c?.reportEngineV2754?{reportEngineV2754:c.reportEngineV2754,reportSnapshotV2754:c.reportSnapshotV2754,enginePdfV2754:c.enginePdfV2754,reportRevisionV2754:c.reportRevisionV2754||0,engineAcceptedV2757:c.engineAcceptedV2757}:{};
   function engineReaderV2754(c,email){return {editCopyV2756:c,...engineDataV2754(c),onSaveSnapshot:c.reportEngineV2754&&(session?.canWrite||profile?.canWrite)?(fields,requestId,name)=>saveSnapshotCopyV2754(c.id,email,fields,requestId,name):null};}
   async function attachEngineV2754(copy,template,current){
     if(current.reportEngineV2754!==true||!template.bundled)return copy;
@@ -837,13 +843,22 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfUnleased,acqu
       if(!confirmed&&stamp===epoch&&session===current){const timer=setTimeout(()=>{retryTimersV2740.delete(copy.id);if(stamp===epoch&&session===current)sync(false,copy.id).catch(()=>{});},5000);retryTimersV2740.set(copy.id,timer);}return;
     }
     if(data.type==='CDQ_REPORT_ENGINE_DATA_SAVED_V2754'){
-      const job=inflight.get(data.requestId),copy=await get('copies',data.requestId);
-      if(!job||job.type!=='CDQ_REPORT_ENGINE_SAVE_V2754'||job.epoch!==stamp||job.uploadId!==data.uploadId||!copy?.reportEngineV2754||copy.removed||copy.email!==current.email||stamp!==epoch||session!==current||!data.ok||!Number.isSafeInteger(data.reportRevision)||data.reportRevision<1||data.reportRevision<Number(copy.reportRevisionV2754||0)||data.reportId&&data.reportId!==copy.reportEngineV2754.reportId)return;
-      // This receipt updates the row; it does not retire the pending PDF work.
-      const context={...copy.reportEngineV2754,baseRevision:data.reportRevision,...(data.pdf?.fileId?{fileId:data.pdf.fileId}:{}),...(data.pdf?.driveRevision?{expectedDriveRevision:data.pdf.driveRevision}:{})};
-      const updated={...copy,reportEngineV2754:context,reportRevisionV2754:data.reportRevision,enginePdfV2754:data.pdf||{status:'pending'}};
-      if(updated.reportPayloadV2754&&copy.uploadId!==data.uploadId)updated.reportPayloadV2754={...updated.reportPayloadV2754,baseRevision:data.reportRevision};
-      await put('copies',updated);if(stamp===epoch&&session===current)send({type:'CDQ_REPORT_ENGINE_ROW_V2754',email:current.email,clientId:copy.destination.clientId,localId:copy.id,reportId:context.reportId,row:data.row,pdf:data.pdf,reportRevision:data.reportRevision});return;
+      const job=inflight.get(data.requestId)||sentJobsV2740.get(data.requestId),copy=await get('copies',data.requestId);
+      if(!job||job.type!=='CDQ_REPORT_ENGINE_SAVE_V2754'||job.epoch!==stamp||job.uploadId!==data.uploadId||!copy?.reportEngineV2754||copy.removed||copy.email!==current.email||stamp!==epoch||session!==current||!data.ok||!Number.isSafeInteger(data.reportRevision)||data.reportRevision<1||data.reportRevision<Number(copy.reportRevisionV2754||0)||data.reportId&&data.reportId!==copy.reportEngineV2754.reportId||data.clientId&&data.clientId!==copy.destination.clientId||data.saveRequestIdV2757&&data.uploadId!=='fields_'+data.saveRequestIdV2757)return;
+      // DATA_SAVED and the final ACK share the same confirmed-receipt path.
+      // A delayed final message cannot leave a confirmed creation on disk.
+      const receipt={...data,type:'CDQ_REPORT_ENGINE_SAVE_V2754_RESULT',id:data.pdf?.fileId,revision:data.pdf?.driveRevision||''};
+      if(validEngineReceiptV2755(copy,receipt))data=receipt;
+      else{
+        const context={...copy.reportEngineV2754,baseRevision:data.reportRevision,...(data.pdf?.fileId?{fileId:data.pdf.fileId}:{}),...(data.pdf?.driveRevision?{expectedDriveRevision:data.pdf.driveRevision}:{})};
+        const updated={...copy,reportEngineV2754:context,reportRevisionV2754:data.reportRevision,enginePdfV2754:data.pdf||{status:'pending'},engineAcceptedV2757:{uploadId:data.uploadId,requestId:data.saveRequestIdV2757||String(data.uploadId||'').replace(/^fields_/,''),revision:data.reportRevision},error:''};
+        if(updated.reportPayloadV2754&&copy.uploadId!==data.uploadId)updated.reportPayloadV2754={...updated.reportPayloadV2754,baseRevision:data.reportRevision,fileId:context.fileId,...(context.expectedDriveRevision?{expectedDriveRevision:context.expectedDriveRevision}:{})};
+        await put('copies',updated);
+        if(stamp===epoch&&session===current){
+          reportProgressV2749(updated,'data-saved','Données synchronisées. Mise à jour du PDF dans Drive…');notifyDocument(updated);
+          send({type:'CDQ_REPORT_ENGINE_ROW_V2754',email:current.email,clientId:copy.destination.clientId,localId:copy.id,reportId:context.reportId,row:data.row,pdf:data.pdf,reportRevision:data.reportRevision});
+        }return;
+      }
     }
     if(['CDQ_OFFLINE_COPY_RESULT','CDQ_OFFLINE_SAVE_RESULT','CDQ_REPORT_ENGINE_SAVE_V2754_RESULT'].includes(data.type)){
       const job=inflight.get(data.requestId)||sentJobsV2740.get(data.requestId);
