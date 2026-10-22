@@ -11,7 +11,7 @@ export async function readReaderOpeningBytesV2753({blob,preparedBlob,readerNorma
   const direct=preparedBlob instanceof Blob&&normalized;
   if(!direct){
     const result=await work.requestBlob('open',blob,{summary:false},{epoch,valid:()=>{guard();return true;}});
-    guard();onPrepared(result.info||{});guard();return result.bytes;
+    guard();onPrepared(result.info||{});guard();return result.bytes instanceof Uint8Array?result.bytes:new Uint8Array(result.bytes);
   }
   if(preparedBlob.size<8||preparedBlob.size>32*1024*1024)throw Error('PDF invalide (32 Mo maximum).');
   const bytes=new Uint8Array(await preparedBlob.arrayBuffer());
