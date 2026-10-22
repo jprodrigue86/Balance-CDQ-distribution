@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.58" data-cdq-pc-release="9ddc474a89b9aec8f3e405d159b2886957381b592abaae3d4747251abe2fe0b9">
+<html data-cdq-pc-version="27.59" data-cdq-pc-release="744d001c1765f8ada4f6dab7d6fecd48c47d83f3f0724e13f5c505791f571ddb">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -902,7 +902,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.21-v27.58-reader-roundtrip">
+<meta name="cdq-package-build" content="2026.10.21-v27.59-prepared-drive-send">
 
 
 <script id="cdqBridgeV23">
@@ -956,7 +956,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.21-v27.58-reader-roundtrip'
+    build:'2026.10.21-v27.59-prepared-drive-send'
   });
 }
 
@@ -969,7 +969,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.21-v27.58-reader-roundtrip'
+        build:'2026.10.21-v27.59-prepared-drive-send'
       });
     }
   } catch(e) {}
@@ -6066,6 +6066,21 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
  .file-pending-v2708{font:12px Arial,sans-serif;margin-left:8px;color:var(--cdq-muted,#aebbc7)}
  </style>
 <script type="module">import {installFirstTapV2756} from "./first-tap-v2756.mjs";installFirstTapV2756(document);</script>
+<style id="cdq-send-progress-v2759">
+#cdqProgressModal{position:fixed!important;inset:0!important;z-index:1000000!important;align-items:center!important;justify-content:center!important;padding:16px!important;box-sizing:border-box!important;background:rgba(0,0,0,.65)!important}
+#cdqProgressModal>.modal{box-sizing:border-box!important;width:min(440px,100%)!important;max-width:440px!important;height:auto!important;max-height:calc(100dvh - 32px)!important;margin:0!important;padding:20px!important;border-radius:14px!important;overflow:auto!important;background:var(--cdq-surface,#24272b)!important;color:var(--cdq-ink,#f0f1f3)!important;box-shadow:0 16px 50px #0008!important}
+#cdqProgressModal h2{font:700 19px/1.25 Arial,sans-serif!important;margin:0 0 16px!important}
+#cdqProgressModal .cdq-progress-box{margin:0!important}
+#cdqProgressModal .cdq-progress-track{display:block!important;height:8px!important;overflow:hidden!important;border-radius:999px!important;background:rgba(38,157,255,.18)!important}
+#cdqProgressModal .cdq-progress-fill{height:100%!important;background:#269dff!important;border-radius:inherit;transition:width .2s ease}
+#cdqProgressModal[data-indeterminate="true"] .cdq-progress-fill{width:34%!important;animation:cdq-send-working-v2759 1.25s ease-in-out infinite}
+#cdqProgressModal .cdq-send-progress-detail-v2759{display:flex;align-items:flex-start;gap:12px;margin-top:12px;font:14px/1.4 Arial,sans-serif}
+#cdqProgressModal .cdq-progress-label{flex:1;min-width:0;margin:0!important;white-space:normal!important;overflow-wrap:anywhere;color:inherit!important}
+#cdqProgressCountV2759{flex:none;font-variant-numeric:tabular-nums;white-space:nowrap;color:inherit}
+#cdqSendFailureV2759{color:var(--cdq-danger,#ff7373);font:14px/1.4 Arial,sans-serif;white-space:normal;overflow-wrap:anywhere}
+@keyframes cdq-send-working-v2759{from{transform:translateX(-105%)}to{transform:translateX(300%)}}
+@media(prefers-reduced-motion:reduce){#cdqProgressModal[data-indeterminate="true"] .cdq-progress-fill{animation:none;width:100%!important}}
+</style>
 </head>
 
 
@@ -11757,7 +11772,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.21-v27.58-reader-roundtrip";
+  const CDQ_BUILD = "2026.10.21-v27.59-prepared-drive-send";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -12590,17 +12605,76 @@ function cdqInstallSwipeGesture(row){
   };
 
 
+  let cdqSendProgressV2759={session:'',generation:0,total:1,done:0,current:1,active:false,hideTimer:null};
+  function cdqEnsureSendProgressV2759(){
+    let modal=document.getElementById('cdqProgressModal');
+    if(!modal){cdqCreateProgressModal();modal=document.getElementById('cdqProgressModal');}
+    if(!modal)throw Error('La progression de l’envoi ne peut pas être affichée.');
+    if(!modal.querySelector('#cdqProgressCountV2759')){
+      modal.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-labelledby="cdqProgressTitleV2759" tabindex="-1"><h2 id="cdqProgressTitleV2759">Envoi des rapports</h2><div class="cdq-progress-box"><div id="cdqProgressTrackV2759" class="cdq-progress-track" role="progressbar" aria-label="Préparation des fichiers" aria-valuemin="0"><div id="cdqProgressFill" class="cdq-progress-fill"></div></div><div class="cdq-send-progress-detail-v2759"><div id="cdqProgressLabel" class="cdq-progress-label" role="status" aria-live="polite"></div><span id="cdqProgressCountV2759"></span></div></div></div>';
+    }
+    return modal;
+  }
+  function cdqRestoreSendOptionsV2759(context,error){
+    try{cdqSendGuardV2750(context);}catch(_){return;}
+    const modal=document.getElementById('modalOverlay');
+    if(modal){
+      let status=document.getElementById('cdqSendFailureV2759');
+      if(!status&&error){status=document.createElement('p');status.id='cdqSendFailureV2759';status.setAttribute('role','alert');const buttons=modal.querySelector('.modal-buttons');if(buttons)buttons.before(status);else modal.querySelector('.modal')?.append(status);}
+      if(status){status.textContent=error?String(error.message||error):'';status.hidden=!error;}
+      modal.style.display='flex';modal.removeAttribute('aria-hidden');document.getElementById('emailDestinataire')?.focus();
+    }
+  }
   function cdqSetProgress(p){
-    const fill=document.getElementById("cdqProgressFill"),label=document.getElementById("cdqProgressLabel");if(!fill||!label)return;
-    const total=Math.max(1,Number(p&&p.total||1)),done=Math.max(0,Number(p&&p.termine||0));let pct=Math.min(96,Math.round(done/total*88));if(p&&p.phase==="envoi")pct=94;if(p&&p.phase==="termine")pct=100;fill.style.width=pct+"%";label.textContent=(p&&p.message)||("Préparation "+done+" / "+total);
+    const state=cdqSendProgressV2759;
+    if(!state.active)return;
+    p=p||{};
+    const modal=cdqEnsureSendProgressV2759(),fill=document.getElementById('cdqProgressFill'),label=document.getElementById('cdqProgressLabel'),track=document.getElementById('cdqProgressTrackV2759');
+    const total=Number(p.total);if(Number.isFinite(total)&&total>0)state.total=Math.max(1,Math.floor(total));
+    const done=Number(p.termine);if(Number.isFinite(done)&&done>=0)state.done=Math.min(state.total,Math.max(state.done,Math.floor(done)));
+    const prepared=String(p.message||'').match(/Préparation du PDF\s+(\d+)\s*\/\s*(\d+)/);
+    if(prepared){state.current=Math.min(state.total,Number(prepared[1]));state.done=Math.max(state.done,state.current-1);}
+    else state.current=Math.min(state.total,state.done+1);
+    const complete=p.phase==='termine';
+    if(complete){state.done=state.total;state.current=state.total;}
+    const sending=p.phase==='envoi';
+    const indeterminate=!complete&&!sending&&state.done===0;
+    modal.dataset.indeterminate=String(indeterminate);
+    fill.style.width=(complete?100:sending?94:Math.min(88,Math.round(state.done/state.total*88)))+'%';
+    label.textContent=String(p.message||(sending?'Envoi du courriel…':'Préparation des rapports…'));
+    document.getElementById('cdqProgressCountV2759').textContent=state.current+' sur '+state.total;
+    track.setAttribute('aria-valuemax',String(state.total));track.setAttribute('aria-valuenow',String(state.done));
+    track.setAttribute('aria-valuetext',label.textContent+' — '+state.current+' sur '+state.total);
   }
   function cdqStartProgress(sessionId,total){
-    const m=document.getElementById("cdqProgressModal");m.style.display="flex";cdqSetProgress({total:total,termine:0,message:"Préparation des rapports..."});if(cdqProgressTimer)clearInterval(cdqProgressTimer);
+    const previous=cdqSendProgressV2759;
+    if(previous.hideTimer)clearTimeout(previous.hideTimer);
+    if(cdqProgressTimer)clearInterval(cdqProgressTimer);
+    cdqProgressTimer=null;
+    const state=cdqSendProgressV2759={session:String(sessionId),generation:previous.generation+1,total:Math.max(1,Number(total)||1),done:0,current:1,active:true,hideTimer:null};
+    const modal=cdqEnsureSendProgressV2759();modal.style.display='flex';modal.setAttribute('aria-busy','true');
+    cdqSetProgress({total:state.total,termine:0,message:'Préparation des rapports…'});
+    modal.querySelector('.modal')?.focus({preventScroll:true});
+    // The duplicate check has no server-side progress session to poll.
+    if(state.session.startsWith('check-'))return;
     let reading=false;
-    cdqProgressTimer=setInterval(function(){if(reading)return;reading=true;cdqApiRun().withSuccessHandler(function(p){reading=false;if(p&&document.getElementById('cdqProgressModal')?.style.display!=='none')cdqSetProgress(p);}).withFailureHandler(function(){reading=false;}).obtenirProgressionEnvoi(sessionId);},1500);
+    cdqProgressTimer=setInterval(function(){
+      if(reading||!state.active||cdqSendProgressV2759!==state)return;
+      reading=true;
+      cdqApiRun().withSuccessHandler(function(p){reading=false;if(state.active&&cdqSendProgressV2759===state&&p)cdqSetProgress(p);})
+        .withFailureHandler(function(){reading=false;}).obtenirProgressionEnvoi(state.session);
+    },1500);
   }
-  function cdqStopProgress(success){if(cdqProgressTimer){clearInterval(cdqProgressTimer);cdqProgressTimer=null;}if(success)cdqSetProgress({phase:"termine",total:1,termine:1,message:"Envoi terminé."});setTimeout(function(){const m=document.getElementById("cdqProgressModal");if(m)m.style.display="none";},success?650:0);}
-
+  function cdqStopProgress(success){
+    const state=cdqSendProgressV2759;
+    if(cdqProgressTimer){clearInterval(cdqProgressTimer);cdqProgressTimer=null;}
+    if(success)cdqSetProgress({phase:'termine',total:state.total,termine:state.total,message:'Traitement terminé.'});
+    state.active=false;
+    const modal=document.getElementById('cdqProgressModal');if(modal)modal.setAttribute('aria-busy','false');
+    if(state.hideTimer)clearTimeout(state.hideTimer);
+    const hide=()=>{if(cdqSendProgressV2759===state&&modal)modal.style.display='none';};
+    if(success)state.hideTimer=setTimeout(hide,650);else hide();
+  }
 
   function cdqOpenRetryFailures(resultat,contexte){
     const echecs=resultat&&Array.isArray(resultat.echecs)?resultat.echecs:[];
@@ -12660,14 +12734,15 @@ function cdqInstallSwipeGesture(row){
       const archiveV2754=folders.length?await cdqReportEngineArchiveV2754.prepare(folders,context):null;cdqSendGuardV2750(context);
       let sendFiles=files.map(String);
       if(flatten){
-        const prepared=await cdqPrepareSendFilesV2553(files,null,company,session,msg=>afficherMessage(msg,true),context);
+        const prepared=await cdqPrepareSendFilesV2553(files,null,company,session,msg=>cdqSetProgress({phase:'preparation',message:msg}),context);
         sendFiles=prepared.sendIds;tempIds=prepared.tempIds;
       }
       if(archiveV2754)await cdqReportEngineArchiveV2754.prepare(folders,context,archiveV2754);
       cdqSendGuardV2750(context);
       cdqApiRun()
         .withSuccessHandler(function(r){
-          try{cdqSendGuardV2750(context)}catch(_){return}
+          if(cdqSendProgressV2759.session!==session||!cdqSendProgressV2759.active)return;
+          try{cdqSendGuardV2750(context)}catch(_){cdqStopProgress(false);return}
           if(send)send.disabled=String(utilisateurCourantRole||"")==="lecture";
           const hasFailures=!!(r&&Array.isArray(r.echecs)&&r.echecs.length);
           cdqStopProgress(!hasFailures || Number(r&&r.envoyes||0)>0);
@@ -12683,9 +12758,11 @@ function cdqInstallSwipeGesture(row){
           }
         })
         .withFailureHandler(function(e){
-          try{cdqSendGuardV2750(context)}catch(_){return}
+          if(cdqSendProgressV2759.session!==session||!cdqSendProgressV2759.active)return;
+          try{cdqSendGuardV2750(context)}catch(_){cdqStopProgress(false);return}
           if(send)send.disabled=String(utilisateurCourantRole||"")==="lecture";
           cdqStopProgress(false);
+          cdqRestoreSendOptionsV2759(context,e);
           if(tempIds.length)cdqRpcV2553('nettoyerCopiesAplatiesV2553',[tempIds]).catch(()=>{});
           const msg=e&&e.message?e.message:String(e);
           if(msg.indexOf("CDQ_DOUBLE_ENVOI|")!==-1) alert("Envoi bloqué : cette sélection vient déjà d’être envoyée.");
@@ -12695,24 +12772,26 @@ function cdqInstallSwipeGesture(row){
     }catch(e){
       if(send)send.disabled=String(utilisateurCourantRole||"")==="lecture";
       cdqStopProgress(false);
+      cdqRestoreSendOptionsV2759(context,e);
       try{cdqSendGuardV2750(context);if(tempIds.length)cdqRpcV2553('nettoyerCopiesAplatiesV2553',[tempIds]).catch(()=>{})}catch(_){}
       afficherErreur(e);
     }
   }
 let cdqSendCheckingV2708=false;
   window.confirmerEnvoi=async function(){
-   if(cdqSendCheckingV2708)return;
+   if(cdqSendCheckingV2708||cdqSendProgressV2759.active)return;
    const email=String(document.getElementById('emailDestinataire').value||'').trim(),message=document.getElementById('messageEmail').value,files=obtenirFichiersSelectionnes(),folders=obtenirDossiersSelectionnes(),profileV2751=cdqSendProfileV2750(files,null,folders.length),mode=obtenirModeEnvoiSelectionne(),flatten=mode==='convertir'&&!!profileV2751.pdf;
    if(String(utilisateurCourantRole||'')==='lecture'){alert('Le rôle Lecture seule ne peut pas envoyer de fichiers.');return;}
    if(!email){alert('Veuillez entrer une adresse courriel.');return}if(!files.length&&!folders.length)return;
    let context;try{context=cdqSendContextV2750(String(compagnieSelectionnee||''))}catch(e){afficherErreur(e);return;}
    cdqSendCheckingV2708=true;const total=files.length+folders.length;
+   fermerConfirmation();
    cdqStartProgress('check-'+crypto.randomUUID(),total);cdqSetProgress({total,message:'Vérification de l’envoi…'});
    try{
     const check=await cdqRpcV2553('verifierEnvoiSelectionRecentV2553',[files,folders,mode,email,context.clientId,24]);cdqSendGuardV2750(context);
-    let force=false;if(check?.doublon){force=confirm('Cette sélection a déjà été envoyée récemment. Voulez-vous l’envoyer de nouveau ?');if(!force){cdqStopProgress(false);return}}
-    fermerConfirmation();await cdqRunSendSelection(files,folders,mode,email,message,context.clientId,force,flatten);
-   }catch(error){cdqStopProgress(false);afficherErreur(error)}finally{cdqSendCheckingV2708=false}
+    let force=false;if(check?.doublon){force=confirm('Cette sélection a déjà été envoyée récemment. Voulez-vous l’envoyer de nouveau ?');if(!force){cdqStopProgress(false);cdqRestoreSendOptionsV2759(context);return}}
+    await cdqRunSendSelection(files,folders,mode,email,message,context.clientId,force,flatten);
+   }catch(error){cdqStopProgress(false);cdqRestoreSendOptionsV2759(context,error);afficherErreur(error)}finally{cdqSendCheckingV2708=false}
   };
 
 function cdqApplyDensity(value,noSync){
@@ -14030,7 +14109,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.21-v27.58-reader-roundtrip";
+const CDQ_V19_BUILD = "2026.10.21-v27.59-prepared-drive-send";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15931,7 +16010,7 @@ function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoch,curre
     const template=await loadTemplate(context.template);checkCurrent();if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');
     return {...legacyRecord,id:String(fileId),clientId:context.clientId,folderId:context.destinationId,nom:record.name,blob:template.blob,revision:context.expectedDriveRevision,reportEngineV2754:context,reportSnapshotV2754:record.fields,readerPreparedVersion:2730};
   }
-  async function save(context,fields,requestId,name){return (await client()).save(context,fields,requestId,name);}
+  async function save(context,fields,requestId,name,preparedPdf){return (await client()).save(context,fields,requestId,name,preparedPdf);}
   async function handle(data){
     if(data.type!=='CDQ_REPORT_ENGINE_SAVE_V2754'||data.email!==owner()||!canWrite()||!data.payload)return false;
     const email=owner(),stamp=epoch(),attempt=++lease,payload=data.payload;
@@ -16358,7 +16437,7 @@ async function cdqOpenPdfInternal(id,preparedRecord){
     }
     if(d.type===(inPwa?'CDQ_PDF_SAVE_SNAPSHOT_V2754':'CDQ_READER_SAVE_SNAPSHOT_V2754')){
       if(inPwa&&d.fileId!==id||previewV2757||rec.readOnlyListV2755||!rec.reportEngineV2754||!/^save-[\w-]{8,80}$/.test(String(d.requestId||'')))return;
-      try{valid();await editLeaseV2756?.ensure();valid();if(!requests.has(d.requestId))requests.set(d.requestId,cdqReportEngineSelectorV2754.save(rec.reportEngineV2754,d.reportSnapshotV2754,d.requestId,d.name||rec.nom));const result=await requests.get(d.requestId);valid();rec.reportEngineV2754=result.reportEngineV2754||rec.reportEngineV2754;rec.reportSnapshotV2754=result.reportSnapshotV2754||d.reportSnapshotV2754;reply({requestId:d.requestId,ok:true,...result});}catch(error){requests.delete(d.requestId);reply({requestId:d.requestId,ok:false,error:error.message});}return;
+      try{valid();await editLeaseV2756?.ensure();valid();if(!requests.has(d.requestId))requests.set(d.requestId,cdqReportEngineSelectorV2754.save(rec.reportEngineV2754,d.reportSnapshotV2754,d.requestId,d.name||rec.nom,d.preparedPdfV2759));const result=await requests.get(d.requestId);valid();rec.reportEngineV2754=result.reportEngineV2754||rec.reportEngineV2754;rec.reportSnapshotV2754=result.reportSnapshotV2754||d.reportSnapshotV2754;reply({requestId:d.requestId,ok:true,...result});}catch(error){requests.delete(d.requestId);reply({requestId:d.requestId,ok:false,error:error.message});}return;
     }
     if(d.type!==(inPwa?'CDQ_PDF_SAVE_REQUEST_V2304':'CDQ_READER_SAVE')||inPwa&&d.fileId!==id)return;
     if(!/^save-[\w-]{8,80}$/.test(String(d.requestId||''))||!(d.blob instanceof Blob)||d.blob.type!=='application/pdf')return;
@@ -17666,7 +17745,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.21-v27.58-reader-roundtrip";
+const CDQ_V20_BUILD = "2026.10.21-v27.59-prepared-drive-send";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -18513,7 +18592,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.21-v27.58-reader-roundtrip";
+const CDQ_V21_BUILD = "2026.10.21-v27.59-prepared-drive-send";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -22928,7 +23007,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.21-v27.58-reader-roundtrip',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.21-v27.59-prepared-drive-send',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;

@@ -234,7 +234,14 @@ async function openReaderInternal(data,context){
         if(!saves.has(m.requestId)){
           const fields=reportFieldsV2754(m.reportSnapshotV2754);
           saveProgressV2758.begin(m.requestId,0,data.reportEngineV2754);
-          saves.set(m.requestId,Promise.resolve().then(()=>data.onSaveSnapshot(fields,m.requestId,m.name,data.reportEngineV2754)));
+          const preparedPdfV2759=m.preparedPdfV2759;
+          // Reserve the request synchronously, before validating Blob bytes.
+          // Concurrent messages with the same id must share one save promise.
+          saves.set(m.requestId,Promise.resolve().then(async()=>{
+            if(!(preparedPdfV2759 instanceof Blob)||preparedPdfV2759.type!=='application/pdf'||preparedPdfV2759.size<8||preparedPdfV2759.size>16*1024*1024||(await preparedPdfV2759.slice(0,5).text())!=='%PDF-')throw Error('Le PDF préparé est absent ou invalide. Le rapport reste ouvert.');
+            if(!opened||!valid())throw Error('Le rapport ou le compte a changé pendant son enregistrement.');
+            return data.onSaveSnapshot(fields,m.requestId,m.name,data.reportEngineV2754,preparedPdfV2759);
+          }));
         }
         const result=await saves.get(m.requestId);if(!valid())throw Error('Le compte ou l’accès Drive a changé.');
         equipmentDispositionV2746='saved';

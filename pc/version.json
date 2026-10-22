@@ -1,13 +1,13 @@
 {
   "platform": "pc-pwa",
-  "version": "27.58",
-  "release": "9ddc474a89b9aec8f3e405d159b2886957381b592abaae3d4747251abe2fe0b9",
+  "version": "27.59",
+  "release": "744d001c1765f8ada4f6dab7d6fecd48c47d83f3f0724e13f5c505791f571ddb",
   "desktopModel": 3,
-  "androidSourceBuild": "2026.10.21-v27.58-reader-roundtrip",
-  "androidSelectorSha256": "50a4d5431d499393dc818ee6eff5d22ff9fc327f08c37f6564ea3db1f645f272",
-  "generatedFrom": "scripts/pipeline-v2758.mjs",
+  "androidSourceBuild": "2026.10.21-v27.59-prepared-drive-send",
+  "androidSelectorSha256": "9083f590eda785f6335f4602758b3f0827144c36b42ea14b61e3839b5ce101f2",
+  "generatedFrom": "scripts/pipeline-v2759.mjs",
   "files": 899,
   "componentBaseVersion": "27.54",
   "componentBaseRelease": "4bdc04a045dd3c821d416468539df7507f61357e91961d506a90faa662eee631",
-  "build": "2026.10.21-v27.58-reader-roundtrip"
+  "build": "2026.10.21-v27.59-prepared-drive-send"
 }

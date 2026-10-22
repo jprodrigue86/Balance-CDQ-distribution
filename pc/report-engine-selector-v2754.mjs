@@ -67,7 +67,7 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     const template=await loadTemplate(context.template);checkCurrent();if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');
     return {...legacyRecord,id:String(fileId),clientId:context.clientId,folderId:context.destinationId,nom:record.name,blob:template.blob,revision:context.expectedDriveRevision,reportEngineV2754:context,reportSnapshotV2754:record.fields,readerPreparedVersion:2730};
   }
-  async function save(context,fields,requestId,name){return (await client()).save(context,fields,requestId,name);}
+  async function save(context,fields,requestId,name,preparedPdf){return (await client()).save(context,fields,requestId,name,preparedPdf);}
   async function handle(data){
     if(data.type!=='CDQ_REPORT_ENGINE_SAVE_V2754'||data.email!==owner()||!canWrite()||!data.payload)return false;
     const email=owner(),stamp=epoch(),attempt=++lease,payload=data.payload;
