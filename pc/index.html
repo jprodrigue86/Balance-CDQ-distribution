@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.60" data-cdq-pc-release="96e3b696136c32d9d119b9c46125113c34807af92a65efb5ccad06d06d144181">
+<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="27.61" data-cdq-pc-release="0c62e772ed180b6820ce33e14020dd2f9efeaf248c26653dff2abe39849426e4">
 <head>
 <script id="cdq-durable-resume-v2751">
 window.cdqDurableResumeV2751=(function createDurableResumeV2751({native=null,read=()=>''}={}){
@@ -490,7 +490,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.22-v27.60-company-recovery-cyan30-shared-editing';
+const CDQ_PWA_BUILD = '2026.10.22-v27.61-no-file-availability';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -627,7 +627,6 @@ let backendBuild = '';
 const cdqOffline = import('./offline-templates-v2636.mjs').then(module=>module.createOfflineTemplates({
 send:data=>replyToSelector(selectorWindow,data),
 openPdf:data=>cdqAfficherPdf(data),
-acquireFileEdit:(...args)=>{const source=document.getElementById('app')?.contentWindow;if(typeof source?.cdqAcquireFileEditV2756!=='function')throw Error('Déverrouillez CDQ pour modifier ce fichier.');return source.cdqAcquireFileEditV2756(...args);},
 warmPdf:()=>{
 if(document.querySelector('link[data-cdq-reader-preload-v2682]'))return;
 for(const name of ['reader-v2525.mjs','vendor/pdfjs-6.3.289/build/pdf.mjs','vendor/pdfjs-6.3.289/web/pdf_viewer.mjs']){
@@ -1427,7 +1426,6 @@ function cdqHandleDefaultGoogleAccountV2297(data,source){
   if(data.type==='CDQ_READER_SAVE_PROGRESS_V2758'){import('./reader-host-v2525.mjs').then(module=>module.currentReader()?.saveProgressV2758?.(data,source)).catch(()=>{});return true;}
   if(data.type==='CDQ_READER_OPENING_STATUS_V2757'){const ctx=cdqPdfV2304Context;if(ctx&&ctx.source===source&&ctx.fileId===data.fileId&&ctx.readerSession===data.readerSession)cdqOpeningBarV2757(ctx,data.text);return true;}
   if(data.type==='CDQ_CANCEL_READER_PREVIEW_V2757'){const ctx=cdqPdfV2304Context;if(ctx&&ctx.source===source&&ctx.fileId===data.fileId&&ctx.readerSession===data.readerSession&&ctx.readerPhaseV2757===data.readerPhaseV2757&&(ctx.previewV2757||!ctx.openedV2757)){ctx.cancelledV2757=true;ctx.barV2757?.remove();cdqPdfV2304Context=null;import('./reader-host-v2525.mjs').then(module=>{const reader=module.currentReader();if(reader?.readerSessionV2757===ctx.readerSession&&reader?.readerPhaseV2757===ctx.readerPhaseV2757)reader.disposePreviewV2757(false);});}return true;}
-  if(data.type==='CDQ_READER_EDIT_LEASE_V2756'){const ctx=cdqPdfV2304Context;if(ctx&&ctx.source===source&&ctx.fileId===data.fileId&&ctx.readerSession===data.readerSession)import('./reader-host-v2525.mjs').then(module=>{if(cdqPdfV2304Context===ctx){const reader=module.currentReader();if(reader?.fileId===ctx.fileId)reader.editLease?.(data.remainingMs);}});return true;}
   if(data.type==='CDQ_DEFAULT_GOOGLE_ACCOUNT_GET'){
     cdqReplyDefaultGoogleAccountV2297(source);
     return true;
