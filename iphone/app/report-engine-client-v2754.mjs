@@ -85,6 +85,40 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
   const key=(account,id)=>account+'|'+id;
   const serial=(id,fn)=>{const p=(jobs.get(id)||Promise.resolve()).catch(()=>{}).then(fn);jobs.set(id,p);p.finally(()=>{if(jobs.get(id)===p)jobs.delete(id);}).catch(()=>{});return p;};
   const notify=record=>{if(record.account===getAccount())try{onChange(record);}catch{}};
+
+  // A blocked local tombstone may outlive the confirmed server deletion.
+  // Reconcile that exact report with STATUS; never resend DELETE to recover it.
+  const deletionReadsV2760=new Map();
+  async function reconcileDeletedV2760(record){
+    const account=getAccount(),stamp=generation;
+    if(!record?.deleted||!record.pending||record.account!==account||!canWrite()||!isOnline())return record;
+    const existing=deletionReadsV2760.get(record.key);if(existing)return existing;
+    const reportId=record.context.reportId,clientId=record.context.clientId,destinationId=record.context.destinationId,requestId=record.payload.requestId;
+    const valid=()=>stamp===generation&&account===getAccount()&&canWrite();
+    const flight=(async()=>{
+      let result;
+      try{result=await rpc('status',{reportId,clientId});}catch{return record;}
+      if(!valid())return record;
+      // The authenticated status endpoint checks the requested client scope.
+      // Tombstone responses omit clientId/fileId; if supplied they must agree.
+      const fileId=record.context.fileId||record.pdf?.fileId||'';
+      if(result?.ok!==true||result.reportId!==reportId||result.deleted!==true||result.drivePending!==false||
+        !Number.isSafeInteger(result.revision)||result.revision<Number(record.context.baseRevision||0)||
+        result.clientId!==undefined&&result.clientId!==clientId||result.pdf?.status==='conflict'||
+        result.pdf?.fileId&&fileId&&result.pdf.fileId!==fileId||result.fileId&&fileId&&result.fileId!==fileId)return record;
+      return serial(record.key,async()=>{
+        const current=await storage.get(record.key);
+        if(!valid()||!current?.deleted||current.account!==account||current.payload.requestId!==requestId||
+          current.context.reportId!==reportId||current.context.clientId!==clientId||current.context.destinationId!==destinationId||
+          current.restoredFromRevision!==record.restoredFromRevision||Number(current.context.baseRevision||0)>result.revision)return current||record;
+        const updated={...current,context:{...current.context,baseRevision:result.revision},serverRevision:result.revision,
+          deleted:true,deleteAck:true,pending:false,blocked:false,error:'',pdf:{...current.pdf,...result.pdf,status:'deleted',fileId:current.context.fileId||current.pdf?.fileId||''}};
+        await storage.commit(updated,false);if(valid())notify(updated);return updated;
+      });
+    })();
+    deletionReadsV2760.set(record.key,flight);
+    try{return await flight;}finally{if(deletionReadsV2760.get(record.key)===flight)deletionReadsV2760.delete(record.key);}
+  }
   async function syncRecord(record){
     const stamp=generation,account=getAccount(),valid=()=>stamp===generation&&getAccount()===account&&canWrite();if(!account||record.account!==account||!valid()||!isOnline()||sends.has(record.key)||!record.pending)return;
     const attempt=record.payload.requestId;sends.set(record.key,attempt);
@@ -95,6 +129,7 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
       if(!result?.ok||deleting&&(result.deleted!==true||result.reportId!==record.context.reportId)||!deleting&&!result.deleted&&!(result.dataSaved||record.dataSaved&&Number.isSafeInteger(result.revision)))throw Object.assign(Error(result?.message||result?.error||'Sauvegarde serveur non confirmée.'),{code:result?.code||result?.error});
       if(!deleting&&!result.deleted&&record.dataSaved&&Number(result?.revision)!==Number(record.serverRevision))throw Object.assign(Error('Une autre révision du rapport a été enregistrée. Rouvrez le rapport avant de continuer.'),{code:'revision_conflict'});
       await serial(record.key,async()=>{const current=await storage.get(record.key);if(!valid()||!current||current.context.clientId!==record.context.clientId||current.context.destinationId!==record.context.destinationId)return;const same=current.payload.requestId===attempt;
+        if(current.deleted&&current.deleteAck&&!current.pending)return;
         if(record.deleted&&!current.deleted||Number.isSafeInteger(current.restoredFromRevision)&&Number(result.revision)<=current.restoredFromRevision)return;
         if(current.deleted||result.deleted){
           // A late save receipt may identify the final Drive file, but must
@@ -109,10 +144,10 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
         const updated={...current,context,serverRevision:revision,dataSaved:same,pdf:result.pdf,error:'',pending:!same||!confirmed,payload:same?current.payload:{...current.payload,baseRevision:revision,fileId:context.fileId,...(context.expectedDriveRevision?{expectedDriveRevision:context.expectedDriveRevision}:{})}};
         await storage.commit(updated,updated.pending);notify(updated);
       });
-      if(['conflict','error'].includes(result.pdf?.status)){await serial(record.key,async()=>{const current=await storage.get(record.key);if(!valid()||!current||current.payload.requestId!==attempt)return;const updated={...current,error:result.pdf.message||'La publication Drive nécessite une vérification.',blocked:result.pdf.status==='conflict',pending:true};await storage.commit(updated,true);notify(updated);if(!updated.blocked)schedule(record.key,5000);});}
+      if(['conflict','error'].includes(result.pdf?.status)){await serial(record.key,async()=>{const current=await storage.get(record.key);if(!valid()||!current||current.payload.requestId!==attempt||current.deleted&&current.deleteAck&&!current.pending)return;const updated={...current,error:result.pdf.message||'La publication Drive nécessite une vérification.',blocked:result.pdf.status==='conflict',pending:true};await storage.commit(updated,true);notify(updated);if(!updated.blocked)schedule(record.key,5000);});}
       else if(deleting||result.deleted){if(result.drivePending!==false)schedule(record.key,1500);}
       else if(result.pdf?.status!=='confirmed')schedule(record.key,1500);
-    }catch(error){await serial(record.key,async()=>{const current=await storage.get(record.key);if(!valid()||!current||current.payload.requestId!==attempt)return;const conflict=/conflict|revision|forbidden|unauthorized|access/i.test(String(error.code||''));const updated={...current,error:error.message,blocked:conflict,pending:true};await storage.commit(updated,true);notify(updated);if(!conflict)schedule(record.key,5000);});}
+    }catch(error){await serial(record.key,async()=>{const current=await storage.get(record.key);if(!valid()||!current||current.payload.requestId!==attempt||current.deleted&&current.deleteAck&&!current.pending)return;const conflict=/conflict|revision|forbidden|unauthorized|access/i.test(String(error.code||''));const updated={...current,error:error.message,blocked:conflict,pending:true};await storage.commit(updated,true);notify(updated);if(!conflict)schedule(record.key,5000);});}
     finally{sends.delete(record.key);const latest=await storage.get(record.key).catch(()=>null);if(valid()&&latest?.pending&&latest.payload.requestId!==attempt)queueMicrotask(()=>syncRecord(latest));}
   }
   function schedule(id,delay){if(timers.has(id))return;const stamp=generation;timers.set(id,setTimeout(async()=>{timers.delete(id);if(stamp!==generation)return;const record=await storage.get(id).catch(()=>null);if(record?.pending&&!record.blocked)syncRecord(record);},delay));}
@@ -120,6 +155,7 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
     const account=getAccount(),meta=reportContextV2754(context),stamp=generation;if(!account||!canWrite()||!meta)throw Error('Déverrouillez CDQ pour supprimer ce rapport.');const id=key(account,meta.reportId);
     const record=await serial(id,async()=>{if(stamp!==generation||account!==getAccount()||!canWrite())throw Error('Le compte ou l’accès Drive a changé.');const old=await storage.get(id);if(old?.deleted)return old;const normalized=old?.context||meta,payload={reportId:normalized.reportId,clientId:normalized.clientId,baseRevision:normalized.baseRevision,fileId:normalized.fileId||'',requestId:crypto.randomUUID()};
       const updated={...old,...(context.fields?{fields:reportFieldsV2754(context.fields),name:context.name||old?.name}:{}),key:id,account,context:normalized,payload,deleted:true,deleteAck:false,dataSaved:false,pending:true,blocked:false,error:'',savedAt:Date.now(),pdf:{status:'deleting',fileId:normalized.fileId||''}};await storage.commit(updated,true);notify(updated);return updated;});
+    if(record.deleted&&record.pending){const recovered=await reconcileDeletedV2760(record);if(recovered?.pending&&!recovered.blocked)queueMicrotask(()=>syncRecord(recovered));return recovered;}
     queueMicrotask(()=>syncRecord(record));return record;
   },async restore(context){
     const account=getAccount(),stamp=generation;if(!account||!canWrite()||!uuid(context?.reportId)||!context.clientId||!Number.isSafeInteger(context.baseRevision)||context.baseRevision<0)throw Error('Restauration de rapport non autorisée.');const id=key(account,context.reportId);
@@ -154,5 +190,5 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
       const normalized=reportFieldsV2754(fields),publication=pdf||{status:'confirmed',fileId:meta.fileId,revision},pending=publication.status!=='confirmed'||Number(publication.revision)!==revision,record={key:id,account,context:{...meta,baseRevision:revision},fields:normalized,name,serverRevision:revision,dataSaved:true,pending,blocked:false,error:'',savedAt:Date.now(),pdf:publication,payload:{...meta,baseRevision:revision,requestId:crypto.randomUUID(),name,fields:normalized}};
       await storage.commit(record,pending);notify(record);if(pending)queueMicrotask(()=>syncRecord(record));return record;
     });
-  },async get(context){const account=getAccount();if(!account)return null;if(typeof context==='string')return storage.get(key(account,context));if(context?.reportId)return storage.get(key(account,context.reportId));if(context?.fileId)return (await storage.all()).find(record=>record.account===account&&(record.context.fileId===context.fileId||record.pdf?.fileId===context.fileId))||null;return null;},async all(){const account=getAccount();return (await storage.all()).filter(record=>record.account===account);},async resume({reportIds}={}){const account=getAccount(),selected=Array.isArray(reportIds)?new Set(reportIds):null;for(const record of await storage.all())if(record.account===account&&record.pending&&!record.blocked&&(!selected||selected.has(record.context.reportId)))syncRecord(record);},lock(){generation++;for(const timer of timers.values())clearTimeout(timer);timers.clear();},stats:()=>({inflight:sends.size,queuedTimers:timers.size})};
+  },async get(context){const account=getAccount();if(!account)return null;if(typeof context==='string')return storage.get(key(account,context));if(context?.reportId)return storage.get(key(account,context.reportId));if(context?.fileId)return (await storage.all()).find(record=>record.account===account&&(record.context.fileId===context.fileId||record.pdf?.fileId===context.fileId))||null;return null;},async all(){const account=getAccount();return (await storage.all()).filter(record=>record.account===account);},async resume({reportIds}={}){const account=getAccount(),selected=Array.isArray(reportIds)?new Set(reportIds):null;for(const record of await storage.all())if(record.account===account&&record.pending&&(!selected||selected.has(record.context.reportId))){if(record.deleted)reconcileDeletedV2760(record).then(recovered=>{if(recovered?.pending&&!recovered.blocked)syncRecord(recovered);}).catch(()=>{});else if(!record.blocked)syncRecord(record);}},lock(){generation++;for(const timer of timers.values())clearTimeout(timer);timers.clear();},stats:()=>({inflight:sends.size,queuedTimers:timers.size})};
 }

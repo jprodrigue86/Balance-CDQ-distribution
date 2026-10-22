@@ -7,9 +7,9 @@
     "sha256": "dd95fbfff8106cc8381f579d5342916feb1d30d8394babaebd63d24412bb9a5d"
   },
   "opening": {
-    "build": "2026.10.18-v27.54-data-engine",
-    "manifestSha256": "50f4b499493ceffde7037e97e4b72404411f9e4247fdf56e14b6ab3e1f1e5f32",
-    "normalizerFingerprint": "b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"
+    "build": "2026.10.22-v27.60-company-recovery-cyan30-shared-editing",
+    "manifestSha256": "2eb0efe1d38cc590ef1a3f9f3863a2ac08f571b7593b39f01358582ac6afafa7",
+    "normalizerFingerprint": "e3c567e1c5c42508ddb42e7166ce5b20352c20bacc032e80e7a84d28a852b631"
   },
   "renderer": {
     "version": "6.3.289",
@@ -859,14 +859,14 @@
     "camion": {
       "source": {
         "path": "assets/templates/camion.pdf",
-        "sha256": "ff40bd121e4e53ac75dac859a86e803a2d3c34f89c2c306b6b206e330a0e5b5e",
-        "bytes": 984346
+        "sha256": "e2c0bd73429bf9d8e7701b87eaf2fcadb79c04d0986acac955f3aad9336c4635",
+        "bytes": 981875
       },
       "normalized": {
-        "path": "assets/reader-opening-v2753/camion-ff40bd121e4e53ac75dac859a86e803a2d3c34f89c2c306b6b206e330a0e5b5e.pdf",
-        "sha256": "ff40bd121e4e53ac75dac859a86e803a2d3c34f89c2c306b6b206e330a0e5b5e",
-        "bytes": 984346,
-        "normalizerFingerprint": "b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"
+        "path": "assets/reader-opening-v2753/camion-e2c0bd73429bf9d8e7701b87eaf2fcadb79c04d0986acac955f3aad9336c4635.pdf",
+        "sha256": "e2c0bd73429bf9d8e7701b87eaf2fcadb79c04d0986acac955f3aad9336c4635",
+        "bytes": 981875,
+        "normalizerFingerprint": "e3c567e1c5c42508ddb42e7166ce5b20352c20bacc032e80e7a84d28a852b631"
       },
       "rendererFingerprint": "e7e1735d7d4d69bcb2a2513fc8d34812947d64a24c6db297892e2002f8d5731e",
       "numPages": 1,
@@ -895,11 +895,11 @@
       "exactOnlyAtCaptureViewport": true,
       "staticArtworkV2753": {
         "algorithmVersion": "cdq-static-artwork-graph-sha256-v1",
-        "fingerprint": "8929ce6b5b81e7a692e2c3d5336b7fb98a5149034eacc5af99fc501db5450639",
+        "fingerprint": "c15f9d951e00104a7ae9c0b212a2ee2c7eec430e230364e2537dfea0b39b76b8",
         "pageIndex": 0,
         "pageCount": 1,
-        "bytesSha256": "ff40bd121e4e53ac75dac859a86e803a2d3c34f89c2c306b6b206e330a0e5b5e",
-        "bytesLength": 984346
+        "bytesSha256": "e2c0bd73429bf9d8e7701b87eaf2fcadb79c04d0986acac955f3aad9336c4635",
+        "bytesLength": 981875
       },
       "captures": [
         {
@@ -921,9 +921,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/camion-ff40bd121e4e53ac-e7e1735d7d4d69bc-768.png",
-            "sha256": "18d3298621ac2466befcefb1b37d233390b801a9baf6e2d3f53615e9a02d980a",
-            "bytes": 519949,
+            "path": "assets/reader-template-paint-v2753/camion-e2c0bd73429bf9d8-e7e1735d7d4d69bc-768.png",
+            "sha256": "7eb7556b94c59d6f640c7f15c0516af81d6f2ef9eda9a9b9cdab93f33a4564b8",
+            "bytes": 536747,
             "width": 768,
             "height": 1087,
             "pixels": 834816
@@ -950,9 +950,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/camion-ff40bd121e4e53ac-e7e1735d7d4d69bc-1536.png",
-            "sha256": "a7934247597e311d067749586a2573051e862598d2297a3092fe33e0047be1ee",
-            "bytes": 1705039,
+            "path": "assets/reader-template-paint-v2753/camion-e2c0bd73429bf9d8-e7e1735d7d4d69bc-1536.png",
+            "sha256": "895214f7aa1144746d8e914127eed0ab071ee81e17a74dcf9abb50c62d068d11",
+            "bytes": 1744966,
             "width": 1536,
             "height": 2173,
             "pixels": 3337728
@@ -965,14 +965,14 @@
     "chariot": {
       "source": {
         "path": "assets/templates/chariot.pdf",
-        "sha256": "cfc6b918db86543b1a53056b3e023880c1da4ed934c092419cf0694bf91d3ffc",
-        "bytes": 989313
+        "sha256": "f9c9725309144446ebe2d82b3db0f90c4d161946e73fad8ce069d64a36253c3f",
+        "bytes": 994442
       },
       "normalized": {
-        "path": "assets/reader-opening-v2753/chariot-cfc6b918db86543b1a53056b3e023880c1da4ed934c092419cf0694bf91d3ffc.pdf",
-        "sha256": "cfc6b918db86543b1a53056b3e023880c1da4ed934c092419cf0694bf91d3ffc",
-        "bytes": 989313,
-        "normalizerFingerprint": "b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"
+        "path": "assets/reader-opening-v2753/chariot-f9c9725309144446ebe2d82b3db0f90c4d161946e73fad8ce069d64a36253c3f.pdf",
+        "sha256": "f9c9725309144446ebe2d82b3db0f90c4d161946e73fad8ce069d64a36253c3f",
+        "bytes": 994442,
+        "normalizerFingerprint": "e3c567e1c5c42508ddb42e7166ce5b20352c20bacc032e80e7a84d28a852b631"
       },
       "rendererFingerprint": "e7e1735d7d4d69bcb2a2513fc8d34812947d64a24c6db297892e2002f8d5731e",
       "numPages": 1,
@@ -1001,11 +1001,11 @@
       "exactOnlyAtCaptureViewport": true,
       "staticArtworkV2753": {
         "algorithmVersion": "cdq-static-artwork-graph-sha256-v1",
-        "fingerprint": "e7f972d565362a30c086d8a466afda565341926c519131cbd292836741fa3a4e",
+        "fingerprint": "5b0407d2a0119c603a82978e3cd91716e7badb1baac3ffbf460fc2ca154a65fa",
         "pageIndex": 0,
         "pageCount": 1,
-        "bytesSha256": "cfc6b918db86543b1a53056b3e023880c1da4ed934c092419cf0694bf91d3ffc",
-        "bytesLength": 989313
+        "bytesSha256": "f9c9725309144446ebe2d82b3db0f90c4d161946e73fad8ce069d64a36253c3f",
+        "bytesLength": 994442
       },
       "captures": [
         {
@@ -1027,9 +1027,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/chariot-cfc6b918db86543b-e7e1735d7d4d69bc-768.png",
-            "sha256": "995220a9d58a4af3bfc1e6361365e5c66a7775056da6ed4604b48425fee5a65b",
-            "bytes": 320679,
+            "path": "assets/reader-template-paint-v2753/chariot-f9c9725309144446-e7e1735d7d4d69bc-768.png",
+            "sha256": "af819473e7b46bdc1575f4cd17bb07e0bfe77dc5cd604bb0789c2b06059ed0d0",
+            "bytes": 340430,
             "width": 768,
             "height": 994,
             "pixels": 763392
@@ -1056,9 +1056,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/chariot-cfc6b918db86543b-e7e1735d7d4d69bc-1536.png",
-            "sha256": "344530cefef01b5e342b8483bd7ca9679e38e20c578a39574adea0849d72afe2",
-            "bytes": 955634,
+            "path": "assets/reader-template-paint-v2753/chariot-f9c9725309144446-e7e1735d7d4d69bc-1536.png",
+            "sha256": "c50338e87ebb2cbed8edaa1ba7c864075e96defc34d729373b8733fb375bee26",
+            "bytes": 1001048,
             "width": 1536,
             "height": 1988,
             "pixels": 3053568
@@ -1071,14 +1071,14 @@
     "convoyeur": {
       "source": {
         "path": "assets/templates/convoyeur.pdf",
-        "sha256": "726b71534e89dc69f6bb43aa1b60507e77a76619c644e3ae3b7b5f1a50b945f2",
-        "bytes": 997172
+        "sha256": "a43ff404d42b846c105770c3fe74bfb15ec646c1d658bf999fc5447ea3ed0d90",
+        "bytes": 1001427
       },
       "normalized": {
-        "path": "assets/reader-opening-v2753/convoyeur-726b71534e89dc69f6bb43aa1b60507e77a76619c644e3ae3b7b5f1a50b945f2.pdf",
-        "sha256": "726b71534e89dc69f6bb43aa1b60507e77a76619c644e3ae3b7b5f1a50b945f2",
-        "bytes": 997172,
-        "normalizerFingerprint": "b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"
+        "path": "assets/reader-opening-v2753/convoyeur-a43ff404d42b846c105770c3fe74bfb15ec646c1d658bf999fc5447ea3ed0d90.pdf",
+        "sha256": "a43ff404d42b846c105770c3fe74bfb15ec646c1d658bf999fc5447ea3ed0d90",
+        "bytes": 1001427,
+        "normalizerFingerprint": "e3c567e1c5c42508ddb42e7166ce5b20352c20bacc032e80e7a84d28a852b631"
       },
       "rendererFingerprint": "e7e1735d7d4d69bcb2a2513fc8d34812947d64a24c6db297892e2002f8d5731e",
       "numPages": 1,
@@ -1107,11 +1107,11 @@
       "exactOnlyAtCaptureViewport": true,
       "staticArtworkV2753": {
         "algorithmVersion": "cdq-static-artwork-graph-sha256-v1",
-        "fingerprint": "7bc3b0475b138c6f55ccfc0a0e5e41fd1fcc9a6ffa28e63ef60ffabb8f82bbef",
+        "fingerprint": "903fd5eeac8af9706880231f93dcc0d60de499ea3222468926a0bb1493add5ac",
         "pageIndex": 0,
         "pageCount": 1,
-        "bytesSha256": "726b71534e89dc69f6bb43aa1b60507e77a76619c644e3ae3b7b5f1a50b945f2",
-        "bytesLength": 997172
+        "bytesSha256": "a43ff404d42b846c105770c3fe74bfb15ec646c1d658bf999fc5447ea3ed0d90",
+        "bytesLength": 1001427
       },
       "captures": [
         {
@@ -1133,9 +1133,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/convoyeur-726b71534e89dc69-e7e1735d7d4d69bc-768.png",
-            "sha256": "e0bbd513f8c377c0235f6e76ce599c0ee04c84d6b9bc2a0b8938da824fe2a918",
-            "bytes": 354526,
+            "path": "assets/reader-template-paint-v2753/convoyeur-a43ff404d42b846c-e7e1735d7d4d69bc-768.png",
+            "sha256": "d3cd1c81f98807abfb63da75206ebe2dd6a4767b5cbdb1b67bcf09bd3d1f62c5",
+            "bytes": 374820,
             "width": 768,
             "height": 994,
             "pixels": 763392
@@ -1162,9 +1162,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/convoyeur-726b71534e89dc69-e7e1735d7d4d69bc-1536.png",
-            "sha256": "6fb90bdb0ac762ce55efa4278917c891e75d642097f8ec2d6ba0374f3c0801c9",
-            "bytes": 1015772,
+            "path": "assets/reader-template-paint-v2753/convoyeur-a43ff404d42b846c-e7e1735d7d4d69bc-1536.png",
+            "sha256": "738fdc7a6a50122a0b785aa959971b6bbfcd6ecc05f3e17fb85c664f4e9d488c",
+            "bytes": 1061641,
             "width": 1536,
             "height": 1988,
             "pixels": 3053568
@@ -1177,14 +1177,14 @@
     "cuve4": {
       "source": {
         "path": "assets/templates/cuve.pdf",
-        "sha256": "527fa14460532a028ea5b68d694d05ea7c57975c87f6362aa4b85609bd3adafd",
-        "bytes": 981801
+        "sha256": "f6853e2903719b571704bee43f3c68452d5caeb5b5aca63402f4488d40a93bb7",
+        "bytes": 987777
       },
       "normalized": {
-        "path": "assets/reader-opening-v2753/cuve4-527fa14460532a028ea5b68d694d05ea7c57975c87f6362aa4b85609bd3adafd.pdf",
-        "sha256": "527fa14460532a028ea5b68d694d05ea7c57975c87f6362aa4b85609bd3adafd",
-        "bytes": 981801,
-        "normalizerFingerprint": "b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"
+        "path": "assets/reader-opening-v2753/cuve4-f6853e2903719b571704bee43f3c68452d5caeb5b5aca63402f4488d40a93bb7.pdf",
+        "sha256": "f6853e2903719b571704bee43f3c68452d5caeb5b5aca63402f4488d40a93bb7",
+        "bytes": 987777,
+        "normalizerFingerprint": "e3c567e1c5c42508ddb42e7166ce5b20352c20bacc032e80e7a84d28a852b631"
       },
       "rendererFingerprint": "e7e1735d7d4d69bcb2a2513fc8d34812947d64a24c6db297892e2002f8d5731e",
       "numPages": 1,
@@ -1213,11 +1213,11 @@
       "exactOnlyAtCaptureViewport": true,
       "staticArtworkV2753": {
         "algorithmVersion": "cdq-static-artwork-graph-sha256-v1",
-        "fingerprint": "270e55eb0095466867133ae66a01bbbb1619e3998fa49de092d1bb94bba6e380",
+        "fingerprint": "164d5cdbe9daf4be0820c73591befef2083a2c3599f25565ce1683100af1e740",
         "pageIndex": 0,
         "pageCount": 1,
-        "bytesSha256": "527fa14460532a028ea5b68d694d05ea7c57975c87f6362aa4b85609bd3adafd",
-        "bytesLength": 981801
+        "bytesSha256": "f6853e2903719b571704bee43f3c68452d5caeb5b5aca63402f4488d40a93bb7",
+        "bytesLength": 987777
       },
       "captures": [
         {
@@ -1239,9 +1239,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/cuve4-527fa14460532a02-e7e1735d7d4d69bc-768.png",
-            "sha256": "b89edd0e37b94bc86a584f181f8c73b4ed37b31ce0b09ee6e478073a098251a6",
-            "bytes": 276448,
+            "path": "assets/reader-template-paint-v2753/cuve4-f6853e2903719b57-e7e1735d7d4d69bc-768.png",
+            "sha256": "f53d8e10336608f7d8937af8c877ae39bbbb4e841e2a3a7bb764cd3acc171c2b",
+            "bytes": 291026,
             "width": 768,
             "height": 994,
             "pixels": 763392
@@ -1268,9 +1268,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/cuve4-527fa14460532a02-e7e1735d7d4d69bc-1536.png",
-            "sha256": "29cf3124cdd058ec03905394a0f77a5d467620a56d7d0342396ac2c7c51a1f5d",
-            "bytes": 833415,
+            "path": "assets/reader-template-paint-v2753/cuve4-f6853e2903719b57-e7e1735d7d4d69bc-1536.png",
+            "sha256": "e616ff892f160c96488c1a3f132bef64f167167a9bcf0d0dbf8ad75a611585fa",
+            "bytes": 872776,
             "width": 1536,
             "height": 1988,
             "pixels": 3053568
@@ -1283,14 +1283,14 @@
     "multitete": {
       "source": {
         "path": "assets/templates/multitete.pdf",
-        "sha256": "606cbdf75a89b2bab30ccad78bbbce015256a666ac7c664e32e9469e4a70ba8c",
-        "bytes": 893339
+        "sha256": "b0e5b6bb4cb0106fdf97bc01cae0704cd1483d0c0114d080147cc26f7e789e47",
+        "bytes": 918790
       },
       "normalized": {
-        "path": "assets/reader-opening-v2753/multitete-606cbdf75a89b2bab30ccad78bbbce015256a666ac7c664e32e9469e4a70ba8c.pdf",
-        "sha256": "606cbdf75a89b2bab30ccad78bbbce015256a666ac7c664e32e9469e4a70ba8c",
-        "bytes": 893339,
-        "normalizerFingerprint": "b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"
+        "path": "assets/reader-opening-v2753/multitete-b0e5b6bb4cb0106fdf97bc01cae0704cd1483d0c0114d080147cc26f7e789e47.pdf",
+        "sha256": "b0e5b6bb4cb0106fdf97bc01cae0704cd1483d0c0114d080147cc26f7e789e47",
+        "bytes": 918790,
+        "normalizerFingerprint": "e3c567e1c5c42508ddb42e7166ce5b20352c20bacc032e80e7a84d28a852b631"
       },
       "rendererFingerprint": "e7e1735d7d4d69bcb2a2513fc8d34812947d64a24c6db297892e2002f8d5731e",
       "numPages": 1,
@@ -1319,11 +1319,11 @@
       "exactOnlyAtCaptureViewport": true,
       "staticArtworkV2753": {
         "algorithmVersion": "cdq-static-artwork-graph-sha256-v1",
-        "fingerprint": "acd6fc4644a827e3076171189ad6a77eff9ecadfb02898b724ddba09f5d893e1",
+        "fingerprint": "2498f4ad48711bca7b45183d36ea9b43194385e5a2c034f4cce7e7d2a510e32f",
         "pageIndex": 0,
         "pageCount": 1,
-        "bytesSha256": "606cbdf75a89b2bab30ccad78bbbce015256a666ac7c664e32e9469e4a70ba8c",
-        "bytesLength": 893339
+        "bytesSha256": "b0e5b6bb4cb0106fdf97bc01cae0704cd1483d0c0114d080147cc26f7e789e47",
+        "bytesLength": 918790
       },
       "captures": [
         {
@@ -1345,9 +1345,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/multitete-606cbdf75a89b2ba-e7e1735d7d4d69bc-768.png",
-            "sha256": "9256bd2f681960b6dd371700145ed1a480192eed04adbb73813157a928c93067",
-            "bytes": 288982,
+            "path": "assets/reader-template-paint-v2753/multitete-b0e5b6bb4cb0106f-e7e1735d7d4d69bc-768.png",
+            "sha256": "72e25400e65bdbf6e2745443f69ba4a2226d9d2fb8e06681a0e507b060f59d14",
+            "bytes": 302111,
             "width": 768,
             "height": 994,
             "pixels": 763392
@@ -1374,9 +1374,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/multitete-606cbdf75a89b2ba-e7e1735d7d4d69bc-1536.png",
-            "sha256": "8460f6411f07368c3042c4f936fc1370ca37f022cddd0c72632ede5eac4149b9",
-            "bytes": 873806,
+            "path": "assets/reader-template-paint-v2753/multitete-b0e5b6bb4cb0106f-e7e1735d7d4d69bc-1536.png",
+            "sha256": "5038c82564b630efe226bc9f8a6b9cfbbb614c7aabe1364d050995a93b442c3e",
+            "bytes": 908951,
             "width": 1536,
             "height": 1988,
             "pixels": 3053568
@@ -1389,14 +1389,14 @@
     "plancher": {
       "source": {
         "path": "assets/templates/plancher.pdf",
-        "sha256": "775ec19b78a14e5851ad620b1ef99e82a12306d76e0fd531e46f57f97e3b3364",
-        "bytes": 260859
+        "sha256": "d4def5fb2753272b9769e9fcc73b8b9da46173ba6aea185b9791f96917b5acfb",
+        "bytes": 264168
       },
       "normalized": {
-        "path": "assets/reader-opening-v2753/plancher-775ec19b78a14e5851ad620b1ef99e82a12306d76e0fd531e46f57f97e3b3364.pdf",
-        "sha256": "775ec19b78a14e5851ad620b1ef99e82a12306d76e0fd531e46f57f97e3b3364",
-        "bytes": 260859,
-        "normalizerFingerprint": "b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"
+        "path": "assets/reader-opening-v2753/plancher-d4def5fb2753272b9769e9fcc73b8b9da46173ba6aea185b9791f96917b5acfb.pdf",
+        "sha256": "d4def5fb2753272b9769e9fcc73b8b9da46173ba6aea185b9791f96917b5acfb",
+        "bytes": 264168,
+        "normalizerFingerprint": "e3c567e1c5c42508ddb42e7166ce5b20352c20bacc032e80e7a84d28a852b631"
       },
       "rendererFingerprint": "e7e1735d7d4d69bcb2a2513fc8d34812947d64a24c6db297892e2002f8d5731e",
       "numPages": 1,
@@ -1425,11 +1425,11 @@
       "exactOnlyAtCaptureViewport": true,
       "staticArtworkV2753": {
         "algorithmVersion": "cdq-static-artwork-graph-sha256-v1",
-        "fingerprint": "badef45b23bf5c0a52390fd4dc2e568f2590cbd50d950121ddd2973c1c6c3a12",
+        "fingerprint": "385dcd955b91813866229970780be42bf54fc3f3d2e8c721e67f4966fdadb770",
         "pageIndex": 0,
         "pageCount": 1,
-        "bytesSha256": "775ec19b78a14e5851ad620b1ef99e82a12306d76e0fd531e46f57f97e3b3364",
-        "bytesLength": 260859
+        "bytesSha256": "d4def5fb2753272b9769e9fcc73b8b9da46173ba6aea185b9791f96917b5acfb",
+        "bytesLength": 264168
       },
       "captures": [
         {
@@ -1451,9 +1451,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/plancher-775ec19b78a14e58-e7e1735d7d4d69bc-768.png",
-            "sha256": "aa94031ea23b0aec1837cbb2d7bdb289689a0019a15f3962acda6cb09fb2479c",
-            "bytes": 315984,
+            "path": "assets/reader-template-paint-v2753/plancher-d4def5fb2753272b-e7e1735d7d4d69bc-768.png",
+            "sha256": "4bc8573587c2d5ddb0c8facd3e4de8f7bc3394c6a4b12aaecb96917c2f2f63d2",
+            "bytes": 333552,
             "width": 768,
             "height": 994,
             "pixels": 763392
@@ -1480,9 +1480,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/plancher-775ec19b78a14e58-e7e1735d7d4d69bc-1536.png",
-            "sha256": "c57c7675688380b20397e169d6c9f17ff5d7efc62f29453aa6828e1a73ca8874",
-            "bytes": 962187,
+            "path": "assets/reader-template-paint-v2753/plancher-d4def5fb2753272b-e7e1735d7d4d69bc-1536.png",
+            "sha256": "01b26a334b51228ec881ac13669290c5737ee154531545770b36b3819c805009",
+            "bytes": 1002796,
             "width": 1536,
             "height": 1988,
             "pixels": 3053568
@@ -1495,14 +1495,14 @@
     "precision": {
       "source": {
         "path": "assets/templates/precision.pdf",
-        "sha256": "caf5b445d66f6fa5fb5e9bbd6fc50349bb98f78ab6ffdf7ac5f6e3fd321a6326",
-        "bytes": 986068
+        "sha256": "98c8d8f73f7755c058562260bdc132246bd083d1ea35024fb800c0bf3264bc69",
+        "bytes": 991292
       },
       "normalized": {
-        "path": "assets/reader-opening-v2753/precision-caf5b445d66f6fa5fb5e9bbd6fc50349bb98f78ab6ffdf7ac5f6e3fd321a6326.pdf",
-        "sha256": "caf5b445d66f6fa5fb5e9bbd6fc50349bb98f78ab6ffdf7ac5f6e3fd321a6326",
-        "bytes": 986068,
-        "normalizerFingerprint": "b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"
+        "path": "assets/reader-opening-v2753/precision-98c8d8f73f7755c058562260bdc132246bd083d1ea35024fb800c0bf3264bc69.pdf",
+        "sha256": "98c8d8f73f7755c058562260bdc132246bd083d1ea35024fb800c0bf3264bc69",
+        "bytes": 991292,
+        "normalizerFingerprint": "e3c567e1c5c42508ddb42e7166ce5b20352c20bacc032e80e7a84d28a852b631"
       },
       "rendererFingerprint": "e7e1735d7d4d69bcb2a2513fc8d34812947d64a24c6db297892e2002f8d5731e",
       "numPages": 1,
@@ -1531,11 +1531,11 @@
       "exactOnlyAtCaptureViewport": true,
       "staticArtworkV2753": {
         "algorithmVersion": "cdq-static-artwork-graph-sha256-v1",
-        "fingerprint": "b6dfe853f61472164d376c3aaf88f39d3c959433f38f051ecda34c0cb5321295",
+        "fingerprint": "23cf09282c955135aac9f1469ba1ae4c66e0bd2b64cde9e07693da3403f56831",
         "pageIndex": 0,
         "pageCount": 1,
-        "bytesSha256": "caf5b445d66f6fa5fb5e9bbd6fc50349bb98f78ab6ffdf7ac5f6e3fd321a6326",
-        "bytesLength": 986068
+        "bytesSha256": "98c8d8f73f7755c058562260bdc132246bd083d1ea35024fb800c0bf3264bc69",
+        "bytesLength": 991292
       },
       "captures": [
         {
@@ -1557,9 +1557,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/precision-caf5b445d66f6fa5-e7e1735d7d4d69bc-768.png",
-            "sha256": "ee2d333fc6b9e8f95d11c605ac65317ae8e0ea1d74c6b7aa71cd68f8e045c455",
-            "bytes": 276627,
+            "path": "assets/reader-template-paint-v2753/precision-98c8d8f73f7755c0-e7e1735d7d4d69bc-768.png",
+            "sha256": "efaa576c1aec5216e103fbb9b01f2f4fc28238360f119c739924fecad3a9cc8f",
+            "bytes": 290558,
             "width": 768,
             "height": 994,
             "pixels": 763392
@@ -1586,9 +1586,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/precision-caf5b445d66f6fa5-e7e1735d7d4d69bc-1536.png",
-            "sha256": "c575e53dbf1c44cab4b2617aa5f94bc2042f6f8a44edbea1629c582c54d8f51e",
-            "bytes": 832257,
+            "path": "assets/reader-template-paint-v2753/precision-98c8d8f73f7755c0-e7e1735d7d4d69bc-1536.png",
+            "sha256": "f13f8f3b6739175f0f23f227b52b273d2938b18ec3e1eaa6e886d3eb66b73729",
+            "bytes": 867639,
             "width": 1536,
             "height": 1988,
             "pixels": 3053568
@@ -1601,14 +1601,14 @@
     "suspendue": {
       "source": {
         "path": "assets/templates/suspendue.pdf",
-        "sha256": "5502adbf2abf8ff9d0058fef81fb23db0f898e215c756d787c04cde6ec71e342",
-        "bytes": 991589
+        "sha256": "2a619465ea7eb052a7f55cee151481d46206ce356ce242b2d3b7a29f27870d34",
+        "bytes": 989238
       },
       "normalized": {
-        "path": "assets/reader-opening-v2753/suspendue-459ecb6e980e21f1490c995dc7797b07086983966fe8fc5b725f546f726e296a.pdf",
-        "sha256": "459ecb6e980e21f1490c995dc7797b07086983966fe8fc5b725f546f726e296a",
-        "bytes": 992804,
-        "normalizerFingerprint": "b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"
+        "path": "assets/reader-opening-v2753/suspendue-47bee3ad4e1ab12737884cfcc4f8345e496977fb0e74d8628f2f7a846b876ab2.pdf",
+        "sha256": "47bee3ad4e1ab12737884cfcc4f8345e496977fb0e74d8628f2f7a846b876ab2",
+        "bytes": 991317,
+        "normalizerFingerprint": "e3c567e1c5c42508ddb42e7166ce5b20352c20bacc032e80e7a84d28a852b631"
       },
       "rendererFingerprint": "e7e1735d7d4d69bcb2a2513fc8d34812947d64a24c6db297892e2002f8d5731e",
       "numPages": 1,
@@ -1637,11 +1637,11 @@
       "exactOnlyAtCaptureViewport": true,
       "staticArtworkV2753": {
         "algorithmVersion": "cdq-static-artwork-graph-sha256-v1",
-        "fingerprint": "308af76fe4bba6730e83f16cbc0e0d55ac710bea18e41c6de31fdbc03653d299",
+        "fingerprint": "d9feeb12e0d1a07a936666c400777d76c31fb4fe26c09569e3c3e1b703676f57",
         "pageIndex": 0,
         "pageCount": 1,
-        "bytesSha256": "459ecb6e980e21f1490c995dc7797b07086983966fe8fc5b725f546f726e296a",
-        "bytesLength": 992804
+        "bytesSha256": "47bee3ad4e1ab12737884cfcc4f8345e496977fb0e74d8628f2f7a846b876ab2",
+        "bytesLength": 991317
       },
       "captures": [
         {
@@ -1663,9 +1663,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/suspendue-459ecb6e980e21f1-e7e1735d7d4d69bc-768.png",
-            "sha256": "3f168eaf296548d8559e2ad5eda29bf4ebc341db5cf589c05bac9ab7d06f3b55",
-            "bytes": 283298,
+            "path": "assets/reader-template-paint-v2753/suspendue-47bee3ad4e1ab127-e7e1735d7d4d69bc-768.png",
+            "sha256": "ef2b5a82884e7b61bc61b0a4666cfee74c41a8ff3b6a1d99f8a4c148364343a3",
+            "bytes": 296391,
             "width": 768,
             "height": 994,
             "pixels": 763392
@@ -1692,9 +1692,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/suspendue-459ecb6e980e21f1-e7e1735d7d4d69bc-1536.png",
-            "sha256": "b6bcacefb20626fac7e8491560914ec21be3b7e9c05fccd366df3b95821a303b",
-            "bytes": 861619,
+            "path": "assets/reader-template-paint-v2753/suspendue-47bee3ad4e1ab127-e7e1735d7d4d69bc-1536.png",
+            "sha256": "75a4b5a1105d2c596203fce9e657f9c2c1935f78d3673c888ab9b9c6fb1998d9",
+            "bytes": 898342,
             "width": 1536,
             "height": 1988,
             "pixels": 3053568
@@ -1707,14 +1707,14 @@
     "table": {
       "source": {
         "path": "assets/templates/table.pdf",
-        "sha256": "3dabe416501c57698c891dc628b6153b34669d603f81d88d4219aa6b1364b1f9",
-        "bytes": 975055
+        "sha256": "c54ff5f28a0be5f332236d90d84bcdf6273bd4136d7872bd13934d72131646b6",
+        "bytes": 979010
       },
       "normalized": {
-        "path": "assets/reader-opening-v2753/table-3dabe416501c57698c891dc628b6153b34669d603f81d88d4219aa6b1364b1f9.pdf",
-        "sha256": "3dabe416501c57698c891dc628b6153b34669d603f81d88d4219aa6b1364b1f9",
-        "bytes": 975055,
-        "normalizerFingerprint": "b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"
+        "path": "assets/reader-opening-v2753/table-c54ff5f28a0be5f332236d90d84bcdf6273bd4136d7872bd13934d72131646b6.pdf",
+        "sha256": "c54ff5f28a0be5f332236d90d84bcdf6273bd4136d7872bd13934d72131646b6",
+        "bytes": 979010,
+        "normalizerFingerprint": "e3c567e1c5c42508ddb42e7166ce5b20352c20bacc032e80e7a84d28a852b631"
       },
       "rendererFingerprint": "e7e1735d7d4d69bcb2a2513fc8d34812947d64a24c6db297892e2002f8d5731e",
       "numPages": 1,
@@ -1743,11 +1743,11 @@
       "exactOnlyAtCaptureViewport": true,
       "staticArtworkV2753": {
         "algorithmVersion": "cdq-static-artwork-graph-sha256-v1",
-        "fingerprint": "f75c8fab9191888c9a55d8cc6ffb59d580baa8ce96c0211c859f42808f2a83c9",
+        "fingerprint": "95fd758330003d5d1a0f3f51b3a0c95908f7b1c9123d461705f30d5299d67ef0",
         "pageIndex": 0,
         "pageCount": 1,
-        "bytesSha256": "3dabe416501c57698c891dc628b6153b34669d603f81d88d4219aa6b1364b1f9",
-        "bytesLength": 975055
+        "bytesSha256": "c54ff5f28a0be5f332236d90d84bcdf6273bd4136d7872bd13934d72131646b6",
+        "bytesLength": 979010
       },
       "captures": [
         {
@@ -1769,9 +1769,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/table-3dabe416501c5769-e7e1735d7d4d69bc-768.png",
-            "sha256": "3790c845142b2107c396f8da839fac9d605baeac26c43ef31e903af639bb8b6c",
-            "bytes": 272356,
+            "path": "assets/reader-template-paint-v2753/table-c54ff5f28a0be5f3-e7e1735d7d4d69bc-768.png",
+            "sha256": "874027c99de94d68049544940f9ebf9eadbc4afd0f5580a4f3dc4ad706b79f62",
+            "bytes": 287691,
             "width": 768,
             "height": 994,
             "pixels": 763392
@@ -1798,9 +1798,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/table-3dabe416501c5769-e7e1735d7d4d69bc-1536.png",
-            "sha256": "798e86e3129690adea3404285cc13192a31901bcf12880b902f584e185d6dc2b",
-            "bytes": 826754,
+            "path": "assets/reader-template-paint-v2753/table-c54ff5f28a0be5f3-e7e1735d7d4d69bc-1536.png",
+            "sha256": "a5156850da340b132e7ed77a361b5f31cb8c704886a3443a37a2058b9a9cf733",
+            "bytes": 863877,
             "width": 1536,
             "height": 1988,
             "pixels": 3053568
@@ -1813,14 +1813,14 @@
     "trackscale": {
       "source": {
         "path": "assets/templates/trackscale.pdf",
-        "sha256": "00cbe6cb741c2e28c7c342d17c695c593f780145e129873c68b442e84881b309",
-        "bytes": 599102
+        "sha256": "9e654e760469ebef519c56b4d0359fb1ee24799d0bda5e2455a39594aa028185",
+        "bytes": 605574
       },
       "normalized": {
-        "path": "assets/reader-opening-v2753/trackscale-00cbe6cb741c2e28c7c342d17c695c593f780145e129873c68b442e84881b309.pdf",
-        "sha256": "00cbe6cb741c2e28c7c342d17c695c593f780145e129873c68b442e84881b309",
-        "bytes": 599102,
-        "normalizerFingerprint": "b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"
+        "path": "assets/reader-opening-v2753/trackscale-9e654e760469ebef519c56b4d0359fb1ee24799d0bda5e2455a39594aa028185.pdf",
+        "sha256": "9e654e760469ebef519c56b4d0359fb1ee24799d0bda5e2455a39594aa028185",
+        "bytes": 605574,
+        "normalizerFingerprint": "e3c567e1c5c42508ddb42e7166ce5b20352c20bacc032e80e7a84d28a852b631"
       },
       "rendererFingerprint": "e7e1735d7d4d69bcb2a2513fc8d34812947d64a24c6db297892e2002f8d5731e",
       "numPages": 1,
@@ -1849,11 +1849,11 @@
       "exactOnlyAtCaptureViewport": true,
       "staticArtworkV2753": {
         "algorithmVersion": "cdq-static-artwork-graph-sha256-v1",
-        "fingerprint": "d61d020ef0cbf2c1c508914a4c8901e8524c1e30ae464bda937df448ffb99175",
+        "fingerprint": "93315ead8af9e08a7903a281aa846e63e2de207cc19167b47728e78025b9cc7c",
         "pageIndex": 0,
         "pageCount": 1,
-        "bytesSha256": "00cbe6cb741c2e28c7c342d17c695c593f780145e129873c68b442e84881b309",
-        "bytesLength": 599102
+        "bytesSha256": "9e654e760469ebef519c56b4d0359fb1ee24799d0bda5e2455a39594aa028185",
+        "bytesLength": 605574
       },
       "captures": [
         {
@@ -1875,9 +1875,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/trackscale-00cbe6cb741c2e28-e7e1735d7d4d69bc-768.png",
-            "sha256": "06dc39f29e1af876ea9b1f2caa5a2e6fc4b21c6b09dcee2b39b8979730aeb684",
-            "bytes": 258176,
+            "path": "assets/reader-template-paint-v2753/trackscale-9e654e760469ebef-e7e1735d7d4d69bc-768.png",
+            "sha256": "c729d95696312c9aa8dbaa2537445e52a6f0a1c798f19a3aeb8f819aa4a17d5d",
+            "bytes": 273257,
             "width": 768,
             "height": 994,
             "pixels": 763392
@@ -1904,9 +1904,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/trackscale-00cbe6cb741c2e28-e7e1735d7d4d69bc-1536.png",
-            "sha256": "426d9f1f71b7258b6b65627a1092fd5c8225709296ff9883756a4c20398789c9",
-            "bytes": 772034,
+            "path": "assets/reader-template-paint-v2753/trackscale-9e654e760469ebef-e7e1735d7d4d69bc-1536.png",
+            "sha256": "d4de8d492dabe6bf2271f7660921db5530e130668ae3690fe7dfc099a7a1cc11",
+            "bytes": 808450,
             "width": 1536,
             "height": 1988,
             "pixels": 3053568
@@ -1919,14 +1919,14 @@
     "train": {
       "source": {
         "path": "assets/templates/train.pdf",
-        "sha256": "44ebcd98aad4522d172e402a1f52dba729e7af0eb39b01fb84f0fc2e35ce7a36",
-        "bytes": 996163
+        "sha256": "d549ea7a06e59692514a3feba96fa80fed3edb2094dee603b0b293c95413f478",
+        "bytes": 991904
       },
       "normalized": {
-        "path": "assets/reader-opening-v2753/train-3cdaad61a08a8daee5a321f7b44eae8a97ba94be888662e40ce898397814be26.pdf",
-        "sha256": "3cdaad61a08a8daee5a321f7b44eae8a97ba94be888662e40ce898397814be26",
-        "bytes": 999286,
-        "normalizerFingerprint": "b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"
+        "path": "assets/reader-opening-v2753/train-e481c900c144a624c53be295403bf92a55b6a7b0f47d38bc686314f06cab311b.pdf",
+        "sha256": "e481c900c144a624c53be295403bf92a55b6a7b0f47d38bc686314f06cab311b",
+        "bytes": 997147,
+        "normalizerFingerprint": "e3c567e1c5c42508ddb42e7166ce5b20352c20bacc032e80e7a84d28a852b631"
       },
       "rendererFingerprint": "e7e1735d7d4d69bcb2a2513fc8d34812947d64a24c6db297892e2002f8d5731e",
       "numPages": 1,
@@ -1955,11 +1955,11 @@
       "exactOnlyAtCaptureViewport": true,
       "staticArtworkV2753": {
         "algorithmVersion": "cdq-static-artwork-graph-sha256-v1",
-        "fingerprint": "c948b549aa160df41fcf7b17d1a9c0ba54a67268772fccbb286e669e31518ab1",
+        "fingerprint": "6300c07b4f7502896e8ad30c0508d905d9066d8274a4197d97fd253be7bbe407",
         "pageIndex": 0,
         "pageCount": 1,
-        "bytesSha256": "3cdaad61a08a8daee5a321f7b44eae8a97ba94be888662e40ce898397814be26",
-        "bytesLength": 999286
+        "bytesSha256": "e481c900c144a624c53be295403bf92a55b6a7b0f47d38bc686314f06cab311b",
+        "bytesLength": 997147
       },
       "captures": [
         {
@@ -1981,9 +1981,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/train-3cdaad61a08a8dae-e7e1735d7d4d69bc-768.png",
-            "sha256": "506f090e2899b579e5a5b083815ac2177ca2d5908c0809f593f070f3843b392f",
-            "bytes": 500332,
+            "path": "assets/reader-template-paint-v2753/train-e481c900c144a624-e7e1735d7d4d69bc-768.png",
+            "sha256": "ef846115a8e83b0a81ad17fc09b54d8bd614133bfc3d7d7b2741399c626cb079",
+            "bytes": 518688,
             "width": 768,
             "height": 1087,
             "pixels": 834816
@@ -2010,9 +2010,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/train-3cdaad61a08a8dae-e7e1735d7d4d69bc-1536.png",
-            "sha256": "0dbeb6185457c27aed54ea30bf17d3bc86e1dab631723d747aa5641be0ccf851",
-            "bytes": 1612315,
+            "path": "assets/reader-template-paint-v2753/train-e481c900c144a624-e7e1735d7d4d69bc-1536.png",
+            "sha256": "f75055e20b4a0dd61a62299d3a1346e62c11ec8db6daea97f7c34d900636d3f0",
+            "bytes": 1654562,
             "width": 1536,
             "height": 2173,
             "pixels": 3337728
@@ -2025,14 +2025,14 @@
     "tremie4": {
       "source": {
         "path": "assets/templates/tremie.pdf",
-        "sha256": "f95adfb77ab93b230ce67ab879654e11874bc9f0afda45edc8038f275903b7ee",
-        "bytes": 908402
+        "sha256": "9ecc1deb02e26c4ad44163a6f4ec61013e32ae66812912f24330da16f9b4e3e4",
+        "bytes": 914398
       },
       "normalized": {
-        "path": "assets/reader-opening-v2753/tremie4-f95adfb77ab93b230ce67ab879654e11874bc9f0afda45edc8038f275903b7ee.pdf",
-        "sha256": "f95adfb77ab93b230ce67ab879654e11874bc9f0afda45edc8038f275903b7ee",
-        "bytes": 908402,
-        "normalizerFingerprint": "b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"
+        "path": "assets/reader-opening-v2753/tremie4-9ecc1deb02e26c4ad44163a6f4ec61013e32ae66812912f24330da16f9b4e3e4.pdf",
+        "sha256": "9ecc1deb02e26c4ad44163a6f4ec61013e32ae66812912f24330da16f9b4e3e4",
+        "bytes": 914398,
+        "normalizerFingerprint": "e3c567e1c5c42508ddb42e7166ce5b20352c20bacc032e80e7a84d28a852b631"
       },
       "rendererFingerprint": "e7e1735d7d4d69bcb2a2513fc8d34812947d64a24c6db297892e2002f8d5731e",
       "numPages": 1,
@@ -2061,11 +2061,11 @@
       "exactOnlyAtCaptureViewport": true,
       "staticArtworkV2753": {
         "algorithmVersion": "cdq-static-artwork-graph-sha256-v1",
-        "fingerprint": "20ec42f710e5c2412bcad6224a9ac04a71279ed84e9189653858c915ed3a9f15",
+        "fingerprint": "f5182ed0d9728fc1a517460250005d469995dc4025802793bcfa9f0c6813519d",
         "pageIndex": 0,
         "pageCount": 1,
-        "bytesSha256": "f95adfb77ab93b230ce67ab879654e11874bc9f0afda45edc8038f275903b7ee",
-        "bytesLength": 908402
+        "bytesSha256": "9ecc1deb02e26c4ad44163a6f4ec61013e32ae66812912f24330da16f9b4e3e4",
+        "bytesLength": 914398
       },
       "captures": [
         {
@@ -2087,9 +2087,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/tremie4-f95adfb77ab93b23-e7e1735d7d4d69bc-768.png",
-            "sha256": "824d9f0dc85d386bfdf88f5e193e67f4df9472b31acb8e023da9f372a24fde0b",
-            "bytes": 276613,
+            "path": "assets/reader-template-paint-v2753/tremie4-9ecc1deb02e26c4a-e7e1735d7d4d69bc-768.png",
+            "sha256": "5d4582733930ea1fe5b782130302ba5dca067595fbd97b6e61ffabe473714c6c",
+            "bytes": 290935,
             "width": 768,
             "height": 994,
             "pixels": 763392
@@ -2116,9 +2116,9 @@
           },
           "separateAnnots": true,
           "background": {
-            "path": "assets/reader-template-paint-v2753/tremie4-f95adfb77ab93b23-e7e1735d7d4d69bc-1536.png",
-            "sha256": "c810f60666cf59116a5bb998fa4547ea08539ecce9eb08b1a20e61d6eaebff13",
-            "bytes": 832946,
+            "path": "assets/reader-template-paint-v2753/tremie4-9ecc1deb02e26c4a-e7e1735d7d4d69bc-1536.png",
+            "sha256": "77d829f85c9058b0576a11368d50c6857b0e0cde96c2256296368debed6c7e6a",
+            "bytes": 872551,
             "width": 1536,
             "height": 1988,
             "pixels": 3053568

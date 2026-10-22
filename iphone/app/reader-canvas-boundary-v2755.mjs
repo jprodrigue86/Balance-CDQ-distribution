@@ -1,19 +1,20 @@
+export const LEGACY_TRAIN_CALENDAR_BOUNDARY_POLICY_V2755=Object.freeze({"family":"train","version":"27.55","pdfjsVersion":"6.3.289","sourceSha256":"3cdaad61a08a8daee5a321f7b44eae8a97ba94be888662e40ce898397814be26","sourceBytes":999286,"artworkAlgorithm":"cdq-static-artwork-graph-sha256-v1","artworkFingerprint":"c948b549aa160df41fcf7b17d1a9c0ba54a67268772fccbb286e669e31518ab1","boundary":"before-and-after-native-calendar-outer-fill","constructPath":91,"paintOperation":23,"fillStyle":"#0e06ad","lineCap":"butt","globalAlpha":1,"globalCompositeOperation":"source-over","lineWidths":[1,6],"readbackWidth":1,"readbackHeight":1,"drawOps":[0,2228.280029296875,5995,1,2428.280029296875,5995,2,2444.860107421875,5995,2458.280029296875,6008.419921875,2458.280029296875,6025,1,2458.280029296875,6195,2,2458.280029296875,6211.58984375,2444.860107421875,6225,2428.280029296875,6225,1,2228.280029296875,6225,2,2211.699951171875,6225,2198.280029296875,6211.58984375,2198.280029296875,6195,1,2198.280029296875,6025,2,2198.280029296875,6008.419921875,2211.699951171875,5995,2228.280029296875,5995]});
+export const LEGACY_CAMION_CANVAS_BOUNDARY_POLICY_V2755=Object.freeze({"family":"camion","version":"27.55","pdfjsVersion":"6.3.289","sourceSha256":"ff40bd121e4e53ac75dac859a86e803a2d3c34f89c2c306b6b206e330a0e5b5e","sourceBytes":984346,"artworkAlgorithm":"cdq-static-artwork-graph-sha256-v1","artworkFingerprint":"8929ce6b5b81e7a692e2c3d5336b7fb98a5149034eacc5af99fc501db5450639","boundary":"before-and-after-native-main-fill","readbackWidth":1,"readbackHeight":1});
 // Isolate native fills for the exact approved Camion artwork. Each boundary
 // discards one pixel; it never rewrites, retains or replays any image data.
 // Decoration is local to the main canvas and lasts only for its render task.
 export const CAMION_CANVAS_BOUNDARY_POLICY_V2755=Object.freeze({
   family:'camion',version:'27.55',pdfjsVersion:'6.3.289',
-  sourceSha256:'ff40bd121e4e53ac75dac859a86e803a2d3c34f89c2c306b6b206e330a0e5b5e',sourceBytes:984346,
+  sourceSha256:'e2c0bd73429bf9d8e7701b87eaf2fcadb79c04d0986acac955f3aad9336c4635',sourceBytes:981875,
   artworkAlgorithm:'cdq-static-artwork-graph-sha256-v1',
-  artworkFingerprint:'8929ce6b5b81e7a692e2c3d5336b7fb98a5149034eacc5af99fc501db5450639',
+  artworkFingerprint:'c15f9d951e00104a7ae9c0b212a2ee2c7eec430e230364e2537dfea0b39b76b8',
   boundary:'before-and-after-native-main-fill',readbackWidth:1,readbackHeight:1
 });
-const policy=CAMION_CANVAS_BOUNDARY_POLICY_V2755;
+const policy=CAMION_CANVAS_BOUNDARY_POLICY_V2755,camionPoliciesV2760=[policy,LEGACY_CAMION_CANVAS_BOUNDARY_POLICY_V2755];
 const preparedIdentities=new WeakSet(),installedDocuments=new WeakSet(),installedPages=new WeakSet(),activeContexts=new WeakMap();
 const hash=value=>typeof value==='string'&&/^[a-f0-9]{64}$/.test(value);
 const currentEpoch=(preparedEpoch,epoch)=>Number.isInteger(epoch)&&epoch>=0&&preparedEpoch===epoch;
-const matchingArtwork=artwork=>artwork?.algorithmVersion===policy.artworkAlgorithm&&
-  artwork.fingerprint===policy.artworkFingerprint&&artwork.pageIndex===0&&artwork.pageCount===1;
+const matchingArtwork=artwork=>camionPoliciesV2760.some(p=>artwork?.algorithmVersion===p.artworkAlgorithm&&artwork.fingerprint===p.artworkFingerprint&&artwork.pageIndex===0&&artwork.pageCount===1);
 const require=(ok,message)=>{if(!ok)throw Error('Camion canvas boundary: '+message);};
 
 // Return null synchronously for excluded documents. Only a plausible Camion
@@ -26,11 +27,11 @@ export function prepareCamionCanvasBoundaryV2755({sourceBytes,staticArtwork,prep
   const sourceBytesLength=sourceBytes.byteLength;
   const artwork=matchingArtwork(staticArtwork)?{bytesSha256:staticArtwork.bytesSha256,bytesLength:staticArtwork.bytesLength}:null;
   // Other families, including Précision, do not add a digest to normal opening.
-  if(sourceBytesLength!==policy.sourceBytes&&!artwork)return null;
+  if(!camionPoliciesV2760.some(p=>sourceBytesLength===p.sourceBytes)&&!artwork)return null;
   return (async()=>{
     const sourceSha256=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',sourceBytes)),value=>value.toString(16).padStart(2,'0')).join('');
     checkCurrent();
-    const canonical=sourceSha256===policy.sourceSha256&&sourceBytesLength===policy.sourceBytes;
+    const canonical=camionPoliciesV2760.some(p=>sourceSha256===p.sourceSha256&&sourceBytesLength===p.sourceBytes);
     const filled=artwork&&hash(artwork.bytesSha256)&&artwork.bytesSha256===sourceSha256&&artwork.bytesLength===sourceBytesLength;
     if(!canonical&&!filled)return null;
     const identity=Object.freeze({sourceSha256,sourceBytesLength,epoch,pdfjsVersion});
@@ -138,9 +139,9 @@ export function installCamionCanvasBoundaryV2755(document,identity){
 // unrelated document preparations keep their existing behavior.
 export const TRAIN_CALENDAR_BOUNDARY_POLICY_V2755=Object.freeze({
   family:'train',version:'27.55',pdfjsVersion:'6.3.289',
-  sourceSha256:'3cdaad61a08a8daee5a321f7b44eae8a97ba94be888662e40ce898397814be26',sourceBytes:999286,
+  sourceSha256:'e481c900c144a624c53be295403bf92a55b6a7b0f47d38bc686314f06cab311b',sourceBytes:997147,
   artworkAlgorithm:'cdq-static-artwork-graph-sha256-v1',
-  artworkFingerprint:'c948b549aa160df41fcf7b17d1a9c0ba54a67268772fccbb286e669e31518ab1',
+  artworkFingerprint:'6300c07b4f7502896e8ad30c0508d905d9066d8274a4197d97fd253be7bbe407',
   boundary:'before-and-after-native-calendar-outer-fill',constructPath:91,paintOperation:23,
   fillStyle:'#0e06ad',lineCap:'butt',globalAlpha:1,globalCompositeOperation:'source-over',
   lineWidths:Object.freeze([1,6]),readbackWidth:1,readbackHeight:1,
@@ -152,7 +153,7 @@ export const TRAIN_CALENDAR_BOUNDARY_POLICY_V2755=Object.freeze({
     1,2228.280029296875,6225,2,2211.699951171875,6225,2198.280029296875,6211.58984375,2198.280029296875,6195,
     1,2198.280029296875,6025,2,2198.280029296875,6008.419921875,2211.699951171875,5995,2228.280029296875,5995])
 });
-const trainPolicy=TRAIN_CALENDAR_BOUNDARY_POLICY_V2755;
+const trainPolicy=TRAIN_CALENDAR_BOUNDARY_POLICY_V2755,trainPoliciesV2760=[trainPolicy,LEGACY_TRAIN_CALENDAR_BOUNDARY_POLICY_V2755];
 const trainPreparedIdentities=new WeakSet(),trainInstalledDocuments=new WeakSet(),trainPageStates=new WeakMap(),trainActiveContexts=new WeakMap();
 const requireTrain=(ok,message)=>{if(!ok)throw Error('Train calendar boundary: '+message);};
 
@@ -162,13 +163,12 @@ export function prepareTrainCalendarBoundaryV2755({sourceBytes,staticArtwork,pre
     sourceBytes.byteLength<8||sourceBytes.byteLength>32*1024*1024)return null;
   if(sourceBytes[0]!==37||sourceBytes[1]!==80||sourceBytes[2]!==68||sourceBytes[3]!==70||sourceBytes[4]!==45)return null;
   const sourceBytesLength=sourceBytes.byteLength;
-  const artwork=staticArtwork?.algorithmVersion===trainPolicy.artworkAlgorithm&&staticArtwork.fingerprint===trainPolicy.artworkFingerprint&&
-    staticArtwork.pageIndex===0&&staticArtwork.pageCount===1?{bytesSha256:staticArtwork.bytesSha256,bytesLength:staticArtwork.bytesLength}:null;
-  if(sourceBytesLength!==trainPolicy.sourceBytes&&!artwork)return null;
+  const artwork=trainPoliciesV2760.some(p=>staticArtwork?.algorithmVersion===p.artworkAlgorithm&&staticArtwork.fingerprint===p.artworkFingerprint&&staticArtwork.pageIndex===0&&staticArtwork.pageCount===1)?{bytesSha256:staticArtwork.bytesSha256,bytesLength:staticArtwork.bytesLength}:null;
+  if(!trainPoliciesV2760.some(p=>sourceBytesLength===p.sourceBytes)&&!artwork)return null;
   return (async()=>{
     const sourceSha256=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',sourceBytes)),value=>value.toString(16).padStart(2,'0')).join('');
     checkCurrent();
-    const canonical=sourceSha256===trainPolicy.sourceSha256&&sourceBytesLength===trainPolicy.sourceBytes;
+    const canonical=trainPoliciesV2760.some(p=>sourceSha256===p.sourceSha256&&sourceBytesLength===p.sourceBytes);
     const filled=artwork&&hash(artwork.bytesSha256)&&artwork.bytesSha256===sourceSha256&&artwork.bytesLength===sourceBytesLength;
     if(!canonical&&!filled)return null;
     const identity=Object.freeze({family:'train',sourceSha256,sourceBytesLength,epoch,pdfjsVersion});

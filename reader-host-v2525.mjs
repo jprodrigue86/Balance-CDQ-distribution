@@ -7,7 +7,7 @@ import {createBundledOpeningV2753} from './reader-bundled-opening-v2753.mjs';
 import {validatedReaderStaticArtworkV2753} from './reader-static-artwork-binding-v2753.mjs';
 
 // Filled only by the final package builder; source checkouts use worker OPEN.
-const BUNDLED_OPENING_PIN_V2753=Object.freeze({"build":"2026.10.18-v27.54-data-engine","manifestSha256":"50f4b499493ceffde7037e97e4b72404411f9e4247fdf56e14b6ab3e1f1e5f32","normalizerSha256":"b378c2669015be9974f50b58352a963ec12221cb25ae50245b62ccc1239bb49c"});
+const BUNDLED_OPENING_PIN_V2753=Object.freeze({"build":"2026.10.22-v27.60-company-recovery-cyan30-shared-editing","manifestSha256":"2eb0efe1d38cc590ef1a3f9f3863a2ac08f571b7593b39f01358582ac6afafa7","normalizerSha256":"e3c567e1c5c42508ddb42e7166ce5b20352c20bacc032e80e7a84d28a852b631"});
 const bundledOpeningV2753=createBundledOpeningV2753({pin:BUNDLED_OPENING_PIN_V2753});
 
 let active=null;
@@ -87,10 +87,11 @@ export function openReader(data){
     if(request.reportEngineV2754&&request.reportSnapshotV2754){
       const {bundledTemplate}=await import('./report-templates-v2636.mjs');
       const template=await bundledTemplate(request.reportEngineV2754.template.modeleId);
-      if(template.sha256!==request.reportEngineV2754.template.sha256)throw Error('Le modèle de ce rapport doit être récupéré avant son ouverture.');
-      // A pinned local template plus answers replaces PDF normalization on
-      // reopen. Its immutable bytes are still verified by bundledTemplate.
-      request.blob=template.blob;request.readerPreparedVersion=2730;context.sourceBlob=template.blob;
+      // Historical reports retain their authenticated original PDF and pin.
+      // Only an exact template identity can replace a report's source bytes.
+      if(template.sha256===request.reportEngineV2754.template.sha256){
+        request.blob=template.blob;request.readerPreparedVersion=2730;context.sourceBlob=template.blob;
+      }
     }
     return openReaderInternal(request,context);
   });openQueue=result.catch(()=>{});return result;

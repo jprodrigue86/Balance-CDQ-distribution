@@ -1,45 +1,38 @@
-// The server is authoritative. Timing uses elapsed time, never the device clock
-// compared with the server clock. A late response cannot revive a closed session.
-export function createFileEditSessionV2756({rpc,fileId,clientId,sessionId=crypto.randomUUID(),owner,currentOwner=()=>owner,onState=()=>{},now=()=>performance.now(),setTimer=setTimeout,clearTimer=clearTimeout}){
- let closed=false,until=0,flight=null,timer=null,generation=0,last=null;
+// The historical API name remains compatible with the reader adapters.
+// Opening checks Drive access once; it never reserves a file for one technician.
+export function createFileEditSessionV2756({rpc,fileId,clientId,sessionId=crypto.randomUUID(),owner,currentOwner=()=>owner,onState=()=>{}}){
+ let closed=false,authorized=false,flight=null,generation=0;
  const payload={fileId:String(fileId),clientId:String(clientId),sessionId};
- function state(){return {fileId,sessionId,active:!closed&&currentOwner()===owner&&now()<until,remainingMs:Math.max(0,until-now()),holder:last?.holder||''};}
- function notify(){onState(state());}
- function schedule(){clearTimer(timer);if(closed)return;timer=setTimer(()=>{notify();renew().catch(()=>{});},state().active?Math.min(30000,Math.max(10,until-now())):30000);}
- async function request(action){
-  if(closed||currentOwner()!==owner)throw Error('Le compte ou le fichier a changé.');
-  if(flight)return flight;
-  const stamp=++generation,started=now();
-  flight=Promise.resolve().then(()=>rpc(action,payload)).then(result=>{
-   if(closed||stamp!==generation||currentOwner()!==owner)throw Error('Le compte ou le fichier a changé.');
-   last=result;
-   if(!result?.ok||result.protocol!==1||!result.acquired){until=0;notify();throw Object.assign(Error(result?.pending?'Une sauvegarde de ce fichier se termine. Réessayez dans un instant.':(result?.holder||'Un autre technicien')+' a ce fichier ouvert. Réessayez après sa fermeture.'),{code:'FILE_EDIT_LOCKED'});}
-   const duration=Number(result.expiresAt)-Number(result.serverTime);
-   if(!Number.isFinite(duration)||duration<=0||duration>120000)throw Error('La session de modification n’est pas confirmée.');
-   // Count the complete round trip against the lease, including queue time.
-   until=started+duration-1000;notify();return state();
-  }).finally(()=>{flight=null;schedule();});
+ const current=()=>{try{return !closed&&!!owner&&currentOwner()===owner;}catch{return false;}};
+ const check=()=>{if(!current()){authorized=false;onState(state());throw Object.assign(Error('Le compte ou le fichier a changé.'),{code:'EDIT_ACCOUNT_CHANGED'});}};
+ function state(){const active=authorized&&current();return {fileId,sessionId,active,remainingMs:active?Infinity:0,holder:'',exclusive:false};}
+ const notify=()=>onState(state());
+ async function acquire(){
+  check();if(authorized)return state();if(flight)return flight;
+  const stamp=++generation;
+  flight=Promise.resolve().then(()=>{check();return rpc('editAcquire',payload);}).then(result=>{
+   check();if(stamp!==generation)throw Error('Le compte ou le fichier a changé.');
+   if(result?.ok!==true||result.protocol!==1||result.acquired!==true)throw Object.assign(Error('La modification de ce fichier n’a pas été autorisée. Vérifiez votre accès Drive.'),{code:'EDIT_NOT_AUTHORIZED'});
+   if(result.exclusive!==false)throw Object.assign(Error('Le serveur utilise encore une ancienne version des droits de modification. Réessayez après la mise à jour CDQ.'),{code:'EDIT_PROTOCOL_MISMATCH'});
+   authorized=true;notify();return state();
+  }).finally(()=>{flight=null;});
   return flight;
  }
- const renew=()=>request(state().active?'editRenew':'editAcquire');
- return {acquire:()=>request('editAcquire'),renew,state,
-  async ensure(){if(!state().active)await renew();if(!state().active)throw Error('La session de modification a expiré. Vos réponses restent conservées.');},
-  async close(){if(closed)return;closed=true;++generation;clearTimer(timer);notify();try{await flight;}catch{}if(currentOwner()===owner)await rpc('editRelease',payload);}
- };
+ return {acquire,renew:acquire,state,async ensure(){await acquire();check();},async close(){if(closed)return;closed=true;authorized=false;generation++;notify();}};
 }
 
-export function installReaderEditLeaseV2756({document,viewer,now=()=>performance.now(),status}){
- let enabled=false,until=0,timer;
- const active=()=>!enabled||now()<until;
- function check(){if(active())return true;document.activeElement?.blur?.();status('Modification suspendue : la connexion au fichier doit être rétablie. Vos réponses restent conservées.');return false;}
+// The reader retains an explicit access-revocation gate. An authorized reader
+// has no lease deadline; a closed or locked account still sends zero to stop it.
+export function installReaderEditLeaseV2756({document,viewer,status}){
+ let enabled=false,allowed=true;
+ function check(){if(!enabled||allowed)return true;document.activeElement?.blur?.();status('Modification suspendue : déverrouillez votre compte CDQ. Vos réponses restent conservées.');return false;}
  const guard=event=>{if(!check()){event.preventDefault();event.stopImmediatePropagation();}};
  for(const type of ['beforeinput','pointerdown','keydown','change'])viewer.addEventListener(type,guard,true);
- return {check,reset(){enabled=false;until=0;clearTimeout(timer);},update(remainingMs){enabled=true;until=now()+Math.max(0,Math.min(120000,Number(remainingMs)||0));clearTimeout(timer);timer=setTimeout(check,Math.max(0,until-now()));}};
+ return {check,reset(){enabled=false;allowed=true;},update(remainingMs){enabled=true;allowed=typeof remainingMs==='number'&&remainingMs>0;}};
 }
 
-// Local reports open before Drive has assigned an ID. Adopt the same file
-// lease when its durable receipt arrives, and suspend the local reader until
-// acquisition succeeds. A refused lease never discards the technician's copy.
+// Local copies keep account and lifecycle checks when Drive assigns an ID.
+// The access check is shared and never claims exclusive use of that file.
 export function createLocalReaderEditSessionsV2756({acquire,open,currentOwner,isOnline=()=>navigator.onLine!==false,setTimer=setTimeout,clearTimer=clearTimeout}){
  const readers=new Map();
  const driveId=copy=>String(copy?.driveId||copy?.filledDriveId||copy?.reportEngineV2754?.fileId||'');
