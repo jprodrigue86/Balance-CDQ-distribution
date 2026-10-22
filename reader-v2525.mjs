@@ -329,17 +329,39 @@ const readerEquipmentV2746=createReaderEquipmentEmitterV2746({surface:$('viewer'
     return input?.value??cdqStoredFieldStateV2581(fieldName).value;
   },send:tell});
 const status=value=>{const el=$('status');el.textContent=value;el.dataset.active=String(!!value);};
+let readerSaveProgressRequestV2759='',readerLeaseProgressV2759=null;
+function readerEditLeaseStatusV2759(value){
+  const current=$('status').textContent;
+  // A newly created report acquires its first Drive lease after its receipt.
+  // Remember only a progress message displaced by that temporary suspension.
+  if(readerSaveProgressRequestV2759&&current&&current===readerSaveProgressV2758.lastDisplayed())readerLeaseProgressV2759={requestId:readerSaveProgressRequestV2759,version,generation:documentGenerationV2730,text:value};
+  else if(readerLeaseProgressV2759?.text!==current)readerLeaseProgressV2759=null;
+  status(value);
+}
+function resumeReaderSaveProgressV2759(remainingMs){
+  const suspended=readerLeaseProgressV2759;
+  if(!(Number(remainingMs)>0)||!suspended||suspended.requestId!==readerSaveProgressRequestV2759||suspended.version!==version||suspended.generation!==documentGenerationV2730||$('status').textContent!==suspended.text)return false;
+  readerLeaseProgressV2759=null;
+  // Rendering rechecks the current request, dirty state and live edit lease.
+  // A receipt cannot itself renew a lease or acknowledge another local write.
+  return renderReaderSaveProgressV2758(suspended.requestId,true);
+}
 function renderReaderSaveProgressV2758(requestId,initial=false){
   const value=readerSaveProgressV2758.text({requestId,version,dirty,closed,opening,saving});
   if(!value||!initial&&$('status').textContent!==readerSaveProgressV2758.lastDisplayed())return false;
-  if(!editGuardV2756.check())return false;
+  readerSaveProgressRequestV2759=requestId;
+  if(!editGuardV2756.check()){
+    readerLeaseProgressV2759={requestId,version,generation:documentGenerationV2730,text:$('status').textContent};
+    return false;
+  }
+  readerLeaseProgressV2759=null;
   status(value);readerSaveProgressV2758.displayed(value);return true;
 }
-function busy(value){saving=value;$('viewer').inert=value;$('savingMask').hidden=!value;for(const id of ['save','saveClose','doneFields','dismissKeyboard','discard','file'])$(id).disabled=value||!doc||readOnly;}
+function busy(value){saving=value;$('viewer').inert=value||opening||closed;$('savingMask').hidden=!value;for(const id of ['save','saveClose','doneFields','dismissKeyboard','discard','file'])$(id).disabled=value||!doc||opening||readOnly;}
 function fail(error){busy(false);status(error.message||String(error));$('closeError').textContent=error.message||String(error);closeAfterSave=false;}
 function modified(){if(!readOnly&&!opening){dirty=true;version++;status('');}}
 function resetDocumentFieldsV2730(){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};
-  readerEquipmentV2746.reset();readerSaveProgressV2758.reset();
+  readerEquipmentV2746.reset();readerSaveProgressV2758.reset();readerSaveProgressRequestV2759='';readerLeaseProgressV2759=null;
   tableColumnV2737?.dispose();tableColumnV2737=null;visualRefreshV2730.reset();choices?.cancel();form?.reset();touch?.reset();cdqKeyboardFieldV2550(false);menu(true);
   documentPaintV2730?.dispose();documentPaintV2730=null;
   doc=null;documentTask=null;fieldDefinitions=null;readerCalibration=null;formattedFields.clear();fieldTypography.clear();touchedIdentity.clear();lateIdentity=null;
@@ -406,6 +428,10 @@ async function outputSnapshotV2754(){
   commitActive();await new Promise(resolve=>setTimeout(resolve,120));
   await scripting.dispatchWillSave();await new Promise(resolve=>setTimeout(resolve,0));await visualRefreshV2730.flush();
   if(current!==doc||generation!==documentGenerationV2730||closed)throw Error('Le rapport a changé pendant son enregistrement.');
+  const fields=capturePreparedReaderFieldsV2759();
+  return {reportSnapshotV2754:fields};
+}
+function capturePreparedReaderFieldsV2759(){
   const fields=captureReportFieldsV2754(fieldDefinitions,cdqStoredFieldStateV2581,definition=>{
     const state=doc.annotationStorage.getValue(definition.id,definition)||definition;
     // PDF.js updates annotationStorage before external sandbox listeners. Its
@@ -413,7 +439,25 @@ async function outputSnapshotV2754(){
     const formattedValue=state.formattedValue??formattedFields.get(definition.id);
     return {...definition,...state,...(formattedValue!==undefined?{formattedValue}:{})};
   });
-  return {reportSnapshotV2754:fields};
+  return fields;
+}
+async function outputPreparedSnapshotV2759(){
+  const current=doc,generation=documentGenerationV2730,work=pdfWorkV2729(),epoch=work.stats().epoch;
+  const check=()=>{if(!current||current!==doc||generation!==documentGenerationV2730||closed||opening||work.stats().epoch!==epoch)throw Error('Le rapport a changé pendant son enregistrement.');};
+  check();
+  // Commit the active field, validation and WillSave calculations exactly once.
+  // Both the field record and the PDF then come from this same live document.
+  const snapshot=await outputSnapshotV2754();check();
+  const capturedVersion=version,serialized=JSON.stringify(snapshot.reportSnapshotV2754);
+  const unchanged=()=>{check();if(version!==capturedVersion||JSON.stringify(capturePreparedReaderFieldsV2759())!==serialized)throw Error('Les réponses ont changé pendant la préparation du PDF. Réessayez l’enregistrement.');};
+  const bytes=await current.saveDocument();unchanged();
+  // Retain the approved local save normalization; never render a second PDF
+  // from the field snapshot on the server when these prepared bytes are used.
+  const prepared=await work.request('save',{bytes,summary:false},{epoch});unchanged();
+  const blob=new Blob([prepared.bytes],{type:'application/pdf'});
+  if(blob.size<8||blob.size>16*1024*1024||(await blob.slice(0,5).text())!=='%PDF-')throw Error('Le PDF préparé est invalide ou dépasse 16 Mo.');
+  unchanged();
+  return {...snapshot,preparedPdfV2759:blob,pdfSaveInfoV2753:validatedPdfSaveInfoV2753(prepared.info)};
 }
 async function output(){
   const work=pdfWorkV2729(),workEpoch=work.stats().epoch;
@@ -433,18 +477,18 @@ async function finishDocument(){
   closeAfterSave=true;
   await save();
 }
-const editGuardV2756=installReaderEditLeaseV2756({document,viewer:$('viewer'),status});
+const editGuardV2756=installReaderEditLeaseV2756({document,viewer:$('viewer'),status:readerEditLeaseStatusV2759});
 async function save(external=false){
   if(!external&&!editGuardV2756.check())return;
-  if(!doc||saving||readOnly&&!external)return;
+  if(!doc||opening||closed||saving||readOnly&&!external)return;
   if(!readOnly&&decimalGuard&&!decimalGuard.validateAll())return;
-  busy(true);$('closeError').textContent='';status(external?'Téléchargement…':'Enregistrement…');
+  commitActive();busy(true);$('closeError').textContent='';status(external?'Téléchargement…':'Enregistrement…');
   try{
     // A lost local acknowledgement retries the exact durable payload. Reusing
     // its request id must not serialize and repair the whole PDF again.
     const dataOnly=!!reportEngineV2754&&hosted&&!!fileId&&!external;
-    const reusable=lastAttempt?.version===version&&(dataOnly?!!lastAttempt.reportSnapshotV2754:!!lastAttempt.blob);
-    const prepared=reusable?lastAttempt:dataOnly?await outputSnapshotV2754():await output();
+    const reusable=lastAttempt?.version===version&&(dataOnly?!!lastAttempt.reportSnapshotV2754&&lastAttempt.preparedPdfV2759 instanceof Blob:!!lastAttempt.blob);
+    const prepared=reusable?lastAttempt:dataOnly?await outputPreparedSnapshotV2759():await output();
     const {blob,pdfSaveInfoV2753}=prepared,snapshot=version;
     if(external||!hosted||!fileId){const receipt=await downloadPdf(blob,name);busy(false);status(receipt);if(closeAfterSave){closeAfterSave=false;close();}return;}
     const requestId=lastAttempt?.version===snapshot?lastAttempt.id:'save-'+crypto.randomUUID();
@@ -452,7 +496,7 @@ async function save(external=false){
     pending={id:requestId,version:snapshot};
     readerSaveProgressV2758.begin(requestId,snapshot,reportEngineV2754);
     pending.timer=setTimeout(()=>{if(pending?.id!==requestId)return;pending=null;fail(new Error('La sauvegarde n’a pas encore été confirmée. Le PDF reste ouvert; réessayez ou téléchargez vos réponses.'));},90000);
-    if(dataOnly)tell({type:'CDQ_READER_SAVE_SNAPSHOT_V2754',reportSnapshotV2754:prepared.reportSnapshotV2754,name,requestId});
+    if(dataOnly)tell({type:'CDQ_READER_SAVE_SNAPSHOT_V2754',reportSnapshotV2754:prepared.reportSnapshotV2754,preparedPdfV2759:prepared.preparedPdfV2759,name,requestId});
     else tell({type:'CDQ_READER_SAVE',blob,name,requestId,readerPreparedVersion:2730,pdfSaveInfoV2753});
   }catch(e){fail(e);}
 }
@@ -654,7 +698,7 @@ $('file').onchange=()=>{if(doc){status('Fermez le PDF actuel avant d’en ouvrir
 window.addEventListener('message',async e=>{
   if(!hosted||e.source!==parent||!parentOrigin||e.origin!==parentOrigin)return;
   const d=e.data||{};
-  if(d.type==='CDQ_READER_EDIT_LEASE_V2756'&&String(d.fileId||'')===fileId){editGuardV2756.update(d.remainingMs);return;}
+  if(d.type==='CDQ_READER_EDIT_LEASE_V2756'&&String(d.fileId||'')===fileId){editGuardV2756.update(d.remainingMs);resumeReaderSaveProgressV2759(d.remainingMs);return;}
   if(d.type==='CDQ_READER_THEME'){applyReaderTheme(d.theme);return;}
   if(d.type==='CDQ_READER_PREFILL_V2642'&&String(d.fileId||'')===fileId){lateIdentity={...lateIdentity,...d.values};applyLateIdentity();return;}
   if(d.type==='CDQ_READER_REQUEST_CLOSE'){requestClose();return;}

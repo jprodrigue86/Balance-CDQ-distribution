@@ -1,5 +1,6 @@
 import {createLocalReaderEditSessionsV2756} from './file-edit-session-v2756.mjs';
 import {reportContextV2754,reportFieldsV2754,reportPayloadV2754} from './report-engine-client-v2754.mjs';
+import {prepareReportPdfV2759} from './prepared-report-pdf-v2759.mjs';
 import {equipmentValuesV2697} from './equipment-list-v2697.mjs';
 import {nameFromReport,nextNumberedReportNameV2731,identificationReportName} from './report-name-v2648.mjs';
 import {pdfWorkV2729,validatedPdfSaveInfoV2753} from './pdf-work-v2729.mjs';
@@ -256,7 +257,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfUnleased,acqu
   const validReadStamp=readStamp=>!readStamp||(readStamp.access===readAccessVersion&&readStamp.retirement===(readRetirementVersions.get(readStamp.key)||0));
   const allowed=email=>localEmail===email||session?.email===email;
   const engineDataV2754=c=>c?.reportEngineV2754?{reportEngineV2754:c.reportEngineV2754,reportSnapshotV2754:c.reportSnapshotV2754,enginePdfV2754:c.enginePdfV2754,reportRevisionV2754:c.reportRevisionV2754||0,engineAcceptedV2757:c.engineAcceptedV2757}:{};
-  function engineReaderV2754(c,email){return {saveProgressOwnerV2758:email,editCopyV2756:c,...engineDataV2754(c),onSaveSnapshot:c.reportEngineV2754&&(session?.canWrite||profile?.canWrite)?(fields,requestId,name)=>saveSnapshotCopyV2754(c.id,email,fields,requestId,name):null};}
+  function engineReaderV2754(c,email){return {saveProgressOwnerV2758:email,editCopyV2756:c,...engineDataV2754(c),onSaveSnapshot:c.reportEngineV2754&&(session?.canWrite||profile?.canWrite)?(fields,requestId,name,context,preparedPdf)=>saveSnapshotCopyV2754(c.id,email,fields,requestId,name,preparedPdf):null};}
   async function attachEngineV2754(copy,template,current){
     if(current.reportEngineV2754!==true||!template.bundled)return copy;
     const {REPORT_ENGINE_TEMPLATES_V2754}=await import('./report-engine-templates-v2754.mjs'),meta=REPORT_ENGINE_TEMPLATES_V2754[engineFamilyAliasV2754[copy.modeleId]||copy.modeleId];
@@ -265,7 +266,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfUnleased,acqu
     if(!context)throw Error('Le nouveau rapport n’a pas pu être préparé.');
     return {...copy,reportEngineV2754:context,reportSnapshotV2754:null,reportPayloadV2754:null};
   }
-  async function saveSnapshotCopyV2754(id,email,fields,readerRequestId,name){
+  async function saveSnapshotCopyV2754(id,email,fields,readerRequestId,name,preparedPdf){
     const stamp=epoch,access=readAccessVersion,snapshot=reportFieldsV2754(fields);
     const canSave=()=>stamp===epoch&&access===readAccessVersion&&!pendingAccessTransitions&&allowed(email)&&profile?.canWrite&&(!session||session.email===email&&session.canWrite);
     return serialCopy(id,async()=>{
@@ -274,6 +275,8 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfUnleased,acqu
       if(copy.readerRequestId!==readerRequestId){
         const reportName=identificationReportName(snapshot.identification_balance?.value)||name||copy.name;
         const payload=reportPayloadV2754(copy.reportEngineV2754,snapshot,readerRequestId,reportName);
+        if(preparedPdf)payload.preparedPdfV2759=await prepareReportPdfV2759(payload,preparedPdf);
+        if(!canSave())throw Error('Le compte ou l’accès a changé pendant la préparation du PDF.');
         const form={getFields:()=>Object.entries(snapshot).map(([field,state])=>({getName:()=>field,getText:()=>String(state.value??''),getSelected:()=>Array.isArray(state.value)?state.value:[String(state.value??'')],isChecked:()=>state.value===true||state.value==='Yes'}))};
         const updated={...copy,reportSnapshotV2754:snapshot,reportPayloadV2754:payload,initialValues:null,readerRequestId,equipmentSignature:equipmentValuesV2697(form),autoReportName:copy.autoReportName||reportName!==copy.name,name:reportName,editVersion:(copy.editVersion||0)+1,uploadId:'fields_'+payload.requestId,status:'pending',error:''};
         await put('copies',updated);if(!canSave())throw Error('Le compte a changé.');clearRetryV2740(id);rememberNames(updated);reportProgressV2749(updated,'saving-local','Réponses enregistrées sur cet appareil.');notifyDocument(updated);

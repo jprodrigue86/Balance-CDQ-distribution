@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="27.58" data-cdq-iphone-release="4f36fbedb53e6f64db836fa6fadc72a00bf11aaf74eec8879c6a160b8ddf0edb">
+<html lang="fr" data-cdq-iphone-version="27.59" data-cdq-iphone-release="9148fc6c5560f9f101aed0bf23dea1019f48e6d56b897c2cade4baa3580fdd75">
 <head>
 <script id="cdq-durable-resume-v2751">
 window.cdqDurableResumeV2751=(function createDurableResumeV2751({native=null,read=()=>''}={}){
@@ -491,7 +491,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.21-v27.58-reader-roundtrip';
+const CDQ_PWA_BUILD = '2026.10.21-v27.59-prepared-drive-send';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1678,9 +1678,9 @@ function cdqAfficherPdfV2304(data,source){
       const requestId='discard-'+crypto.randomUUID(),timer=setTimeout(()=>{ctx.pending.delete(requestId);reject(new Error('La fermeture n’a pas été confirmée.'));},12000);
       ctx.pending.set(requestId,{resolve,reject,timer});replyToSelector(source,{type:'CDQ_PDF_DISCARD_REQUEST_V2520',fileId:ctx.fileId,readerSession:ctx.readerSession,readerPhaseV2757:ctx.readerPhaseV2757,requestId});
     }):null,
-    onSaveSnapshot:data.readOnly||!data.reportEngineV2754&&!data.reportEngineImportV2754?null:(fields,requestId,name)=>new Promise((resolve,reject)=>{
+    onSaveSnapshot:data.readOnly||!data.reportEngineV2754&&!data.reportEngineImportV2754?null:(fields,requestId,name,context,preparedPdfV2759)=>new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>{ctx.pending.delete(requestId);reject(Error('La conservation des réponses n’a pas été confirmée.'));},85000);
-      ctx.pending.set(requestId,{resolve,reject,timer});replyToSelector(source,{type:'CDQ_PDF_SAVE_SNAPSHOT_V2754',fileId:ctx.fileId,readerSession:ctx.readerSession,readerPhaseV2757:ctx.readerPhaseV2757,requestId,name,reportSnapshotV2754:fields});
+      ctx.pending.set(requestId,{resolve,reject,timer});replyToSelector(source,{type:'CDQ_PDF_SAVE_SNAPSHOT_V2754',fileId:ctx.fileId,readerSession:ctx.readerSession,readerPhaseV2757:ctx.readerPhaseV2757,requestId,name,reportSnapshotV2754:fields,preparedPdfV2759});
     }),
     onSave:data.readOnly?null:(blob,requestId,name,provenance)=>new Promise((resolve,reject)=>{
       const timer=setTimeout(()=>{ctx.pending.delete(requestId);reject(new Error('La sauvegarde n’a pas été confirmée.'));},85000);
