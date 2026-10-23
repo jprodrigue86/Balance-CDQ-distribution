@@ -1,0 +1,27 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V27.64",
+  "build": "V27.64",
+  "title": "CDQ V27.64 — lectures de métadonnées par phase, contrôles conservés",
+  "requiresBuild": [
+    "V27.63"
+  ],
+  "patches": [
+    {
+      "id": "cdq-read-phase-marker-v2764",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "// CDQ V27.63 : passerelle Google pour la reconciliation PDF apres renommage.",
+      "replacement": "// CDQ V27.64 : lectures metadata par phase; passerelle de reconciliation PDF conservee.",
+      "expected": 1
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQDataEngineV2754.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.64/files/CDQDataEngineV2754.gs",
+      "sha256": "6219003fafa66f9919023ad664c44ac3445214123d282b48e5767b16d0be3056"
+    }
+  ]
+}
