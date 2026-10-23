@@ -21,10 +21,11 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     if(!report)return null;const snapshot=report.snapshot||report.payload||report;
     return {engine:2754,reportId:report.reportId||snapshot.reportId,clientId:report.clientId||snapshot.clientId,destinationId:report.destinationId||snapshot.destinationId,fileId:report.pdf?.fileId||report.fileId||snapshot.fileId||'',family:report.family||snapshot.family,template:report.template||snapshot.template,baseRevision:Number(report.revision||report.serverRevision||0),expectedDriveRevision:report.pdf?.driveRevision||report.driveRevision||snapshot.expectedDriveRevision||''};
   }
-  async function recordForOpen(fileId,legacyRecord=null,{localOnly=false,requireFresh=false,checkCurrent=()=>{}}={}){
-    checkCurrent();
+  async function recordForOpen(fileId,legacyRecord=null,{localOnly=false,requireFresh=false,checkCurrent=()=>{},onPhase=()=>{}}={}){
+    const phase=name=>{checkCurrent();try{onPhase(name);}catch{}};
+    phase('lookup-start');
     if(requireFresh&&!isOnline())throw Object.assign(Error('La connexion est nécessaire pour vérifier la dernière version. La copie reste en consultation.'),{code:'REPORT_ENGINE_OFFLINE'});
-    const email=owner(),stamp=epoch(),engine=await client();let record=await engine.get({fileId:String(fileId)});checkCurrent();if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');
+    const email=owner(),stamp=epoch(),engine=await client();let record=await engine.get({fileId:String(fileId)});checkCurrent();phase('lookup-ready');if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');
     const expectedClient=String(legacyRecord?.clientId||currentClient()),deleted=()=>{throw Object.assign(Error('Ce rapport a été supprimé. Ses réponses conservées ne seront pas renvoyées.'),{code:'REPORT_DELETED'});};
     async function rememberRead(result){
       checkCurrent();if(result.deleted)deleted();
@@ -32,7 +33,7 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
       const context=contextOf(report),fields=report.fields||report.snapshot?.fields||report.payload?.fields;
       if(!context||!fields)throw Object.assign(Error('Les réponses serveur de ce rapport sont incomplètes.'),{code:'INVALID_REPORT_RESPONSE'});
       if(expectedClient&&context.clientId!==expectedClient)throw Object.assign(Error('Le rapport appartient à un autre client.'),{code:'SCOPE_MISMATCH'});
-      return engine.remember({context,fields,name:report.name||legacyRecord?.nom,pdf:report.pdf,serverRevision:report.revision});
+      phase('snapshot-start');const remembered=await engine.remember({context,fields,name:report.name||legacyRecord?.nom,pdf:report.pdf,serverRevision:report.revision});phase('snapshot-ready');return remembered;
     }
     if(record){
       if(record.deleted)deleted();
@@ -42,8 +43,8 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
       if(movedClient&&!isOnline())throw Object.assign(Error('Connectez-vous pour vérifier le nouvel emplacement de ce rapport.'),{code:'SCOPE_MISMATCH'});
       if(!localOnly&&isOnline()){
         try{
-          const result=await call('read',{...(movedClient?{}:{reportId:record.context.reportId}),clientId:expectedClient||record.context.clientId,fileId:String(fileId)});
-          checkCurrent();if(result.deleted)deleted();
+          phase('read-start');const result=await call('read',{...(movedClient?{}:{reportId:record.context.reportId}),clientId:expectedClient||record.context.clientId,fileId:String(fileId)});
+          checkCurrent();phase('read-ready');if(result.deleted)deleted();
           if(result.found===false){if(requireFresh||!(record.pending&&!record.dataSaved))throw Object.assign(Error('Ce rapport n’est plus présent sur le serveur.'),{code:'REPORT_NOT_FOUND'});}
           else{const refreshed=await rememberRead(result);if(!refreshed)throw Object.assign(Error('Les réponses serveur de ce rapport sont incomplètes.'),{code:'INVALID_REPORT_RESPONSE'});record=refreshed;}
         }catch(error){
@@ -55,16 +56,16 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     }
     if(!record){
       if(localOnly)return null;
-      const capable=await capabilities();checkCurrent();
+      phase('capability-start');const capable=await capabilities();checkCurrent();phase('capability-ready');
       if(!capable?.ready){if(requireFresh)throw Object.assign(Error('Le moteur de rapports ne répond pas. La copie locale reste en consultation.'),{code:'REPORT_ENGINE_UNAVAILABLE'});return null;}
-      const result=await call('read',{fileId:String(fileId),clientId:expectedClient});checkCurrent();if(result.deleted)deleted();
+      phase('read-start');const result=await call('read',{fileId:String(fileId),clientId:expectedClient});checkCurrent();phase('read-ready');if(result.deleted)deleted();
       const consultation=listConsultationDescriptorV2755(result,String(fileId),expectedClient);
       if(consultation){legacyScopes.delete(String(fileId));return consultation;}
       record=await rememberRead(result);if(!record){if(result.legacyScope)legacyScopes.set(String(fileId),result.legacyScope);return null;}
     }
     if(record.deleted)deleted();
     const context=record.context;if(expectedClient&&context.clientId!==expectedClient)throw Object.assign(Error('Le rapport appartient à un autre client.'),{code:'SCOPE_MISMATCH'});
-    const template=await loadTemplate(context.template);checkCurrent();if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');
+    phase('template-start');const template=await loadTemplate(context.template);checkCurrent();phase('template-ready');if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');
     return {...legacyRecord,id:String(fileId),clientId:context.clientId,folderId:context.destinationId,nom:record.name,blob:template.blob,revision:context.expectedDriveRevision,reportEngineV2754:context,reportSnapshotV2754:record.fields,readerPreparedVersion:2730};
   }
   async function save(context,fields,requestId,name,preparedPdf){return (await client()).save(context,fields,requestId,name,preparedPdf);}
