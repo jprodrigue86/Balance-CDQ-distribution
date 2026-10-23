@@ -9,8 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>CDQ Apps Script Manager</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=51">
-  <link rel="stylesheet" href="diagnostics.css?v=51">
+  <link rel="stylesheet" href="style.css?v=52">
+  <link rel="stylesheet" href="diagnostics.css?v=52">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -23,7 +23,7 @@
             <strong>CDQ Script Manager</strong>
             <span>Gestion et déploiement de vos applications Google Apps Script</span>
           </div>
-          <div class="version-chip" id="versionChip" title="Version de CDQ Script Manager">V51</div>
+          <div class="version-chip" id="versionChip" title="Version de CDQ Script Manager">V52</div>
           <button id="installApp" class="install-btn" type="button">Installer</button>
         </div>
       </header>
@@ -51,7 +51,7 @@
         <p>Connecte ton compte Google, choisis le projet, colle le nouveau code et écris-le sans ouvrir l’éditeur Apps Script.</p>
       </div>
       <div class="status-row">
-        <span id="versionBadge" class="badge version-badge">Version : V51</span>
+        <span id="versionBadge" class="badge version-badge">Version : V52</span>
         <span id="authBadge" class="badge">Google : non connecté</span>
         <span id="projectBadge" class="badge">Projet : aucun</span>
         <span id="changeBadge" class="badge">Modifications : 0</span>
@@ -135,6 +135,23 @@
         <div id="quickResult" class="quick-result sm-workflow-result">Google connecté et projet lié automatiquement. Choisis maintenant ton package.</div>
         <button id="toggleAdvanced" class="secondary quick-advanced" type="button">Options avancées</button>
       </article>
+    </section>
+
+    <section class="card" id="updateCheckCard" aria-labelledby="updateCheckHeading">
+      <div class="section-title"><span>✓</span><h2 id="updateCheckHeading">Vérifier la mise à jour</h2></div>
+      <p class="muted">Contrôle les versions avec le diagnostic existant. Aucune écriture de code ni publication. Les modifications en préparation sont conservées.</p>
+      <button id="updateCheckRun" type="button" class="primary">Vérifier la mise à jour</button>
+      <p id="updateCheckNext" role="status" aria-live="polite"></p>
+      <p class="muted">Cloudflare et les appareils installés ne sont pas vérifiés par ce bouton.</p>
+      <details><summary>Résultats des tests GitHub</summary>
+        <p><a href="https://github.com/jprodrigue86/Balance-CDQ-prive/actions/workflows/economy-checks.yml" target="_blank" rel="noopener noreferrer">Ouvrir les contrôles économiques privés</a></p>
+        <p class="muted">Télécharge l’archive du résultat GitHub, extrais result.json puis importe-le ici. Le fichier est lu localement ; son authenticité n’est pas vérifiée par GitHub dans cette page.</p>
+        <label for="updateCheckSha">Révision GitHub à vérifier (40 caractères)</label>
+        <input id="updateCheckSha" type="text" maxlength="40" autocomplete="off" spellcheck="false">
+        <label for="updateCheckReceipt">Compte rendu result.json</label>
+        <input id="updateCheckReceipt" type="file" accept=".json,application/json">
+        <p id="updateCheckTests" role="status" aria-live="polite">Aucun résultat importé. Ces tests ne remplacent pas la qualification complète.</p>
+      </details>
     </section>
 
     <section class="card" id="diagnosticCard" aria-labelledby="diagnosticHeading">
@@ -355,9 +372,10 @@
     </div>
   </div>
 
-  <script src="api.js?v=51"></script>
+  <script src="api.js?v=52"></script>
   <script src="jszip.min.js?v=23"></script>
-  <script src="diagnostics.js?v=51"></script>
-  <script src="app.js?v=51"></script>
+  <script src="diagnostics.js?v=52"></script>
+  <script src="app.js?v=52"></script>
+  <script src="update-check.js?v=52"></script>
 </body>
 </html>
