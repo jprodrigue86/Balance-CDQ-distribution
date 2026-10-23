@@ -18,7 +18,21 @@ window.cdqDurableResumeV2751=(function createDurableResumeV2751({native=null,rea
 
 <script src="./safe-viewport-v2532.js" data-cdq-viewport="shell"></script>
 <script src="./app-session-v2661.js"></script>
-<script src="./pc-update.js"></script>
+<script id="cdqdiag-update-gate-v1">
+/* This diagnostic page never installs or activates PC updates. The ordinary
+   PC app at /pc/ retains its own verified service-worker update workflow.
+   Start the genuine CDQ Selector and preserve all Google/CDQ authentication. */
+(function(){
+  const root=document.documentElement;
+  if(root.dataset.cdqPcBootGateV2717!=='1'||root.dataset.cdqPcVersion!=='27.63'){
+    throw new Error('Version CDQ inattendue : diagnostic non activé.');
+  }
+  root.dataset.cdqPcStartupV2717='ready';
+  window.cdqPcStartupReady=Promise.resolve();
+  const status=()=>({message:'Mode diagnostic : mise à jour PC gérée dans CDQ normal',available:false,checking:false});
+  window.cdqPcUpdates={check:()=>Promise.resolve(status()),apply:()=>false,status};
+})();
+</script>
 <script src="https://accounts.google.com/gsi/client" defer></script>
 <script src="./embedded-rpc.js"></script>
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
