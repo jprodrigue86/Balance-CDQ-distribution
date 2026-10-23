@@ -1,6 +1,6 @@
 /* CDQ Drive Diagnostic V27.64 — observation only; no RPC, Drive write, PDF edit or auth mutation. */
 const $ = id => document.getElementById(id);
-const frame = $('cdq');
+const frame = $('cdq') || {contentWindow:window,addEventListener:(...args)=>window.addEventListener(...args)};
 const STORE = 'cdq-drive-diagnostic-v2764-sessions';
 const MAX_EVENTS = 700;
 const allowedMessageTypes = new Set([
@@ -149,7 +149,7 @@ function scan(){
      for(const node of frames){try{walk(node.contentWindow,depth+1);}catch(_){}}
    }
    walk(frame.contentWindow,0);
-   $('connection').textContent=firstSelector?'CDQ détecté — sonde PDF active':firstApp?'CDQ en chargement — attente du lecteur':'Chargement de CDQ…';
+   $('connection').textContent=firstSelector?'CDQ — sonde PDF active':firstApp||state.detectedAppVersion?'CDQ V'+(state.detectedAppVersion||'web')+' chargé — connexion / rapport à ouvrir':'Chargement de CDQ…';
  }catch(_){$('connection').textContent='Impossible de suivre cette page CDQ dans son cadre.';}
 }
 function counts(){
@@ -180,6 +180,7 @@ function render(){
  $('state').textContent=state.active?'Enregistrement en cours':'Diagnostic arrêté';
  $('state').dataset.active=String(state.active);
  $('start').textContent=state.active?'Arrêter la mesure':'Démarrer une nouvelle mesure';
+ if($('cdqdiag-mini'))$('cdqdiag-mini').textContent=state.active?'● Diagnostic Drive actif':'Diagnostic Drive';
  $('summary').textContent=c.opened+' ouverture(s) • dernière ouverture : '+(c.lastOpenMs!=null?(c.lastOpenMs/1000).toFixed(2)+' s':'non mesurée')+' • confirmation Drive après clic : '+(c.lastSaveMs!=null?(c.lastSaveMs/1000).toFixed(2)+' s':'non mesurée')+' • '+state.events.length+' événements';
  const list=$('events');
  const last=state.events.slice(-16).reverse();
@@ -207,6 +208,7 @@ function makeFile(){
  return new File([exportData()],'CDQ-diagnostic-Drive-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json',{type:'application/json'});
 }
 $('start').addEventListener('click',()=>{
+ const wasActive=state.active;
  if(state.active){append('diagnostic:fin');state.active=false;state.endedAt=new Date().toISOString();}
  else{
    state.active=true;
@@ -217,6 +219,7 @@ $('start').addEventListener('click',()=>{
    append('diagnostic:debut');
  }
  persist();render();
+ if(!wasActive && state.active && $('cdqdiagpanel') && $('cdqdiag-mini')){$('cdqdiagpanel').hidden=true;$('cdqdiag-mini').hidden=false;}
 });
 $('mark-open').addEventListener('click',()=>append('repere-manuel:clic-ouvrir-pdf'));
 $('mark-save').addEventListener('click',()=>append('repere-manuel:clic-enregistrer'));
@@ -244,6 +247,8 @@ $('details').addEventListener('click',()=>{
  panel.hidden=!panel.hidden;
  $('details').textContent=panel.hidden?'Afficher le journal':'Masquer le journal';
 });
+if($('cdqdiag-minimize'))$('cdqdiag-minimize').addEventListener('click',()=>{$('cdqdiagpanel').hidden=true;$('cdqdiag-mini').hidden=false;});
+if($('cdqdiag-mini'))$('cdqdiag-mini').addEventListener('click',()=>{$('cdqdiagpanel').hidden=false;$('cdqdiag-mini').hidden=true;});
 frame.addEventListener('load',()=>{firstApp=false;firstSelector=false;setTimeout(scan,60)});
 setInterval(scan,450);
 render();scan();
