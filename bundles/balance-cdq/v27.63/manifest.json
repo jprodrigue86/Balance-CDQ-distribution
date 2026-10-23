@@ -1,0 +1,27 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V27.63",
+  "build": "V27.63",
+  "title": "CDQ V27.63 — passerelle Google uniquement (mise à jour du Worker Cloudflare encore requise)",
+  "requiresBuild": [
+    "V27.60"
+  ],
+  "patches": [
+    {
+      "id": "cdq-rename-bridge-marker-v2763",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "function renommerFichier(fichierId, nouveauNom, idCompagnie) {\n  verifierDroit_('ecriture');",
+      "replacement": "function renommerFichier(fichierId, nouveauNom, idCompagnie) {\n  // CDQ V27.63 : passerelle Google pour la reconciliation PDF apres renommage.\n  verifierDroit_('ecriture');",
+      "expected": 1
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQDataEngineV2754.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.63/files/CDQDataEngineV2754.gs",
+      "sha256": "48744236e446f0180c7be0b6124268515421bb197fee84f915d3e4dd3f43d78e"
+    }
+  ]
+}
