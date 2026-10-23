@@ -655,7 +655,8 @@ unlock:async email=>{
 let loadingTimer = null;
 let hideLoadingTimer = null;
 let loadGeneration = 0;
-document.getElementById('open-direct').href = cdqFreshAppUrl('direct');
+document.getElementById('open-direct').href = new URL('./index.html',location.href).href;
+document.getElementById('open-direct').textContent='Ouvrir CDQ normal dans un onglet';
 window.cdqPcStartupReady.then(()=>{if(!cdqDeferReloadV2679())app.src=cdqFreshAppUrl('startup');});
 
 let cdqGoogleChallengeV42 = null;
@@ -1506,7 +1507,7 @@ if(data.type==='CDQ_INTERFACE_FAILED_V2652'){
   // Drive tests if all application modules and authenticated controls are ready.
   // Never override the CDQ account state, revision checks or data access.
   const failure=String(data.reason||'');
-  const reason=failure==='Image non chargée'?'image':failure==='Interface incomplète'?'layout':failure==='Navigation indisponible'?'module':'other';
+  const reason=/(?:image|decod|encodingerror|\.png|\.webp|\.svg|\.jpe?g)/i.test(failure)?'image':failure==='Interface incomplète'?'layout':failure==='Navigation indisponible'?'module':'other';
   window.dispatchEvent(new CustomEvent('cdq:drive-diagnostic-ui-failure',{detail:{reason}}));
   const doc=app.contentDocument,win=app.contentWindow;
   let safe=false;
@@ -1542,7 +1543,7 @@ if(data.type==='CDQ_INTERFACE_FAILED_V2652'){
     reason==='image'?'image de navigation indisponible':
     reason==='layout'?'navigation encore incomplète':
     reason==='module'?'module de navigation manquant':'préparation interrompue'
-  )+'. Ouvrez CDQ dans un onglet ou réessayez.';
+  )+'. '+(failure?'Détail : '+failure.replace(/[<>\r\n]/g,' ').slice(0,110)+'. ':'')+'Ouvrez CDQ normal dans un onglet ou réessayez.';
   document.getElementById('open-direct').hidden=false;
   return;
 }
