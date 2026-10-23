@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.62" data-cdq-pc-release="7b72f6bf292c40a753edc89ed233afa9eafaf1139043aff9f68b16e7a26fc7ee">
+<html data-cdq-pc-version="27.63" data-cdq-pc-release="b06b99776a01a3e788cfca3bc6ff57e136c9b419e29faea7a1b6e92fd35fbcb7">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -902,7 +902,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.23-v27.62-reader-recovery">
+<meta name="cdq-package-build" content="2026.10.23-v27.63-client-speed">
 
 
 <script id="cdqBridgeV23">
@@ -956,7 +956,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.23-v27.62-reader-recovery'
+    build:'2026.10.23-v27.63-client-speed'
   });
 }
 
@@ -969,7 +969,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.23-v27.62-reader-recovery'
+        build:'2026.10.23-v27.63-client-speed'
       });
     }
   } catch(e) {}
@@ -8781,10 +8781,17 @@ function chargerFichiers(){
     });
 }
 
+const cdqInitialClientRequestsV2763=new Set();
 function chargerContenuServeurRapide(idCompagnie){
+  idCompagnie=String(idCompagnie||'');
   const owner=String(utilisateurCourantEmail||'');
-  cdqApiRun()
+  if(!idCompagnie||!owner||cdqAccessState!=='ready')return;
+  const key=owner+'|'+idCompagnie;
+  if(cdqInitialClientRequestsV2763.has(key))return;
+  cdqInitialClientRequestsV2763.add(key);
+  try{cdqApiRun()
     .withSuccessHandler(function(resultat){
+      cdqInitialClientRequestsV2763.delete(key);
       if(cdqAccessState!=='ready'||owner!==String(utilisateurCourantEmail||''))return;
       let contenu = resultat && resultat.contenu ? resultat.contenu : resultat;
       const verifiedAt = resultat && resultat.genereLe ? Number(resultat.genereLe) : Date.now();
@@ -8808,8 +8815,12 @@ function chargerContenuServeurRapide(idCompagnie){
         planifierActualisationCompagnie(idCompagnie,verifiedAt);
       }
     })
-    .withFailureHandler(afficherErreur)
+    .withFailureHandler(function(error){
+      cdqInitialClientRequestsV2763.delete(key);
+      if(owner===String(utilisateurCourantEmail||'')&&cdqAccessState==='ready')afficherErreur(error);
+    })
     .obtenirContenuClientOptimise(idCompagnie,false);
+  }catch(error){cdqInitialClientRequestsV2763.delete(key);throw error;}
 }
 
 function planifierActualisationCompagnie(idCompagnie,verifiedAt){
@@ -10935,11 +10946,11 @@ function confirmerSuppression(){
 
   cdqApiRun()
     .withSuccessHandler(function(resultat){
-      const ids = resultat && Array.isArray(resultat.ids) ? resultat.ids : fichiers;
-      if(!supprimerFichiersDuCache(idCompagnie,ids)){
-        actualiserCompagnieEnArrierePlan(idCompagnie);
-      }
-      afficherMessage((resultat && resultat.message) || "Fichier(s) supprimé(s).",true);
+      const ids=Array.isArray(resultat?.ids)?resultat.ids.filter(id=>fichiers.some(asked=>String(asked)===String(id))):[];
+      if(ids.length&&!supprimerFichiersDuCache(idCompagnie,ids))actualiserCompagnieEnArrierePlan(idCompagnie);
+      const incomplete=resultat?.complete===false||!!resultat?.erreurs?.length||ids.length!==fichiers.length;
+      if(incomplete){const first=resultat?.erreurs?.[0];afficherMessage(first?.message||"Suppression non confirmée pour certains fichiers. Actualisez avant de réessayer.",false);}
+      else afficherMessage(resultat?.message||"Fichier(s) supprimé(s).",true);
     })
     .withFailureHandler(afficherErreur)
     .supprimerFichiers(fichiers,idCompagnie);
@@ -11772,7 +11783,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.23-v27.62-reader-recovery";
+  const CDQ_BUILD = "2026.10.23-v27.63-client-speed";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14109,7 +14120,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.23-v27.62-reader-recovery";
+const CDQ_V19_BUILD = "2026.10.23-v27.63-client-speed";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -17723,7 +17734,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.23-v27.62-reader-recovery";
+const CDQ_V20_BUILD = "2026.10.23-v27.63-client-speed";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -18570,7 +18581,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.23-v27.62-reader-recovery";
+const CDQ_V21_BUILD = "2026.10.23-v27.63-client-speed";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -22985,7 +22996,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.23-v27.62-reader-recovery',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.23-v27.63-client-speed',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
