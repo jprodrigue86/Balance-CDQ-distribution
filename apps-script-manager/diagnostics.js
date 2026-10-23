@@ -108,6 +108,7 @@ function diagnosticComparisonTextV43(comparison){
 function diagnosticRowsV43(r){
   return [
     ['Script Manager',r.managerVersion],
+    ['Prochaine étape automatique',r.automation?.nextActionText||'Diagnostic en cours'],
     ['Source serveur Google',r.source?.backendBuild||'Version non détectée'],
     ['Source interface Google',r.source?.selectorBuild||'Version non détectée'],
     ['Déploiement configuré',r.production?.versionNumber?'Apps Script v'+r.production.versionNumber:'Non confirmé'],
@@ -180,7 +181,7 @@ async function startVersionDiagnosticV43({id,files,deployments,deploymentsReadOk
   if(latest.version&&newest.version&&diagnosticVersionOrderV43(latest.version,newest.version)<0)r.issues.push('AUTOMATIC_PACKAGE_BEHIND_NEWEST_SERVER_PACKAGE');
   if(Object.values(r.published).some(x=>x.status==='unavailable'))r.issues.push('SOME_PUBLIC_VERSIONS_UNAVAILABLE');
   if(r.source?.backendBuild&&newest.build&&diagnosticVersionOrderV43(r.source.backendBuild,newest.build)<0)r.issues.push('SOURCE_BEHIND_PUBLISHED_SERVER_PACKAGE');
-  r.completedAt=new Date().toISOString();CDQ_DIAGNOSTIC_V43.report=r;diagnosticRenderV43(r);
+  r.completedAt=new Date().toISOString();r.automation=diagnosticAutomationV53(r);CDQ_DIAGNOSTIC_V43.report=r;diagnosticRenderV43(r);
   if(!S.deployBusy&&id===CDQ_PRODUCTION_SCRIPT_ID){
     S.productionBuild=r.production.content?.backendBuild||r.production.content?.selectorBuild||'';
     S.redeploySource=r.production.matchesSource===false;
@@ -282,3 +283,37 @@ function initializeVersionDiagnosticV43(){
   });
 }
 if(typeof document!=='undefined')initializeVersionDiagnosticV43();
+
+/* V53: deterministic automation receipt; no network, timers or AI calls. */
+function diagnosticAutomationV53(report){
+  const validHash=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
+  const source=report.source?.fingerprintSha256,deployed=report.production?.content?.fingerprintSha256;
+  const sourceReady=validHash(source),deployedReady=report.production?.status==='content_verified'&&validHash(deployed);
+  const identical=sourceReady&&deployedReady&&source===deployed&&report.production.matchesSource===true;
+  const checks=[
+    {id:'source_fingerprint',status:sourceReady?'passed':'unknown'},
+    {id:'deployed_fingerprint',status:deployedReady?'passed':'unknown'},
+    {id:'source_matches_deployment',status:identical?'passed':sourceReady&&deployedReady?'review':'unknown'}
+  ];
+  for(const name of ['android','iphone','web','automaticPackage','manager']){
+    const item=report.published?.[name];
+    checks.push({id:'published_'+name,status:item?.status==='read'&&typeof item.version==='string'&&item.version?'observed':'unknown'});
+  }
+  const knownIssues=Array.isArray(report.issues)?report.issues.filter(x=>typeof x==='string'&&/^[A-Z0-9_]{1,100}$/.test(x)):[];
+  const unknown=checks.some(x=>x.status==='unknown');
+  const decision=!sourceReady||!deployedReady||unknown?'complete_read_checks':!identical?'review_source_difference':knownIssues.length?'review_diagnostic_issues':'reuse_verified_diagnostic';
+  const messages={
+    complete_read_checks:'Des lectures restent non confirmées. Vérifier la connexion et les informations manquantes avant toute publication.',
+    review_source_difference:'La source et le déploiement diffèrent. Examiner les modifications prévues avant une écriture.',
+    review_diagnostic_issues:'Examiner les points signalés dans le diagnostic.',
+    reuse_verified_diagnostic:'Réutiliser ces vérifications pour ce projet et ces empreintes. Les tests fonctionnels et la publication restent à qualifier.'
+  };
+  return {schema:'cdq-manager-automation-v1',mode:'read_only',completedAt:report.completedAt,
+    projectId:diagnosticIdV43(report.project?.id),sourceFingerprint:sourceReady?source:null,
+    deployedFingerprint:deployedReady?deployed:null,
+    deploymentVersion:Number.isInteger(report.production?.versionNumber)?report.production.versionNumber:null,
+    checks,issues:knownIssues,nextAction:decision,nextActionText:messages[decision],
+    qualification:'not_performed',cloudflare:'not_measured',physicalDevices:'not_measured',
+    execution:{additionalNetworkRequests:0,githubActionsStarted:0,aiCalls:0,backgroundScheduler:false},
+    reusePolicy:'Same project and fingerprints only; verify freshness and target before reuse. Published version labels alone do not establish release readiness.'};
+}
