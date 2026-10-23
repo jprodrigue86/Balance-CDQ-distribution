@@ -1,0 +1,37 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V27.65",
+  "build": "V27.65",
+  "title": "CDQ V27.65 — diagnostic file, relais et serveur; accès inchangés",
+  "requiresBuild": [
+    "V27.64"
+  ],
+  "patches": [
+    {
+      "id": "cdq-rpc-trace-marker-v2765",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "// CDQ V27.64 : lectures metadata par phase; passerelle de reconciliation PDF conservee.",
+      "replacement": "// CDQ V27.65 : trace du transport RPC; authentification et integrite conservees.",
+      "expected": 1
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQBootstrapV2687.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.65/files/CDQBootstrapV2687.gs",
+      "sha256": "3ef253097d40e7f6bccb78916552bc5939ccd7d8adac8980a327fa0dfe65c4f9"
+    },
+    {
+      "name": "CDQDataEngineV2754.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.65/files/CDQDataEngineV2754.gs",
+      "sha256": "4081eaa0bf5e8675785e670de8fd1b5d772c5f1d0116092040db42d91c5a7c04"
+    },
+    {
+      "name": "CDQEmbedded.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.65/files/CDQEmbedded.gs",
+      "sha256": "c1207fcb3544d8d34c1207bc81af6c059ef1e2c7014249152d12588aaa181df2"
+    }
+  ]
+}
