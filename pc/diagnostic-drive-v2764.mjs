@@ -30,7 +30,7 @@ const state = {
  runtime:'CDQ web PC, NOT the native Android APK',
  events:[]
 };
-const attached = new WeakSet();
+const attached = new WeakMap();
 let redraw=0, firstApp=false, firstSelector=false;
 try {
  const old=JSON.parse(localStorage.getItem(STORE)||'null');
@@ -88,14 +88,15 @@ function resourceType(entry){
  return null;
 }
 function attach(win,depth){
- if(!win||depth>5||attached.has(win))return;
+ if(!win||depth>5)return;
  let doc,href='';
  try{
    doc=win.document;
    href=win.location.href;
    if(win.location.origin!==location.origin||!doc)return;
  }catch(_){return;}
- attached.add(win);
+ if(attached.get(win)===doc)return;
+ attached.set(win,doc);
  const role=/Selector\.html/i.test(href)?'selector':/reader-v2525\.html/i.test(href)?'lecteur':depth===0?'app':'frame';
  if(role==='selector')firstSelector=true;
  if(role==='app')firstApp=true;
