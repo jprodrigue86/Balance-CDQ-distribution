@@ -1,32 +1,27 @@
 {
   "schema": "cdq-script-bundle-v3",
   "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
-  "version": "V27.60",
-  "build": "V27.60",
-  "title": "CDQ 27.60 — compagnies, édition partagée et modèles approuvés",
+  "version": "V27.63",
+  "build": "V27.63",
+  "title": "CDQ V27.63 — passerelle Google uniquement (mise à jour du Worker Cloudflare encore requise)",
   "requiresBuild": [
-    "2026.10.21-v27.56-file-edit-sessions"
+    "V27.60"
   ],
   "patches": [
     {
-      "id": "company-create-once-v2760",
+      "id": "cdq-rename-bridge-marker-v2763",
       "file": "Code.gs",
       "op": "replace_literal",
-      "search": "function creerDossierClient(nomDossier) {\n  verifierDroit_('ecriture');\n\n  nomDossier = (nomDossier || '').trim();\n  if (!nomDossier) throw new Error('Le nom du dossier ne peut pas être vide.');\n  if (nomDossier.length > 200) throw new Error('Le nom du dossier est trop long.');\n\n  const dossierPrincipal = DriveApp.getFolderById(CONFIG.MASTER_FOLDER_ID);\n  const nouveauDossier = dossierPrincipal.createFolder(nomDossier);\n  assurerStructureClientAIOuverture_(nouveauDossier.getId());\n\n  invaliderCacheCompagnies_();\n\n  return {\n    id: nouveauDossier.getId(),\n    nom: nouveauDossier.getName()\n  };\n}",
-      "replacement": "function creerDossierClient(nomDossier,requestId) {\n  return cdqCreateCompanyOnceV2760_(nomDossier,requestId);\n}",
+      "search": "function renommerFichier(fichierId, nouveauNom, idCompagnie) {\n  verifierDroit_('ecriture');",
+      "replacement": "function renommerFichier(fichierId, nouveauNom, idCompagnie) {\n  // CDQ V27.63 : passerelle Google pour la reconciliation PDF apres renommage.\n  verifierDroit_('ecriture');",
       "expected": 1
     }
   ],
   "extraFiles": [
     {
       "name": "CDQDataEngineV2754.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.60/files/CDQDataEngineV2754.gs",
-      "sha256": "51c5dd6a44d25cbae2210503d6bff56ee9e3ac22270eb29b39806fce84c95e07"
-    },
-    {
-      "name": "CDQCompanyControlsV2760.gs",
-      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.60/files/CDQCompanyControlsV2760.gs",
-      "sha256": "15aa09acd3b8f039ffeeaa551fcad8c951c04aeccfe043ed9c980a64a5b2ac64"
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v27.63/files/CDQDataEngineV2754.gs",
+      "sha256": "48744236e446f0180c7be0b6124268515421bb197fee84f915d3e4dd3f43d78e"
     }
   ]
 }
