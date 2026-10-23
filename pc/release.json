@@ -1,11 +1,11 @@
 {
   "platform": "pc-pwa",
-  "version": "27.61",
-  "release": "0c62e772ed180b6820ce33e14020dd2f9efeaf248c26653dff2abe39849426e4",
+  "version": "27.62",
+  "release": "7b72f6bf292c40a753edc89ed233afa9eafaf1139043aff9f68b16e7a26fc7ee",
   "desktopModel": 3,
-  "androidSourceBuild": "2026.10.22-v27.61-no-file-availability",
-  "androidSelectorSha256": "86cc31738462e1680e9e4f162a0cb5da02a0e61bd34de577a7149bbf63d3f957",
-  "generatedFrom": "scripts/pipeline-v2761.mjs",
+  "androidSourceBuild": "2026.10.23-v27.62-reader-recovery",
+  "androidSelectorSha256": "a818c8ab71f380c16c90557ad7f18ee4615506d010c8bd32b9aa3a67a5567830",
+  "generatedFrom": "scripts/pipeline-v2762.mjs",
   "files": 899,
   "componentBaseVersion": "27.54",
   "componentBaseRelease": "4bdc04a045dd3c821d416468539df7507f61357e91961d506a90faa662eee631"
