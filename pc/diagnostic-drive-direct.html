@@ -1500,7 +1500,52 @@ if(data.type==='CDQ_PREWARM_READER_V2554'){
   return;
 }
 
-if(data.type==='CDQ_INTERFACE_FAILED_V2652'){loadHelp.style.display='flex';document.getElementById('load-title').textContent='Préparation de l’interface';document.getElementById('load-message').textContent='Une image ou un module n’a pas pu être chargé. Réessayez le chargement.';return;}
+if(data.type==='CDQ_INTERFACE_FAILED_V2652'){
+  // V27.64 diagnostic-only: expose the exact category of presentation failure.
+  // A missing graphic or a moving navigation layout must not block timed
+  // Drive tests if all application modules and authenticated controls are ready.
+  // Never override the CDQ account state, revision checks or data access.
+  const failure=String(data.reason||'');
+  const reason=failure==='Image non chargée'?'image':failure==='Interface incomplète'?'layout':failure==='Navigation indisponible'?'module':'other';
+  window.dispatchEvent(new CustomEvent('cdq:drive-diagnostic-ui-failure',{detail:{reason}}));
+  const doc=app.contentDocument,win=app.contentWindow;
+  let safe=false;
+  try{
+    const routes=['home','dossier','calibration','calcul','inventory','catalog','invoices','opportunities','trash'];
+    const nav=[...doc.querySelectorAll('.bottom-nav > .bottom-nav-item')];
+    safe=(reason==='image'||reason==='layout')&&iframeLoaded&&selectorReady&&cdqInterfaceReadyV2648
+      &&cdqFrameAccessV2751==='ready'&&!selectorAwaitingAccess
+      &&doc.readyState==='complete'
+      &&typeof win.cdqWorkspaceV2638?.prepareNavigation==='function'
+      &&typeof win.cdqCalibrationV2565?.prepareNavigation==='function'
+      &&typeof win.cdqIconThemesV2514?.refresh==='function'
+      &&nav.length===routes.length
+      &&nav.every((node,i)=>node.dataset.workspaceRoute===routes[i]&&node.querySelector('small')&&node.querySelector(':scope > span'))
+      &&doc.querySelectorAll('#cdqTopActionsV2204 > button').length===4;
+  }catch(_){safe=false;}
+  if(safe){
+    // Presentation-only fallback. CDQ itself has already authenticated, loaded
+    // the required navigation modules, and explicitly reported interface-ready.
+    cdqFirstFrameStableV2543=true;
+    cdqFirstFrameStableSourceV2543='diagnostic-visual-fallback';
+    clearTimeout(cdqFirstFrameFallbackV2543);
+    loadHelp.style.display='none';
+    document.getElementById('load-message').textContent='L’interface CDQ est utilisable. Une vérification graphique secondaire a échoué.';
+    masquerMurApresDelaiMinimum();
+    window.dispatchEvent(new CustomEvent('cdq:drive-diagnostic-ui-fallback',{detail:{reason}}));
+    return;
+  }
+  loadHelp.style.display='flex';
+  loading.style.display='none';
+  document.getElementById('load-title').textContent='Préparation de l’interface CDQ';
+  document.getElementById('load-message').textContent='Diagnostic : '+(
+    reason==='image'?'image de navigation indisponible':
+    reason==='layout'?'navigation encore incomplète':
+    reason==='module'?'module de navigation manquant':'préparation interrompue'
+  )+'. Ouvrez CDQ dans un onglet ou réessayez.';
+  document.getElementById('open-direct').hidden=false;
+  return;
+}
 if(data.type==='CDQ_INTERFACE_READY_V2648'){
   cdqInterfaceReadyV2648=true;if(cdqFrameAccessV2751!=='ready'||cdqFirstFrameStableV2543){app.style.visibility='visible';loading.style.display='none';}
   return;

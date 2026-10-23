@@ -12,6 +12,8 @@ const allowedMessageTypes = new Set([
 ]);
 const eventNames = [
  'cdq:reader-opening-metric-v2757',
+ 'cdq:drive-diagnostic-ui-failure',
+ 'cdq:drive-diagnostic-ui-fallback',
  'cdq:report-data-saved-v2754',
  'cdq:report-pdf-confirmed-v2754',
  'cdq:pdf-saved',
@@ -113,7 +115,11 @@ function attach(win,depth){
  },true);
  for(const name of eventNames){
    win.addEventListener(name,ev=>{
-     if(name==='cdq:reader-opening-metric-v2757'){
+     if(name==='cdq:drive-diagnostic-ui-failure'||name==='cdq:drive-diagnostic-ui-fallback'){
+       const d=ev.detail||{};
+       const approved=['image','layout','module','other'];
+       append('diagnostic:'+ (name.endsWith('fallback')?'affichage-repris':'erreur-interface'),{result:approved.includes(d.reason)?d.reason:'other'});
+     }else if(name==='cdq:reader-opening-metric-v2757'){
        const d=ev.detail||{};
        append('ouverture:etape',{phase:d.phase,elapsedMs:d.elapsedMs});
      }else append('signal:'+name);
