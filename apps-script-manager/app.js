@@ -2,7 +2,7 @@
 
 const $ = id => document.getElementById(id);
 const LS = localStorage;
-const APP_VERSION = 'V53';
+const APP_VERSION = 'V54';
 const CDQ_PRODUCTION_SCRIPT_ID = '1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf';
 const CDQ_PRODUCTION_DEPLOYMENT_ID = 'AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw';
 const CDQ_PRODUCTION_WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw/exec';
@@ -950,6 +950,8 @@ async function readProject(id, save = true) {
       // Read-only Google audit; Drive receives only a private, sanitized report.
       // Never interpret a missing live version label as an outdated deployment.
       void startVersionDiagnosticV43({id, files:content.files, deployments:deps, deploymentsReadOk, readGeneration});
+      // Parallel, non-blocking, entirely local regression checks; never start GitHub Actions.
+      void window.CDQLocalChecksV54?.run().catch(()=>{});
     }
   }
 }

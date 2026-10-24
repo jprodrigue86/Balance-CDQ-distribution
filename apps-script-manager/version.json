@@ -1,5 +1,6 @@
 {
-  "version": "V53",
-  "build": "2026.10.23-v53-automatic-diagnostic",
-  "diagnosticSchema": "cdq-version-diagnostic-v1"
+  "version": "V54",
+  "build": "2026.10.24-v54-local-regression",
+  "diagnosticSchema": "cdq-version-diagnostic-v1",
+  "testSchema": "cdq-manager-local-tests-v1"
 }
