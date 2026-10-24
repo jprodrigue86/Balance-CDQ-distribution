@@ -108,6 +108,7 @@ function diagnosticComparisonTextV43(comparison){
 function diagnosticRowsV43(r){
   return [
     ['Script Manager',r.managerVersion],
+    ['Tests locaux CDQ Manager',r.localTests?.status==='passed'?'86 tests validés (local uniquement)':'Non confirmés — '+(r.localTests?.reason||'en attente')],
     ['Prochaine étape automatique',r.automation?.nextActionText||'Diagnostic en cours'],
     ['Source serveur Google',r.source?.backendBuild||'Version non détectée'],
     ['Source interface Google',r.source?.selectorBuild||'Version non détectée'],
@@ -181,6 +182,19 @@ async function startVersionDiagnosticV43({id,files,deployments,deploymentsReadOk
   if(latest.version&&newest.version&&diagnosticVersionOrderV43(latest.version,newest.version)<0)r.issues.push('AUTOMATIC_PACKAGE_BEHIND_NEWEST_SERVER_PACKAGE');
   if(Object.values(r.published).some(x=>x.status==='unavailable'))r.issues.push('SOME_PUBLIC_VERSIONS_UNAVAILABLE');
   if(r.source?.backendBuild&&newest.build&&diagnosticVersionOrderV43(r.source.backendBuild,newest.build)<0)r.issues.push('SOURCE_BEHIND_PUBLISHED_SERVER_PACKAGE');
+  // Attach only a compact, non-sensitive record. Existing Drive report access
+  // remains optional and user-authorized; no additional Drive file is created.
+  let localProof=null;
+  try{
+    if(typeof window!=='undefined'){
+      // Ensure a quick automatic login cannot race with the deferred module tag.
+      if(!window.CDQLocalAutomationV55?.run)await import('./qa-automation-v55.mjs?v=55');
+      if(window.CDQLocalAutomationV55?.run)
+        localProof=await window.CDQLocalAutomationV55.run({reason:'private-diagnostic'});
+    }
+  }catch(_){}
+  if(!current())return;
+  r.localTests=diagnosticLocalTestsV55(localProof);
   r.completedAt=new Date().toISOString();r.automation=diagnosticAutomationV53(r);CDQ_DIAGNOSTIC_V43.report=r;diagnosticRenderV43(r);
   if(!S.deployBusy&&id===CDQ_PRODUCTION_SCRIPT_ID){
     S.productionBuild=r.production.content?.backendBuild||r.production.content?.selectorBuild||'';
@@ -283,6 +297,26 @@ function initializeVersionDiagnosticV43(){
   });
 }
 if(typeof document!=='undefined')initializeVersionDiagnosticV43();
+
+
+// Compact V55 test receipt for the existing optional private Drive diagnostic.
+// It never certifies Android, authentication, real PDFs or publication.
+function diagnosticLocalTestsV55(value){
+  const checked=Number(value?.checkedAt),fresh=Number.isFinite(checked)&&checked>0&&
+    checked<=Date.now()&&Date.now()-checked<=12*60*60*1000;
+  const passed=value?.schema==='cdq-manager-automation-v2'&&value?.version==='V55'&&
+    value?.status==='passed'&&fresh&&/^[a-f0-9]{64}$/.test(String(value?.fingerprint||''))&&
+    value?.report?.total===86&&value?.report?.passed===86&&
+    value?.report?.failed===0&&value?.negativeControls?.rejected===6&&
+    value?.appValidation===false&&value?.authenticatedDriveValidation===false&&
+    value?.androidNativeValidation===false&&value?.publicationApproved===false;
+  return {status:passed?'passed':'unverified',source:'manager-shared-js-v55',
+    checkedAt:passed?new Date(checked).toISOString():null,
+    fingerprint:passed?value.fingerprint:null,
+    cases:passed?86:0,negativeControls:passed?6:0,
+    reason:passed?'LOCAL_ONLY':String(value?.reason||'NOT_OBSERVED').slice(0,120),
+    driveE2E:false,nativeAndroid:false,publicationReady:false};
+}
 
 /* V53: deterministic automation receipt; no network, timers or AI calls. */
 function diagnosticAutomationV53(report){

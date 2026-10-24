@@ -1,6 +1,7 @@
 {
-  "version": "V54",
-  "build": "2026.10.24-v54-local-regression",
+  "version": "V55",
+  "build": "2026.10.24-v55-automatic-local-validation",
   "diagnosticSchema": "cdq-version-diagnostic-v1",
-  "testSchema": "cdq-manager-local-tests-v1"
+  "testSchema": "cdq-manager-local-tests-v2",
+  "releaseChecks": "local-synthetic-only"
 }

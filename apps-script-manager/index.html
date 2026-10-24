@@ -9,8 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>CDQ Apps Script Manager</title>
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="style.css?v=54">
-  <link rel="stylesheet" href="diagnostics.css?v=54">
+  <link rel="stylesheet" href="style.css?v=55">
+  <link rel="stylesheet" href="diagnostics.css?v=55">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -23,7 +23,7 @@
             <strong>CDQ Script Manager</strong>
             <span>Gestion et déploiement de vos applications Google Apps Script</span>
           </div>
-          <div class="version-chip" id="versionChip" title="Version de CDQ Script Manager">V54</div>
+          <div class="version-chip" id="versionChip" title="Version de CDQ Script Manager">V55</div>
           <button id="installApp" class="install-btn" type="button">Installer</button>
         </div>
       </header>
@@ -51,7 +51,7 @@
         <p>Connecte ton compte Google, choisis le projet, colle le nouveau code et écris-le sans ouvrir l’éditeur Apps Script.</p>
       </div>
       <div class="status-row">
-        <span id="versionBadge" class="badge version-badge">Version : V54</span>
+        <span id="versionBadge" class="badge version-badge">Version : V55</span>
         <span id="authBadge" class="badge">Google : non connecté</span>
         <span id="projectBadge" class="badge">Projet : aucun</span>
         <span id="changeBadge" class="badge">Modifications : 0</span>
@@ -143,8 +143,8 @@
       <button id="updateCheckRun" type="button" class="primary">Vérifier la mise à jour</button>
       <p id="updateCheckNext" role="status" aria-live="polite"></p>
       <p class="muted">Cloudflare et les appareils installés ne sont pas vérifiés par ce bouton.</p>
-      <details><summary>Résultats des tests GitHub</summary>
-        <p><a href="https://github.com/jprodrigue86/Balance-CDQ-prive/actions/workflows/economy-checks.yml" target="_blank" rel="noopener noreferrer">Ouvrir les contrôles économiques privés</a></p>
+      <details><summary>Anciens résultats GitHub (facultatif)</summary>
+        <p><a href="https://github.com/jprodrigue86/Balance-CDQ-prive/blob/main/ci/archives/README-2026-10-24.md" target="_blank" rel="noopener noreferrer">Consulter les anciens workflows archivés</a></p>
         <p class="muted">Télécharge l’archive du résultat GitHub, extrais result.json puis importe-le ici. Le fichier est lu localement ; son authenticité n’est pas vérifiée par GitHub dans cette page.</p>
         <label for="updateCheckSha">Révision GitHub à vérifier (40 caractères)</label>
         <input id="updateCheckSha" type="text" maxlength="40" autocomplete="off" spellcheck="false">
@@ -155,16 +155,16 @@
     </section>
 
 
-    <section class="card" id="cdqLocalChecksPanelV54" aria-labelledby="cdqLocalChecksTitleV54">
-      <div class="section-title"><span>✓</span><h2 id="cdqLocalChecksTitleV54">Tests rapides dans CDQ Manager</h2></div>
-      <p class="muted">Exécute les contrôles de logique PDF, décimales, conformité, sauvegardes et liste sur ce navigateur, sans démarrer GitHub Actions et sans accéder aux rapports clients. Les tests Android natifs, les signatures APK et les opérations Drive authentifiées restent distincts.</p>
+    <section class="card" id="cdqLocalChecksPanelV55" aria-labelledby="cdqLocalChecksTitleV55">
+      <div class="section-title"><span>✓</span><h2 id="cdqLocalChecksTitleV55">Tests rapides dans CDQ Manager</h2></div>
+      <p class="muted">86 tests locaux sur le véritable code CDQ : vérification des empreintes avant/après, contrôles négatifs et réutilisation limitée aux fichiers inchangés. Aucune donnée client, aucun lancement GitHub. Ces tests ne certifient pas Android ou Drive authentifié.</p>
       <div class="actions two">
-        <button id="cdqLocalChecksRunV54" class="primary" type="button">Relancer les tests locaux</button>
-        <button id="cdqLocalChecksCopyV54" class="secondary" type="button" disabled>Copier le rapport</button>
+        <button id="cdqLocalChecksRunV55" class="primary" type="button">Relancer les tests locaux</button>
+        <button id="cdqLocalChecksCopyV55" class="secondary" type="button" disabled>Copier le rapport</button>
       </div>
-      <p id="cdqLocalChecksStatusV54" role="status" aria-live="polite">Les tests seront lancés après la lecture d'un projet, ou manuellement ici.</p>
-      <p class="muted" id="cdqLocalChecksProgressV54"></p>
-      <details><summary>Résultats détaillés des tests locaux</summary><pre id="cdqLocalChecksDetailsV54" class="diagnostic-text">Aucun test effectué.</pre></details>
+      <p id="cdqLocalChecksStatusV55" role="status" aria-live="polite">Vérification locale automatique au chargement et après lecture du projet; résultats réutilisés seulement pour des empreintes identiques.</p>
+      <p class="muted" id="cdqLocalChecksProgressV55"></p>
+      <details><summary>Résultats détaillés des tests locaux</summary><pre id="cdqLocalChecksDetailsV55" class="diagnostic-text">Aucun test effectué.</pre></details>
     </section>
 
     <section class="card" id="diagnosticCard" aria-labelledby="diagnosticHeading">
@@ -385,11 +385,11 @@
     </div>
   </div>
 
-  <script src="api.js?v=54"></script>
+  <script src="api.js?v=55"></script>
   <script src="jszip.min.js?v=23"></script>
-  <script src="diagnostics.js?v=54"></script>
-  <script src="app.js?v=54"></script>
-  <script src="update-check.js?v=54"></script>
-  <script type="module" src="local-tests-v54.mjs?v=54"></script>
+  <script src="diagnostics.js?v=55"></script>
+  <script src="app.js?v=55"></script>
+  <script src="update-check.js?v=55"></script>
+  <script type="module" src="qa-automation-v55.mjs?v=55"></script>
 </body>
 </html>
