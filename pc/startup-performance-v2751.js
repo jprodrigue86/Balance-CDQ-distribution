@@ -67,8 +67,8 @@ function wrapRpcRunnerV2751(original,budget,{report=()=>{}}={}){
         }
         if(/^(?:actualiserContenuClient|cdqStartupMaintenanceV2686)$/.test(name))options.kind='background';
         options.traceId=traceId;options.label=label;
-        options.interactive=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirDiagnosticApplication|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&String(args[0])==='read';
-        const clientBound=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirChunkDocumentPdfCDQ|obtenirPdfLecteurCDQV2520|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&String(args[0])==='read';
+        options.interactive=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirDiagnosticApplication|obtenirPdfLecteurCDQV2520|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&String(args[0])==='read';
+        const clientBound=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirChunkDocumentPdfCDQ|obtenirPdfLecteurCDQV2520|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&String(args[0])==='read';
         if(clientBound){const selected=typeof compagnieSelectionnee==='undefined'?'':String(compagnieSelectionnee);options.valid=()=>selected===(typeof compagnieSelectionnee==='undefined'?'':String(compagnieSelectionnee));}
         budget.run(send,options).then(values=>{if(typeof ok==='function')ok(...values);},error=>{
           const values=error?.rpcValues||(hasValue?[error,value]:[error]);

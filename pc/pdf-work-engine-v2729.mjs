@@ -40,7 +40,7 @@ export function createPdfWorkEngineV2729({limit=96*1024*1024,worker=false}={}){
   const generation=epoch,current=()=>{if(generation!==epoch)throw Error('Le compte a changé.');},L=await tools(worker);current();if(type==='warm')return {ready:true};
   if(type==='list'){
    if(!Array.isArray(payload.rows)||payload.rows.length>500)throw Error('Liste de balances invalide.');
-   const bytes=await renderBalanceListV2728(payload.rows,payload.name,payload.author,payload.warnings||[],L);
+   const bytes=await renderBalanceListV2728(payload.rows,payload.name,payload.author,payload.warnings||[],L,payload.notes||[]);
    current();const pdf=await L.PDFDocument.load(bytes,{updateMetadata:false});pdf.catalog.set(L.PDFName.of('CDQBalanceListV2728'),L.PDFString.of(payload.digest));
    const output=await pdf.save({updateFieldAppearances:false});current();return {bytes:output};
   }
