@@ -17,6 +17,13 @@ export function pdfReportConformityV2727(form){
  return 'unknown';
 }
 
+// Same conclusion rules for the engine's authenticated response snapshot.
+export function reportConformityFieldsV2770(values){
+ if(!values||typeof values!=='object')return 'unknown';
+ const truth=value=>value===true||['yes','on','true','1','oui'].includes(normalize(value));
+ return pdfReportConformityV2727({getFields:()=>Object.entries(values).map(([name,state])=>({getName:()=>name,getText:()=>state?.value,isChecked:()=>truth(state?.value)}))});
+}
+
 export async function pdfReportConformitySnapshotV2727(blob,L){
  if(!(blob instanceof Blob))throw Error('PDF absent');
  const worker=pdfWorkV2729();if(worker)return (await worker.inspect(blob)).conformity;

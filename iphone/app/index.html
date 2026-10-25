@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="27.63" data-cdq-iphone-release="82d6a2e4a2aec38c90a96af1a4ae55dfd91f0207a5618d0508a1cb2386fd58ef">
+<html lang="fr" data-cdq-iphone-version="27.81" data-cdq-iphone-release="a0705015e42607230602acdd8fa658998ef7765d7be711554e055c71f566b3ae">
 <head>
 <script id="cdq-durable-resume-v2751">
 window.cdqDurableResumeV2751=(function createDurableResumeV2751({native=null,read=()=>''}={}){
@@ -491,7 +491,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.10.23-v27.63-client-speed';
+const CDQ_PWA_BUILD = '2026.10.25-v27.81-drive-send-fluidity';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1644,14 +1644,7 @@ function cdqAfficherPdf(data){
 }
 function cdqOpeningBarV2757(ctx,text){
  if(ctx.cancelledV2757||cdqPdfV2304Context!==ctx)return;
- if(!text){ctx.barV2757?.remove();ctx.barV2757=null;return;}
- if(!ctx.barV2757){
-  const bar=document.createElement('section');bar.setAttribute('role','status');bar.style.cssText='position:fixed;left:12px;right:12px;bottom:14px;z-index:2147483600;background:#101820;color:white;padding:12px;display:flex;align-items:center;gap:12px;border:1px solid #58bfff;border-radius:10px';
-  const label=document.createElement('span'),button=document.createElement('button');button.type='button';button.textContent='Fermer';button.style.cssText='margin-left:auto;min-height:44px';
-  button.onclick=()=>{if(cdqPdfV2304Context!==ctx||ctx.cancelledV2757||ctx.openedV2757&&!ctx.previewV2757)return;replyToSelector(ctx.source,{type:'CDQ_READER_OPEN_CANCEL_V2757',fileId:ctx.fileId,readerSession:ctx.readerSession,readerPhaseV2757:ctx.readerPhaseV2757});};
-  bar.append(label,button);ctx.barV2757=bar;document.body.append(bar);
- }
- ctx.barV2757.firstChild.textContent=String(text).slice(0,700);
+ ctx.barV2757?.remove();ctx.barV2757=null;
 }
 function cdqAfficherPdfV2304(data,source){
   const previous=cdqPdfV2304Context;

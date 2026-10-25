@@ -13,7 +13,7 @@ export function listConsultationDescriptorV2755(result,fileId,clientId){
     revision:observed.driveRevision,readOnlyListV2755:true,reconciliationRequired:true});
 }
 
-export async function loadListConsultationV2755(descriptor,{rpc,valid,decode,maxBytes=32*1024*1024}){
+export async function loadListConsultationV2755(descriptor,{rpc,valid,decode,maxBytes=32*1024*1024,onProgress=()=>{}}){
   const fail=message=>{throw Object.assign(Error(message),{code:'LIST_CHANGED_DURING_READ'});};
   if(descriptor?.readOnlyListV2755!==true||!descriptor.id||!descriptor.clientId||!descriptor.revision)
     fail('La liste à consulter est invalide.');
@@ -22,13 +22,15 @@ export async function loadListConsultationV2755(descriptor,{rpc,valid,decode,max
   if(meta?.id!==descriptor.id||meta.clientId!==descriptor.clientId||meta.revision!==descriptor.revision||
     meta.unchanged||!Number.isSafeInteger(meta.taille)||meta.taille<8||meta.taille>maxBytes)
     fail('La liste a changé. Rouvrez sa version actuelle.');
-  const parts=[];
-  if(meta.base64)parts.push(decode(meta.base64));
+  const parts=[];let received=0;
+  const receivedPart=bytes=>{parts.push(bytes);received+=bytes.length;try{onProgress({received,total:meta.taille,phase:'download'});}catch{}};
+  try{onProgress({received:0,total:meta.taille,phase:'metadata'});}catch{}
+  if(meta.base64)receivedPart(decode(meta.base64));
   else{
     if(!Number.isSafeInteger(meta.chunks)||meta.chunks<1||meta.chunks>32)fail('La lecture de la liste est incomplète.');
     for(let i=0;i<meta.chunks;i+=3){
       const group=await Promise.all(Array.from({length:Math.min(3,meta.chunks-i)},(_,n)=>rpc('obtenirChunkDocumentPdfCDQ',[descriptor.id,meta.revision,i+n])));valid();
-      for(const part of group){if(part?.revision!==meta.revision)fail('La liste a changé pendant sa lecture.');parts.push(decode(part.base64));}
+      for(const part of group){if(part?.revision!==meta.revision)fail('La liste a changé pendant sa lecture.');receivedPart(decode(part.base64));}
     }
   }
   const blob=new Blob(parts,{type:'application/pdf'});
@@ -36,6 +38,7 @@ export async function loadListConsultationV2755(descriptor,{rpc,valid,decode,max
   const after=await rpc('obtenirMetaDocumentPdfCDQ',[descriptor.id]);valid();
   if(after?.id!==descriptor.id||after.clientId!==descriptor.clientId||after.revision!==meta.revision||after.taille!==blob.size)
     fail('La liste a changé pendant sa lecture.');
+  try{onProgress({received,total:meta.taille,phase:'verified'});}catch{}
   return {id:descriptor.id,clientId:descriptor.clientId,folderId:descriptor.destinationId,
     destinationId:descriptor.destinationId,nom:String(meta.nom||'Liste de balance.pdf'),blob,
     revision:meta.revision,readOnlyListV2755:true,reconciliationRequired:true};

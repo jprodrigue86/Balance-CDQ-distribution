@@ -1,12 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "27.63",
-  "release": "82d6a2e4a2aec38c90a96af1a4ae55dfd91f0207a5618d0508a1cb2386fd58ef",
+  "version": "27.81",
+  "release": "a0705015e42607230602acdd8fa658998ef7765d7be711554e055c71f566b3ae",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.23-v27.63-client-speed",
-  "androidSelectorSha256": "3dcf564776562f0224db1da8adae3598761154bc11e38c4ec342f693c15a573d",
-  "generatedFrom": "scripts/v2763-release.py",
-  "files": 891,
-  "componentBaseVersion": "27.62",
-  "componentBaseRelease": "40b3418f82e5cea9c9ffca9b3fc2057b47e308c876a445de738a8dccd38878c6"
+  "androidSourceBuild": "2026.10.25-v27.81-drive-send-fluidity",
+  "androidSelectorSha256": "adbfc9b626b50b25aa4db5057d8a78f3ea35949b5a0d4268a33d9a6dc18faea6",
+  "generatedFrom": "scripts/build-iphone-v2781.mjs",
+  "files": 904
 }

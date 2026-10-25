@@ -22,7 +22,8 @@
   const historicalEndpointV2752='https://script.google.com/macros/s/AKfycbx8NuvklaL-azJBIVyCMKjPk_Hd9z62Q_2-NPl3vqw2kJRpI5wy63J8xkBN5toOFxEw/exec';
   const historicalReadsV2752=new Set();
   const allowed=new Set(['cdqRpc','reprendreActivationCDQ','creerDefiConnexionGoogleCDQ','verifierJetonGoogleCDQ','obtenirEtatAcces','connecterAvecCodeAcces','restaurerSessionApresBiometrie','reprendreSessionCourteCDQV2524']);
-  const channel=crypto.randomUUID(), pending=new Map();
+  const channel=crypto.randomUUID(), pending=new Map(),traceRows=[];
+  function trace(job,phase,extra={}){if(!job)return;traceRows.push({id:job.traceId,phase,method:job.name==='cdqRpc'?String(job.args[0]||'').slice(0,91):job.name,elapsedMs:Math.round(performance.now()-job.started),...extra});if(traceRows.length>90)traceRows.shift();}
   let frame, peer, peerRelay=null, peerOrigin='', serial=0, failed='', sessionToken='',authEpoch=0;
   let bootstrapV2687=null,bootstrapFallbackV2687;
   let batchTimerV2687;
@@ -33,7 +34,7 @@
   const unavailable='La connexion CDQ ne répond pas. Vérifiez Internet et réessayez. Si CDQ est déjà installé, actualisez l’application iPhone.';
   function settle(id,ok,value){
     const job=pending.get(id);if(!job)return;
-    pending.delete(id);if(job.timer)clearTimeout(job.timer);
+    trace(job,ok?'resolved':'rejected');pending.delete(id);if(job.timer)clearTimeout(job.timer);
     const handler=ok?job.success:job.failure;
     if(typeof handler==='function')handler(ok?value:Error(String(value||unavailable)),job.userObject);
   }
@@ -61,7 +62,7 @@
       if(!batchTimerV2687)batchTimerV2687=setTimeout(flushStartupReadsV2687,120);
       return;
     }
-    job.sent=true;
+    job.sent=true;trace(job,'bridge-post');
     if(!job.timer)job.timer=setTimeout(
       ()=>settle(job.id,false,job.name==='obtenirEtatAcces'?'La vérification de connexion a expiré. Appuyez sur Réessayer la connexion.':'La demande a expiré. Vérifiez son résultat avant de relancer une écriture.'),
       90000
@@ -98,8 +99,8 @@
       if(name==='withUserObject')return obj=>runner(success,failure,obj,bypassStartup);
       if(typeof name!=='string'||name==='then')return undefined;
       return (...args)=>{
-        const id=String(++serial),job={id,name,args,success,failure,userObject,sent:false,timer:null,authEpoch};
-        pending.set(id,job);
+        const id=String(++serial),job={id,name,args,success,failure,userObject,sent:false,timer:null,authEpoch,started:performance.now(),traceId:name==='cdqRpc'?args[3]?.id:null};
+        pending.set(id,job);trace(job,'transport-created');
         if(!allowed.has(name)&&!sessionToken){
           settle(id,false,'Appel serveur non autorisé.');
           return;
@@ -179,10 +180,11 @@
         bootstrapV2687.response=data.bootstrapV2687;bootstrapV2687.receivedAt=Date.now();
       }
       for(const job of pending.values())send(job);
+    }else if(data.type==='CDQ_EMBEDDED_ACK_V2765'&&event.source===peer&&event.origin===peerOrigin){trace(pending.get(String(data.id)),'relay-received');
     }else if(data.type==='CDQ_EMBEDDED_RESULT'&&peer&&
       (event.source===peer||event.source===peerRelay)&&event.origin===peerOrigin&&
       pending.get(String(data.id))?.sent===true&&typeof data.ok==='boolean'){
-      const id=String(data.id),job=pending.get(id);
+      const id=String(data.id),job=pending.get(id);trace(job,'relay-result',{server:data.timingsV2765||null});
       if(data.ok===true&&data.value&&typeof data.value==='object'){
         const token=String(data.value.jetonSession||'').trim();
         if(data.value.autorise===true&&token&&job?.authEpoch===authEpoch){sessionToken=token;batchUntilV2687=Date.now()+15000;}
@@ -204,6 +206,7 @@
   window.google={script:{run:runner()}};
   window.cdqReadHistoricalUploadReceiptV2752=readHistoricalUploadReceiptV2752;
   window.cdqEmbeddedRpcV2529={run:window.google.script.run,readHistoricalUploadReceipt:readHistoricalUploadReceiptV2752,
+    snapshot:()=>({schema:'cdq-embedded-transport-v2765',peerReady:!!peer,pending:pending.size,events:traceRows.slice()}),
     resetSession(){
       ++authEpoch;sessionToken='';batchUntilV2687=0;
       for(const cancel of [...historicalReadsV2752])cancel();

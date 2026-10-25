@@ -1,12 +1,12 @@
 import {balanceSourceRowsV2751,balanceDisplayRowsV2751} from './balance-list-index-v2751.mjs';
 const norm=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
 const clean=value=>{const text=String(value??'').normalize('NFC').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,160);return /^(?:[-–—]+|n\/?a|non renseign[eé]|true|false|vrai|faux)$/i.test(text)?'':text;};
-export const EQUIPMENT_FIELDS_V2746=Object.freeze(['base_balance_fabricant','indicateur_fabricant','base_balance_modele','indicateur_modele','capacite_maximale','echelon','unite_mesure','identification_balance','Bouton_Conforme','Bouton_NonConforme','Statut_conformite']);
+export const EQUIPMENT_FIELDS_V2746=Object.freeze(['base_balance_fabricant','indicateur_fabricant','base_balance_modele','indicateur_modele','capacite_maximale','echelon','unite_mesure','identification_balance','Bouton_Conforme','Bouton_NonConforme','Bouton_ACompleter','Statut_conformite']);
 export function equipmentEditSignatureV2746(values){
  if(!values||typeof values!=='object'||!Object.prototype.hasOwnProperty.call(values,'identification_balance'))return null;
  const text=name=>clean(Array.isArray(values[name])?values[name].join(', '):values[name]),checked=name=>values[name]===true||['yes','on','true','1','oui'].includes(norm(values[name]));
  const unit=text('unite_mesure'),cap=text('capacite_maximale'),inc=text('echelon'),status=norm(values.Statut_conformite);
- const bad=checked('Bouton_NonConforme')||status==='non conforme',good=checked('Bouton_Conforme')||status==='conforme';
+ const bad=checked('Bouton_NonConforme')||status==='non conforme',good=!(checked('Bouton_ACompleter')||status==='a completer')&&(checked('Bouton_Conforme')||status==='conforme');
  return JSON.stringify([text('base_balance_fabricant')||text('indicateur_fabricant'),text('base_balance_modele')||text('indicateur_modele'),cap+(cap&&unit?' '+unit:''),inc+(inc&&unit?' '+unit:''),text('identification_balance'),bad?'nonconforming':good?'conforming':'unknown']);
 }
 export function equipmentSignatureRowV2746(signature,{id,source='',revision=''}={}){

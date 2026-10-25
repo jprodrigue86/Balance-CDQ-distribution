@@ -1,7 +1,7 @@
 // This adapter runs inside the authenticated Selector. Google sessions and
 // server signing keys stay in their existing authority boundaries.
 import {listConsultationDescriptorV2755} from './list-consultation-v2755.mjs';
-export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoch,currentClient=()=>'',post,instant,background,loadClient,loadTemplate,publish=()=>{},isOnline=()=>globalThis.navigator?.onLine!==false}){
+export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoch,currentClient=()=>'',post,instant,background,loadClient,loadTemplate,readLocal=async()=>null,publish=()=>{},isOnline=()=>globalThis.navigator?.onLine!==false}){
   let capability=null,capabilityFlight=null,clientFlight=null,lease=0;const pendingReports=new Set(),legacyScopes=new Map(),receiptFlightsV2757=new Map();
   const valid=(email,stamp)=>email===owner()&&stamp===epoch()&&canRead();
   const fail=result=>{if(!result?.ok)throw Object.assign(Error(result?.error||result?.message||'Le moteur de rapports est indisponible.'),{code:result?.code});return result;};
@@ -12,11 +12,19 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     if(record.pending)pendingReports.add(record.context.reportId);else pendingReports.delete(record.context.reportId);
     background?.setPending?.('report-engine',pendingReports.size,record.account);
     if(record.deleted){publish('cdq:report-deleted-v2754',{owner:record.account,clientId:record.context.clientId,reportId:record.context.reportId,fileId:record.pdf?.fileId||record.context.fileId||'',pending:!!record.pending,confirmed:!!record.deleteAck&&!record.pending});return;}
-    const context=record.context,pdf=record.pdf,confirmed=record.dataSaved===true&&!record.pending&&pdf?.status==='confirmed'&&Number(pdf.revision)===Number(record.serverRevision),detail={owner:record.account,clientId:context.clientId,reportId:context.reportId,sourceId:pdf?.fileId||context.fileId||context.reportId,saveId:record.payload?.requestId,name:record.name,fields:record.fields,revision:record.serverRevision,pdf,dataSaved:!!record.dataSaved,pending:!!record.pending};
+    const context=record.context,pdf=record.pdf,confirmed=record.dataSaved===true&&!record.pending&&pdf?.status==='confirmed'&&Number(pdf.revision)===Number(record.serverRevision),detail={owner:record.account,clientId:context.clientId,reportId:context.reportId,sourceId:pdf?.fileId||context.fileId||context.reportId,saveId:record.payload?.requestId,name:record.name,fields:record.fields,revision:record.serverRevision,pdf,dataSaved:!!record.dataSaved,pending:!!record.pending,localDurable:true,savedAt:record.savedAt};
+    if(record.pending&&context.fileId&&Number.isFinite(record.savedAt))instant?.confirm?.({id:context.fileId,nom:record.name,type:'PDF',_cdqPendingSaveV2660:record.payload.requestId,_cdqLocalSavedAtV2772:record.savedAt},context.clientId,context.destinationId,{type:'PDF'});
     publish('cdq:report-data-saved-v2754',detail);
-    if(confirmed){const file={id:pdf.fileId,fileId:pdf.fileId,nom:record.name,name:record.name,revision:pdf.driveRevision,modifiedTime:pdf.driveRevision,clientId:context.clientId,destinationId:context.destinationId,type:'PDF',reportIdV2754:context.reportId,reportRevisionV2754:record.serverRevision};instant?.confirm?.(file,context.clientId,context.destinationId,{type:'PDF'});publish('cdq:report-pdf-confirmed-v2754',{...detail,...file});}
+    if(confirmed){const file={id:pdf.fileId,fileId:pdf.fileId,nom:record.name,name:record.name,revision:pdf.driveRevision,modifiedTime:pdf.driveRevision,clientId:context.clientId,destinationId:context.destinationId,type:'PDF',reportIdV2754:context.reportId,reportRevisionV2754:record.serverRevision,_cdqCommittedUploadV2660:record.payload.requestId,_cdqLocalSavedAtV2772:0};instant?.confirm?.(file,context.clientId,context.destinationId,{type:'PDF'});publish('cdq:report-pdf-confirmed-v2754',{...detail,...file,revision:record.serverRevision});}
   }
-  async function client(){if(!clientFlight)clientFlight=loadClient().then(module=>module.createReportEngineClientV2754({rpc:call,getAccount:owner,canWrite,onChange:changed}));return clientFlight;}
+  async function client(){
+    if(!clientFlight){
+      const flight=Promise.resolve().then(loadClient).then(module=>module.createReportEngineClientV2754({rpc:call,getAccount:owner,canWrite,onChange:changed}));
+      clientFlight=flight;
+      flight.catch(()=>{if(clientFlight===flight)clientFlight=null;});
+    }
+    return clientFlight;
+  }
   function contextOf(report){
     if(!report)return null;const snapshot=report.snapshot||report.payload||report;
     return {engine:2754,reportId:report.reportId||snapshot.reportId,clientId:report.clientId||snapshot.clientId,destinationId:report.destinationId||snapshot.destinationId,fileId:report.pdf?.fileId||report.fileId||snapshot.fileId||'',family:report.family||snapshot.family,template:report.template||snapshot.template,baseRevision:Number(report.revision||report.serverRevision||0),expectedDriveRevision:report.pdf?.driveRevision||report.driveRevision||snapshot.expectedDriveRevision||''};
@@ -25,8 +33,12 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     const phase=name=>{checkCurrent();try{onPhase(name);}catch{}};
     phase('lookup-start');
     if(requireFresh&&!isOnline())throw Object.assign(Error('La connexion est nécessaire pour vérifier la dernière version. La copie reste en consultation.'),{code:'REPORT_ENGINE_OFFLINE'});
-    const email=owner(),stamp=epoch(),engine=await client();let record=await engine.get({fileId:String(fileId)});checkCurrent();phase('lookup-ready');if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');
-    const expectedClient=String(legacyRecord?.clientId||currentClient()),deleted=()=>{throw Object.assign(Error('Ce rapport a été supprimé. Ses réponses conservées ne seront pas renvoyées.'),{code:'REPORT_DELETED'});};
+    const email=owner(),stamp=epoch(),expectedClient=String(legacyRecord?.clientId||currentClient());
+    // A fresh authorized read can overlap local storage; editing still awaits it.
+    let freshRead=null;
+    if(requireFresh&&!localOnly){phase('read-start');freshRead=call('read',{fileId:String(fileId),clientId:expectedClient});freshRead.catch(()=>{});}
+    const engine=await client();let record=await engine.get({fileId:String(fileId)});checkCurrent();phase('lookup-ready');if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');
+    const deleted=()=>{throw Object.assign(Error('Ce rapport a été supprimé. Ses réponses conservées ne seront pas renvoyées.'),{code:'REPORT_DELETED'});};
     async function rememberRead(result){
       checkCurrent();if(result.deleted)deleted();
       const report=result.report||(result.snapshot?{...result,...result.snapshot,pdf:result.pdf,revision:result.revision}:null);if(!report)return null;
@@ -43,7 +55,7 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
       if(movedClient&&!isOnline())throw Object.assign(Error('Connectez-vous pour vérifier le nouvel emplacement de ce rapport.'),{code:'SCOPE_MISMATCH'});
       if(!localOnly&&isOnline()){
         try{
-          phase('read-start');const result=await call('read',{...(movedClient?{}:{reportId:record.context.reportId}),clientId:expectedClient||record.context.clientId,fileId:String(fileId)});
+          if(!freshRead)phase('read-start');const result=await (freshRead||call('read',{...(movedClient?{}:{reportId:record.context.reportId}),clientId:expectedClient||record.context.clientId,fileId:String(fileId)}));
           checkCurrent();phase('read-ready');if(result.deleted)deleted();
           if(result.found===false){if(requireFresh||!(record.pending&&!record.dataSaved))throw Object.assign(Error('Ce rapport n’est plus présent sur le serveur.'),{code:'REPORT_NOT_FOUND'});}
           else{const refreshed=await rememberRead(result);if(!refreshed)throw Object.assign(Error('Les réponses serveur de ce rapport sont incomplètes.'),{code:'INVALID_REPORT_RESPONSE'});record=refreshed;}
@@ -56,14 +68,35 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     }
     if(!record){
       if(localOnly)return null;
-      phase('capability-start');const capable=await capabilities();checkCurrent();phase('capability-ready');
-      if(!capable?.ready){if(requireFresh)throw Object.assign(Error('Le moteur de rapports ne répond pas. La copie locale reste en consultation.'),{code:'REPORT_ENGINE_UNAVAILABLE'});return null;}
-      phase('read-start');const result=await call('read',{fileId:String(fileId),clientId:expectedClient});checkCurrent();phase('read-ready');if(result.deleted)deleted();
+      if(!freshRead){
+        phase('capability-start');const capable=await capabilities();checkCurrent();phase('capability-ready');
+        if(!capable?.ready){if(requireFresh)throw Object.assign(Error('Le moteur de rapports ne répond pas. La copie locale reste en consultation.'),{code:'REPORT_ENGINE_UNAVAILABLE'});return null;}
+        phase('read-start');
+      }
+      const result=await (freshRead||call('read',{fileId:String(fileId),clientId:expectedClient}));checkCurrent();phase('read-ready');if(result.deleted)deleted();
       const consultation=listConsultationDescriptorV2755(result,String(fileId),expectedClient);
       if(consultation){legacyScopes.delete(String(fileId));return consultation;}
-      record=await rememberRead(result);if(!record){if(result.legacyScope)legacyScopes.set(String(fileId),result.legacyScope);return null;}
+      record=await rememberRead(result);if(!record){
+        const scope=result.legacyScope;if(scope)legacyScopes.set(String(fileId),scope);
+        const local=await readLocal(String(fileId))||legacyRecord;checkCurrent();const own=local?.reportEngineV2754;
+        if(local?.pendingSaveId&&local.reportSnapshotOwnerV2757===email&&local.reportSnapshotV2754&&own?.baseRevision===0&&own.fileId===String(fileId)&&scope?.fileId===own.fileId&&scope.clientId===own.clientId&&scope.destinationId===own.destinationId){
+          if(scope.expectedDriveRevision!==own.expectedDriveRevision)throw Object.assign(Error('Le PDF a changé. Les nouvelles réponses restent conservées sur cet appareil.'),{code:'REPORT_LOCAL_REVISION_CONFLICT'});
+          record={context:own,fields:local.reportSnapshotV2754,name:local.nom};
+        }else return null;
+      }
     }
     if(record.deleted)deleted();
+    // The Android editor's durable copy owns newly saved fields; its PDF blob
+    // can still be the preceding support PDF while publication is in flight.
+    const local=await readLocal(String(fileId))||legacyRecord;checkCurrent();
+    if(local?.reportSnapshotV2754&&local.reportSnapshotOwnerV2757===email){
+      const own=local.reportEngineV2754,remote=record.context;
+      if(own?.reportId===remote.reportId&&own.clientId===remote.clientId&&own.destinationId===remote.destinationId&&own.fileId===String(fileId)&&own.template?.sha256===remote.template?.sha256){
+        const pending=!!local.pendingSaveId,localRevision=Number(own.baseRevision),remoteRevision=Number(remote.baseRevision);
+        if(pending&&remoteRevision>localRevision&&JSON.stringify(record.fields)!==JSON.stringify(local.reportSnapshotV2754))throw Object.assign(Error('Une autre révision existe. Vos nouvelles réponses restent conservées sur cet appareil.'),{code:'REPORT_LOCAL_REVISION_CONFLICT'});
+        if(pending&&remoteRevision<=localRevision||localRevision>remoteRevision)record={...record,context:own,fields:local.reportSnapshotV2754,name:local.nom||record.name};
+      }
+    }
     const context=record.context;if(expectedClient&&context.clientId!==expectedClient)throw Object.assign(Error('Le rapport appartient à un autre client.'),{code:'SCOPE_MISMATCH'});
     phase('template-start');const template=await loadTemplate(context.template);checkCurrent();phase('template-ready');if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');
     return {...legacyRecord,id:String(fileId),clientId:context.clientId,folderId:context.destinationId,nom:record.name,blob:template.blob,revision:context.expectedDriveRevision,reportEngineV2754:context,reportSnapshotV2754:record.fields,readerPreparedVersion:2730};
@@ -97,7 +130,7 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
         }
         if(result.pdf?.status!=='confirmed')throw Error('Données synchronisées. La mise à jour du PDF dans Drive reste en cours.');
         const file={id:result.pdf.fileId,revision:result.pdf.driveRevision,name:payload.name,nom:payload.name,reportRevision:expected,reportIdV2754:payload.reportId,reportRevisionV2754:expected,_cdqCommittedUploadV2660:data.uploadId};
-        instant?.confirm?.(file,payload.clientId,payload.destinationId,{type:'PDF'});reply('CDQ_REPORT_ENGINE_SAVE_V2754_RESULT',{ok:true,...file,pdf:result.pdf});publish('cdq:report-pdf-confirmed-v2754',{...file,owner:email,clientId:payload.clientId,reportId:payload.reportId,fields:payload.fields,pdf:result.pdf,revision:expected});
+        instant?.confirm?.(file,payload.clientId,payload.destinationId,{type:'PDF'});reply('CDQ_REPORT_ENGINE_SAVE_V2754_RESULT',{ok:true,...file,pdf:result.pdf});publish('cdq:report-pdf-confirmed-v2754',{...file,owner:email,clientId:payload.clientId,reportId:payload.reportId,sourceId:payload.fileId||result.pdf.fileId,saveId:payload.requestId,fields:payload.fields,pdf:result.pdf,revision:expected});
       }catch(error){reply('CDQ_REPORT_ENGINE_SAVE_V2754_RESULT',{ok:false,message:error.message,code:error.code||''});}
       return attempt>0;
     })();
@@ -105,7 +138,7 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     try{return await flight;}finally{if(receiptFlightsV2757.get(flightKey)===flight)receiptFlightsV2757.delete(flightKey);}
   }
   async function resume(){if(canRead()){await capabilities();await (await client()).resume();}}
-  function reset(){lease++;receiptFlightsV2757.clear();capability=null;capabilityFlight=null;pendingReports.clear();legacyScopes.clear();clientFlight?.then(value=>value.lock());background?.setPending?.('report-engine',0,owner());}
+  function reset(){lease++;receiptFlightsV2757.clear();capability=null;capabilityFlight=null;pendingReports.clear();legacyScopes.clear();clientFlight?.then(value=>value.lock()).catch(()=>{});background?.setPending?.('report-engine',0,owner());}
   function importContext(fileId){const scope=legacyScopes.get(String(fileId));return scope&&canRead()?{...scope,reportId:crypto.randomUUID(),baseRevision:0}:null;}
   return {call,client,capabilities,recordForOpen,importContext,save,handle,resume,reset,get enabled(){return capability?.ready===true;}};
 }
