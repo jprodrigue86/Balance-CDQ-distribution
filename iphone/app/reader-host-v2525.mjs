@@ -1,3 +1,4 @@
+import {captureSavedCalibration,retainSavedCalibration,calibrationSavedFileId} from './calibration-save-v2784.mjs';
 import {createReaderSaveProgressV2758} from './reader-save-progress-v2758.mjs';
 import {reportContextV2754,reportFieldsV2754} from './report-engine-client-v2754.mjs';
 import {validatedPdfSaveInfoV2753} from './pdf-work-v2729.mjs';
@@ -145,7 +146,9 @@ async function openReaderInternal(data,context){
   if(!reused)frame.src=new URL('./reader-v2525.html',import.meta.url).href;frame.referrerPolicy='origin';frame.removeAttribute('aria-hidden');
   frame.style.cssText='position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:#101820';
   frame.hidden=false;
-  const origin=new URL(frame.src).origin,saves=new Map();let closed=false,guard=false,ready=false,opened=false,prefillValues=null,closeWaiters=[],pendingClose=false,handle=null;
+  function captureCalibrationV2784(m){if(calibrationSavesV2784.has(m.requestId))return;const c=workspaceContextV2767();calibrationSavesV2784.set(m.requestId,captureSavedCalibration({owner:c?.ready?c.owner:'',fileId:calibrationSavedFileId({fileId:data.fileId,copy:data.editCopyV2756}),saveId:m.requestId,name:m.name||data.name,items:m.calibrationDevicesV2784,readOnly:data.readOnly}));}
+  function retainCalibrationV2784(m,result){const c=workspaceContextV2767();retainSavedCalibration(calibrationSavesV2784.get(m.requestId),{currentOwner:c?.ready?c.owner:'',isCurrent:valid,result,retain:detail=>technicianSourceV2767?.cdqCalibrationV2565?.recordSaved?.(detail)});}
+  const origin=new URL(frame.src).origin,saves=new Map(),calibrationSavesV2784=new Map();let closed=false,guard=false,ready=false,opened=false,prefillValues=null,closeWaiters=[],pendingClose=false,handle=null;
   let workspaceOwner=null,lastWorkspaceLayout=null;
   function layout(message){
     if(!data.workspaceSource)return;
@@ -235,6 +238,7 @@ async function openReaderInternal(data,context){
     }
     if(m.type==='CDQ_READER_SAVE_SNAPSHOT_V2754'&&data.onSaveSnapshot&&data.reportEngineV2754&&!data.readOnly){
       if(!valid()||!/^save-[\w-]{8,80}$/.test(String(m.requestId||'')))return;
+      captureCalibrationV2784(m);
       try{
         if(!saves.has(m.requestId)){
           const fields=reportFieldsV2754(m.reportSnapshotV2754);
@@ -249,15 +253,16 @@ async function openReaderInternal(data,context){
           }));
         }
         const result=await saves.get(m.requestId);if(!valid())throw Error('Le compte ou l’accès Drive a changé.');
-        equipmentDispositionV2746='saved';
+        equipmentDispositionV2746='saved';retainCalibrationV2784(m,result);
         tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:true,queued:result?.queued!==false,reportEngineV2754:result?.reportEngineV2754});
       }catch(e){saves.delete(m.requestId);tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:false,error:e.message||String(e)});}
       return;
     }
     if(m.type==='CDQ_READER_SAVE'&&data.onSave&&!data.readOnly){
       if(!/^save-[\w-]{8,80}$/.test(String(m.requestId||''))||!(m.blob instanceof Blob)||m.blob.type!=='application/pdf'||m.blob.size<8||m.blob.size>32*1024*1024)return;
+      captureCalibrationV2784(m);
       if(!saves.has(m.requestId))saves.set(m.requestId,Promise.resolve().then(()=>data.onSave(m.blob,m.requestId,m.name,{readerPreparedVersion:m.readerPreparedVersion===2730?2730:undefined,pdfSaveInfoV2753:m.pdfSaveInfoV2753?validatedPdfSaveInfoV2753(m.pdfSaveInfoV2753):null})));
-      try{const result=await saves.get(m.requestId);equipmentDispositionV2746='saved';tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:true,queued:!!result?.queued});}
+      try{const result=await saves.get(m.requestId);equipmentDispositionV2746='saved';retainCalibrationV2784(m,result);tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:true,queued:!!result?.queued});}
       catch(e){saves.delete(m.requestId);tell({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:false,error:e.message||String(e)});}
     }
   }

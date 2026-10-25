@@ -188,13 +188,13 @@ async function startVersionDiagnosticV43({id,files,deployments,deploymentsReadOk
   try{
     if(typeof window!=='undefined'){
       // Ensure a quick automatic login cannot race with the deferred module tag.
-      if(!window.CDQLocalAutomationV56?.run)await import('./qa-automation-v56.mjs?v=56');
-      if(window.CDQLocalAutomationV56?.run)
-        localProof=await window.CDQLocalAutomationV56.run({reason:'private-diagnostic'});
+      if(!window.CDQLocalAutomationV58?.run)await import('./qa-automation-v58.mjs?v=58');
+      if(window.CDQLocalAutomationV58?.run)
+        localProof=await window.CDQLocalAutomationV58.run({reason:'private-diagnostic'});
     }
   }catch(_){}
   if(!current())return;
-  r.localTests=diagnosticLocalTestsV56(localProof);
+  r.localTests=diagnosticLocalTestsV58(localProof);
   r.completedAt=new Date().toISOString();r.automation=diagnosticAutomationV53(r);CDQ_DIAGNOSTIC_V43.report=r;diagnosticRenderV43(r);
   if(!S.deployBusy&&id===CDQ_PRODUCTION_SCRIPT_ID){
     S.productionBuild=r.production.content?.backendBuild||r.production.content?.selectorBuild||'';
@@ -299,21 +299,22 @@ function initializeVersionDiagnosticV43(){
 if(typeof document!=='undefined')initializeVersionDiagnosticV43();
 
 
-// Compact V56 test receipt for the existing optional private Drive diagnostic.
+// Compact V58 test receipt for the existing optional private Drive diagnostic.
 // It never certifies Android, authentication, real PDFs or publication.
-function diagnosticLocalTestsV56(value){
+function diagnosticLocalTestsV58(value){
   const checked=Number(value?.checkedAt),fresh=Number.isFinite(checked)&&checked>0&&
     checked<=Date.now()&&Date.now()-checked<=12*60*60*1000;
-  const passed=value?.schema==='cdq-manager-automation-v2'&&value?.version==='V56'&&
+  const suiteValid=window.CDQLocalAutomationV58?.validateReport?.(value?.report)?.ok===true;
+  const passed=suiteValid&&value?.schema==='cdq-manager-automation-v2'&&value?.version==='V58'&&
     value?.status==='passed'&&fresh&&/^[a-f0-9]{64}$/.test(String(value?.fingerprint||''))&&
-    value?.report?.total===105&&value?.report?.passed===105&&
+    value?.report?.total===value?.report?.passed&&
     value?.report?.failed===0&&value?.negativeControls?.rejected===6&&
     value?.appValidation===false&&value?.authenticatedDriveValidation===false&&
     value?.androidNativeValidation===false&&value?.publicationApproved===false;
-  return {status:passed?'passed':'unverified',source:'manager-shared-js-v56',
+  return {status:passed?'passed':'unverified',source:'manager-shared-js-v58',
     checkedAt:passed?new Date(checked).toISOString():null,
     fingerprint:passed?value.fingerprint:null,
-    cases:passed?105:0,negativeControls:passed?6:0,
+    cases:passed?value.report.total:0,negativeControls:passed?6:0,
     reason:passed?'LOCAL_ONLY':String(value?.reason||'NOT_OBSERVED').slice(0,120),
     driveE2E:false,nativeAndroid:false,publicationReady:false};
 }

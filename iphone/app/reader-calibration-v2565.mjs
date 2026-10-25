@@ -1,4 +1,5 @@
 import {findCalibration} from './calibration-db-v2565.mjs';
+import {devicesFromPdfFields} from './calibration-scan-v2668.mjs';
 
 function defs(fields,name){
   const raw=fields instanceof Map?fields.get(name):fields?.[name];
@@ -21,7 +22,7 @@ function icon(){
   return '<svg viewBox="0 0 32 32" width="25" height="25" aria-hidden="true"><rect x="3" y="4" width="26" height="23" rx="3.5" fill="#8aa2af" stroke="#d8edf7"/><rect x="6.5" y="7.5" width="19" height="8" rx="1.3" fill="#06180f" stroke="#76e9ad"/><path d="M9 11.5h4m2 0h3m2 0h3" stroke="#a4ffd0" stroke-width="1.2"/><circle cx="9" cy="21.5" r="2" fill="#e2eaee"/><circle cx="16" cy="21.5" r="2" fill="#e2eaee"/><circle cx="23" cy="21.5" r="2" fill="#e2eaee"/></svg>';
 }
 export function installReaderCalibration({surface,doc,fields,tell}){
-  const header=document.querySelector('header');if(!header)return {refresh(){}};
+  const header=document.querySelector('header');if(!header)return {refresh(){},snapshot(){return [];}};
   let button=document.getElementById('calibrationHelp');
   if(!button){
     button=document.createElement('button');button.id='calibrationHelp';button.type='button';button.hidden=true;
@@ -29,19 +30,20 @@ export function installReaderCalibration({surface,doc,fields,tell}){
     const menu=document.getElementById('menu');header.insertBefore(button,menu||null);
   }
   let active=null;
+  function snapshot(){
+    const values={};for(const name of ['indicateur_modele','indicateur_fabricant','indicateur_marque','base_balance_modele','balance_modele','base_balance_fabricant','balance_fabricant'])values[name]=fieldValue(surface,doc,fields,name);
+    return devicesFromPdfFields(values,{});
+  }
   function context(){
-    const first=(names)=>names.map(n=>fieldValue(surface,doc,fields,n)).find(v=>v&&!/^(?:-|n\/a|s\/o|aucun)$/i.test(v))||'';
-    const indicatorModel=first(['indicateur_modele']);
-    const model=indicatorModel||first(['base_balance_modele','balance_modele']);
-    const manufacturer=indicatorModel?first(['indicateur_fabricant']):first(['base_balance_fabricant','balance_fabricant']);
-    const device=findCalibration(manufacturer,model);
-    return device?{manufacturer:device.manufacturer,model:device.model}:null;
+    const item=snapshot()[0];if(!item)return null;
+    const device=findCalibration(item.manufacturer,item.model);
+    return device?{manufacturer:device.manufacturer,model:device.model,category:device.category}:item;
   }
   function refresh(){
     active=context();button.hidden=!active;
     if(active){button.title='Méthode de calibration — '+active.manufacturer+' '+active.model;button.setAttribute('aria-label',button.title);}
   }
-  button.onclick=()=>{refresh();if(active)tell({type:'CDQ_CALIBRATION_OPEN_V2565',manufacturer:active.manufacturer,model:active.model});};
+  button.onclick=()=>{refresh();if(active)tell({type:'CDQ_CALIBRATION_OPEN_V2565',manufacturer:active.manufacturer,model:active.model,category:active.category});};
   refresh();
-  return {refresh};
+  return {refresh,snapshot};
 }
