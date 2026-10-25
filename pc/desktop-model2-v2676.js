@@ -90,7 +90,7 @@
       const type=row.dataset.fileType||'';let tag=row.querySelector('.cdq-pc-file-type');
       if(!tag){tag=document.createElement('span');tag.className='cdq-pc-file-type';row.append(tag);}text(tag,type==='GOOGLE_SHEETS'?'Sheets':type||'Fichier');
       const date=row.querySelector('.file-date');if(date&&row.dataset.fileDate){const d=new Date(row.dataset.fileDate);if(!Number.isNaN(d.getTime())){date.title=d.toLocaleString('fr-CA');text(date,new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'short',year:'numeric'}).format(d));}}
-      const badge=row.querySelector('.file-today-done-badge');if(badge&&badge.parentElement!==row)row.append(badge);
+      window.cdqFileStateSlotV2782?.(row);
       installRowActions(row);
     }
     const folders=scope===document?all('#filesContainer .folder-header'):[...(scope.matches('.folder-header')?[scope]:[]),...all('.folder-header',scope)];
@@ -158,7 +158,7 @@
       for(const record of records){
         if(chromeMutationV2724(record))chromeChangedV2724=true;
         const row=record.target.nodeType===1?record.target.closest('#filesContainer .file-row'):record.target.parentElement?.closest('#filesContainer .file-row');
-        if(row&&!record.target.closest?.('.cdq-pc-file-type,.file-pending-v2708,.file-today-done-badge')&&(record.type==='attributes'&&record.oldValue!==record.target.getAttribute(record.attributeName)&&record.attributeName.startsWith('data-file-')||record.type==='childList'&&[...record.addedNodes,...record.removedNodes].some(node=>node.nodeType!==1||!node.matches('.cdq-pc-file-type,.file-pending-v2708,.file-today-done-badge'))))fileRootsV2724.add(row);
+        if(row&&!record.target.closest?.('.cdq-pc-file-type,.cdq-file-state-v2782,.file-pending-v2708,.file-today-done-badge')&&(record.type==='attributes'&&record.oldValue!==record.target.getAttribute(record.attributeName)&&record.attributeName.startsWith('data-file-')||record.type==='childList'&&[...record.addedNodes,...record.removedNodes].some(node=>node.nodeType!==1||!node.matches('.cdq-pc-file-type,.cdq-file-state-v2782,.file-pending-v2708,.file-today-done-badge'))))fileRootsV2724.add(row);
         if(record.type!=='childList')continue;
         for(const node of record.addedNodes){
           if(node.nodeType!==1||node.matches('.cdq-pc-file-type,.file-pending-v2708')||node.closest('.cdq-pc-file-type,.file-pending-v2708')||node.matches('.file-today-done-badge')&&node.parentElement?.matches('.file-row'))continue;

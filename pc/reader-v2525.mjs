@@ -85,13 +85,14 @@ const resumeJournalV2767=createReaderResumeV2767();
 let resumeContextV2767=null,resumeSavedV2767=null,resumeTimerV2767=null;
 function rememberReaderV2767(){
  if(!doc||closed||opening||!resumeContextV2767||resumeSavedV2767?.conflict)return false;
- const fields=dirty?capturePreparedReaderFieldsV2759():null;
+ const meaningfulDirtyV2783=hasChangesV2782();
+ const fields=meaningfulDirtyV2783?capturePreparedReaderFieldsV2759():null;
  const active=document.activeElement;
  if(fields&&active&&$('viewer').contains(active)&&fields[active.name]&&active.matches?.('input:not([type=checkbox]),textarea')){
   const field=fields[active.name];field.value=active.value;delete field.formattedValue;
   for(const widget of field.widgets||[]){widget.value=active.value;delete widget.formattedValue;}
  }
- try{return resumeJournalV2767.write(resumeContextV2767,{fields,dirty,viewport:{scale:viewer.currentScale,page:viewer.currentPageNumber,left:$('container').scrollLeft,top:$('container').scrollTop}});}
+ try{return resumeJournalV2767.write(resumeContextV2767,{fields,dirty:meaningfulDirtyV2783,viewport:{scale:viewer.currentScale,page:viewer.currentPageNumber,left:$('container').scrollLeft,top:$('container').scrollTop}});}
  catch(error){status(error.message);return false;}
 }
 function scheduleReaderResumeV2767(){clearTimeout(resumeTimerV2767);resumeTimerV2767=setTimeout(rememberReaderV2767,250);}
@@ -145,6 +146,7 @@ function restoreInitialIdentityV2730(){
 }
 function applyLateIdentity(){
   if(!lateIdentity||!doc||opening||readOnly||closed)return;
+  if(!initialPreparedDraftV2730){lateIdentity=null;return;} // Consultation never prefills or resaves an existing report.
   const values=lateIdentity;lateIdentity=null;
   for(const [name,value] of Object.entries(values)){
     if(!/^client_(adresse|ville|province|code_postal|telephone)$/.test(name)||typeof value!=='string'||value.length>1000||!value.trim()||touchedIdentity.has(name))continue;
@@ -379,15 +381,15 @@ function renderReaderSaveProgressV2758(requestId,initial=false){
 }
 function busy(value){saving=value;$('viewer').inert=value||opening||closed;$('savingMask').hidden=!value;for(const id of ['save','saveClose','doneFields','dismissKeyboard','discard','file'])$(id).disabled=value||!doc||opening||readOnly;}
 function fail(error){busy(false);status(error.message||String(error));$('closeError').textContent=error.message||String(error);closeAfterSave=false;}
-let cleanSignatureV2782=null,mustSaveV2782=false;
-function hasChangesV2782(){return mustSaveV2782||(cleanSignatureV2782===null?dirty:reportValueSignatureV2782(capturePreparedReaderFieldsV2759())!==cleanSignatureV2782);}
-function modified(){if(!readOnly&&!opening){dirty=true;version++;status('');}}
+let cleanSignatureV2782=null,mustSaveV2782=false,userEditedV2783=false;
+function hasChangesV2782(){return mustSaveV2782||(userEditedV2783&&(cleanSignatureV2782===null?dirty:reportValueSignatureV2782(capturePreparedReaderFieldsV2759())!==cleanSignatureV2782));}
+function modified(){if(!readOnly&&!opening){userEditedV2783=true;dirty=true;version++;status('');}}
 function resetDocumentFieldsV2730(){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};
   readerEquipmentV2746.reset();readerSaveProgressV2758.reset();readerSaveProgressRequestV2759='';
   tableColumnV2737?.dispose();tableColumnV2737=null;visualRefreshV2730.reset();choices?.cancel();form?.reset();touch?.reset();cdqKeyboardFieldV2550(false);menu(true);
   documentPaintV2730?.dispose();documentPaintV2730=null;
   doc=null;documentTask=null;fieldDefinitions=null;readerCalibration=null;formattedFields.clear();fieldTypography.clear();touchedIdentity.clear();lateIdentity=null;
-  lastAttempt=null;pending=null;dirty=false;version=0;savedVersion=0;cleanSignatureV2782=null;mustSaveV2782=false;closeAfterSave=false;initialAppliedV2730=false;initialUpdatesV2730=[];
+  lastAttempt=null;pending=null;dirty=false;version=0;savedVersion=0;cleanSignatureV2782=null;mustSaveV2782=false;userEditedV2783=false;closeAfterSave=false;initialAppliedV2730=false;initialUpdatesV2730=[];
   cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;delete $('viewer').dataset.ready;$('viewer').classList.remove('cdq-form');$('viewer').inert=true;
   $('calibrationHelp')?.setAttribute('hidden','');
 }
@@ -607,7 +609,7 @@ async function open(data){
           qaFirstPaintOwnerV2731=Object.freeze({document:doc,generation,epoch:workEpoch,paint:preparedPaintV2753});
           firstPaint=documentPaintV2730=cancellableReaderPaintV2730(firstReaderPaintV2682(viewer.eventBus));viewer.setDocument(doc);viewer.linkService.setDocument(doc);
         }
-        doc.annotationStorage.onSetModified=()=>{if(!readOnly&&!opening){dirty=true;status('');}};
+        doc.annotationStorage.onSetModified=()=>{if(!readOnly&&!opening&&(userEditedV2783||mustSaveV2782)){dirty=true;status('');}};
         $('save').hidden=readOnly;$('saveClose').hidden=readOnly;
         // Scripting can initialise fields after the first canvas appears. Input
         // becomes available only after the canvas, widgets and calculations.
@@ -648,7 +650,7 @@ async function open(data){
         await visualRefreshV2730.flush();checkLease();
         if(canvasCandidateV2730)canvasCandidateV2730.viewport=readerViewportV2730(viewer);
         if(reuse&&!canRetainReaderCanvasV2730(canvasCandidateV2730,{epoch:workEpoch,document:doc,pageView:viewer.getPageView(0),controls:$('viewer').querySelectorAll('input,textarea,select,button').length,viewport:retained.viewport}))throw Error('Le rendu du rapport a changé pendant son ouverture.');
-        mustSaveV2782=initialPreparedDraftV2730||!!resumeSavedV2767?.dirty;cleanSignatureV2782=reportValueSignatureV2782(capturePreparedReaderFieldsV2759());
+        mustSaveV2782=initialPreparedDraftV2730||!!resumeSavedV2767?.dirty;cleanSignatureV2782=reportValueSignatureV2782(capturePreparedReaderFieldsV2759());userEditedV2783=false;dirty=mustSaveV2782;
         opening=false;busy(false);$('viewer').style.opacity='';$('viewer').dataset.ready='true';status('');
         cdqScheduleWidthFitV2753();applyLateIdentity();
         if(resumeSavedV2767?.viewport){const v=resumeSavedV2767.viewport;if(Number.isFinite(v.scale)&&v.scale>=.35&&v.scale<=4)viewer.currentScale=v.scale;viewer.currentPageNumber=Math.max(1,Math.min(viewer.pagesCount,Number(v.page)||1));$('container').scrollLeft=Math.max(0,Number(v.left)||0);$('container').scrollTop=Math.max(0,Number(v.top)||0);}
@@ -707,6 +709,7 @@ $('discard').onclick=()=>{
 };
 $('closeDialog').addEventListener('cancel',e=>{if(saving)e.preventDefault();else tell({type:'CDQ_READER_CLOSE_CANCELLED_V2640'});closeAfterSave=false;});
 for(const type of ['input','change'])$('viewer').addEventListener(type,e=>{if(autoReportName&&e.target.name==='identification_balance'){const next=identificationReportName(e.target.value);if(next){name=next;$('name').textContent=name;}}});
+$('viewer').addEventListener('click',e=>{if(e.isTrusted&&e.target.closest?.('button,input[type=button]'))modified();},{capture:true});
 $('viewer').addEventListener('input',modified);$('viewer').addEventListener('change',modified);
 // Scripted PDF fields cancel native insertion and return accepted text through
 // the sandbox, without emitting input/change. Capture the editing intent before
@@ -851,7 +854,7 @@ try{
         eventBus.dispatch('updatefromsandbox',{source:window,detail:{id:definition.id,value}});
         eventBus.dispatch('dispatcheventinsandbox',{source:viewer,detail:{id:definition.id,name:'Keystroke',value,willCommit:true,commitKey:1,selStart:0,selEnd:value.length}});
       }
-    },changed:()=>{dirty=true;version++;readerEquipmentV2746.changed();visualRefreshV2730.schedule();}});
+    },changed:()=>{userEditedV2783=true;dirty=true;version++;readerEquipmentV2746.changed();visualRefreshV2730.schedule();}});
   let liveCalculationTimer=0;
   $('viewer').addEventListener('input',e=>{
     const field=e.target,value=String(field.value??'');

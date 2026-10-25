@@ -58,7 +58,7 @@ html.cdq-desktop-v2676 #cdqClientActionsV2640 [data-balance-list-menu]{display:f
 html.cdq-desktop-v2676 #cdqClientActionsV2640 [data-balance-list-status]{width:100%;font-size:12px}
 #cdqPcFileColumns{display:grid;grid-template-columns:minmax(0,1fr) 135px 100px 30px;gap:10px;padding:9px 12px 9px 50px;background:var(--cdq-raised);border:1px solid var(--cdq-line);border-bottom:0;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;color:var(--cdq-muted)}
 html.cdq-desktop-v2676 body #filesContainer{border:1px solid var(--cdq-line)!important;border-radius:0 0 8px 8px!important;background:var(--cdq-page)!important;width:100%!important;max-width:none!important;overflow:visible!important}
-html.cdq-desktop-v2676 body #filesContainer .file-row{display:grid!important;grid-template-columns:28px minmax(0,1fr) 135px 100px 30px!important;align-items:center!important;gap:10px!important;min-height:var(--cdq-pc-row-min,48px)!important;padding:7px 12px!important;border-bottom:1px solid var(--cdq-line)!important;background:var(--cdq-page)!important;margin:0!important;border-radius:0!important;box-sizing:border-box!important;cursor:pointer}
+html.cdq-desktop-v2676 body #filesContainer .file-row{display:grid!important;grid-template-columns:28px minmax(0,1fr) 135px 80px 30px 70px!important;align-items:center!important;gap:10px!important;min-height:var(--cdq-pc-row-min,48px)!important;padding:7px 12px!important;border-bottom:1px solid var(--cdq-line)!important;background:var(--cdq-page)!important;margin:0!important;border-radius:0!important;box-sizing:border-box!important;cursor:pointer}
 html.cdq-desktop-v2676 body .file-info{display:contents!important}
 html.cdq-desktop-v2676 body #filesContainer :is(.file-row,.folder)[data-pc-search-hidden=true],html.cdq-desktop-v2676 body #filesContainer :is(.file-row,.folder)[style*="display: none"]{display:none!important}
 html.cdq-desktop-v2676 body .file-name{grid-column:2!important;grid-row:1!important;font-size:calc(15px * var(--cdq-pc-text,1))!important;line-height:1.35!important;white-space:normal!important;overflow-wrap:anywhere!important;color:var(--cdq-ink)!important}
@@ -155,8 +155,6 @@ html.cdq-desktop-v2676 body #filesContainer .file-name{display:flex!important;al
 html.cdq-desktop-v2676 body #filesContainer .file-name-text{flex:0 1 auto!important;min-width:0!important}
 @media(max-width:1000px){html.cdq-desktop-v2676 body #cdqClientActionsV2640{grid-template-columns:repeat(3,minmax(0,1fr))!important}html.cdq-desktop-v2676 body #cdqClientActionsV2640>.cdq-pc-file-search{grid-column:1/-1;grid-row:2;max-width:370px}}
 
-html.cdq-desktop-v2676 body #filesContainer .file-row>.file-today-done-badge{grid-column:5!important;grid-row:1!important;position:static!important;justify-self:center!important;align-self:center!important;width:24px!important;height:24px!important;min-width:24px!important;margin:0!important;font-size:16px!important}
-html.cdq-desktop-v2676 body #filesContainer .file-row>.file-today-done-badge[hidden]{display:inline-flex!important;visibility:hidden!important}
 
 html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675],html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675]>:is(span,svg,img,div,i){width:44px!important;height:44px!important;min-width:44px!important;max-width:44px!important;min-height:44px!important;max-height:44px!important;object-fit:contain!important}
 
