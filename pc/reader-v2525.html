@@ -338,7 +338,21 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
   };
 })();
 </script>
-</head><body>
+<style id="cdq-operation-feedback-v2767">
+body #status,body.cdq-reader-pc #status,body.cdq-keyboard-field #status{
+ display:block!important;position:fixed!important;top:calc(48px + var(--reader-safe-top,env(safe-area-inset-top,0px)))!important;
+ left:5px!important;right:5px!important;bottom:auto!important;transform:none!important;width:auto!important;max-width:none!important;
+ height:auto!important;padding:5px 0 8px!important;line-height:1.2!important;white-space:normal!important;
+ border:0!important;border-radius:0!important;background:var(--reader-panel,#101820)!important;
+ opacity:0!important;pointer-events:none!important;z-index:90!important;
+}
+body #status[data-active="true"]{opacity:1!important}
+body #status::before{display:none!important}
+body #status::after{content:'';display:block;height:4px;margin-top:5px;background:#269dff;border-radius:3px;}
+body #status[data-busy="true"]::after{width:38%;animation:cdq-blue-operation-v2767 1.4s ease-in-out infinite}
+@keyframes cdq-blue-operation-v2767{0%,100%{transform:translateX(0)}50%{transform:translateX(155%)}}
+@media(prefers-reduced-motion:reduce){body #status[data-busy="true"]::after{width:100%;animation:none}}
+</style></head><body>
 <header id="readerTop"><button id="back" aria-label="Retour dans CDQ"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg><span>Retour</span></button><div id="zoomControls" aria-label="Zoom du PDF"><button id="minus" class="zoom-button" aria-label="Réduire"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><span id="zoom">100 %</span><button id="plus" class="zoom-button" aria-label="Agrandir"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button></div><button id="menu" aria-label="Options du PDF" aria-expanded="false"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></header>
 <div id="more" role="menu" hidden><button id="fit" role="menuitem">Ajuster à la largeur</button><button id="download" role="menuitem">Télécharger</button><button id="save" role="menuitem" class="primary" disabled>Enregistrer</button><button id="cancelMenu" role="menuitem" title="Fermer le menu et continuer la saisie">Annuler</button><button id="quitMenu" role="menuitem">Quitter</button></div><footer id="readerNameBar" aria-label="Nom du rapport"><span id="name">PDF</span></footer>
 <div id="container"><div id="viewer" class="pdfViewer"></div><div id="empty"><label class="action" for="file">Ouvrir un PDF</label></div></div><input id="file" type="file" accept="application/pdf,.pdf"><div id="status" role="status">Chargement du lecteur…</div>

@@ -37,15 +37,23 @@ function completeSheet(snapshot,file,clientId){
 
 // Two authorised folder snapshots replace N individual metadata requests and
 // the server's re-download/rebuild. Missing or changed sources abort the write.
-export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,loadSheet,library,cachedSignature,stillCurrent,onSaved=()=>{},onSourceRead=()=>{},previousState=null,hashText=hash,render=null,sourceIndex=null,guardedSave=false,indexOnly=false}){
- if(!fileId)return null;const guard=()=>{if(!stillCurrent())throw Error('Le client, le compte ou une sauvegarde a changé.');};guard();
+export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,loadSheet,library,cachedSignature,stillCurrent,onSaved=()=>{},onSourceRead=()=>{},previousState=null,hashText=hash,render=null,sourceIndex=null,guardedSave=false,indexOnly=false,listDestinationId='',onProgress=()=>{}}){
+ // V27.77: an initial engine import has no list PDF to reopen or render.
+ // It must still inspect and recheck a COMPLETE authorised Drive snapshot.
+ const bootstrap=indexOnly===true&&!fileId;
+ if(!fileId&&!bootstrap)return null;const guard=()=>{if(!stillCurrent())throw Error('Le client, le compte ou une sauvegarde a changé.');};guard();
  async function snapshot(){
   const response=await rpc('obtenirContenuDossierParesseux',clientId,clientId);guard();const root=folderContent(response,clientId);
   const lists=root.fichiers.filter(f=>norm(f.nom||f.name)==='liste de balance.pdf'&&pdf(f)).map(file=>({file,folderId:String(clientId)}));
   const listFolders=root.dossiers.filter(f=>norm(f.nom||f.name)==='liste de balance').sort((a,b)=>String(a.id).localeCompare(String(b.id)));
   if(listFolders.some(f=>!f.id)||new Set(listFolders.map(f=>String(f.id))).size!==listFolders.length)throw Error('Dossier de liste incomplet.');
   await groups(listFolders,async folder=>{const r=await rpc('obtenirContenuDossierParesseux',folder.id,clientId);guard();const child=folderContent(r,folder.id);for(const file of child.fichiers)if(norm(file.nom||file.name)==='liste de balance.pdf'&&pdf(file))lists.push({file,folderId:String(folder.id)});});
-  const selected=lists.filter(row=>String(row.file.id)===String(fileId));if(selected.length!==1)throw Error('La liste a été déplacée, remplacée ou supprimée.');
+  const selected=lists.filter(row=>String(row.file.id)===String(fileId));
+  if(bootstrap){
+   // Even a list that another technician created in the meantime prohibits
+   // this path; never publish a second canonical list.
+   if(!listDestinationId||listFolders.length!==1||String(listFolders[0].id)!==String(listDestinationId)||lists.length)throw Error('CONFLICT_LIST_FILE : la première liste ne peut pas être créée sans destination unique et vide.');
+  }else if(selected.length!==1)throw Error('La liste a été déplacée, remplacée ou supprimée.');
   const folders=root.dossiers.filter(f=>/^rapports? (?:d ?)?etalonnages?$/.test(norm(f.nom||f.name))).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
   if(folders.some(f=>!f.id)||new Set(folders.map(f=>String(f.id))).size!==folders.length)throw Error('Dossier de rapports incomplet.');
   const children=await groups(folders,async folder=>{const r=await rpc('obtenirContenuDossierParesseux',folder.id,clientId);guard();return folderContent(r,folder.id);});
@@ -53,18 +61,21 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
   for(const f of root.fichiers)if(!excluded(f)&&(sheet(f)||pdf(f)))take(f);for(const child of children)for(const f of child.fichiers)if(!excluded(f)&&(sheet(f)||pdf(f)))take(f);
   const sorted=[...files.values()].sort((a,b)=>String(a.id).localeCompare(String(b.id)));
   if(sorted.length>500||sorted.some(f=>!sourceRev(f)||f._cdqPendingSaveV2660||String(f.id).startsWith('cdq-local-')))throw Error('Révisions des rapports non confirmées.');
-  return {name:root.nom||root.name||'',files:sorted,folders:folders.map(f=>String(f.id)),listFolderId:selected[0].folderId,list:{...selected[0].file}};
+  return {name:root.nom||root.name||'',files:sorted,folders:folders.map(f=>String(f.id)),
+   listFolderId:bootstrap?String(listDestinationId):selected[0].folderId,
+   list:bootstrap?{id:'',name:'',mimeType:'',modifiedTime:'',revision:''}:{...selected[0].file}};
  }
  const indexed=guardedSave===true&&validBalanceSourceIndexV2751(sourceIndex,clientId,fileId);
  const before=indexed?{name:sourceIndex.name||'',files:sourceIndex.sources.map(source=>({...source.file,id:source.id,revision:source.revision,modifiedTime:source.revision,dateModification:source.revision})),folders:sourceIndex.folders,listFolderId:sourceIndex.listFolderId,list:{...sourceIndex.list,revision:sourceIndex.listRevision,modifiedTime:sourceIndex.listRevision,dateModification:sourceIndex.listRevision}}:await snapshot(),beforeKey=snapshotKey(before),records=[],signatures=new Map();let L,existing,old,libraryPromise;
  const pdfLibrary=async()=>{libraryPromise??=Promise.resolve().then(library);L=await libraryPromise;guard();return L;};
+ let progressCount=0;const announce=()=>{try{onProgress({phase:'analyse',done:progressCount,total:before.files.length});}catch{}};announce();
  await groups(before.files,async file=>{
   guard();let signature=indexed?sourceIndex.sources.find(source=>source.id===String(file.id))?.signature:cachedSignature?.(file),parsed=signatureValues(signature);
   if(!parsed){if(sheet(file)){const returned=await loadSheet(file.id,clientId,sourceRev(file));guard();const snapshot=completeSheet(returned,file,clientId),values=sheetBalanceValuesV2703(snapshot.onglets[0].valeurs);signature=values==='null'?values:JSON.stringify([...JSON.parse(values),sheetReportConformityV2727(snapshot)]);}
    else{const record=await loadPdf(file.id,sourceRev(file));guard();if(!record?.blob||record.id&&String(record.id)!==String(file.id)||rev(record)!==sourceRev(file)||record.clientId&&String(record.clientId)!==String(clientId))throw Error('Un rapport a changé pendant la préparation.');signature=await equipmentSnapshotV2697(record.blob,await pdfLibrary());}
    guard();onSourceRead(file,signature);}
-  guard();parsed=signatureValues(signature);if(!parsed)throw Error('Données de balance incomplètes.');const {values}=parsed;signatures.set(String(file.id),signature);if(values===null)return;
-  const [fabricant,modele,capacite,echelon,identification,conformity]=values;records.push({id:String(file.id),source:file.nom||file.name||'',revision:sourceRev(file),fabricant,modele,capacite,echelon,identification,conformity});
+  guard();parsed=signatureValues(signature);if(!parsed)throw Error('Données de balance incomplètes.');const {values}=parsed;signatures.set(String(file.id),signature);if(values===null){progressCount++;announce();return;}
+  const [fabricant,modele,capacite,echelon,identification,conformity]=values;records.push({id:String(file.id),source:file.nom||file.name||'',revision:sourceRev(file),fabricant,modele,capacite,echelon,identification,conformity});progressCount++;announce();
  });
  const rows=balanceDisplayRowsV2751(records);
  const digest=await hashText(JSON.stringify([String(clientId),before.name,rows.map(r=>[r.fabricant,r.modele,r.capacite,r.echelon,r.identification,r.conformity])]));guard();

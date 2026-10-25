@@ -16,7 +16,7 @@
   const SERVER_GRACE_MS=110;
   const warmJobs=new Map();
   const serverJobs=new Map();
-  let prewarmBatch=null;
+  let prewarmBatch=null,accessGeneration=0;
 
   const account=()=>String(typeof utilisateurCourantEmail!=='undefined'?utilisateurCourantEmail:'').trim().toLowerCase();
   const client=()=>String(typeof compagnieSelectionnee!=='undefined'?compagnieSelectionnee:'');
@@ -41,8 +41,9 @@
     }catch(_){}
   }
 
-  function current(id,email){
-    return ready()&&account()===email&&client()===String(id);
+  function sameAccess(email,generation){return generation===accessGeneration&&ready()&&account()===email;}
+  function current(id,email,generation=accessGeneration){
+    return sameAccess(email,generation)&&client()===String(id);
   }
 
   function serverKey(id,email){return email+'|'+String(id);}
@@ -80,14 +81,15 @@
         verifiedAt:Number((typeof cacheDerniereVerificationCompagnies!=='undefined'?cacheDerniereVerificationCompagnies[id]:0)||0)
       });
     }
-    const key=serverKey(id,email);
+    const key=serverKey(id,email),generation=accessGeneration;
     if(warmJobs.has(key))return warmJobs.get(key);
     if(typeof lireCachePersistantClient!=='function')return Promise.resolve(null);
 
     const job=Promise.resolve()
       .then(()=>lireCachePersistantClient(id))
       .then(record=>{
-        if(!ready()||account()!==email)return null;
+        if(!sameAccess(email,generation))return null;
+        if(record?.contenu&&cacheContenuCompagnies[id]&&Number(cacheDerniereVerificationCompagnies[id]||0)>=Number(record.verifiedAt||0))return {contenu:cacheContenuCompagnies[id],verifiedAt:cacheDerniereVerificationCompagnies[id]};
         if(record?.contenu){
           cacheContenuCompagnies[id]=record.contenu;
           cacheDerniereVerificationCompagnies[id]=Number(record.verifiedAt)||0;
@@ -95,7 +97,7 @@
         return record||null;
       })
       .catch(()=>null)
-      .finally(()=>warmJobs.delete(key));
+      .finally(()=>{if(warmJobs.get(key)===job)warmJobs.delete(key);});
     warmJobs.set(key,job);
     return job;
   }
@@ -103,7 +105,7 @@
   function requestServer(id,email=account()){
     id=String(id||'');
     if(!id||!email||!ready()||account()!==email)return Promise.resolve(null);
-    const key=serverKey(id,email);
+    const key=serverKey(id,email),generation=accessGeneration;
     if(serverJobs.has(key))return serverJobs.get(key);
 
     const job=new Promise((resolve,reject)=>{
@@ -114,7 +116,7 @@
           .obtenirContenuClientOptimise(id,false);
       }catch(error){reject(error);}
     }).then(result=>{
-      if(!ready()||account()!==email)return null;
+      if(!sameAccess(email,generation))return null;
       let content=result&&result.contenu?result.contenu:result;
       const verifiedAt=result&&result.genereLe?Number(result.genereLe):Date.now();
       const source=result&&result.source?String(result.source):'drive';
@@ -138,20 +140,21 @@
       }
       if(source==='cache'&&typeof planifierActualisationCompagnie==='function'){
         setTimeout(()=>{
-          if(ready()&&account()===email){
+          if(sameAccess(email,generation)){
             planifierActualisationCompagnie(id,verifiedAt);
           }
         },0);
       }
       return content;
     }).catch(error=>{
-      if(current(id,email)&&!(typeof cacheContenuCompagnies!=='undefined'&&cacheContenuCompagnies[id])){
+      if(!sameAccess(email,generation))return null;
+      if(current(id,email,generation)&&!(typeof cacheContenuCompagnies!=='undefined'&&cacheContenuCompagnies[id])){
         afficherErreur(error);
       }else{
         try{console.log('Chargement client V25.45 :',error);}catch(_){}
       }
       return null;
-    }).finally(()=>serverJobs.delete(key));
+    }).finally(()=>{if(serverJobs.get(key)===job)serverJobs.delete(key);});
 
     serverJobs.set(key,job);
     return job;
@@ -159,43 +162,42 @@
 
   async function loadClient(){
     if(typeof compagnieSelectionnee==='undefined'||!compagnieSelectionnee)return;
-    const id=client(),email=account();
+    const id=client(),email=account(),generation=accessGeneration;
     if(!id||!email||!ready())return;
-    if(!window.cdqClientDayCacheV2746?.peek(id)){
+    let windowReady=!!window.cdqClientDayCacheV2746?.peek(id),serverStarted=false,serverContent=null,serverVerifiedAt=0;
+    const startServer=()=>{
+      if(serverStarted||!current(id,email,generation)||(windowReady&&cacheContenuCompagnies[id]))return;
+      serverStarted=true;
+      requestServer(id,email).then(content=>{
+        if(!current(id,email,generation)||!content)return;
+        serverContent=content;serverVerifiedAt=Number(cacheDerniereVerificationCompagnies[id]||0);
+      });
+    };
+    // Start the network fallback before a blocked cache-window read or write.
+    const timer=setTimeout(startServer,SERVER_GRACE_MS);
+    if(!windowReady){
       try{await window.cdqClientDayCacheV2746?.open(id);}catch(_){ }
     }
-    if(!current(id,email))return;
+    if(!current(id,email,generation)){clearTimeout(timer);return;}
+    windowReady=true;
     remember(id);
-
-    if((typeof cacheContenuCompagnies!=='undefined'&&cacheContenuCompagnies[id])){
-      displayCached(id,email);
-      return;
+    // Expiring the previous window may finish after the fresh server response.
+    // Restore only that response, never a rejected/expired disk snapshot.
+    if(serverContent&&!cacheContenuCompagnies[id]){
+      cacheContenuCompagnies[id]=serverContent;
+      cacheDerniereVerificationCompagnies[id]=serverVerifiedAt;
     }
-
-    if(typeof afficherMessage==='function'){
-      afficherMessage('Chargement des fichiers...',false);
+    if(cacheContenuCompagnies[id]){
+      clearTimeout(timer);displayCached(id,email);return;
     }
-
-    let serverStarted=false;
-    const startServer=()=>{
-      if(serverStarted||!current(id,email)||(typeof cacheContenuCompagnies!=='undefined'&&cacheContenuCompagnies[id]))return;
-      serverStarted=true;
-      requestServer(id,email);
-    };
-
-    const timer=setTimeout(startServer,SERVER_GRACE_MS);
+    if(typeof afficherMessage==='function')afficherMessage('Chargement des fichiers...',false);
+    if(serverStarted){clearTimeout(timer);return;}
     warm(id,email).then(record=>{
       clearTimeout(timer);
-      if(!current(id,email))return;
-      if(record?.contenu||(typeof cacheContenuCompagnies!=='undefined'&&cacheContenuCompagnies[id])){
-        displayCached(id,email);
-        return;
-      }
+      if(!current(id,email,generation))return;
+      if(record?.contenu||cacheContenuCompagnies[id]){displayCached(id,email);return;}
       startServer();
-    }).catch(()=>{
-      clearTimeout(timer);
-      startServer();
-    });
+    }).catch(()=>{clearTimeout(timer);startServer();});
   }
 
   function prewarm(){
@@ -286,10 +288,11 @@ html:is(.android,.ios,.mobile-device) #cdqGlobalProgressV2293[data-cdq-integrate
 
   window.addEventListener('cdq:access-ready',()=>setTimeout(prewarm,30));
   window.addEventListener('cdq:drive-ready-v2632',()=>setTimeout(prewarm,30));
-  window.addEventListener('cdq:drive-cleared-v2632',()=>{warmJobs.clear();serverJobs.clear();prewarmBatch=null;});
+  function resetAccess(){accessGeneration++;warmJobs.clear();serverJobs.clear();prewarmBatch=null;}
+  window.addEventListener('cdq:drive-cleared-v2632',resetAccess);
   window.addEventListener('cdq:access-state-v2527',event=>{
     if(event.detail==='ready')setTimeout(prewarm,30);
-    else{warmJobs.clear();serverJobs.clear();}
+    else resetAccess();
   });
 
   // Replace only the client-list loading path. Startup, authentication,

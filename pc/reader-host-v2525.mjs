@@ -106,6 +106,9 @@ async function openReaderInternal(data,context){
     await active.requestClose();
     guardContext();
   }
+  const technicianSourceV2767=data.workspaceSource||window.selectorWindow||document.getElementById('app')?.contentWindow;
+  const workspaceContextV2767=()=>{try{return technicianSourceV2767?.cdqReaderWorkspaceV2767?.()||null;}catch{return null;}};
+  const technicianContextV2767=()=>{try{return technicianSourceV2767?.cdqTechniciansV2767?.()||null;}catch{return null;}};
   const {sourceBlob}=context;
   if(!(sourceBlob instanceof Blob)||sourceBlob.type!=='application/pdf'||!sourceBlob.size||sourceBlob.size>32*1024*1024)throw Error('PDF invalide.');
   // Prepare the PDF while the retained viewer/worker/sandbox is becoming ready,
@@ -183,11 +186,13 @@ async function openReaderInternal(data,context){
     canReceive:()=>opened&&!closed&&!data.readOnly&&valid(),
     onEdit:detail=>data.onEquipmentEdit?.(detail),onEnd:detail=>data.onEquipmentEditEnded?.(detail)});
   const tell=message=>{if(!closed)frame.contentWindow?.postMessage(message,origin)};
+  const techniciansChangedV2767=()=>{if(opened&&!closed)tell({type:'CDQ_READER_TECHNICIANS_V2767',context:technicianContextV2767()});};
+  try{technicianSourceV2767?.addEventListener('cdq:technicians-v2767',techniciansChangedV2767);}catch{}
   function requestClose(){if(opened)tell({type:'CDQ_READER_REQUEST_CLOSE'});else pendingClose=true;}
   function pop(){if(closed)return;history.pushState({cdqReader:marker},'',location.href);tell({type:'CDQ_READER_REQUEST_CLOSE'});}
   let replacingPreviewV2757=false;
   function close(reusable=false,failure=null){
-    if(closed)return;closed=true;saveProgressV2758.close();if(active===handle)active=null;clearTimeout(timer);
+    if(closed)return;closed=true;try{technicianSourceV2767?.removeEventListener('cdq:technicians-v2767',techniciansChangedV2767);}catch{}saveProgressV2758.close();if(active===handle)active=null;clearTimeout(timer);
     equipmentGateV2746.end(equipmentDispositionV2746);
     window.removeEventListener('message',receive);window.removeEventListener('popstate',pop);window.removeEventListener('resize',resize);window.removeEventListener('cdq:keyboard-insets-v2653',resize);window.visualViewport?.removeEventListener('resize',resize);if(reusable&&opened&&valid())prepareClosedReaderV2730(frame,route);else frame.remove();
     try{const root=data.workspaceSource?.document.documentElement;if(root?.dataset.cdqReaderSessionV2679===marker)delete root.dataset.cdqReaderSessionV2679;root?.classList.remove('cdq-workspace-reader-open');data.workspaceSource?.cdqWorkspaceV2638?.readerClosed();data.workspaceSource?.cdqWorkspaceV2638?.measure();}catch{}
@@ -218,7 +223,7 @@ async function openReaderInternal(data,context){
       if(!guard&&!window.BalanceCDQNative&&!/BalanceCDQAndroid\//i.test(navigator.userAgent)){history.pushState({cdqReader:marker},'',location.href);guard=true;window.addEventListener('popstate',pop);}
       const result=pdfPreparation?await pdfPreparation:null;if(closed)return;if(result?.error){openingFailed(result.error);return;}
       if(!valid()){openingFailed(Error('Le compte ou l’accès Drive a changé.'));return;}
-      tell({type:'CDQ_READER_OPEN',readerRequestId:marker,readerPhaseV2757:data.readerPhaseV2757||0,saveProgressOwnerV2758:data.saveProgressOwnerV2758,blob:sourceBlob,preparedBlob:result?.blob,readerPreparedVersion:result?.preparedVersion===2730?2730:undefined,readerNormalizedV2730:result?.normalized===true,preparedEpoch:workEpoch,staticArtworkV2753:result?.staticArtworkV2753,initialValues:data.initialValues,reportEngineV2754:data.reportEngineV2754,reportEngineImportV2754:typeof data.onSaveSnapshot==='function'?data.reportEngineImportV2754:null,reportSnapshotV2754:data.reportSnapshotV2754,name:data.name,theme:data.theme,fileId:data.onSave||data.onSaveSnapshot?String(data.fileId||'local-copy'):'',readOnly:!!data.readOnly,autoReportName:data.autoReportName===true,desktop:!!data.workspaceSource?.document.documentElement.classList.contains('cdq-desktop-v2676')});
+      tell({type:'CDQ_READER_OPEN',readerRequestId:marker,readerPhaseV2757:data.readerPhaseV2757||0,saveProgressOwnerV2758:data.saveProgressOwnerV2758,blob:sourceBlob,preparedBlob:result?.blob,readerPreparedVersion:result?.preparedVersion===2730?2730:undefined,readerNormalizedV2730:result?.normalized===true,preparedEpoch:workEpoch,staticArtworkV2753:result?.staticArtworkV2753,resumeContextV2767:(()=>{const c=workspaceContextV2767();return c?.ready?{owner:c.owner,sessionId:c.sessionId,clientId:data.reportEngineV2754?.clientId||data.editCopyV2756?.destination?.clientId||c.clientId,fileId:String(data.fileId||''),localCopy:!!data.editCopyV2756,revision:JSON.stringify([data.reportEngineV2754?.reportId||'',data.reportEngineV2754?.baseRevision??null,data.sourceRevisionV2767||''])}:null;})(),techniciansV2767:technicianContextV2767(),initialValues:data.initialValues,reportEngineV2754:data.reportEngineV2754,reportEngineImportV2754:typeof data.onSaveSnapshot==='function'?data.reportEngineImportV2754:null,reportSnapshotV2754:data.reportSnapshotV2754,name:data.name,theme:data.theme,fileId:data.onSave||data.onSaveSnapshot?String(data.fileId||'local-copy'):'',readOnly:!!data.readOnly,autoReportName:data.autoReportName===true,desktop:!!data.workspaceSource?.document.documentElement.classList.contains('cdq-desktop-v2676')});
     }
     if(m.type==='CDQ_READER_OPENED'&&m.readerRequestId===marker){opened=true;clearTimeout(timer);if(data.reportEngineImportV2754&&m.reportEngineV2754){const imported=reportContextV2754(m.reportEngineV2754),candidate=data.reportEngineImportV2754;if(imported&&imported.reportId===candidate.reportId&&imported.fileId===candidate.fileId&&imported.clientId===candidate.clientId&&imported.destinationId===candidate.destinationId)data.reportEngineV2754=imported;}data.onOpened?.({reportEngineV2754:data.reportEngineV2754});if(prefillValues)tell({type:'CDQ_READER_PREFILL_V2642',fileId:String(data.fileId||''),values:prefillValues});if(pendingClose)requestClose();prepareSecondEngineV2731(handle,frame,valid);}
     if(m.type==='CDQ_READER_CLOSE')close(m.reusable===true);

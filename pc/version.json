@@ -1,13 +1,11 @@
 {
   "platform": "pc-pwa",
-  "version": "27.63",
-  "release": "b06b99776a01a3e788cfca3bc6ff57e136c9b419e29faea7a1b6e92fd35fbcb7",
+  "version": "27.81",
+  "release": "329545cee555747b3131272fea12e4b348a700f6b96f74a79a24302969dd0755",
   "desktopModel": 3,
-  "androidSourceBuild": "2026.10.23-v27.63-client-speed",
-  "androidSelectorSha256": "3dcf564776562f0224db1da8adae3598761154bc11e38c4ec342f693c15a573d",
-  "generatedFrom": "scripts/v2763-release.py",
-  "files": 899,
-  "componentBaseVersion": "27.62",
-  "componentBaseRelease": "7b72f6bf292c40a753edc89ed233afa9eafaf1139043aff9f68b16e7a26fc7ee",
-  "build": "2026.10.23-v27.63-client-speed"
+  "androidSourceBuild": "2026.10.25-v27.81-drive-send-fluidity",
+  "androidSelectorSha256": "adbfc9b626b50b25aa4db5057d8a78f3ea35949b5a0d4268a33d9a6dc18faea6",
+  "generatedFrom": "scripts/build-pc-v2781.mjs",
+  "files": 912,
+  "build": "2026.10.25-v27.81-drive-send-fluidity"
 }

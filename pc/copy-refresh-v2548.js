@@ -20,10 +20,15 @@
   }
 
   function inferredName(result) {
-    const direct = String(result?.nom || result?.name || '').trim();
+    // Keep a local Drive status suffix OUT of the actual filename.
+    const clean = value => String(value || '')
+      .replace(/\s+[—–-]\s*⚠\s*Drive non confirmé(?:\.pdf)?\s*$/iu, '')
+      .trim();
+    const direct = clean(result?.nom || result?.name);
     if (direct) return /\.pdf$/i.test(direct) ? direct : direct + '.pdf';
     let label = String(document.getElementById('copyTemplateName')?.textContent || '')
       .replace(/[«»"]/g, '').trim();
+    label = clean(label);
     if (!label) label = 'Nouveau rapport';
     return /\.pdf$/i.test(label) ? label : label + '.pdf';
   }
@@ -136,12 +141,15 @@
         }
       }
 
+      // Original confirmation is authoritative. Rejected old receipts must
+      // never be reinserted by this faster presentation wrapper.
+      if (!confirmed) return false;
       const painted = inject(result, clientId, parentId, fallback);
       if (selected && !painted && savedLexical && typeof cacheContenuCompagnies !== 'undefined') {
         const root = cacheContenuCompagnies[String(clientId || '')];
         if (root) savedLexical(root);
       }
-      return confirmed || painted;
+      return confirmed;
     };
   }
 

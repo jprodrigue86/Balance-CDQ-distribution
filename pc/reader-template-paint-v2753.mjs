@@ -1,6 +1,5 @@
 import {READER_TEMPLATE_PAINT_MANIFEST_V2753} from './reader-template-paint-manifest-v2753.mjs';
-
-export const READER_TEMPLATE_PAINT_POLICY_V2754=Object.freeze({"schema":2754,"platform":"pc","version":"27.54","kind":"native-first-paint-family","family":"trackscale","sourceSha256":"00cbe6cb741c2e28c7c342d17c695c593f780145e129873c68b442e84881b309","sourceBytes":599102,"staticArtworkFingerprint":"d61d020ef0cbf2c1c508914a4c8901e8524c1e30ae464bda937df448ffb99175","reason":"native-annotation-fidelity"});
+export const READER_TEMPLATE_PAINT_POLICY_V2754=Object.freeze({schema:2754,platform:'pc',version:'27.54',kind:'native-first-paint-family',family:'trackscale',sourceSha256:'00cbe6cb741c2e28c7c342d17c695c593f780145e129873c68b442e84881b309',sourceBytes:599102,staticArtworkFingerprint:'d61d020ef0cbf2c1c508914a4c8901e8524c1e30ae464bda937df448ffb99175',reason:'native-annotation-fidelity'});
 
 const VERSION='6.3.289',ALGORITHM='cdq-static-artwork-graph-sha256-v1',MAX_PIXELS=4000000;
 const hash=value=>typeof value==='string'&&/^[a-f0-9]{64}$/.test(value);
@@ -56,8 +55,6 @@ export function selectReaderTemplatePaintV2753(manifest,{sourceSha256,sourceByte
   if(manifest?.schema!==2||manifest.kind!=='cdq-pristine-template-background'||manifest.version!==2753||!validWidths(manifest.widths)||manifest.renderer?.version!==VERSION||!hash(manifest.renderer.fingerprint)||!hash(sourceSha256)||!Number.isSafeInteger(sourceBytesLength)||sourceBytesLength<8||sourceBytesLength>32*1024*1024||!Number.isFinite(targetPhysicalWidth)||targetPhysicalWidth<=0)return null;
   const entries=Object.values(manifest.templates||{}).filter(entry=>entry?.rendererFingerprint===manifest.renderer.fingerprint&&hash(entry.normalized?.sha256)&&Number.isSafeInteger(entry.normalized.bytes)&&entry.normalized.bytes>=8&&entry.normalized.bytes<=32*1024*1024&&Array.isArray(entry.captures)&&entry.captures.length===manifest.widths.length&&manifest.widths.every((width,index)=>{const capture=entry.captures[index];return validCapture(capture)&&capture.viewport?.width===width&&validEntry(resolveCapture(entry,capture));}));
   const choose=family=>{
-    // Resolve the unique source/graph first, then keep this exact PC family
-    // on the complete native renderer before any PNG fetch, cache or decode.
     const native=READER_TEMPLATE_PAINT_POLICY_V2754,artwork=family.staticArtworkV2753;
     if(family.normalized.sha256===native.sourceSha256&&family.normalized.bytes===native.sourceBytes&&artwork?.algorithmVersion===ALGORITHM&&artwork.fingerprint===native.staticArtworkFingerprint&&artwork.pageIndex===0&&artwork.pageCount===1)return null;
     return resolveCapture(family,family.captures.find(capture=>capture.viewport.width===captureWidth(manifest.widths,targetPhysicalWidth)));
