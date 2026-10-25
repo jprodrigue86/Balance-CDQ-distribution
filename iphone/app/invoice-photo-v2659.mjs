@@ -49,7 +49,7 @@ function jpeg(source, width, height, orientation = 1) {
   dimensions(width, height);
   const swapped = orientation >= 5 && orientation <= 8;
   const sw = swapped ? height : width, sh = swapped ? width : height;
-  const maxW = 1900, maxH = 7200, minReceiptW = 1000;
+  const maxW = 2400, maxH = 8000, minReceiptW = 1000;
   let k = Math.min(1, maxW / sw, maxH / sh);
   if (sw < minReceiptW && sh > sw * 1.6) k = Math.min(maxW / sw, maxH / sh, minReceiptW / sw);
   const canvas = document.createElement('canvas');
@@ -68,7 +68,9 @@ function jpeg(source, width, height, orientation = 1) {
   const [a,b,c,d,e,f] = transforms[orientation] || transforms[1];
   ctx.setTransform(a*sx,b*sy,c*sx,d*sy,e*sx,f*sy);
   ctx.drawImage(source, 0, 0, width, height);
-  const result = canvas.toDataURL('image/jpeg', .92);
+  let result = canvas.toDataURL('image/jpeg', .96);
+  if(result.length>11*1024*1024)result=canvas.toDataURL('image/jpeg', .90);
+  if(result.length>11*1024*1024)throw Error('Photo trop volumineuse : recadrez le reçu avant de réessayer.');
   canvas.width = canvas.height = 1;
   if (!result.startsWith('data:image/jpeg;base64,')) throw Error('Préparation de la photo impossible.');
   return result;

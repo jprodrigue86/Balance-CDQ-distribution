@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="27.82" data-cdq-iphone-release="34f7a860cac437b66118f58085517e71bc0cce486d3cb9807488d56cb6a4ab47">
+<html data-cdq-iphone-version="27.83" data-cdq-iphone-release="f715f8caa548f444d56faeaad5b7227de0b56192378d4dac5df87baeab13bb57">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdq-durable-resume-v2751">
@@ -871,7 +871,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
       supplied={...supplied,_cdqLocalSavedAtV2772:localAt};
     }
     if(old._cdqPendingSaveV2660&&supplied._cdqCommittedUploadV2660!==old._cdqPendingSaveV2660&&!supplied._cdqPendingSaveV2660)supplied={...supplied,nom:old.nom,_cdqPendingSaveV2660:old._cdqPendingSaveV2660,_cdqDriveUploadErrorV2740:old._cdqDriveUploadErrorV2740||''};
-    if(supplied._cdqCommittedUploadV2660&&supplied._cdqCommittedUploadV2660===old._cdqPendingSaveV2660)supplied={...supplied,_cdqPendingSaveV2660:''};
+    if(supplied._cdqCommittedUploadV2660&&(!old._cdqPendingSaveV2660||supplied._cdqCommittedUploadV2660===old._cdqPendingSaveV2660))supplied={...supplied,_cdqPendingSaveV2660:'',_cdqDriveUploadErrorV2740:''};
     const meta={...fallback,...old,...supplied,id:String(result.id),nom:String(supplied.nom||result.nom||old.nom||fallback.nom||'')};
     if(!meta.nom)return false;
     if(meta.mimeType==='application/pdf')meta.type='PDF';
@@ -904,7 +904,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.25-v27.82-file-state-list-manager">
+<meta name="cdq-package-build" content="2026.10.25-v27.83-pc-mobile-invoice-cache">
 
 
 <script id="cdqBridgeV23">
@@ -958,7 +958,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.25-v27.82-file-state-list-manager'
+    build:'2026.10.25-v27.83-pc-mobile-invoice-cache'
   });
 }
 
@@ -971,7 +971,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.25-v27.82-file-state-list-manager'
+        build:'2026.10.25-v27.83-pc-mobile-invoice-cache'
       });
     }
   } catch(e) {}
@@ -6081,6 +6081,7 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
 #cdqSendFailureV2759{color:var(--cdq-danger,#ff7373);font:14px/1.4 Arial,sans-serif;white-space:normal;overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){#cdqProgressModal[data-indeterminate="true"] .cdq-progress-fill::after,#cdqProgressModal[data-busy="true"] .cdq-progress-fill::after{animation:none;opacity:0}}
 </style>
+<link rel="stylesheet" href="./mobile-selection-v2783.css">
 </head>
 
 
@@ -9665,11 +9666,21 @@ function deletionSelectionKeyV2782(owner,client,selection){
  return JSON.stringify([String(owner),String(client),[...new Set(selection.fileIds||[])].sort(),[...new Set(selection.folderIds||[])].sort()]);
 }
 
+// Shared ownership of the trailing status. Desktop must never reparent its children.
 function cdqFileStateSlotV2782(row){
- let host=row.querySelector(".cdq-file-state-v2782");if(!host){host=document.createElement("span");host.className="cdq-file-state-v2782";row.append(host);}
- let slot=host.querySelector(".cdq-save-slot-v2782");if(!slot){slot=document.createElement("span");slot.className="cdq-save-slot-v2782";host.append(slot);}
- for(const badge of row.querySelectorAll(".file-pending-v2708,.file-today-done-badge"))if(badge.parentNode!==slot)slot.append(badge);if(row.lastChild!==host)row.append(host);return {host,slot};
+ let host=row.querySelector(':scope > .cdq-file-state-v2782');
+ if(!host){host=document.createElement('span');host.className='cdq-file-state-v2782';row.append(host);}
+ let slot=host.querySelector('.cdq-save-slot-v2782');
+ if(!slot){slot=document.createElement('span');slot.className='cdq-save-slot-v2782';host.append(slot);}
+ for(const selector of ['.file-pending-v2708','.file-today-done-badge']){
+  const badges=[...row.querySelectorAll(selector)],badge=badges.find(b=>b.parentNode===slot)||badges[0];
+  if(badge&&badge.parentNode!==slot)slot.append(badge);
+  for(const duplicate of badges)if(duplicate!==badge)duplicate.remove();
+ }
+ if(row.lastElementChild!==host)row.append(host);
+ return {host,slot};
 }
+
 function creerLigneFichier(fichier){
   const ligne = document.createElement("div");
   ligne.className = "file-row";
@@ -11308,6 +11319,7 @@ function mettreAJourInterface(){
     deleteButton.style.display = totalSelection > 0 ? "flex" : "none";
   }
 
+  window.cdqMobileSelectionV2783?.refresh();
   // Selection actions belong to the selection bar; Dossier remains navigation.
   const duplicate=document.getElementById('duplicateSelectionButtonV2655');
   if(duplicate){duplicate.hidden=!(fichiersSelectionnes>0&&dossiersChoisis===0&&['admin','technicien'].includes(String(utilisateurCourantRole||'')));}
@@ -11778,7 +11790,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.25-v27.82-file-state-list-manager";
+  const CDQ_BUILD = "2026.10.25-v27.83-pc-mobile-invoice-cache";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14138,7 +14150,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.25-v27.82-file-state-list-manager";
+const CDQ_V19_BUILD = "2026.10.25-v27.83-pc-mobile-invoice-cache";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -17830,7 +17842,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.25-v27.82-file-state-list-manager";
+const CDQ_V20_BUILD = "2026.10.25-v27.83-pc-mobile-invoice-cache";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -18677,7 +18689,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.25-v27.82-file-state-list-manager";
+const CDQ_V21_BUILD = "2026.10.25-v27.83-pc-mobile-invoice-cache";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -23093,7 +23105,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.25-v27.82-file-state-list-manager',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.25-v27.83-pc-mobile-invoice-cache',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -24489,6 +24501,16 @@ html body #filesContainer .file-pending-v2708[role=button]{pointer-events:auto!i
 html body #filesContainer .cdq-opening-spinner-v2781{box-sizing:border-box;flex:0 0 28px!important;width:28px!important;height:28px!important;border-width:3px!important;border-color:#53d5ff30!important;border-top-color:#53d5ff!important;border-right-color:#53d5ff!important;margin:0!important;animation:cdq23-spin .8s linear infinite!important}
 @keyframes cdq-upload-pulse-v2782{0%,100%{opacity:.55;transform:translateY(2px)}50%{opacity:1;transform:translateY(-2px)}}
 @media(prefers-reduced-motion:reduce){html body #filesContainer .file-pending-v2708 svg{animation-duration:2.4s}html body #filesContainer .cdq-opening-spinner-v2781{animation-duration:1.6s!important}}
+</style><style id="cdq-file-state-v2783">/* One status owner on both platforms, no auto-placed extra grid row. */
+html.cdq-desktop-v2676 body #filesContainer .file-row>.cdq-file-state-v2782{grid-column:6!important;grid-row:1!important;justify-self:end!important;margin:0!important;min-width:70px}
+html.cdq-desktop-v2676 body #filesContainer .file-row>.cdq-pending-menu-button-v2731{grid-column:5!important;grid-row:1!important}
+html body #filesContainer .cdq-opening-spinner-v2781{border:0!important;animation:none!important;overflow:visible!important}
+html body #filesContainer .cdq-opening-spinner-v2781 svg{width:28px;height:28px;display:block;overflow:visible;transform:rotate(-90deg);animation:cdq-opening-rotate-v2783 1s linear infinite}
+html body #filesContainer .cdq-opening-spinner-v2781 circle{fill:none;stroke:#53d5ff;stroke-width:3;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:100;animation:cdq-opening-sweep-v2783 1s linear infinite}
+@keyframes cdq-opening-rotate-v2783{to{transform:rotate(270deg)}}
+@keyframes cdq-opening-sweep-v2783{0%{stroke-dashoffset:100}85%,100%{stroke-dashoffset:0}}
+
+html.cdq-desktop-v2676 body #filesContainer .file-row :is(.file-actions,.file-menu-button,.file-more-button){grid-column:5!important;grid-row:1!important}
 </style>
 <script id="cdqInterfaceV2708">(() => {
  'use strict';
@@ -24701,7 +24723,7 @@ function installActivityStatusV2745({host=window,doc=document,clock=host,confirm
   const active=openingRowsV2781.has(String(id));let spinner=row.querySelector('.cdq-opening-spinner-v2781');
   if(!active){spinner?.remove();return;}
   const {host,slot}=cdqFileStateSlotV2782(row);
-  if(!spinner){spinner=document.createElement('span');spinner.className='cdq23-row-spinner cdq-opening-spinner-v2781';spinner.setAttribute('role','status');spinner.setAttribute('aria-label','Ouverture du fichier en cours');host.insertBefore(spinner,slot);}
+  if(!spinner){spinner=document.createElement('span');spinner.className='cdq23-row-spinner cdq-opening-spinner-v2781';spinner.setAttribute('role','status');spinner.setAttribute('aria-label','Ouverture du fichier en cours');spinner.innerHTML='<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="13" pathLength="100"/></svg>';host.insertBefore(spinner,slot);}
  }
  function repaintOpeningV2781(){for(const row of document.querySelectorAll('#filesContainer .file-row'))paintOpeningV2781(row,row.querySelector('.file-checkbox')?.dataset.fileId);}
  window.cdqRowLoading23={paint:paintOpeningV2781,start(id){id=String(id);const token={};let jobs=openingRowsV2781.get(id);if(!jobs)openingRowsV2781.set(id,jobs=new Set());jobs.add(token);repaintOpeningV2781();let ended=false;return ()=>{if(ended)return;ended=true;jobs.delete(token);if(!jobs.size&&openingRowsV2781.get(id)===jobs)openingRowsV2781.delete(id);repaintOpeningV2781();};},finish(){openingRowsV2781.clear();repaintOpeningV2781();}};
@@ -24995,6 +25017,7 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
 <script src="./icon-background-v2697.js"></script>
 <script src="./interaction-timing-v2764.js"></script>
 <script src="./startup-performance-v2751.js"></script>
+<script src="./mobile-selection-v2783.js"></script>
 </body>
 </html>
 

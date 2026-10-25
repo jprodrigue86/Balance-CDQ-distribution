@@ -1,6 +1,6 @@
 {
-  "version": "V56",
-  "build": "2026.10.25-v56-published-module-validation",
+  "version": "V57",
+  "build": "2026.10.25-v57-pc-mobile-invoice-regressions",
   "diagnosticSchema": "cdq-version-diagnostic-v1",
   "testSchema": "cdq-manager-local-tests-v2",
   "releaseChecks": "local-synthetic-only"
