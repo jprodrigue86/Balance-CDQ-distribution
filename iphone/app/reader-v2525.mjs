@@ -1,3 +1,4 @@
+import {reportValueSignatureV2782} from './file-operation-state-v2782.mjs';
 import {createReaderResumeV2767} from './reader-resume-v2767.mjs';
 import {alignResultCanvasesV2767} from './reader-result-alignment-v2767.mjs';
 import {normalizeTechniciansV2767,technicianFieldV2767} from './reader-technicians-v2767.mjs';
@@ -377,13 +378,15 @@ function renderReaderSaveProgressV2758(requestId,initial=false){
 }
 function busy(value){saving=value;$('viewer').inert=value||opening||closed;$('savingMask').hidden=!value;for(const id of ['save','saveClose','doneFields','dismissKeyboard','discard','file'])$(id).disabled=value||!doc||opening||readOnly;}
 function fail(error){busy(false);status(error.message||String(error));$('closeError').textContent=error.message||String(error);closeAfterSave=false;}
+let cleanSignatureV2782=null,mustSaveV2782=false;
+function hasChangesV2782(){return mustSaveV2782||(cleanSignatureV2782===null?dirty:reportValueSignatureV2782(capturePreparedReaderFieldsV2759())!==cleanSignatureV2782);}
 function modified(){if(!readOnly&&!opening){dirty=true;version++;status('');}}
 function resetDocumentFieldsV2730(){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};
   readerEquipmentV2746.reset();readerSaveProgressV2758.reset();readerSaveProgressRequestV2759='';
   tableColumnV2737?.dispose();tableColumnV2737=null;visualRefreshV2730.reset();choices?.cancel();form?.reset();touch?.reset();cdqKeyboardFieldV2550(false);menu(true);
   documentPaintV2730?.dispose();documentPaintV2730=null;
   doc=null;documentTask=null;fieldDefinitions=null;readerCalibration=null;formattedFields.clear();fieldTypography.clear();touchedIdentity.clear();lateIdentity=null;
-  lastAttempt=null;pending=null;dirty=false;version=0;savedVersion=0;closeAfterSave=false;initialAppliedV2730=false;initialUpdatesV2730=[];
+  lastAttempt=null;pending=null;dirty=false;version=0;savedVersion=0;cleanSignatureV2782=null;mustSaveV2782=false;closeAfterSave=false;initialAppliedV2730=false;initialUpdatesV2730=[];
   cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;delete $('viewer').dataset.ready;$('viewer').classList.remove('cdq-form');$('viewer').inert=true;
   $('calibrationHelp')?.setAttribute('hidden','');
 }
@@ -417,9 +420,11 @@ async function resetClosedDocumentV2730(){
 function close(){if(resumeContextV2767&&!opening&&!closed&&doc&&!resumeSavedV2767?.conflict)resumeJournalV2767.close(resumeContextV2767);clearTimeout(resumeTimerV2767);if(closed)return;readerSaveProgressV2758.close();clearReaderTemplatePaintV2753();qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};closedViewportV2730=readerViewportV2730(viewer);closed=true;documentGenerationV2730++;dirty=false;$('viewer').inert=true;$('viewer').style.opacity='0';try{$('closeDialog').close()}catch(_){};tell({type:'CDQ_READER_CLOSE',reusable:hosted});if(hosted)resetPromiseV2730=resetClosedDocumentV2730();else history.back();}
 async function requestClose(){
   if(saving){status('Enregistrement en cours…');return;}
-  if(decimalGuard&&!decimalGuard.validate())return;
+  const closeDocV2782=doc,closeGenerationV2782=documentGenerationV2730;
   commitActive();await new Promise(r=>setTimeout(r,120));
-  if(!dirty||readOnly){close();return;}
+  if(doc!==closeDocV2782||documentGenerationV2730!==closeGenerationV2782||closed||opening||saving)return;
+  if(readOnly||!hasChangesV2782()){close();return;}
+  if(decimalGuard&&!decimalGuard.validate())return;
   $('closeError').textContent='';if(!$('closeDialog').open)$('closeDialog').showModal();
   $('keepEditing').focus();
 }
@@ -489,7 +494,7 @@ async function output(){
 }
 async function finishDocument(){
   if(saving||!doc)return;
-  if(readOnly||!dirty){close();return;}
+  if(readOnly||(!hosted||!fileId)&&!dirty){close();return;}
   // Close after the local durable write is acknowledged. Drive uploads continue
   // independently, and a failed local write keeps the answers in this reader.
   closeAfterSave=true;
@@ -497,6 +502,13 @@ async function finishDocument(){
 }
 async function save(external=false){
   if(!doc||opening||closed||saving||readOnly&&!external)return;
+  const preflightDocV2782=doc,preflightGenerationV2782=documentGenerationV2730;
+  commitActive();
+  if(!external&&hosted&&fileId&&!hasChangesV2782()){
+    await new Promise(r=>setTimeout(r,120));
+    if(doc!==preflightDocV2782||documentGenerationV2730!==preflightGenerationV2782||closed||opening||saving||readOnly)return;
+    if(!hasChangesV2782()){dirty=false;status('Aucune modification à enregistrer.');if(closeAfterSave){closeAfterSave=false;close();}return;}
+  }
   if(!readOnly&&decimalGuard&&!decimalGuard.validateAll())return;
   commitActive();busy(true);$('closeError').textContent='';status(external?'Préparation du téléchargement…':'Préparation de l’enregistrement…');
   const feedbackDocV2766=doc,feedbackGenerationV2766=documentGenerationV2730;
@@ -511,7 +523,7 @@ async function save(external=false){
     const {blob,pdfSaveInfoV2753}=prepared,snapshot=version;
     if(external||!hosted||!fileId){const receipt=await downloadPdf(blob,name);busy(false);status(receipt);if(closeAfterSave){closeAfterSave=false;close();}return;}
     const requestId=lastAttempt?.version===snapshot?lastAttempt.id:'save-'+crypto.randomUUID();
-    lastAttempt={id:requestId,version:snapshot,...prepared};
+    lastAttempt={id:requestId,version:snapshot,...prepared,semanticSignatureV2782:reportValueSignatureV2782(prepared.reportSnapshotV2754||capturePreparedReaderFieldsV2759())};
     pending={id:requestId,version:snapshot};
     readerSaveProgressV2758.begin(requestId,snapshot,reportEngineV2754);
     pending.timer=setTimeout(()=>{if(pending?.id!==requestId)return;pending=null;fail(new Error('La sauvegarde n’a pas encore été confirmée. Le PDF reste ouvert; réessayez ou téléchargez vos réponses.'));},90000);
@@ -633,6 +645,7 @@ async function open(data){
         await visualRefreshV2730.flush();checkLease();
         if(canvasCandidateV2730)canvasCandidateV2730.viewport=readerViewportV2730(viewer);
         if(reuse&&!canRetainReaderCanvasV2730(canvasCandidateV2730,{epoch:workEpoch,document:doc,pageView:viewer.getPageView(0),controls:$('viewer').querySelectorAll('input,textarea,select,button').length,viewport:retained.viewport}))throw Error('Le rendu du rapport a changé pendant son ouverture.');
+        mustSaveV2782=initialPreparedDraftV2730||!!resumeSavedV2767?.dirty;cleanSignatureV2782=reportValueSignatureV2782(capturePreparedReaderFieldsV2759());
         opening=false;busy(false);$('viewer').style.opacity='';$('viewer').dataset.ready='true';status('');
         cdqScheduleWidthFitV2753();applyLateIdentity();
         if(resumeSavedV2767?.viewport){const v=resumeSavedV2767.viewport;if(Number.isFinite(v.scale)&&v.scale>=.35&&v.scale<=4)viewer.currentScale=v.scale;viewer.currentPageNumber=Math.max(1,Math.min(viewer.pagesCount,Number(v.page)||1));$('container').scrollLeft=Math.max(0,Number(v.left)||0);$('container').scrollTop=Math.max(0,Number(v.top)||0);}
@@ -743,7 +756,7 @@ window.addEventListener('message',async e=>{
     if(!d.ok){fail(new Error(d.error||'Enregistrement impossible. Le PDF reste ouvert.'));return;}
     if(discarding){busy(false);close();return;}
     const progressTrackedV2758=readerSaveProgressV2758.acknowledge(d.requestId,snapshot),savedGenerationV2758=documentGenerationV2730;
-    lastAttempt=null;savedVersion=snapshot;dirty=version!==savedVersion;busy(false);rememberReaderV2767();await scripting.dispatchDidSave();
+    cleanSignatureV2782=lastAttempt?.semanticSignatureV2782??cleanSignatureV2782;mustSaveV2782=false;lastAttempt=null;savedVersion=snapshot;dirty=version!==savedVersion;busy(false);rememberReaderV2767();await scripting.dispatchDidSave();
     if(closed||savedGenerationV2758!==documentGenerationV2730)return;
     if(d.reportEngineV2754)reportEngineV2754=reportContextV2754(d.reportEngineV2754)||reportEngineV2754;
     if(progressTrackedV2758)renderReaderSaveProgressV2758(d.requestId,true);else status(d.queued?'Conservé sur cet appareil — synchronisation en attente.':'✓ Enregistré dans le dossier client');

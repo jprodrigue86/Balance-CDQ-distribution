@@ -83,9 +83,9 @@ function diagnosticVersionOrderV43(a,b){
 async function diagnosticPublishedVersionsV43(){
   const get=async(path,project)=>{try{return project(await diagnosticPublicJsonV43(CDQ_DIAGNOSTIC_ROOT_V43+path));}catch(_){return {status:'unavailable'};}};
   const base=await Promise.all([
-    get('downloads/android-release-update.json',d=>({status:'read',version:diagnosticReleaseVersionV43(d.versionName)||null,versionCode:Number(d.versionCode)||null})),
+    get('android-release-update.json',d=>({status:'read',version:diagnosticReleaseVersionV43(d.versionName)||null,versionCode:Number(d.versionCode)||null})),
     get('iphone/app/release.json',d=>({status:'read',version:diagnosticReleaseVersionV43(d.version)||null,androidSourceBuild:diagnosticVersionLabelV43(d.androidSourceBuild)||null})),
-    get('version.json',d=>({status:'read',version:diagnosticVersionLabelV43(d.version)||null,backendReference:diagnosticVersionLabelV43(d.backend_version)||null,selectorReference:diagnosticVersionLabelV43(d.selector_version)||null})),
+    get('pc/release.json',d=>({status:'read',version:diagnosticVersionLabelV43(d.version)||null,backendReference:diagnosticVersionLabelV43(d.backend_version)||null,selectorReference:diagnosticVersionLabelV43(d.selector_version)||null})),
     get('bundles/balance-cdq/latest/manifest.json',d=>({status:'read',version:diagnosticReleaseVersionV43(d.version)||null,build:diagnosticVersionLabelV43(d.build)||null})),
     get('apps-script-manager/version.json',d=>({status:'read',version:/^V\d+$/.test(d.version)?d.version:null}))
   ]);
@@ -108,7 +108,7 @@ function diagnosticComparisonTextV43(comparison){
 function diagnosticRowsV43(r){
   return [
     ['Script Manager',r.managerVersion],
-    ['Tests locaux CDQ Manager',r.localTests?.status==='passed'?'86 tests validés (local uniquement)':'Non confirmés — '+(r.localTests?.reason||'en attente')],
+    ['Tests locaux CDQ Manager',r.localTests?.status==='passed'?'105 tests validés (local uniquement)':'Non confirmés — '+(r.localTests?.reason||'en attente')],
     ['Prochaine étape automatique',r.automation?.nextActionText||'Diagnostic en cours'],
     ['Source serveur Google',r.source?.backendBuild||'Version non détectée'],
     ['Source interface Google',r.source?.selectorBuild||'Version non détectée'],
@@ -188,13 +188,13 @@ async function startVersionDiagnosticV43({id,files,deployments,deploymentsReadOk
   try{
     if(typeof window!=='undefined'){
       // Ensure a quick automatic login cannot race with the deferred module tag.
-      if(!window.CDQLocalAutomationV55?.run)await import('./qa-automation-v55.mjs?v=55');
-      if(window.CDQLocalAutomationV55?.run)
-        localProof=await window.CDQLocalAutomationV55.run({reason:'private-diagnostic'});
+      if(!window.CDQLocalAutomationV56?.run)await import('./qa-automation-v56.mjs?v=56');
+      if(window.CDQLocalAutomationV56?.run)
+        localProof=await window.CDQLocalAutomationV56.run({reason:'private-diagnostic'});
     }
   }catch(_){}
   if(!current())return;
-  r.localTests=diagnosticLocalTestsV55(localProof);
+  r.localTests=diagnosticLocalTestsV56(localProof);
   r.completedAt=new Date().toISOString();r.automation=diagnosticAutomationV53(r);CDQ_DIAGNOSTIC_V43.report=r;diagnosticRenderV43(r);
   if(!S.deployBusy&&id===CDQ_PRODUCTION_SCRIPT_ID){
     S.productionBuild=r.production.content?.backendBuild||r.production.content?.selectorBuild||'';
@@ -299,21 +299,21 @@ function initializeVersionDiagnosticV43(){
 if(typeof document!=='undefined')initializeVersionDiagnosticV43();
 
 
-// Compact V55 test receipt for the existing optional private Drive diagnostic.
+// Compact V56 test receipt for the existing optional private Drive diagnostic.
 // It never certifies Android, authentication, real PDFs or publication.
-function diagnosticLocalTestsV55(value){
+function diagnosticLocalTestsV56(value){
   const checked=Number(value?.checkedAt),fresh=Number.isFinite(checked)&&checked>0&&
     checked<=Date.now()&&Date.now()-checked<=12*60*60*1000;
-  const passed=value?.schema==='cdq-manager-automation-v2'&&value?.version==='V55'&&
+  const passed=value?.schema==='cdq-manager-automation-v2'&&value?.version==='V56'&&
     value?.status==='passed'&&fresh&&/^[a-f0-9]{64}$/.test(String(value?.fingerprint||''))&&
-    value?.report?.total===86&&value?.report?.passed===86&&
+    value?.report?.total===105&&value?.report?.passed===105&&
     value?.report?.failed===0&&value?.negativeControls?.rejected===6&&
     value?.appValidation===false&&value?.authenticatedDriveValidation===false&&
     value?.androidNativeValidation===false&&value?.publicationApproved===false;
-  return {status:passed?'passed':'unverified',source:'manager-shared-js-v55',
+  return {status:passed?'passed':'unverified',source:'manager-shared-js-v56',
     checkedAt:passed?new Date(checked).toISOString():null,
     fingerprint:passed?value.fingerprint:null,
-    cases:passed?86:0,negativeControls:passed?6:0,
+    cases:passed?105:0,negativeControls:passed?6:0,
     reason:passed?'LOCAL_ONLY':String(value?.reason||'NOT_OBSERVED').slice(0,120),
     driveE2E:false,nativeAndroid:false,publicationReady:false};
 }

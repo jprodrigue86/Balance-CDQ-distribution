@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "27.81",
-  "release": "a0705015e42607230602acdd8fa658998ef7765d7be711554e055c71f566b3ae",
+  "version": "27.82",
+  "release": "34f7a860cac437b66118f58085517e71bc0cce486d3cb9807488d56cb6a4ab47",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.25-v27.81-drive-send-fluidity",
-  "androidSelectorSha256": "adbfc9b626b50b25aa4db5057d8a78f3ea35949b5a0d4268a33d9a6dc18faea6",
-  "generatedFrom": "scripts/build-iphone-v2781.mjs",
-  "files": 904
+  "androidSourceBuild": "2026.10.25-v27.82-file-state-list-manager",
+  "androidSelectorSha256": "13ecbbcb62ccbda8a788209cd7b8759ca7c3c1af42b52cf7e1397d3ab920c523",
+  "generatedFrom": "scripts/build-iphone-v2782.mjs",
+  "files": 905
 }

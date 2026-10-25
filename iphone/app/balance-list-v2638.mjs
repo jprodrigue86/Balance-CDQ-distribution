@@ -1,3 +1,4 @@
+import {balanceListMessagesV2782} from './file-operation-state-v2782.mjs';
 import {equipmentEditSignatureV2746} from './balance-list-live-v2746.mjs';
 import {replaceBalanceSourceV2751,balanceSourceRowsV2751,balanceDisplayRowsV2751,balanceSignatureValuesV2751} from './balance-list-index-v2751.mjs';
 import {calibrationIdentity,calibrationRpc} from './calibration-feedback-v2566.mjs';
@@ -222,9 +223,9 @@ function queuePreview(id){
  job.promise=Promise.resolve().then(async()=>{
   const valid=()=>version===epoch&&account===calibrationIdentity().email&&canRead()&&projected(id).projectionStamp===stamp;
   if(!valid())return null;
-  const warnings=view.localPending?[view.unsaved?'Modifications locales non enregistrées dans le rapport.':'Modifications locales; synchronisation Drive en attente.']:[];let bytes;
-  if(window.cdqPdfWorkV2729?.request){bytes=(await window.cdqPdfWorkV2729.request('list',{rows:view.rows,name:root(id)?.nom||root(id)?.name||'',author:'',digest:'local-'+stamp,warnings},{valid})).bytes;}
-  else{await window.cdqPreparePdfLibV2684();if(!valid())return null;bytes=await renderBalanceListV2728(view.rows,root(id)?.nom||root(id)?.name||'','',warnings,window.PDFLib);}
+  const {warnings,notes}=balanceListMessagesV2782(view);let bytes;
+  if(window.cdqPdfWorkV2729?.request){bytes=(await window.cdqPdfWorkV2729.request('list',{rows:view.rows,name:root(id)?.nom||root(id)?.name||'',author:'',digest:'local-'+stamp,warnings,notes},{valid})).bytes;}
+  else{await window.cdqPreparePdfLibV2684();if(!valid())return null;bytes=await renderBalanceListV2728(view.rows,root(id)?.nom||root(id)?.name||'','',warnings,window.PDFLib,notes);}
   if(!valid())return null;const record={owner:account,clientId:String(id),sourceListId:String(view.fileId),blob:new Blob([bytes],{type:'application/pdf'}),name:view.localPending?'Liste de balance — modifications locales.pdf':'Liste de balance.pdf',localUpdatedAt:view.localUpdatedAt};previews.set(k,{stamp,record});return record;
  }).catch(()=>null).finally(()=>{if(previewJobs.get(k)===job)previewJobs.delete(k);if(version===epoch&&job.dirty)queuePreview(id);});previewJobs.set(k,job);return job.promise;
 }

@@ -1,6 +1,6 @@
 {
-  "version": "V55",
-  "build": "2026.10.24-v55-automatic-local-validation",
+  "version": "V56",
+  "build": "2026.10.25-v56-published-module-validation",
   "diagnosticSchema": "cdq-version-diagnostic-v1",
   "testSchema": "cdq-manager-local-tests-v2",
   "releaseChecks": "local-synthetic-only"
