@@ -1,5 +1,7 @@
 import {applyCalibrationMethods} from './calibration-methods-v2566.mjs';
 import {applyCalibrationModelsV2668} from './calibration-models-v2668.mjs';
+import {applyCalibrationMethodsV2784} from './calibration-methods-v2784.mjs';
+import {applyCalibrationInventoryV2784} from './calibration-inventory-v2784.mjs';
 const norm=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 // Group spelling variants without changing device keys, methods or file links.
 export function calibrationManufacturerGroup(value){
@@ -9,7 +11,8 @@ export function calibrationManufacturerGroup(value){
   if(key==='ad'||key==='and')return 'AND';
   return String(value??'').trim();
 }
-const slug=(manufacturer,model)=>norm(manufacturer).replace(/\s+/g,'-')+'::'+norm(model).replace(/\s+/g,'-');
+const modelNorm=value=>norm(String(value??'').replace(/\+/g,' plus-sign '));
+const slug=(manufacturer,model)=>norm(manufacturer).replace(/\s+/g,'-')+'::'+modelNorm(model).replace(/\s+/g,'-');
 const detected=(category,manufacturer,model,aliases=[])=>({key:slug(manufacturer,model),category,manufacturer,model,aliases,verified:false,status:'detected',method:null});
 
 const devices=[
@@ -70,7 +73,7 @@ const devices=[
   detected('bench','Rice Lake','IQ-710-2A')
 ];
 
-applyCalibrationMethods(devices);applyCalibrationModelsV2668(devices);
+applyCalibrationInventoryV2784(devices);applyCalibrationMethods(devices);applyCalibrationModelsV2668(devices);applyCalibrationMethodsV2784(devices);
 
 const fileIndex=Object.freeze({
   '13gj7Gm6CH3Rz7cOpH03IkF5LCvyEk-wQMTtSX_4lVmM':slug('Adam Equipment','CPW Plus-35'),
@@ -135,9 +138,9 @@ function sameManufacturer(a,b){
   return x===y;
 }
 function sameModel(device,value){
-  const wanted=norm(value).replace(/\s+/g,'');
+  const wanted=modelNorm(value).replace(/\s+/g,'');
   if(!wanted)return false;
-  return [device.model,...(device.aliases||[])].some(v=>norm(v).replace(/\s+/g,'')===wanted);
+  return [device.model,...(device.aliases||[])].some(v=>modelNorm(v).replace(/\s+/g,'')===wanted);
 }
 function findCalibration(manufacturer,model){
   const matches=devices.filter(d=>sameModel(d,model)&&(!norm(manufacturer)||sameManufacturer(d.manufacturer,manufacturer)));
@@ -151,14 +154,18 @@ function forFile(fileId){return byKey(liveFileIndex.get(String(fileId||''))||fil
 function addClientDevices(items){for(const item of items||[]){
   if(!item.manufacturer||!item.model)continue;
   let device=findCalibration(item.manufacturer,item.model);
-  if(!device){device=detected(item.category==='bench'?'bench':'indicator',String(item.manufacturer).slice(0,120),String(item.model).slice(0,120));devices.push(device);applyCalibrationMethods([device]);applyCalibrationModelsV2668([device]);}
+  if(!device){device=detected(item.category==='bench'?'bench':'indicator',String(item.manufacturer).slice(0,120),String(item.model).slice(0,120));devices.push(device);applyCalibrationMethods([device]);applyCalibrationModelsV2668([device]);applyCalibrationMethodsV2784([device]);}
   if(item.fileId)liveFileIndex.set(String(item.fileId),device.key);
 }}
 function categories(){return [
   {id:'indicator',label:'Indicateur',count:devices.filter(d=>d.category==='indicator').length},
-  {id:'bench',label:'Balance de table',count:devices.filter(d=>d.category==='bench').length}
+  {id:'bench',label:'Balances',count:devices.filter(d=>d.category==='bench').length}
 ];}
 function manufacturers(category){
   return [...new Set(devices.filter(d=>d.category===category).map(d=>calibrationManufacturerGroup(d.manufacturer)))].sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'}));
 }
 export {devices,fileIndex,norm,slug,findCalibration,byKey,forFile,categories,manufacturers,addClientDevices,resetClientDevices};
+
+// Never borrow a related model's procedure for an unrecognized reference.
+export function findVerifiedCalibration(manufacturer,model){const d=findCalibration(manufacturer,model);return d?.verified&&d.method?d:null;}
+export function pendingCalibration(manufacturer,model,category='indicator'){return detected(category==='bench'?'bench':'indicator',String(manufacturer||'').trim().slice(0,120),String(model||'').trim().slice(0,120));}

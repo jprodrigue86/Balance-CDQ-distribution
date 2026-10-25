@@ -1,4 +1,5 @@
 import {preparePcReaderCanvasBarrierV2754,installPcReaderCanvasBarrierV2754} from './reader-canvas-barrier-v2754.mjs';
+import {restoredReaderNeedsSaveV2784} from './file-observation-v2784.mjs';
 import {reportValueSignatureV2782} from './file-operation-state-v2782.mjs';
 import {createReaderResumeV2767} from './reader-resume-v2767.mjs';
 import {alignResultCanvasesV2767} from './reader-result-alignment-v2767.mjs';
@@ -526,13 +527,14 @@ async function save(external=false){
     const {blob,pdfSaveInfoV2753}=prepared,snapshot=version;
     if(external||!hosted||!fileId){const receipt=await downloadPdf(blob,name);busy(false);status(receipt);if(closeAfterSave){closeAfterSave=false;close();}return;}
     const requestId=lastAttempt?.version===snapshot?lastAttempt.id:'save-'+crypto.randomUUID();
-    lastAttempt={id:requestId,version:snapshot,...prepared,semanticSignatureV2782:reportValueSignatureV2782(prepared.reportSnapshotV2754||capturePreparedReaderFieldsV2759())};
+    let calibrationDevicesV2784=null;try{calibrationDevicesV2784=reusable?lastAttempt.calibrationDevicesV2784:readerCalibration?.snapshot()||null;}catch{}
+    lastAttempt={id:requestId,version:snapshot,...prepared,calibrationDevicesV2784,semanticSignatureV2782:reportValueSignatureV2782(prepared.reportSnapshotV2754||capturePreparedReaderFieldsV2759())};
     pending={id:requestId,version:snapshot};
     readerSaveProgressV2758.begin(requestId,snapshot,reportEngineV2754);
     pending.timer=setTimeout(()=>{if(pending?.id!==requestId)return;pending=null;fail(new Error('La sauvegarde n’a pas encore été confirmée. Le PDF reste ouvert; réessayez ou téléchargez vos réponses.'));},90000);
     status('Conservation sur cet appareil…');
-    if(dataOnly)tell({type:'CDQ_READER_SAVE_SNAPSHOT_V2754',reportSnapshotV2754:prepared.reportSnapshotV2754,preparedPdfV2759:prepared.preparedPdfV2759,name,requestId});
-    else tell({type:'CDQ_READER_SAVE',blob,name,requestId,readerPreparedVersion:2730,pdfSaveInfoV2753});
+    if(dataOnly)tell({type:'CDQ_READER_SAVE_SNAPSHOT_V2754',reportSnapshotV2754:prepared.reportSnapshotV2754,preparedPdfV2759:prepared.preparedPdfV2759,name,requestId,calibrationDevicesV2784});
+    else tell({type:'CDQ_READER_SAVE',blob,name,requestId,readerPreparedVersion:2730,pdfSaveInfoV2753,calibrationDevicesV2784});
   }catch(e){fail(e);}
 }
 async function open(data){
@@ -650,7 +652,7 @@ async function open(data){
         await visualRefreshV2730.flush();checkLease();
         if(canvasCandidateV2730)canvasCandidateV2730.viewport=readerViewportV2730(viewer);
         if(reuse&&!canRetainReaderCanvasV2730(canvasCandidateV2730,{epoch:workEpoch,document:doc,pageView:viewer.getPageView(0),controls:$('viewer').querySelectorAll('input,textarea,select,button').length,viewport:retained.viewport}))throw Error('Le rendu du rapport a changé pendant son ouverture.');
-        mustSaveV2782=initialPreparedDraftV2730||!!resumeSavedV2767?.dirty;cleanSignatureV2782=reportValueSignatureV2782(capturePreparedReaderFieldsV2759());userEditedV2783=false;dirty=mustSaveV2782;
+        mustSaveV2782=initialPreparedDraftV2730||restoredReaderNeedsSaveV2784(resumeSavedV2767);cleanSignatureV2782=reportValueSignatureV2782(capturePreparedReaderFieldsV2759());userEditedV2783=false;dirty=mustSaveV2782;
         opening=false;busy(false);$('viewer').style.opacity='';$('viewer').dataset.ready='true';status('');
         cdqScheduleWidthFitV2753();applyLateIdentity();
         if(resumeSavedV2767?.viewport){const v=resumeSavedV2767.viewport;if(Number.isFinite(v.scale)&&v.scale>=.35&&v.scale<=4)viewer.currentScale=v.scale;viewer.currentPageNumber=Math.max(1,Math.min(viewer.pagesCount,Number(v.page)||1));$('container').scrollLeft=Math.max(0,Number(v.left)||0);$('container').scrollTop=Math.max(0,Number(v.top)||0);}

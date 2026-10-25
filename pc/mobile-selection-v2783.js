@@ -45,9 +45,18 @@
   else window.cdqCopyV2522?.open(items,action);
  }
  let navActions;
+ const selectionGridV2784=new WeakMap();
  function refresh(){
   if(!mobile())return;
   const nav=document.querySelector('.bottom-nav');if(!nav)return;
+  const selecting=document.body.classList.contains('selection-active');
+  if(selecting){
+   if(!selectionGridV2784.has(nav))selectionGridV2784.set(nav,['grid-template-columns','grid-auto-columns'].map(name=>[name,nav.style.getPropertyValue(name),nav.style.getPropertyPriority(name)]));
+   nav.style.setProperty('grid-template-columns','minmax(0,1fr)','important');nav.style.setProperty('grid-auto-columns','auto','important');nav.scrollLeft=0;
+  }else if(selectionGridV2784.has(nav)){
+   for(const [name,value,priority] of selectionGridV2784.get(nav)){if(value)nav.style.setProperty(name,value,priority);else nav.style.removeProperty(name);}
+   selectionGridV2784.delete(nav);
+  }
   if(!navActions||navActions.parentElement!==nav){
    navActions=document.createElement('div');navActions.className='cdq-selection-actions-v2783';navActions.setAttribute('role','group');navActions.setAttribute('aria-label','Actions de la sélection');
    for(const [action,label]of [['copy','Copier'],['duplicate','Dupliquer'],['move','Déplacer'],['rename','Renommer'],['delete','Supprimer'],['cancel','Annuler']]){
