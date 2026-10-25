@@ -179,9 +179,9 @@ if(typeof window!=='undefined'&&typeof document!=='undefined'){
     last=receipt;
     const tests=receipt?.report;
     write(status,reused
-      ?'105 tests locaux réutilisés : fichiers, environnement et version identiques.'
+      ?tests.total+' tests locaux réutilisés : fichiers, environnement et version identiques.'
       :tests?.failed===0
-        ?'105 tests locaux réussis — aucune donnée client utilisée.'
+        ?tests.total+' tests locaux réussis — aucune donnée client utilisée.'
         :'Tests locaux incomplets ou en échec; aucune validation de publication.');
     write(progress,'Empreinte '+String(receipt?.fingerprint||'').slice(0,12)+
       ' • '+(reused?'résultat réutilisé':'contrôles exécutés')+' • Android/Drive réels non testés');
