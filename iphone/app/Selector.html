@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="27.88" data-cdq-iphone-release="a8a94603b0aa72edac95be14768511e173a1f3f799b7f22d9a1039fcdddd74d8">
+<html data-cdq-iphone-version="27.89" data-cdq-iphone-release="dc72e48349140f0c7c4e63bf42fa1dc3949cc222f5c5a760b95650a99b741eaf">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdq-durable-resume-v2751">
@@ -906,7 +906,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.26-v27.88-complete">
+<meta name="cdq-package-build" content="2026.10.27-v27.89-fast-operations">
 
 
 <script id="cdqBridgeV23">
@@ -960,7 +960,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.26-v27.88-complete'
+    build:'2026.10.27-v27.89-fast-operations'
   });
 }
 
@@ -973,7 +973,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.26-v27.88-complete'
+        build:'2026.10.27-v27.89-fast-operations'
       });
     }
   } catch(e) {}
@@ -11792,7 +11792,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.26-v27.88-complete";
+  const CDQ_BUILD = "2026.10.27-v27.89-fast-operations";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14152,7 +14152,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.26-v27.88-complete";
+const CDQ_V19_BUILD = "2026.10.27-v27.89-fast-operations";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -17852,7 +17852,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.26-v27.88-complete";
+const CDQ_V20_BUILD = "2026.10.27-v27.89-fast-operations";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -18699,7 +18699,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.26-v27.88-complete";
+const CDQ_V21_BUILD = "2026.10.27-v27.89-fast-operations";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -23115,7 +23115,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.26-v27.88-complete',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.27-v27.89-fast-operations',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -24925,7 +24925,9 @@ function installFileDeletionV2746(){
   options.close?.();
   if(preparingDeletesV2782.has(key))return preparingDeletesV2782.get(key);
   const prior=!options.requestId?queued(email).find(job=>job.clientId===clientId&&deletionSelectionKeyV2782(email,clientId,job.selection)===key):null;
+  const finishPreparationV2789=window.cdqDriveBackgroundV2746?.begin?.('delete-preparation:'+key,email);
   const flight=removeImplV2782(selection,{...options,clientId,close:undefined,...(prior?{requestId:prior.requestId}:{})});
+  flight.finally(()=>finishPreparationV2789?.()).catch(()=>{});
   preparingDeletesV2782.set(key,flight);
   flight.finally(()=>{if(preparingDeletesV2782.get(key)===flight)preparingDeletesV2782.delete(key);}).catch(()=>{});
   return flight;

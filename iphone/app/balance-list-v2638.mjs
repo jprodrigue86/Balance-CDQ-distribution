@@ -143,8 +143,12 @@ function engineDataSavedV2754(event){
   if(state){const rows=balanceDisplayRowsV2751((state.rows||[]).filter(item=>item.id!==source&&item.reportId!==d.reportId).concat(pending.get(d.reportId)||row));states.set(k,{...state,sourceIndexV2751:engineListsV2754.has(k)?null:state.sourceIndexV2751,rows,count:rows.length,enginePendingRowsV2754:[...pending.values()]});}persistClient(id);paintRows();
   window.dispatchEvent(new CustomEvent('cdq:balance-list-rows-v2730',{detail:{clientId:id,engine:2754,local:true}}));
  }
- // Report status already drives server publication. Repeated data receipts
- // update the local row; the one Drive confirmation schedules list refresh.
+ // Refresh once when the data is durably accepted; no need to wait for
+ // rendering the report PDF to display the server's latest list rows.
+ if(d.dataSaved&&d.saveId&&acceptedBefore!==String(d.saveId)){
+  clearFailure(k);changes.set(k,(changes.get(k)||0)+1);persistClient(id);scheduleClient(id,0);
+ }
+ publishBackground();
 }
 window.addEventListener('cdq:report-data-saved-v2754',engineDataSavedV2754);
 const confirmedReportRevisionsV2767=new Map();
@@ -191,7 +195,7 @@ function persistClient(id){
  try{localStorage.setItem(journalKey(id),JSON.stringify({version:1,owner:calibrationIdentity().email,clientId:String(id),changes:changes.get(k)||0,satisfied:satisfied.get(k)||0,pending:[...(saveWaits.get(k)||[])],reviews:[...(reviews.get(k)||[])],acknowledgements:[...(reviewReceipts.get(k)||[])].filter(([token])=>reviews.get(k)?.has(token)),enginePendingRowsV2754:[...(enginePendingRowsV2754.get(k)||new Map()).values()],engineDataAcksV2754:[...(engineDataAcksV2754.get(k)||[])],engineRetiredRequestsV2754:[...(engineRetiredRequestsV2754.get(k)||[])],ready}));}catch{}
  publishBackground();
 }
-function publishBackground(){const current=calibrationIdentity().email,prefix=current+'|',keys=new Set([...saveWaits.keys(),...changes.keys(),...reviews.keys(),...jobs.keys(),...engineListsV2754.keys()]);let count=0;for(const k of keys)if(k.startsWith(prefix)&&(jobs.has(k)||(saveWaits.get(k)?.size||0)>0||needsUpdate(k)||engineV2754()&&['pending','running'].includes(engineListsV2754.get(k)?.pdf?.status)))count++;window.cdqDriveBackgroundV2746?.setPending?.('balance-list',count,current);}
+function publishBackground(){const current=calibrationIdentity().email,prefix=current+'|',keys=new Set([...saveWaits.keys(),...changes.keys(),...reviews.keys(),...jobs.keys(),...clientTimers.keys(),...engineImportsV2754.keys(),...engineListFlightsV2754.keys(),...engineListsV2754.keys()]);let count=0;for(const k of keys)if(k.startsWith(prefix)&&(jobs.has(k)||clientTimers.has(k)||engineImportsV2754.has(k)||engineListFlightsV2754.has(k)||(saveWaits.get(k)?.size||0)>0||needsUpdate(k)||engineV2754()&&['pending','running'].includes(engineListsV2754.get(k)?.pdf?.status)))count++;window.cdqDriveBackgroundV2746?.setPending?.('balance-list',count,current);}
 const waiting=id=>{restoreClient(id);return (saveWaits.get(key(id))?.size||0)>0;};
 const needsUpdate=k=>(changes.get(k)||0)>(satisfied.get(k)||0)||(reviews.get(k)?.size||0)>0;
 async function reconcileWaits(id){
@@ -242,7 +246,7 @@ function scheduleClient(id,delay=150){
   clientTimerDeadlinesV2770.set(k,deadline);
   // Authoritative list writes begin after the source's Drive ACK, even while
   // another report/task is active. The PDF worker already prioritizes input.
-  const version=epoch;clientTimers.set(k,setTimeout(()=>{clientTimers.delete(k);clientTimerDeadlinesV2770.delete(k);if(version!==epoch)return;pausedClients.delete(k);refresh(false,true,id).catch(()=>{});},delay));
+  const version=epoch;clientTimers.set(k,setTimeout(()=>{clientTimers.delete(k);clientTimerDeadlinesV2770.delete(k);if(version!==epoch)return;pausedClients.delete(k);refresh(false,true,id).catch(()=>{});},delay));publishBackground();
 }
 function temporaryFailure(error){
  const message=norm(error?.message||error);
@@ -357,6 +361,7 @@ async function open(){
      try{const engine=await refreshEngineListV2754(id,{hydrate:true});
        if(id!==client())return;
        if(engine?.reconciliationRequired||engine?.enginePdfV2754?.status==='conflict'){const code=String(engine?.enginePdfV2754?.errorCode||'CONFLICT_EXTERNAL_DRIVE');paint(id,'La liste a une erreur de publication ('+code+'). Choisissez « Actualiser la liste ».',true);return;}
+       if(engine&&projected(id).complete){const preview=await localPreview(id);if(id!==client())return;if(preview&&await window.cdqOpenBalanceListPreviewV2746?.(preview))return true;}
        if(engine?.enginePdfV2754?.status==='confirmed'&&engine.enginePdfV2754.fileId)return window.cdqOpenPdfV2520?.(engine.enginePdfV2754.fileId,{nom:'Liste de balance.pdf'});
        if(engine?.enginePdfV2754&&['pending','running'].includes(engine.enginePdfV2754.status)){cdqListProgressStepV2778(id,93,'Publication de la liste en cours…');paint(id,'Première liste en préparation sur Drive.');return;}
      }catch(error){paint(id,'Liste de balance — '+String(error?.message||error),true);return;}
@@ -367,6 +372,10 @@ async function open(){
   paint(id,r.status==='pending'||r.status==='working'?'Première liste en préparation. Les autres fichiers restent accessibles.':'Aucune liste disponible. Choisissez « Actualiser la liste ».');
 }
 async function refresh(force=false,verify=false,id=client()){
+ const finish=canWrite()&&queueOwner()?window.cdqDriveBackgroundV2746?.begin?.('list-refresh:'+id,calibrationIdentity().email):null;
+ try{return await refreshImplV2789(force,verify,id);}finally{publishBackground();finish?.();}
+}
+async function refreshImplV2789(force=false,verify=false,id=client()){
   if(!id||!canWrite()||!queueOwner()||navigator.onLine===false)return {status:'unavailable'};
   if(owner!==calibrationIdentity().email)reset();
   restoreClient(id);
@@ -515,7 +524,7 @@ function scheduleScan(id){
 }
 function inspect(){
   if(owner!==calibrationIdentity().email)reset();
-  const id=client();if(id!==visibleClient){visibleClient=id;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();}
+  const id=client(),entered=id!==visibleClient;if(entered){visibleClient=id;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();}
   paintRows();if(!canWrite()||document.hidden)return;
   const tree=root(id);if(!id||!tree)return;
    if(!listFile(id)&&!states.get(key(id))?.enginePdfV2754?.fileId)cdqListProgressStepV2778(id,4,'Vérification du dossier client…');
@@ -526,7 +535,10 @@ function inspect(){
   const receipt=remembered(id);
   // Verify an existing list once before remembering this schema. Identical
   // contents produce no write; subsequent openings reuse the confirmed receipt.
-  if(needsPlacement(id))scheduleClient(id);
+  // One fresh authority check on each client entry also sees changes made
+  // on another device, even when the cached folder fingerprint is unchanged.
+  if(entered){const k=key(id),entry=engineListsV2754.get(k);if(entry)entry.polls=0;changes.set(k,(changes.get(k)||0)+1);persistClient(id);scheduleClient(id,0);}
+  else if(needsPlacement(id))scheduleClient(id);
   else if(!receipt&&listFile(id)){if(typeof updateBalanceListFastV2729==='function')scheduleClient(id);else remember(id,fingerprint);}
   else if(receipt?.fingerprint!==fingerprint)scheduleClient(id);
   if(needsUpdate(key(id)))scheduleClient(id);
@@ -538,7 +550,7 @@ function schedule(){if(timer)return;timer=setTimeout(()=>{timer=0;inspect();},15
 // start. Consumers can show these rows while a separate cloud update resumes.
 function snapshot(id=client()){if(!id||!canRead())return null;restoreClient(id);const k=key(id),ready=states.get(k),tree=root(id),view=projected(id);return ready?.status==='ready'||view.localPending?{...view,pending:view.localPending||waiting(id)||needsUpdate(k)||jobs.has(k)||!!tree&&remembered(id)?.fingerprint!==clientFingerprint(id)}:null;}
 async function flushBackground(){if(!canWrite()||!queueOwner())return [];const current=calibrationIdentity().email,prefix='cdqBalanceListJournalV2730:'+current+'|';try{for(let i=0;i<localStorage.length;i++){const name=localStorage.key(i);if(name?.startsWith(prefix))restoreClient(name.slice(prefix.length));}}catch{}
- const ids=[...new Set([...changes.keys(),...reviews.keys(),...saveWaits.keys(),...engineListsV2754.keys()].filter(k=>k.startsWith(current+'|')&&(needsUpdate(k)||(saveWaits.get(k)?.size||0)>0||['pending','running'].includes(engineListsV2754.get(k)?.pdf?.status))).map(k=>k.slice(current.length+1)))];return Promise.all(ids.slice(0,2).map(id=>refresh(false,true,id)));
+ const ids=[...new Set([...changes.keys(),...reviews.keys(),...saveWaits.keys(),...clientTimers.keys(),...engineListsV2754.keys()].filter(k=>k.startsWith(current+'|')&&(clientTimers.has(k)||needsUpdate(k)||(saveWaits.get(k)?.size||0)>0||['pending','running'].includes(engineListsV2754.get(k)?.pdf?.status))).map(k=>k.slice(current.length+1)))];return Promise.all(ids.slice(0,2).map(id=>refresh(false,true,id)));
 }
 function sendState(id=client()){
  if(!id||!canRead())return {ready:false,stamp:''};restoreClient(id);const k=key(id),accepted=[...(engineDataAcksV2754.get(k)||new Map()).values()].flatMap(token=>[token,'fields_'+token]),tokens=new Set(accepted),view=projection.project(id,states.get(k));
@@ -636,4 +648,5 @@ window.addEventListener('online',()=>{for(const [k,failure] of failed)if(k.start
 document.addEventListener('click',e=>{if(e.target.closest?.('.folder-header,.bottom-nav-item,.company-item')){closeMenu();schedule();}},true);
 const files=document.getElementById('filesContainer');if(files)new MutationObserver(schedule).observe(files,{childList:true,subtree:true});
 reset();schedule();
+
 

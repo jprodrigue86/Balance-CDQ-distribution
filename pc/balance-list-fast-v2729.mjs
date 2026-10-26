@@ -48,16 +48,19 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
   const lists=root.fichiers.filter(f=>norm(f.nom||f.name)==='liste de balance.pdf'&&pdf(f)).map(file=>({file,folderId:String(clientId)}));
   const listFolders=root.dossiers.filter(f=>norm(f.nom||f.name)==='liste de balance').sort((a,b)=>String(a.id).localeCompare(String(b.id)));
   if(listFolders.some(f=>!f.id)||new Set(listFolders.map(f=>String(f.id))).size!==listFolders.length)throw Error('Dossier de liste incomplet.');
-  await groups(listFolders,async folder=>{const r=await rpc('obtenirContenuDossierParesseux',folder.id,clientId);guard();const child=folderContent(r,folder.id);for(const file of child.fichiers)if(norm(file.nom||file.name)==='liste de balance.pdf'&&pdf(file))lists.push({file,folderId:String(folder.id)});});
+  const folders=root.dossiers.filter(f=>/^rapports? (?:d ?)?etalonnages?$/.test(norm(f.nom||f.name))).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+  if(folders.some(f=>!f.id)||new Set(folders.map(f=>String(f.id))).size!==folders.length)throw Error('Dossier de rapports incomplet.');
+  // Fetch independent list/report folders in one bounded batch. Both full
+  // snapshots still authenticate membership before any import or write.
+  const folderRows=await groups([...listFolders,...folders],async folder=>{const r=await rpc('obtenirContenuDossierParesseux',folder.id,clientId);guard();return folderContent(r,folder.id);});
+  for(let i=0;i<listFolders.length;i++)for(const file of folderRows[i].fichiers)if(norm(file.nom||file.name)==='liste de balance.pdf'&&pdf(file))lists.push({file,folderId:String(listFolders[i].id)});
+  const children=folderRows.slice(listFolders.length);
   const selected=lists.filter(row=>String(row.file.id)===String(fileId));
   if(bootstrap){
    // Even a list that another technician created in the meantime prohibits
    // this path; never publish a second canonical list.
    if(!listDestinationId||listFolders.length!==1||String(listFolders[0].id)!==String(listDestinationId)||lists.length)throw Error('CONFLICT_LIST_FILE : la première liste ne peut pas être créée sans destination unique et vide.');
   }else if(selected.length!==1)throw Error('La liste a été déplacée, remplacée ou supprimée.');
-  const folders=root.dossiers.filter(f=>/^rapports? (?:d ?)?etalonnages?$/.test(norm(f.nom||f.name))).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
-  if(folders.some(f=>!f.id)||new Set(folders.map(f=>String(f.id))).size!==folders.length)throw Error('Dossier de rapports incomplet.');
-  const children=await groups(folders,async folder=>{const r=await rpc('obtenirContenuDossierParesseux',folder.id,clientId);guard();return folderContent(r,folder.id);});
   const files=new Map(),take=f=>{if(!f.id)throw Error('Identifiant du rapport absent.');const id=String(f.id),prior=files.get(id);if(prior&&JSON.stringify(fileKey(prior))!==JSON.stringify(fileKey(f)))throw Error('Révisions des rapports non confirmées.');files.set(id,{...f});};
   for(const f of root.fichiers)if(!excluded(f)&&(sheet(f)||pdf(f)))take(f);for(const child of children)for(const f of child.fichiers)if(!excluded(f)&&(sheet(f)||pdf(f)))take(f);
   const sorted=[...files.values()].sort((a,b)=>String(a.id).localeCompare(String(b.id)));

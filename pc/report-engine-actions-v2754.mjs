@@ -6,8 +6,17 @@ export function createReportEngineActionsV2754({engine,owner,canWrite,guard=()=>
   const check=(email,clientId='')=>{guard(email,clientId);if(email!==owner()||!canWrite())throw failure('Le compte ou l’accès a changé.','CDQ_DELETE_ACCOUNT_CHANGED');};
   const contextOf=result=>{const report=result.report||result,snapshot=report.snapshot||report.payload||report;return {engine:2754,reportId:report.reportId||snapshot.reportId,clientId:report.clientId||snapshot.clientId,destinationId:report.destinationId||snapshot.destinationId,family:report.family||snapshot.family,template:report.template||snapshot.template,fileId:report.pdf?.fileId||report.fileId||snapshot.fileId||'',baseRevision:Number(report.revision||snapshot.baseRevision||0),expectedDriveRevision:report.pdf?.driveRevision||snapshot.expectedDriveRevision||''};};
   function track(data){if(data.type==='CDQ_REPORT_ENGINE_SAVE_V2754'&&data.email===owner()&&canWrite()&&data.payload?.reportId){saves.set(data.payload.reportId,data.payload);while(saves.size>500)saves.delete(saves.keys().next().value);}}
-  async function find(fileId,clientId){
-    const email=owner(),client=await engine.client();check(email,clientId);const cached=await client.get({fileId});check(email,clientId);if(cached){if(cached.context.clientId!==clientId)throw failure('Ce rapport appartient à un autre client.','SCOPE_MISMATCH');return cached;}
+  // Bounded independent work; drain every active request before releasing
+  // the selection lock, including on partial failure.
+  async function parallelV2789(items,run){
+    let next=0,error;const output=new Array(items.length);
+    await Promise.all(Array.from({length:Math.min(4,items.length)},async()=>{
+      while(!error){const index=next++;if(index>=items.length)return;try{output[index]=await run(items[index]);}catch(e){error??=e;}}
+    }));
+    if(error)throw error;return output;
+  }
+  async function find(fileId,clientId,cachedRecords){
+    const email=owner(),client=await engine.client();check(email,clientId);const cached=cachedRecords?cachedRecords.find(record=>record.context.fileId===fileId||record.pdf?.fileId===fileId):await client.get({fileId});check(email,clientId);if(cached){if(cached.context.clientId!==clientId)throw failure('Ce rapport appartient à un autre client.','SCOPE_MISMATCH');return cached;}
     const result=await engine.call('read',{fileId,clientId});check(email,clientId);
     if(result.classification==='legacy-list'&&result.kind==='legacy-list'){
       if(result.engine!==2754||result.clientId!==clientId||result.fileId!==fileId||!result.driveRevision)throw failure('La liste historique ne correspond pas au fichier sélectionné.','SCOPE_MISMATCH');return {kind:'legacy-list',context:result};
@@ -24,10 +33,11 @@ export function createReportEngineActionsV2754({engine,owner,canWrite,guard=()=>
     const email=owner();check(email,context.clientId);const client=await engine.client();check(email,context.clientId);
     await client.remove(context);check(email,context.clientId);
     for(let n=0;n<attempts;n++){
+      if(client.synchronizeReportV2789)await client.synchronizeReportV2789(context.reportId);
       const record=await client.get({reportId:context.reportId});check(email,context.clientId);
       if(record?.blocked)throw failure(record.error||'La suppression Drive doit être vérifiée.','CDQ_DELETE_UNCONFIRMED');
       if(record?.deleted&&record.deleteAck&&!record.pending)return {ok:true,reportId:context.reportId,revision:record.serverRevision,context:record.context,deleted:true,drivePending:false,pdf:record.pdf};
-      await client.resume();await wait(1200);check(email,context.clientId);
+      if(!client.synchronizeReportV2789)await client.resume({reportIds:[context.reportId]});await wait(1200);check(email,context.clientId);
     }
     throw failure('La suppression Drive reste en attente. La demande est conservée.','CDQ_DELETE_UNCONFIRMED');
   }
@@ -45,7 +55,9 @@ export function createReportEngineActionsV2754({engine,owner,canWrite,guard=()=>
     const capability=await engine.capabilities();check(email,clientId);
     if(!capability?.ready){if(capability?.configured===false)return legacy(selection);throw failure('Le moteur de rapports doit être joignable pour vérifier la suppression.','CDQ_DELETE_UNCONFIRMED');}
     const targets=new Map(),lists=new Map(),managedFiles=new Set(),files=[...new Set([...selection.fileIds,...descendantIds].map(String))];
-    for(const fileId of files){const record=await find(fileId,clientId);check(email,clientId);if(record?.kind==='list')lists.set(fileId,record.context);else if(record&&record.kind!=='legacy-list'){targets.set(record.context.reportId,record);managedFiles.add(fileId);}}
+    const localClient=await engine.client(),cachedRecords=typeof localClient.all==='function'?await localClient.all():null;check(email,clientId);
+    const classified=await parallelV2789(files,async fileId=>{const record=await find(fileId,clientId,cachedRecords);check(email,clientId);return {fileId,record};});
+    for(const {fileId,record} of classified){if(record?.kind==='list')lists.set(fileId,record.context);else if(record&&record.kind!=='legacy-list'){targets.set(record.context.reportId,record);managedFiles.add(fileId);}}
     if(selection.folderIds.length){
       const folders=folderScope(clientId,selection),listing=await engine.call('list',{clientId});check(email,clientId);
       for(const record of await (await engine.client()).all())if(record.context.clientId===clientId&&folders.has(record.context.destinationId))targets.set(record.context.reportId,record);
@@ -55,11 +67,11 @@ export function createReportEngineActionsV2754({engine,owner,canWrite,guard=()=>
       }
       for(const record of targets.values()){const restoredFolderId=folders.get(record.context.destinationId);if(restoredFolderId)record.context={...record.context,restoredFolderId};}
     }
-    for(const record of targets.values()){
-      if(record.deleted&&record.deleteAck&&!record.pending)continue;
+    await parallelV2789([...targets.values()],async record=>{
+      check(email,clientId);if(record.deleted&&record.deleteAck&&!record.pending)return;
       if(record.context.template){const result=await remove(record.context);record.context={...result.context,...(record.context.restoredFolderId?{restoredFolderId:record.context.restoredFolderId}:{})};}
       else {const result=await engine.call('status',{reportId:record.context.reportId,clientId});check(email,clientId);if(!result.deleted||result.drivePending!==false)throw failure('La suppression du rapport reste à confirmer.','CDQ_DELETE_UNCONFIRMED');}
-    }
+    });
     check(email,clientId);const remainder={fileIds:selection.fileIds.filter(id=>!managedFiles.has(String(id))),folderIds:selection.folderIds};
     const result=remainder.fileIds.length||remainder.folderIds.length?await legacy(remainder):{ok:true,fichiers:[],dossiers:[]};check(email,clientId);
     const confirmed=new Set([...(result.fichiers||result.ids||[]),...(result.dossiers||[])]),folders=folderScope(clientId,selection),confirmedLists=[...lists.values()].filter(list=>confirmed.has(list.fileId)||confirmed.has(folders.get(list.destinationId))).map(list=>({...list,...(folders.get(list.destinationId)?{restoredFolderId:folders.get(list.destinationId)}:{})}));

@@ -83,7 +83,7 @@ export function reportEngineStorageV2754(){return {async get(key){const db=await
 // Shared by native, web and PC shells. Existing legacy copies remain separate
 // until their imported fields and the first server PDF are both confirmed.
 export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2754(),getAccount,canWrite=()=>true,onChange=()=>{},isOnline=()=>globalThis.navigator?.onLine!==false}={}){
-  const jobs=new Map(),sends=new Map(),timers=new Map();let generation=0;
+  const jobs=new Map(),sends=new Map(),timers=new Map(),syncFlightsV2789=new Map();let generation=0;
   const key=(account,id)=>account+'|'+id;
   const serial=(id,fn)=>{const p=(jobs.get(id)||Promise.resolve()).catch(()=>{}).then(fn);jobs.set(id,p);p.finally(()=>{if(jobs.get(id)===p)jobs.delete(id);}).catch(()=>{});return p;};
   const notify=record=>{if(record.account===getAccount())try{onChange(record);}catch{}};
@@ -121,7 +121,17 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
     deletionReadsV2760.set(record.key,flight);
     try{return await flight;}finally{if(deletionReadsV2760.get(record.key)===flight)deletionReadsV2760.delete(record.key);}
   }
-  async function syncRecord(record){
+  function syncRecord(record){
+    const prior=syncFlightsV2789.get(record.key);if(prior)return prior;
+    const stamp=generation;
+    const flight=Promise.resolve().then(()=>sendRecordV2789(record)).finally(async()=>{
+      if(syncFlightsV2789.get(record.key)===flight)syncFlightsV2789.delete(record.key);
+      const latest=await storage.get(record.key).catch(()=>null);
+      if(stamp===generation&&record.account===getAccount()&&canWrite()&&latest?.pending&&latest.payload.requestId!==record.payload.requestId)queueMicrotask(()=>syncRecord(latest));
+    });
+    syncFlightsV2789.set(record.key,flight);return flight;
+  }
+  async function sendRecordV2789(record){
     const stamp=generation,account=getAccount(),valid=()=>stamp===generation&&getAccount()===account&&canWrite();if(!account||record.account!==account||!valid()||!isOnline()||sends.has(record.key)||!record.pending||record.remoteDeletedV2784)return;
     const attempt=record.payload.requestId;sends.set(record.key,attempt);
     try{
@@ -151,7 +161,7 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
       else if(deleting||result.deleted){if(result.drivePending!==false)schedule(record.key,1500);}
       else if(result.pdf?.status!=='confirmed')schedule(record.key,1500);
     }catch(error){await serial(record.key,async()=>{const current=await storage.get(record.key);if(!valid()||!current||current.payload.requestId!==attempt||current.deleted&&current.deleteAck&&!current.pending)return;const remoteDeleted=isDeletedReportV2784(error),conflict=remoteDeleted||/conflict|revision|forbidden|unauthorized|access/i.test(String(error.code||''));const updated={...current,...(remoteDeleted?{remoteDeletedV2784:true}:{}),error:remoteDeleted?DELETED_REPORT_MESSAGE_V2784:error.message,blocked:conflict,pending:true};await storage.commit(updated,true);notify(updated);if(!conflict)schedule(record.key,5000);});}
-    finally{sends.delete(record.key);const latest=await storage.get(record.key).catch(()=>null);if(valid()&&latest?.pending&&latest.payload.requestId!==attempt)queueMicrotask(()=>syncRecord(latest));}
+    finally{sends.delete(record.key);}
   }
   function schedule(id,delay){if(timers.has(id))return;const stamp=generation;timers.set(id,setTimeout(async()=>{timers.delete(id);if(stamp!==generation)return;const record=await storage.get(id).catch(()=>null);if(record?.pending&&!record.blocked)syncRecord(record);},delay));}
   return {async save(context,fields,requestId,name,preparedPdf){const account=getAccount(),meta=reportContextV2754(context);if(!account||!canWrite()||!meta)throw Error('Déverrouillez CDQ pour enregistrer.');const id=key(account,meta.reportId),stamp=generation;const record=await serial(id,async()=>{if(stamp!==generation||account!==getAccount()||!canWrite())throw Error('Le compte ou l’accès Drive a changé.');const old=await storage.get(id);if(old&&old.context.clientId!==meta.clientId)throw Object.assign(Error('Le rapport appartient à un autre client.'),{code:'SCOPE_MISMATCH'});if(old?.remoteDeletedV2784)throw Object.assign(Error(DELETED_REPORT_MESSAGE_V2784),{code:'REPORT_DELETED'});if(old?.deleted)throw Object.assign(Error('Ce rapport a été supprimé. Il ne peut plus être enregistré.'),{code:'REPORT_DELETED'});const payload=reportPayloadV2754(old?.context||meta,fields,requestId,name);if(preparedPdf)payload.preparedPdfV2759=await prepareReportPdfV2759(payload,preparedPdf);if(stamp!==generation||account!==getAccount()||!canWrite())throw Error('Le compte ou l’accès a changé.');if(old?.payload.requestId===payload.requestId){if(JSON.stringify(old.fields)!==JSON.stringify(payload.fields))throw Error('Identifiant de sauvegarde déjà utilisé pour d’autres réponses.');return old;}const updated={key:id,account,context:old?.context||meta,payload,fields:payload.fields,name,pending:true,dataSaved:false,blocked:false,error:'',savedAt:Date.now(),pdf:old?.pdf||{status:'pending'}};await storage.commit(updated,true);notify(updated);return updated;});queueMicrotask(()=>syncRecord(record));return {queued:true,reportEngineV2754:record.context,reportSnapshotV2754:record.fields};},async recoverAsNewV2784(context){
@@ -212,5 +222,12 @@ async remove(context){
       const normalized=reportFieldsV2754(fields),observation=observedReportStateV2784(old,{revision,fields:normalized,name}),publication=pdf||{status:'confirmed',fileId:meta.fileId,revision},pending=publication.status!=='confirmed'||Number(publication.revision)!==revision,record={key:id,account,context:{...meta,baseRevision:revision},fields:normalized,name,serverRevision:revision,dataSaved:true,pending,blocked:!!(observation.requestId&&old.blocked),error:observation.requestId?old.error||'':'',savedAt:observation.savedAt,observationOnlyV2784:observation.observationOnlyV2784,pdf:publication,payload:observation.requestId?old.payload:{...meta,baseRevision:revision,requestId:crypto.randomUUID(),name,fields:normalized}};
       await storage.commit(record,pending);notify(record);if(pending)queueMicrotask(()=>syncRecord(record));return record;
     });
-  },async get(context){const account=getAccount();if(!account)return null;if(typeof context==='string')return storage.get(key(account,context));if(context?.reportId)return storage.get(key(account,context.reportId));if(context?.fileId)return (await storage.all()).find(record=>record.account===account&&(record.context.fileId===context.fileId||record.pdf?.fileId===context.fileId))||null;return null;},async all(){const account=getAccount();return (await storage.all()).filter(record=>record.account===account);},async resume({reportIds}={}){const account=getAccount(),selected=Array.isArray(reportIds)?new Set(reportIds):null;for(const record of await storage.all())if(record.account===account&&record.pending&&(!selected||selected.has(record.context.reportId))){if(record.deleted)reconcileDeletedV2760(record).then(recovered=>{if(recovered?.pending&&!recovered.blocked)syncRecord(recovered);}).catch(()=>{});else if(!record.blocked)syncRecord(record);}},lock(){generation++;for(const timer of timers.values())clearTimeout(timer);timers.clear();},stats:()=>({inflight:sends.size,queuedTimers:timers.size})};
+  },async get(context){const account=getAccount();if(!account)return null;if(typeof context==='string')return storage.get(key(account,context));if(context?.reportId)return storage.get(key(account,context.reportId));if(context?.fileId)return (await storage.all()).find(record=>record.account===account&&(record.context.fileId===context.fileId||record.pdf?.fileId===context.fileId))||null;return null;},async all(){const account=getAccount();return (await storage.all()).filter(record=>record.account===account);},async synchronizeReportV2789(reportId){
+    const account=getAccount(),stamp=generation;if(!account)return;
+    let record=await storage.get(key(account,reportId));
+    if(stamp!==generation||account!==getAccount()||!canWrite()||!record?.pending)return;
+    if(record.deleted&&record.blocked)record=await reconcileDeletedV2760(record);
+    if(stamp!==generation||account!==getAccount()||!canWrite()||!record?.pending||record.blocked)return;
+    await syncRecord(record);
+  },async resume({reportIds}={}){const account=getAccount(),selected=Array.isArray(reportIds)?new Set(reportIds):null;for(const record of await storage.all())if(record.account===account&&record.pending&&(!selected||selected.has(record.context.reportId))){if(record.deleted)reconcileDeletedV2760(record).then(recovered=>{if(recovered?.pending&&!recovered.blocked)syncRecord(recovered);}).catch(()=>{});else if(!record.blocked)syncRecord(record);}},lock(){generation++;for(const timer of timers.values())clearTimeout(timer);timers.clear();},stats:()=>({inflight:sends.size,queuedTimers:timers.size})};
 }
