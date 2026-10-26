@@ -19,7 +19,7 @@ export async function readReaderMetadataV2724(doc){
     if(!annotation.fieldName||!annotation.defaultAppearanceData||!['Tx','Ch'].includes(annotation.fieldType))continue;
     typography.set(annotation.fieldName,Number(annotation.defaultAppearanceData.fontSize)||11.25);
   }
-  return {fields,actions,typography,firstPageHasAnnotations:!!pages[0]?.length};
+  return {fields,actions,typography,t05:pages.some(list=>list.some(a=>a.defaultAppearanceData?.fontName==='Roboto850')),firstPageHasAnnotations:!!pages[0]?.length};
 }
 
 export async function readCalculationMetadataV2724(doc){

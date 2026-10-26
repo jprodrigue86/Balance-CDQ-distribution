@@ -1,6 +1,6 @@
 // PDF approuvé : octets inchangés, aucun accès Drive.
-const meta=Object.freeze({"modeleId":"plancher","templateId":"cdq-app-plancher-v2587-042e5a9a54fae6172d89","name":"Balance de plancher.pdf","sha256":"042e5a9a54fae6172d89f5baca7e469bb66e8d4a3309f792b9fcdb14811929ff","taille":298388,"modifieLe":1790624517159});
-const asset=new URL("./assets/startup-v2681/floor-042e5a9a54fae6172d89f5baca7e469bb66e8d4a3309f792b9fcdb14811929ff.pdf",import.meta.url);
+const meta=Object.freeze({"modeleId":"plancher","templateId":"cdq-t05-plancher-19d6f984615009e0","name":"Balance de plancher.pdf","sha256":"19d6f984615009e01c8ce797242bfdbfb2716984e689774d8c9b54d05f04840b","taille":493574,"modifieLe":1792972800000});
+const asset=new URL("./assets/templates/plancher.pdf",import.meta.url);
 let ready;
 function floorTemplate(){
   if(!ready)ready=(async()=>{

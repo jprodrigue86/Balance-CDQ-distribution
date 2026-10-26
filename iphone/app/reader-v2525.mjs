@@ -1,3 +1,5 @@
+import {installT05Font,styleT05Fields} from './reader-t05.mjs';
+installT05Font();
 import {restoredReaderNeedsSaveV2784} from './file-observation-v2784.mjs';
 import {reportValueSignatureV2782} from './file-operation-state-v2782.mjs';
 import {createReaderResumeV2767} from './reader-resume-v2767.mjs';
@@ -50,6 +52,7 @@ const $=id=>document.getElementById(id),hosted=parent!==window;
 let parentOrigin='',autoReportName=false;
 const formattedFields=new Map(),fieldTypography=new Map();
 function applyFieldTypography(){
+  const t05=styleT05Fields($('viewer'));
   const fields=[];
   for(const field of $('viewer').querySelectorAll('input,textarea,select,button.cdq-choice-field')){
     if(isCorrectionReadingV2736(field.name))field.inputMode='text';
@@ -59,7 +62,7 @@ function applyFieldTypography(){
     if(field.style.getPropertyValue('font-size')!==desired||field.style.getPropertyPriority('font-size')!=='important')field.style.setProperty('font-size',desired,'important');
     fields.push(field);
   }
-  if(!approvedReportMetadataFamilyV2735(fieldDefinitions))centerFieldsGlyphs(fields);
+  if(t05||!approvedReportMetadataFamilyV2735(fieldDefinitions))centerFieldsGlyphs(fields);
   refreshReaderCamionDisplayV2741({surface:$('viewer'),document:doc,fields:fieldDefinitions,typography:fieldTypography});
   refreshReportVisualV2736({surface:$('viewer'),fields:fieldDefinitions});
   if(trialReportMetadataFamilyV2743(fieldDefinitions))refreshResultGeometryV2743($('viewer'));
@@ -614,6 +617,7 @@ async function open(data){
         // becomes available only after the canvas, widgets and calculations.
         const [metadata]=await Promise.all([readReaderMetadataV2724(doc),viewer.firstPagePromise]);checkLease();
         const {fields,actions,typography,firstPageHasAnnotations}=metadata;fieldDefinitions=fields;
+        $('viewer').dataset.cdqT05=String(metadata.t05===true);
         if(!reportEngineV2754&&!readOnly&&data.reportEngineImportV2754&&artworkEpochV2753===workEpoch){
           const template=matchReportTemplateV2754({staticArtworkV2753,fields});
           if(template)reportEngineV2754=reportContextV2754({...data.reportEngineImportV2754,template,family:template.modeleId});
