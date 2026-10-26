@@ -1,0 +1,67 @@
+{
+  "style": "T05 Roboto 850",
+  "templates": [
+    {
+      "file": "camion.pdf",
+      "sha256": "73db995205bd5b50dafa85bceb8fb980ac3db6c80ab05ac50babda1665f3912a",
+      "bytes": 3363615
+    },
+    {
+      "file": "chariot.pdf",
+      "sha256": "a3f1f0047a64012a461aa219de07fae0ed77d642c18557a041896bd47edbe8c7",
+      "bytes": 1819195
+    },
+    {
+      "file": "table.pdf",
+      "sha256": "70e90971e22af4d4b3bed84c376d99e4bd1aa7e268755031624002aee74bd2af",
+      "bytes": 1547398
+    },
+    {
+      "file": "suspendue.pdf",
+      "sha256": "a084563d4bd32aabecc1f3a75399a542223bb14297f7ac2083fda78bc8cd8de5",
+      "bytes": 1802261
+    },
+    {
+      "file": "convoyeur.pdf",
+      "sha256": "9532e740e2495dfe90c9b2dcef2584c69295e5835f4773dd4b2a6f81727bdba0",
+      "bytes": 1825210
+    },
+    {
+      "file": "trackscale.pdf",
+      "sha256": "b741913a7041a6aa5673c1f87d0f63ba65b1362a299e5be9ac49858ff755629c",
+      "bytes": 1428613
+    },
+    {
+      "file": "cuve.pdf",
+      "sha256": "c069ca495d11147e28165556c9c7610be69c335f90163cbe4e1f26856a9600ce",
+      "bytes": 1222995
+    },
+    {
+      "file": "plancher.pdf",
+      "sha256": "19d6f984615009e01c8ce797242bfdbfb2716984e689774d8c9b54d05f04840b",
+      "bytes": 493574
+    },
+    {
+      "file": "tremie.pdf",
+      "sha256": "1a879eee062008a30ec694b18417b336063bf907929d278092b24a91397c8a39",
+      "bytes": 1149861
+    },
+    {
+      "file": "multitete.pdf",
+      "sha256": "2973708946e5b48c64fd2d9569cb443fd4b02d1c0d2a75a21e03f528c4404b26",
+      "bytes": 1700963
+    },
+    {
+      "file": "train.pdf",
+      "sha256": "10e063ee01771f990443ef74c29066e8eebb64d1328d2ad9bdb5dc25f2c8df09",
+      "bytes": 3366644
+    },
+    {
+      "file": "precision.pdf",
+      "sha256": "1e1765d8e456e09d006b623d0da1ce144637d20ffb2575ce27339be7cac1299b",
+      "bytes": 1199060
+    }
+  ],
+  "readerScenarios": 18,
+  "productionApplicationActivated": false
+}
