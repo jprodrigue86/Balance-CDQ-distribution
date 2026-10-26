@@ -1,3 +1,4 @@
+import {balanceSheetSignatureV2788} from './balance-sheet-summary-v2788.mjs';
 import {sheetBalanceValuesV2703} from './balance-data-v2703.mjs';
 import {pdfReportConformityV2727} from './report-conformity-v2727.mjs';
 import {sheetReportConformityV2727} from './sheet-report-conformity-v2727.mjs';
@@ -55,7 +56,7 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
    const listed=Date.parse(file.modifiedTime||file.dateModification||file.revision||''),confirmed=Date.parse(old?.confirmedRevision||'');
    if(confirmed&&listed&&listed<confirmed)continue;
    if(old?.verifiedReadV2729&&(!clientId||old.clientId===String(clientId))&&old.stamp===version&&completeSignature(old.signature))continue;
-   try{let next;if(['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].includes(file.mimeType||file.type)){const sheet=await loadSheet(file.id,expected,clientId);if(!valid(email,generation)||!stillCurrent())break;validateReportReadV2729(sheet,file,{owner:email,clientId,sheet:true});const values=sheetBalanceValuesV2703(sheet.onglets[0].valeurs);next=values==='null'?values:JSON.stringify([...JSON.parse(values),sheetReportConformityV2727(sheet)]);}else{const rec=await loadPdf(file.id,expected);if(!valid(email,generation)||!stillCurrent())break;validateReportReadV2729(rec,file,{owner:email,clientId});next=await snapshot(rec.blob);}if(!valid(email,generation)||!stillCurrent())break;
+   try{let next;if(['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].includes(file.mimeType||file.type)){const sheet=await loadSheet(file.id,expected,clientId);if(!valid(email,generation)||!stillCurrent())break;next=balanceSheetSignatureV2788(sheet,file,{owner:email,clientId});}else{const rec=await loadPdf(file.id,expected);if(!valid(email,generation)||!stillCurrent())break;validateReportReadV2729(rec,file,{owner:email,clientId});next=await snapshot(rec.blob);}if(!valid(email,generation)||!stillCurrent())break;
     if(stamp(file)!==version||data.reports[file.id]!==old)continue; // A changed folder or newer local edit wins a delayed read.
     if(old&&old.signature!==next)changed=true;data.reports[file.id]={signature:next,stamp:version,clientId:String(clientId||''),verifiedReadV2729:true};persist();
    }catch{ /* Leave the previous fingerprint intact; the next Drive event can retry. */ }

@@ -93,7 +93,7 @@ function centerSerializedT05Text(pdf,L){
 export function installT05Font(){
   if(typeof document==='undefined'||document.getElementById('cdq-t05-font'))return;
   const style=document.createElement('style');style.id='cdq-t05-font';
-  style.textContent=`@font-face{font-family:CDQRoboto850;src:url("${new URL('./assets/fonts/t05-roboto850.ttf',import.meta.url).href}") format("truetype");font-weight:850;font-style:normal;font-display:swap}#viewer[data-cdq-t05="true"] button.cdq-choice-field{padding-left:0!important;padding-right:0!important}`;
+  style.textContent=`@font-face{font-family:CDQRoboto850;src:url("${new URL('./assets/fonts/t05-roboto850.ttf',import.meta.url).href}") format("truetype");font-weight:850;font-style:normal;font-display:swap}#viewer[data-cdq-t05="true"] button.cdq-choice-field{padding-left:0!important;padding-right:0!important}#viewer[data-cdq-t05="true"] .textWidgetAnnotation.hasOwnCanvas:has(>input[name="type_balance"][data-cdq-auto-field="true"]){border-color:transparent!important}`;
   document.head.append(style);
 }
 
@@ -103,7 +103,15 @@ export function styleT05Fields(surface){
   if(corrected)for(const indicator of surface.querySelectorAll('input[name^="_cdq_visual_"]')){const section=indicator.closest('section');if(section)section.style.setProperty('pointer-events','none','important');}
   for(const field of surface.querySelectorAll('input:not([type=checkbox]),textarea,select,button.cdq-choice-field')){
     if(!field.name)continue;
-    for(const [key,value]of Object.entries({'font-family':'CDQRoboto850,Arial,sans-serif','font-weight':'850','text-align':'center',color:corrected&&!field.name.endsWith('_numero_tete')&&/^(charge_point_|excentricite_(avant|apres)_|B4_|charge_excentricite$|tolerance_excentricite$)/.test(field.name)?'#000000':field.name.endsWith('_numero_tete')?'#101B7A':'#061B35'}))field.style.setProperty(key,value,'important');
+    for(const [key,value]of Object.entries({'font-family':'CDQRoboto850,Arial,sans-serif','font-weight':'850','text-align':'center',color:corrected&&!field.name.endsWith('_numero_tete')&&/^(charge_point_|excentricite_(avant|apres)_|B4_|charge_excentricite$|tolerance_excentricite$)/.test(field.name)?'#000000':field.name.endsWith('_numero_tete')?'#101B7A':'#061B35'}))if(field.style.getPropertyValue(key)!==value||field.style.getPropertyPriority(key)!=='important')field.style.setProperty(key,value,'important');
+    // PDF.js leaves the native /BS width in unscaled CSS pixels. Scale its
+    // existing border like the .6pt native correction-frame canvases, without
+    // adding a second rectangle or changing any widget geometry.
+    const section=field.closest('section');
+    if(corrected&&section?.style.borderStyle==='solid'&&parseFloat(section.style.borderWidth)>0){
+      const width='calc(0.6px * var(--total-scale-factor))';
+      if(section.style.getPropertyValue('border-width')!==width)section.style.setProperty('border-width',width,'important');
+    }
   }
   return true;
 }

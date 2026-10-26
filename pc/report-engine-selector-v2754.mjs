@@ -98,7 +98,8 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
       }
     }
     const context=record.context;if(expectedClient&&context.clientId!==expectedClient)throw Object.assign(Error('Le rapport appartient à un autre client.'),{code:'SCOPE_MISMATCH'});
-    phase('template-start');const template=await loadTemplate(context.template);checkCurrent();phase('template-ready');if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');
+    const checkTemplateCurrent=()=>{checkCurrent();if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');};
+    phase('template-start');const template=await loadTemplate(context.template,{family:context.family,checkCurrent:checkTemplateCurrent});checkTemplateCurrent();phase('template-ready');
     return {...legacyRecord,id:String(fileId),clientId:context.clientId,folderId:context.destinationId,nom:record.name,blob:template.blob,revision:context.expectedDriveRevision,reportEngineV2754:context,reportSnapshotV2754:record.fields,readerPreparedVersion:2730};
   }
   async function save(context,fields,requestId,name,preparedPdf){return (await client()).save(context,fields,requestId,name,preparedPdf);}

@@ -1,3 +1,4 @@
+import {balanceSheetSignatureV2788} from './balance-sheet-summary-v2788.mjs';
 import {balanceDisplayRowsV2751,validBalanceSourceIndexV2751} from './balance-list-index-v2751.mjs';
 import {equipmentSnapshotV2697} from './equipment-list-v2697.mjs';
 import {sheetBalanceValuesV2703} from './balance-data-v2703.mjs';
@@ -71,7 +72,7 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
  let progressCount=0;const announce=()=>{try{onProgress({phase:'analyse',done:progressCount,total:before.files.length});}catch{}};announce();
  await groups(before.files,async file=>{
   guard();let signature=indexed?sourceIndex.sources.find(source=>source.id===String(file.id))?.signature:cachedSignature?.(file),parsed=signatureValues(signature);
-  if(!parsed){if(sheet(file)){const returned=await loadSheet(file.id,clientId,sourceRev(file));guard();const snapshot=completeSheet(returned,file,clientId),values=sheetBalanceValuesV2703(snapshot.onglets[0].valeurs);signature=values==='null'?values:JSON.stringify([...JSON.parse(values),sheetReportConformityV2727(snapshot)]);}
+  if(!parsed){if(sheet(file)){const returned=await loadSheet(file.id,clientId,sourceRev(file));guard();signature=balanceSheetSignatureV2788(returned,file,{clientId});}
    else{const record=await loadPdf(file.id,sourceRev(file));guard();if(!record?.blob||record.id&&String(record.id)!==String(file.id)||rev(record)!==sourceRev(file)||record.clientId&&String(record.clientId)!==String(clientId))throw Error('Un rapport a changé pendant la préparation.');signature=await equipmentSnapshotV2697(record.blob,await pdfLibrary());}
    guard();onSourceRead(file,signature);}
   guard();parsed=signatureValues(signature);if(!parsed)throw Error('Données de balance incomplètes.');const {values}=parsed;signatures.set(String(file.id),signature);if(values===null){progressCount++;announce();return;}

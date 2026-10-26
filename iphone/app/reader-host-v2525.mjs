@@ -8,7 +8,7 @@ import {createBundledOpeningV2753} from './reader-bundled-opening-v2753.mjs';
 import {validatedReaderStaticArtworkV2753} from './reader-static-artwork-binding-v2753.mjs';
 
 // Filled only by the final package builder; source checkouts use worker OPEN.
-const BUNDLED_OPENING_PIN_V2753=Object.freeze({"build":"2026.10.26-v27.87-pdf-visual","manifestSha256":"c8f75fd4e186e731ee80c4b010f85e023a6f1efe551bab7bbb8fa824321aba47","normalizerSha256":"b80a72d2c04bf8989cf237c52d21d2c6ad0824a553a91a7e501b081c5730e2a8"});
+const BUNDLED_OPENING_PIN_V2753=Object.freeze({"build":"2026.10.26-v27.88-complete","manifestSha256":"29930e1d4551ecd422ecd087f145a9cf61f3e25a2c62c71a8341838d58b783ac","normalizerSha256":"58c2454feaf5442162b56a21aa2e7f34aa2d8abc047d25d9b2a59d44a1a2242e"});
 const bundledOpeningV2753=createBundledOpeningV2753({pin:BUNDLED_OPENING_PIN_V2753});
 
 let active=null;
@@ -85,14 +85,13 @@ export function openReader(data){
   if(request.initialValues&&typeof request.initialValues==='object')request.initialValues={...request.initialValues};
   const work=window.cdqPdfWorkV2729,context={sourceBlob:request.blob,poolEpoch:poolEpochV2730,work,workEpoch:work?.stats().epoch};
   const result=openQueue.then(async()=>{
+    const checkCurrent=()=>{if(request.isCurrentOpeningV2757?.()===false||context.poolEpoch!==poolEpochV2730||context.work&&(window.cdqPdfWorkV2729!==context.work||context.work.stats().epoch!==context.workEpoch))throw Error('Le compte ou l’accès Drive a changé.');};
+    checkCurrent();
     if(request.reportEngineV2754&&request.reportSnapshotV2754){
-      const {bundledTemplate}=await import('./report-templates-v2636.mjs');
-      const template=await bundledTemplate(request.reportEngineV2754.template.modeleId);
-      // Historical reports retain their authenticated original PDF and pin.
-      // Only an exact template identity can replace a report's source bytes.
-      if(template.sha256===request.reportEngineV2754.template.sha256){
-        request.blob=template.blob;request.readerPreparedVersion=2730;context.sourceBlob=template.blob;
-      }
+      const {loadPinnedReportTemplateV2788}=await import('./report-template-pins-v2788.mjs');checkCurrent();
+      const template=await loadPinnedReportTemplateV2788(request.reportEngineV2754.template,{family:request.reportEngineV2754.family,blob:context.sourceBlob,checkCurrent});checkCurrent();
+      // The registry and bytes must match the original pin, including history.
+      request.blob=template.blob;request.readerPreparedVersion=2730;context.sourceBlob=template.blob;
     }
     return openReaderInternal(request,context);
   });openQueue=result.catch(()=>{});return result;

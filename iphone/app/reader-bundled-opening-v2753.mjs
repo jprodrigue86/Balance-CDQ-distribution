@@ -61,6 +61,12 @@ export function createBundledOpeningV2753({pin,manifest=BUNDLED_OPENING_MANIFEST
   if(!pdf(bytes)||bytes.length!==blob.size)return null;
   let sourceSha;try{sourceSha=await hashBytes(bytes);}catch{guard();return null;}guard();
   const match=candidates.find(value=>value.source.sha256===sourceSha);if(!match)return null;
+  // A qualified fixed-point template is already the exact normalized asset.
+  // Reuse the bytes just authenticated instead of downloading them twice and
+  // risking the 200ms network fallback into full PDF normalization.
+  if(match.normalized.path===match.source.path&&match.normalized.sha256===sourceSha&&match.normalized.bytes===bytes.length){
+   guard();return {blob,normalized:true,preparedEpoch:epoch,sourceSha256:sourceSha,normalizedSha256:sourceSha};
+  }
   const normalized=await derivative(match.normalized,requestBudgetMs);guard();
   return normalized?{blob:normalized,normalized:true,preparedEpoch:epoch,sourceSha256:sourceSha,normalizedSha256:match.normalized.sha256}:null;
  }};

@@ -1,4 +1,5 @@
 import {preparePcReaderCanvasBarrierV2754,installPcReaderCanvasBarrierV2754} from './reader-canvas-barrier-v2754.mjs';
+import {alignHeaderCanvasesV2788R4} from './reader-header-alignment-v2788r4.mjs';
 import {installT05Font,styleT05Fields} from './reader-t05.mjs';
 installT05Font();
 import {restoredReaderNeedsSaveV2784} from './file-observation-v2784.mjs';
@@ -68,9 +69,10 @@ function applyFieldTypography(){
   refreshReportVisualV2736({surface:$('viewer'),fields:fieldDefinitions});
   if(trialReportMetadataFamilyV2743(fieldDefinitions))refreshResultGeometryV2743($('viewer'));
 }
-function refreshResults(){if(!doc)return;if(trialReportMetadataFamilyV2743(fieldDefinitions)){restoreBlankResultConclusionV2743($('viewer'));refreshResultGeometryV2743($('viewer'));}else paintReaderResults($('viewer'));alignResultCanvasesV2767($('viewer'),fieldDefinitions);}
-$('viewer').addEventListener('input',()=>requestAnimationFrame(applyFieldTypography));
-$('viewer').addEventListener('change',()=>requestAnimationFrame(applyFieldTypography));
+function refreshResults(){if(!doc)return;if(trialReportMetadataFamilyV2743(fieldDefinitions)){restoreBlankResultConclusionV2743($('viewer'));refreshResultGeometryV2743($('viewer'));}else paintReaderResults($('viewer'));alignResultCanvasesV2767($('viewer'),fieldDefinitions);alignHeaderCanvasesV2788R4($('viewer'),fieldDefinitions);}
+// Input, change and sandbox updates share the same cancellable frame.
+$('viewer').addEventListener('input',()=>visualRefreshV2730.schedule());
+$('viewer').addEventListener('change',()=>visualRefreshV2730.schedule());
 
 try{const o=new URL(document.referrer).origin;if(o===location.origin||/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(o))parentOrigin=o;}catch(_){}
 const tell=data=>{if(hosted&&parentOrigin)parent.postMessage(data,parentOrigin)};
@@ -78,11 +80,12 @@ let api,viewer,scripting,doc,touch,form,documentTask,pdfWorker,sandboxReady,sand
 let canvasCandidateV2730=null,closedCanvasV2730=null,closedViewportV2730=null,documentPaintV2730=null,documentGenerationV2730=0,resetPromiseV2730=Promise.resolve();
 const destroyedReaderTasksV2730=new WeakMap();
 const readerSaveProgressV2758=createReaderSaveProgressV2758();
+let staticDocumentV2788=false,staticSourceBlobV2788=null;
 let lastAttempt=null,fieldDefinitions=null,nativeInput,readerCalibration=null,choices=null,decimalGuard=null,tableColumnV2737=null;
 const visualRefreshV2730=createReaderVisualRefreshV2730(()=>{
   if(!doc||closed)return;
   tableColumnV2737?.refresh();cdqRestorePrecisionToleranceV2726();refreshResults();applyFieldTypography();
-},{defer:()=>opening});
+},{defer:()=>opening,setTimer:callback=>requestAnimationFrame(callback),clearTimer:handle=>cancelAnimationFrame(handle)});
 const touchedIdentity=new Set();let lateIdentity=null;
 let reportEngineV2754=null,reportSnapshotV2754=null,snapshotUpdatesV2754=[],engineDefaultsAppliedV2754=false;
 const resumeJournalV2767=createReaderResumeV2767();
@@ -386,13 +389,13 @@ function renderReaderSaveProgressV2758(requestId,initial=false){
 function busy(value){saving=value;$('viewer').inert=value||opening||closed;$('savingMask').hidden=!value;for(const id of ['save','saveClose','doneFields','dismissKeyboard','discard','file'])$(id).disabled=value||!doc||opening||readOnly;}
 function fail(error){busy(false);status(error.message||String(error));$('closeError').textContent=error.message||String(error);closeAfterSave=false;}
 let cleanSignatureV2782=null,mustSaveV2782=false,userEditedV2783=false;
-function hasChangesV2782(){return mustSaveV2782||(userEditedV2783&&(cleanSignatureV2782===null?dirty:reportValueSignatureV2782(capturePreparedReaderFieldsV2759())!==cleanSignatureV2782));}
+function hasChangesV2782(){if(staticDocumentV2788||readOnly)return false;return mustSaveV2782||(userEditedV2783&&(cleanSignatureV2782===null?dirty:reportValueSignatureV2782(capturePreparedReaderFieldsV2759())!==cleanSignatureV2782));}
 function modified(){if(!readOnly&&!opening){userEditedV2783=true;dirty=true;version++;status('');}}
 function resetDocumentFieldsV2730(){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};
   readerEquipmentV2746.reset();readerSaveProgressV2758.reset();readerSaveProgressRequestV2759='';
   tableColumnV2737?.dispose();tableColumnV2737=null;visualRefreshV2730.reset();choices?.cancel();form?.reset();touch?.reset();cdqKeyboardFieldV2550(false);menu(true);
   documentPaintV2730?.dispose();documentPaintV2730=null;
-  doc=null;documentTask=null;fieldDefinitions=null;readerCalibration=null;formattedFields.clear();fieldTypography.clear();touchedIdentity.clear();lateIdentity=null;
+  doc=null;documentTask=null;fieldDefinitions=null;staticDocumentV2788=false;staticSourceBlobV2788=null;readerCalibration=null;formattedFields.clear();fieldTypography.clear();touchedIdentity.clear();lateIdentity=null;
   lastAttempt=null;pending=null;dirty=false;version=0;savedVersion=0;cleanSignatureV2782=null;mustSaveV2782=false;userEditedV2783=false;closeAfterSave=false;initialAppliedV2730=false;initialUpdatesV2730=[];
   cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;delete $('viewer').dataset.ready;$('viewer').classList.remove('cdq-form');$('viewer').inert=true;
   $('calibrationHelp')?.setAttribute('hidden','');
@@ -490,6 +493,8 @@ async function outputPreparedSnapshotV2759(){
   return {...snapshot,preparedPdfV2759:blob,pdfSaveInfoV2753:validatedPdfSaveInfoV2753(prepared.info)};
 }
 async function output(){
+  // Static lists have no report snapshot and download their original bytes.
+  if(staticDocumentV2788)return {blob:staticSourceBlobV2788};
   const work=pdfWorkV2729(),workEpoch=work.stats().epoch;
   if(decimalGuard&&!decimalGuard.validateAll())throw Error("Corrigez les décimales de la mesure avant d’enregistrer.");
   commitActive();await new Promise(r=>setTimeout(r,120));
@@ -620,6 +625,11 @@ async function open(data){
         // becomes available only after the canvas, widgets and calculations.
         const [metadata]=await Promise.all([readReaderMetadataV2724(doc),viewer.firstPagePromise]);checkLease();
         const {fields,actions,typography,firstPageHasAnnotations}=metadata;fieldDefinitions=fields;
+        staticDocumentV2788=(fields instanceof Map?fields.size:Object.keys(fields||{}).length)===0;
+        if(staticDocumentV2788){
+          if(reportEngineV2754||reportSnapshotV2754)throw Error('Le modèle du rapport ne contient aucun champ. Ses réponses restent conservées.');
+          readOnly=true;staticSourceBlobV2788=blob;$('save').hidden=true;$('saveClose').hidden=true;
+        }
         $('viewer').dataset.cdqT05=String(metadata.t05===true);
         if(!reportEngineV2754&&!readOnly&&data.reportEngineImportV2754&&artworkEpochV2753===workEpoch){
           const template=matchReportTemplateV2754({staticArtworkV2753,fields});
@@ -656,7 +666,7 @@ async function open(data){
         await visualRefreshV2730.flush();checkLease();
         if(canvasCandidateV2730)canvasCandidateV2730.viewport=readerViewportV2730(viewer);
         if(reuse&&!canRetainReaderCanvasV2730(canvasCandidateV2730,{epoch:workEpoch,document:doc,pageView:viewer.getPageView(0),controls:$('viewer').querySelectorAll('input,textarea,select,button').length,viewport:retained.viewport}))throw Error('Le rendu du rapport a changé pendant son ouverture.');
-        mustSaveV2782=initialPreparedDraftV2730||restoredReaderNeedsSaveV2784(resumeSavedV2767);cleanSignatureV2782=reportValueSignatureV2782(capturePreparedReaderFieldsV2759());userEditedV2783=false;dirty=mustSaveV2782;
+        mustSaveV2782=!readOnly&&(initialPreparedDraftV2730||restoredReaderNeedsSaveV2784(resumeSavedV2767));cleanSignatureV2782=staticDocumentV2788?null:reportValueSignatureV2782(capturePreparedReaderFieldsV2759());userEditedV2783=false;dirty=mustSaveV2782;
         opening=false;busy(false);$('viewer').style.opacity='';$('viewer').dataset.ready='true';status('');
         cdqScheduleWidthFitV2753();applyLateIdentity();
         if(resumeSavedV2767?.viewport){const v=resumeSavedV2767.viewport;if(Number.isFinite(v.scale)&&v.scale>=.35&&v.scale<=4)viewer.currentScale=v.scale;viewer.currentPageNumber=Math.max(1,Math.min(viewer.pagesCount,Number(v.page)||1));$('container').scrollLeft=Math.max(0,Number(v.left)||0);$('container').scrollTop=Math.max(0,Number(v.top)||0);}
@@ -841,7 +851,7 @@ try{
   eventBus.on('pagerendered',event=>{if(event.pageNumber===1&&event.source===viewer.getPageView(0)){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};}if(opening)visualRefreshV2730.schedule();else refreshResults();});
   eventBus.on('scalechanging',e=>{$('zoom').textContent=Math.round(e.scale*100)+' %';});
   eventBus.on('pagerendered',e=>{if(!e.error&&e.source?.div)e.source.div.dataset.cdqPaintedV2556='true';if(e.error)fail(e.error);});
-  eventBus.on('annotationlayerrendered',e=>{if(!e.error&&e.pageNumber===1)captureReaderCanvasesV2730(canvasCandidateV2730,e.source);cdqWrapStableAnnotationLayerV2556(e.source);if(opening)return;cdqRestoreInteractiveFieldsV2581();applyFieldTypography();if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();applyFieldTypography();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();refreshResults();});
+  eventBus.on('annotationlayerrendered',e=>{if(!e.error&&e.pageNumber===1)captureReaderCanvasesV2730(canvasCandidateV2730,e.source);cdqWrapStableAnnotationLayerV2556(e.source);if(opening)return;cdqRestoreInteractiveFieldsV2581();if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();visualRefreshV2730.schedule();});
   eventBus.on('updatefromsandbox',event=>{
     if(!doc||closed)return;
     const detail=event.detail||{};
@@ -853,7 +863,15 @@ try{
   // Commit complete numbers or the explicit skip/overload tokens; partial input stays editable.
   installFirstTapV2756(document);
   installVerifiedRangeV2756({surface:$('viewer'),names:()=>Object.assign(fieldDefinitions instanceof Map?[...fieldDefinitions.keys()]:Object.keys(fieldDefinitions||{}),{identity:doc}),read:name=>cdqStoredFieldStateV2581(name).value,family:()=>reportEngineV2754?.family||approvedReportMetadataFamilyV2735(fieldDefinitions)||'',isNew:()=>initialPreparedDraftV2730&&!reportSnapshotV2754,enabled:()=>!!doc&&!readOnly&&!opening&&!saving&&!closed,
-    write:(name,value)=>{
+    commitDependency:async(name,value)=>{
+      const currentDocument=doc,currentSandbox=sandboxReady;
+      for(const definition of cdqFieldDefinitionsV2581(name)){
+        if(!definition.id||definition.readOnly)continue;
+        await dispatchReaderSandboxEventV2731(currentSandbox,{id:definition.id,name:'Keystroke',value,willCommit:true,commitKey:1,selStart:0,selEnd:value.length});
+        if(doc!==currentDocument||closed||opening||readOnly)return false;
+      }
+      return true;
+    },write:(name,value)=>{
       for(const definition of cdqFieldDefinitionsV2581(name)){
         if(!definition.id||definition.readOnly)continue;
         definition.value=value;doc.annotationStorage.setValue(definition.id,{value});

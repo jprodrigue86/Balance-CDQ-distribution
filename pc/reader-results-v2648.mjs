@@ -44,7 +44,10 @@ export function restoreBlankConclusionV2738(surface){
  const inputs=[...surface.querySelectorAll('.buttonWidgetAnnotation.checkBox input')];
  const green=inputs.find(input=>input.name==='Bouton_Conforme');
  const red=inputs.find(input=>input.name==='Bouton_NonConforme');
- if(!green||!red||red.checked||green.checked)return false;
+ if(!green||!red)return false;
+ // A previous blank-state DOM restoration must never survive a real red result.
+ if(red.checked){const changed=green.checked;green.checked=false;return changed;}
+ if(green.checked)return false;
  const hasReading=[...surface.querySelectorAll('input,textarea')].some(input=>
   /^(?:charge_point_\d+_(?:avant|apres)_correction(?:_2)?|excentricite_(?:avant|apres)_.+|B4_.+_(?:Avant|Apres)Correction)$/.test(input.name||'')&&
   !!String(input.value??'').replace(/[\s\u00a0\u202f]/g,''));
@@ -56,10 +59,19 @@ export function restoreBlankConclusionV2738(surface){
 }
 
 export function paintReaderResults(surface){
+  const nativeVisual=surface?.dataset.cdqT05==='true'&&!!surface.querySelector('input[name^="_cdq_visual_"]');
   for(const input of surface.querySelectorAll('.buttonWidgetAnnotation.checkBox input')){
     const name=input.name||'',row=/^charge_point_\d+_conforme_(vert|rouge)$/.exec(name),header=/^(bloc3|excentricite)_statut_(non_)?conforme$/.exec(name);
     if(!row&&!header)continue;
     const section=input.closest('section');if(!section)continue;
+    // These PDFs already own the colored trapezoid and its symbol in /AP.
+    // Keep that one native drawing in the reader, export and saved report.
+    if(nativeVisual){
+      section.classList.remove('cdq-result-widget');
+      section.querySelector('.cdq-result-indicator')?.remove();
+      section.dataset.cdqNativeResultV2788='true';
+      continue;
+    }
     // Approved client reports can predate the trial schema while still owning
     // the same repaired native row appearance. The visual normalizer marks
     // those exact fields as native; do not hide that canvas and put an older

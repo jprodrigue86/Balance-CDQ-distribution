@@ -1,3 +1,4 @@
+import {createBalanceSheetReaderV2788} from './balance-sheet-summary-v2788.mjs';
 import {balanceListMessagesV2782} from './file-operation-state-v2782.mjs';
 import {equipmentEditSignatureV2746} from './balance-list-live-v2746.mjs';
 import {replaceBalanceSourceV2751,balanceSourceRowsV2751,balanceDisplayRowsV2751,balanceSignatureValuesV2751} from './balance-list-index-v2751.mjs';
@@ -9,7 +10,8 @@ import {ensureBalanceListFolderV2731,balanceListLocationV2731,balanceListNeedsPl
 import './field-work-v2729.mjs';
 import {createBalanceListProjectionV2746} from './balance-list-live-v2746.mjs';
 import {renderBalanceListV2728} from './balance-list-renderer-v2728.mjs';
-const equipment=createEquipmentTrackerV2697({identity:()=>calibrationIdentity().email,library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},loadPdf:(id,revision)=>window.cdqLoadPdfForCalibrationV2668(id,revision),loadSheet:(id,revision,clientId)=>call('obtenirSnapshotGoogleSheetHorsLigne',id,clientId||client())});
+const readBalanceSheetV2788=createBalanceSheetReaderV2788({rpc:(...args)=>call(...args),identity:()=>calibrationIdentity().email});
+const equipment=createEquipmentTrackerV2697({identity:()=>calibrationIdentity().email,library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},loadPdf:(id,revision)=>window.cdqLoadPdfForCalibrationV2668(id,revision),loadSheet:(id,revision,clientId)=>readBalanceSheetV2788(id,clientId||client(),revision)});
 window.cdqEquipmentListV2697=equipment;
 const canRead=()=>!!window.cdqDriveEntryV2632?.canRead()&&!!calibrationIdentity().email;
 const canWrite=()=>canRead()&&['admin','technicien'].includes(calibrationIdentity().role);
@@ -122,7 +124,7 @@ async function importEngineIndexV2754(id,state){
 async function reconcileEngineSourcesV2754(id){
  const k=key(id),state=states.get(k);if(!canWrite()||engineCurrentV2754(id)||state?.reconciliationRequired||!state?.fileId)return state;
  const version=epoch,account=calibrationIdentity().email,fingerprint=clientFingerprint(id),current=()=>version===epoch&&account===calibrationIdentity().email&&canWrite()&&fingerprint===clientFingerprint(id);
- const result=await updateBalanceListFastV2729({clientId:id,fileId:state.fileId,indexOnly:true,rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision),loadSheet:(file,clientId)=>call('obtenirSnapshotGoogleSheetHorsLigne',file,clientId),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true),onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,false),previousState:state,stillCurrent:current});
+ const result=await updateBalanceListFastV2729({clientId:id,fileId:state.fileId,indexOnly:true,rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision),loadSheet:(file,clientId,revision)=>readBalanceSheetV2788(file,clientId,revision),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true),onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,false),previousState:state,stillCurrent:current});
  if(!current())throw Error('Le compte, le client ou les sources ont changé.');
  states.set(k,{...state,...result,engineBaselineV2754:engineListsV2754.get(k)});return importEngineIndexV2754(id,states.get(k));
 }
@@ -408,7 +410,7 @@ async function refresh(force=false,verify=false,id=client()){
     const finish=window.cdqDriveBackgroundV2746?.begin?.('list:'+id,calibrationIdentity().email)||(()=>{});
     try{
     const capabilities=await window.cdqDriveTransferV2751?.capabilities?.(),guardedSave=capabilities?.ok===true&&capabilities.guardedSaveV2751===true&&capabilities.sourceManifestValidation===true;
-    const updateOptions={guardedSave,sourceIndex:warmIndexes.has(k)?states.get(k)?.sourceIndexV2751:null,clientId:id,fileId:String(fileId),rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision),loadSheet:file=>call('obtenirSnapshotGoogleSheetHorsLigne',file,id),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true),onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,false),previousState:states.get(k),stillCurrent:()=>version===epoch&&canWrite()&&queueOwner()&&change===(changes.get(k)||0)&&fingerprint===clientFingerprint(id),onSaved:record=>window.cdqStoreBalanceListV2729(record)};
+    const updateOptions={guardedSave,sourceIndex:warmIndexes.has(k)?states.get(k)?.sourceIndexV2751:null,clientId:id,fileId:String(fileId),rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision),loadSheet:(file,clientId,revision)=>readBalanceSheetV2788(file,clientId,revision),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true),onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,false),previousState:states.get(k),stillCurrent:()=>version===epoch&&canWrite()&&queueOwner()&&change===(changes.get(k)||0)&&fingerprint===clientFingerprint(id),onSaved:record=>window.cdqStoreBalanceListV2729(record)};
     let result;try{result=await updateBalanceListFastV2729(updateOptions);}catch(error){if(!updateOptions.sourceIndex||!/(?:SOURCE_MANIFEST_CONFLICT|CONFLICT_REVISION)/.test(String(error?.message||error)))throw error;warmIndexes.delete(k);result=await updateBalanceListFastV2729({...updateOptions,sourceIndex:null});}
     equipment.flushReads?.();clearFailure(k);satisfiedNow();ready(id,result,force);return result;
     }finally{finish();}
@@ -432,7 +434,7 @@ async function refresh(force=false,verify=false,id=client()){
         const index=await updateBalanceListFastV2729({clientId:id,fileId:'',listDestinationId:destination,indexOnly:true,
           rpc:(name,...args)=>call(name,...args),
           loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision),
-          loadSheet:(file,clientId)=>call('obtenirSnapshotGoogleSheetHorsLigne',file,clientId),
+          loadSheet:(file,clientId,revision)=>readBalanceSheetV2788(file,clientId,revision),
           library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},
           cachedSignature:file=>equipment.confirmedSignature(file,id,true),
           onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,false),
