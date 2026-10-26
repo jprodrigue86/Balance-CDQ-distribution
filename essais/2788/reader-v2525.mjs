@@ -1,3 +1,4 @@
+import {alignHeaderCanvasesV2788R4} from './reader-header-alignment-v2788r4.mjs';
 import {preparePcReaderCanvasBarrierV2754,installPcReaderCanvasBarrierV2754} from './reader-canvas-barrier-v2754.mjs';
 import {installT05Font,styleT05Fields} from './reader-t05.mjs';
 installT05Font();
@@ -68,7 +69,7 @@ function applyFieldTypography(){
   refreshReportVisualV2736({surface:$('viewer'),fields:fieldDefinitions});
   if(trialReportMetadataFamilyV2743(fieldDefinitions))refreshResultGeometryV2743($('viewer'));
 }
-function refreshResults(){if(!doc)return;if(trialReportMetadataFamilyV2743(fieldDefinitions)){restoreBlankResultConclusionV2743($('viewer'));refreshResultGeometryV2743($('viewer'));}else paintReaderResults($('viewer'));alignResultCanvasesV2767($('viewer'),fieldDefinitions);}
+function refreshResults(){if(!doc)return;if(trialReportMetadataFamilyV2743(fieldDefinitions)){restoreBlankResultConclusionV2743($('viewer'));refreshResultGeometryV2743($('viewer'));}else paintReaderResults($('viewer'));alignResultCanvasesV2767($('viewer'),fieldDefinitions);alignHeaderCanvasesV2788R4($('viewer'),fieldDefinitions);}
 $('viewer').addEventListener('input',()=>requestAnimationFrame(applyFieldTypography));
 $('viewer').addEventListener('change',()=>requestAnimationFrame(applyFieldTypography));
 
