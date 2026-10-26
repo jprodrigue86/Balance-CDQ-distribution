@@ -158,11 +158,18 @@ export function installReaderTableColumnV2737({surface,getDocument,getFields,get
     const selected=mode(),fields=getFields();if(!selected){lastMode=null;return;}
     applying=true;
     try{
+      let t05Groups=null;
+      const actionMap=definitions(fields,'colonne')[0]?.actions;
+      const actions=actionMap instanceof Map?[...actionMap.values()].flat():Object.values(actionMap||{}).flat();
+      for(const source of actions)if(typeof source==='string'&&source.includes('CDQT05_GEOMETRY')){
+        const json=source.match(/var c=(\{.*?\}),type=/)?.[1];
+        try{const groups=JSON.parse(json).groups;if(Object.keys(tableColumnV2737.groups).every(p=>['Sans','Avec'].every(k=>Number.isFinite(groups?.[p]?.[k])&&groups[p][k]>0&&groups[p][k]<900)))t05Groups=groups;}catch{}
+      }
       for(const [prefix,g] of Object.entries(tableColumnV2737.groups))for(const suffix of g.suffixes){
         const name=prefix+'_'+suffix,hidden=selected==='Sans'&&prefix==='indicateur';
         for(const def of definitions(fields,name)){
           put(def,{noView:hidden,noPrint:hidden});
-          const geometry=tableColumnDomRectV2737(def.rect,g[selected],getPageView(def.page??0));
+          const geometry=tableColumnDomRectV2737(def.rect,t05Groups?.[prefix]?.[selected]??g[selected],getPageView(def.page??0));
           for(const control of controls(name)){
             if(control.dataset.elementId&&control.dataset.elementId!==def.id)continue;
             const section=control.closest('section[data-annotation-id]');if(!section)continue;

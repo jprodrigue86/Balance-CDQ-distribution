@@ -1,3 +1,4 @@
+import {t05Family} from './reader-t05.mjs';
 import {normalizeMeasurementRulesV2736} from './reader-measurements-v2736.mjs';
 import {normalizeReportVisualV2736} from './reader-report-visual-v2736.mjs';
 import {applyEquipmentHeaderGapV2736} from './reader-equipment-gap-v2736.mjs';
@@ -25,7 +26,9 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
     lib.catalog.lookupMaybe(L.PDFName.of('CDQNativeMultiHeadV2763'),L.PDFNumber)?.asNumber()===2763&&
     lib.catalog.has(L.PDFName.of('CDQApprovedReportV2737'))&&
     lib.catalog.lookupMaybe(L.PDFName.of('CDQMultiHeadSkipOverloadV2737'),L.PDFNumber)?.asNumber()===2737;
-  if(approved)changed=(nativeMulti?false:normalizeMeasurementRulesV2736(lib,L,approved))|
+  const t05=t05Family(lib,L);
+  if(t05)changed=false;
+  else if(approved)changed=(nativeMulti?false:normalizeMeasurementRulesV2736(lib,L,approved))|
     normalizeReportVisualV2736(lib,L,approved)|applyEquipmentHeaderGapV2736(lib,L,approved);
   else changed=compactToleranceActions(lib,L)|normalizeFloorStatusV2691(lib,L);
   for(const entry of entries){
@@ -60,7 +63,8 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
       const widgets=original.call(field.acroField).filter(w=>{try{const r=w.getRectangle();return [r.x,r.y,r.width,r.height].every(Number.isFinite);}catch{return false;}});
       if(widgets.length){try{field.acroField.getWidgets=()=>widgets;field.defaultUpdateAppearances(font);}finally{field.acroField.getWidgets=original;}}
     }
-    if(approved)normalizeReportVisualV2736(lib,L,approved);
+    if(t05){ /* Preserve native T05 identity appearance. */ }
+    else if(approved)normalizeReportVisualV2736(lib,L,approved);
     else centerSingleLineAppearances(lib,L);
     return new Blob([await lib.save({updateFieldAppearances:false})],{type:'application/pdf'});
   }

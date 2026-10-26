@@ -1,3 +1,4 @@
+import {t05Family,prepareT05Save} from './reader-t05.mjs';
 import {normalizeMeasurementRulesV2736} from './reader-measurements-v2736.mjs';
 import {compactApprovedFloorToleranceV2739} from './reader-floor-tolerance-v2739.mjs';
 import {normalizeReportVisualV2736} from './reader-report-visual-v2736.mjs';
@@ -70,6 +71,7 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary,onPrepar
   // Observe this exact repaired document before choosing original bytes or
   // serialization. Only a verified palette-restoration marker forces a save.
   const prepared=async changed=>{const observed=typeof onPrepared==='function'?await onPrepared(pdf):null;return changed||observed?.nativeWidgetPaletteRestoredV2755===true?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;};
+  if(t05Family(pdf,L))return prepared(false);
   const correctedFamilyV2736=approvedReportFamilyV2735(pdf,L);
   if(correctedFamilyV2736){
     const nativeMulti=preserveNativeMultiHeadV2737(pdf,L,correctedFamilyV2736);
@@ -122,6 +124,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary,onPrepare
     for(const value of technician.getSelected())if(typeof value==='string'&&value.length<=1000&&value.trim()&&!options.has(value)){missing.push(value);options.add(value);}
     if(missing.length)technician.addOptions(missing);
   }
+  if(prepareT05Save(pdf,L))return persist();
   const correctedFamilyV2736=approvedReportFamilyV2735(pdf,L);
   if(correctedFamilyV2736){
     normalizeTableColumnV2737(pdf,L);

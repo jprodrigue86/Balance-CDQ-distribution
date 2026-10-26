@@ -33,7 +33,39 @@ export function createBundledOpeningV2753({pin,manifest=BUNDLED_OPENING_MANIFEST
   if(!record(pin)||!record(manifest)||manifest.version!==2753||typeof pin.build!=='string'||pin.build!==manifest.build||!sha.test(pin.manifestSha256)||!sha.test(pin.normalizerSha256)||pin.normalizerSha256!==manifest.normalizer?.sha256||!record(catalog)||!record(manifest.families)||Object.keys(catalog).length!==12||Object.keys(manifest.families).sort().join()!==Object.keys(catalog).sort().join())return null;
   if(await hashBytes(encoded(manifest))!==pin.manifestSha256||await hashBytes(encoded(catalog))!==manifest.catalogSha256)return null;
   for(const [family,value]of Object.entries(manifest.families)){
-   const meta=catalog[family];if(!/^[a-z][a-z0-9_-]{0,39}$/.test(family)||!record(value)||value.fixedPoint!==true||!asset(value.source)||!asset(value.normalized)||value.source.path!==meta.path||value.source.bytes!==meta.taille||value.source.sha256!==meta.sha256||!new RegExp('^assets/reader-opening-v2753/'+family+'-'+value.normalized.sha256+'\\.pdf$').test(value.normalized.path))return null;
+   const meta=catalog[family];if(!/^[a-z][a-z0-9_-]{0,39}$/.test(family)||!record(value)||value.fixedPoint!==true||!asset(value.source)||!asset(value.normalized)||value.source.path!==meta.path||value.source.bytes!==meta.taille||value.source.sha256!==meta.sha256||!(value.normalized.path===value.source.path&&value.normalized.sha256===value.source.sha256&&value.normalized.bytes===value.source.bytes||new RegExp('^assets/reader-opening-v2753/'+family+'-'+value.normalized.sha256+'\\.pdf)return null;
+  }
+  return manifest;
+ }
+ const trusted=()=>verified??=(verify().catch(()=>null));
+ async function derivative(meta,budgetMs=fetchBudgetMs){
+  const key=meta.sha256,hit=cache.get(key);if(hit){cache.delete(key);cache.set(key,hit);return hit.blob;}
+  if(pending.has(key))return pending.get(key);
+  // A missing service-worker asset must never turn a local report opening
+  // into an unbounded download. Fall back to the existing worker repair.
+  const controller=new AbortController();let timer;
+  const job=Promise.resolve().then(async()=>{try{
+   const received=await Promise.race([Promise.resolve().then(()=>loadBytes(meta.path,meta.bytes,{signal:controller.signal})),new Promise((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Error('Bundled opening asset timed out'));},Math.min(1000,Math.max(1,Number(budgetMs)||200)));})]),bytes=received instanceof Uint8Array?received.slice():null;if(!pdf(bytes)||bytes.length!==meta.bytes||await hashBytes(bytes)!==meta.sha256)return null;
+   const blob=new Blob([bytes],{type:'application/pdf'});
+   if(blob.size<=limit){cache.set(key,{blob,bytes:blob.size});size+=blob.size;while(size>limit&&cache.size){const oldest=cache.keys().next().value;size-=cache.get(oldest).bytes;cache.delete(oldest);}}
+   return blob;
+  }catch{controller.abort();return null;}finally{clearTimeout(timer);pending.delete(key);}});pending.set(key,job);return job;
+ }
+ return {async prepare(blob,{epoch,getEpoch,checkCurrent=()=>{},fetchBudgetMs:requestBudgetMs}={}){
+  if(!Number.isInteger(epoch)||epoch<0||typeof getEpoch!=='function')return null;
+  const guard=()=>{if(getEpoch()!==epoch)throw Error('Le compte ou l’accès Drive a changé.');checkCurrent();};guard();
+  if(!(blob instanceof Blob)||blob.size<8||blob.size>32*1024*1024)return null;
+  const index=await trusted();guard();if(!index)return null;
+  const candidates=Object.values(index.families).filter(value=>value.source.bytes===blob.size);if(!candidates.length)return null;
+  let bytes;try{bytes=new Uint8Array(await blob.arrayBuffer());}catch{guard();return null;}guard();
+  if(!pdf(bytes)||bytes.length!==blob.size)return null;
+  let sourceSha;try{sourceSha=await hashBytes(bytes);}catch{guard();return null;}guard();
+  const match=candidates.find(value=>value.source.sha256===sourceSha);if(!match)return null;
+  const normalized=await derivative(match.normalized,requestBudgetMs);guard();
+  return normalized?{blob:normalized,normalized:true,preparedEpoch:epoch,sourceSha256:sourceSha,normalizedSha256:match.normalized.sha256}:null;
+ }};
+}
+).test(value.normalized.path)))return null;
   }
   return manifest;
  }
