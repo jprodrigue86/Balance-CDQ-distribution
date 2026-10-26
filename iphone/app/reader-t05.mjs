@@ -14,6 +14,20 @@ export function t05Family(pdf,L){
 export function prepareT05Save(pdf,L){
   const family=t05Family(pdf,L);if(!family)return false;
   const N=L.PDFName.of,form=pdf.getForm();
+  // PDF.js does not serialize push-button visibility; retain the selected
+  // native plateau image in the saved PDF, including passive PDF viewers.
+  if(family==='precision'&&pdf.catalog.has(N('CDQVisual20261026'))){
+    const selected=form.getField('type_plateau').getSelected()[0];
+    const shape=selected==='Triangle'?'triangle':selected==='Rond'?'round':'square';
+    for(const field of form.getFields()){
+      const m=/^plateau_image_(avant|apres)_(square|round|triangle)$/.exec(field.getName());
+      if(!m)continue;
+      for(const widget of field.acroField.getWidgets()){
+        const flags=widget.getFlags();widget.setFlags(m[2]===shape?(flags&~(2|32))|4:flags|2|32);
+      }
+    }
+  }
+
   if(['precision','cuve','tremie'].includes(family)){
     const selected=form.getField(family==='precision'?'type_plateau':'points_test').getSelected()[0];
     const hidden=selected==='Triangle'||selected==='3 points';
@@ -33,7 +47,7 @@ export function prepareT05Save(pdf,L){
         const f=form.getFieldMaybe(prefix+'_'+suffix);if(!f)continue;
         for(const widget of f.acroField.getWidgets()){
           const rect=widget.getRectangle();if(Math.abs(rect.y-y)>.001)widget.setRectangle({...rect,y:Number(y.toFixed(5))});
-          const flags=widget.getFlags();widget.setFlags(mode==='Sans'&&prefix==='indicateur'?(flags|2|32)&~4:(flags&~(2|32))|4);
+          const flags=widget.getFlags();widget.setFlags(mode==='Sans'&&prefix==='indicateur'?flags|2|32:(flags&~(2|32))|4);
         }
       }
     }
@@ -85,9 +99,11 @@ export function installT05Font(){
 
 export function styleT05Fields(surface){
   if(surface?.dataset.cdqT05!=='true')return false;
+  const corrected=!!surface.querySelector('input[name^="_cdq_visual_"]');
+  if(corrected)for(const indicator of surface.querySelectorAll('input[name^="_cdq_visual_"]')){const section=indicator.closest('section');if(section)section.style.setProperty('pointer-events','none','important');}
   for(const field of surface.querySelectorAll('input:not([type=checkbox]),textarea,select,button.cdq-choice-field')){
     if(!field.name)continue;
-    for(const [key,value]of Object.entries({'font-family':'CDQRoboto850,Arial,sans-serif','font-weight':'850','text-align':'center',color:field.name.endsWith('_numero_tete')?'#101B7A':'#061B35'}))field.style.setProperty(key,value,'important');
+    for(const [key,value]of Object.entries({'font-family':'CDQRoboto850,Arial,sans-serif','font-weight':'850','text-align':'center',color:corrected&&!field.name.endsWith('_numero_tete')&&/^(charge_point_|excentricite_(avant|apres)_|B4_|charge_excentricite$|tolerance_excentricite$)/.test(field.name)?'#000000':field.name.endsWith('_numero_tete')?'#101B7A':'#061B35'}))field.style.setProperty(key,value,'important');
   }
   return true;
 }

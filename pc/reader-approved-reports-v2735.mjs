@@ -1,3 +1,4 @@
+import {visualBaseNames20261026,visualBaseMetadataNames20261026} from './reader-visual-schema-20261026.mjs';
 import {trialReportFamilyV2743,trialReportMetadataFamilyV2743} from './reader-trial-reports-v2743.mjs';
 // Independent current masters. This protects artwork and authored forms only;
 // it grants neither account access nor bundled-reader/cache provenance.
@@ -21,7 +22,7 @@ function revisedReportFamilyV2737(pdf,L){
  if(!marker)return null;
  const family=marker.lookupMaybe(N('Family'),L.PDFString)?.decodeText(),expected=APPROVED_REPORTS_V2737[family];
  if(!expected||marker.lookupMaybe(N('Revision'),L.PDFNumber)?.asNumber()!==2737||marker.lookupMaybe(N('SourceSHA256'),L.PDFString)?.decodeText()!==expected.sha)return null;
- const names=pdf.getForm().getFields().map(f=>f.getName()).sort(),fields=fieldsV2737(family);
+ const names=visualBaseNames20261026(pdf,L),fields=fieldsV2737(family);
  return fields&&names.length===fields.length&&names.every((n,i)=>n===fields[i])?family:null;
 }
 export function approvedReportFamilyV2735(pdf,L){
@@ -33,7 +34,7 @@ export function approvedReportFamilyV2735(pdf,L){
   const key=marker.lookupMaybe(N('Family'),L.PDFString)?.decodeText(),expected=APPROVED_REPORTS_V2735[key];
   if(!expected||marker.lookupMaybe(N('Revision'),L.PDFNumber)?.asNumber()!==2735||marker.lookupMaybe(N('SourceSHA256'),L.PDFString)?.decodeText()!==expected.sourceSha256||pdf.getPageCount()!==expected.pages)return null;
   const page=pdf.getPage(0);if(page.getWidth()!==expected.width||page.getHeight()!==expected.height)return null;
-  const names=pdf.getForm().getFields().map(field=>field.getName()).sort();
+  const names=visualBaseNames20261026(pdf,L);
   return names.length===expected.fields.length&&names.every((name,i)=>name===expected.fields[i])?key:null;
  }catch{return null;}
 }
@@ -42,9 +43,9 @@ export function approvedReportFamilyV2735(pdf,L){
 export function approvedReportMetadataFamilyV2735(fields){
  const trial=trialReportMetadataFamilyV2743(fields);if(trial)return trial;
  const revised=fieldsV2737('multitete');
- const current=(fields instanceof Map?[...fields.keys()]:Object.keys(fields||{})).sort();
+ const current=visualBaseMetadataNames20261026(fields);
  if(current.length===revised.length&&current.every((name,i)=>name===revised[i]))return 'multitete';
- const names=(fields instanceof Map?[...fields.keys()]:Object.keys(fields||{})).sort();
+ const names=visualBaseMetadataNames20261026(fields);
  for(const [key,expected] of Object.entries(APPROVED_REPORTS_V2735))if(names.length===expected.fields.length&&names.every((name,i)=>name===expected.fields[i]))return key;
  return null;
 }
