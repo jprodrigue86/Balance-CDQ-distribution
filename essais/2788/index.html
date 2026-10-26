@@ -7,10 +7,10 @@ const frame=document.getElementById('reader'),chooser=document.getElementById('c
 const database=new Promise((resolve,reject)=>{const q=indexedDB.open('CDQ-essai-visuel-2788-r2',1);q.onupgradeneeded=()=>q.result.createObjectStore('reports');q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);});
 async function stored(key,blob){const db=await database;return new Promise((resolve,reject)=>{const tx=db.transaction('reports',blob?'readwrite':'readonly'),s=tx.objectStore('reports'),q=blob?s.put(blob,key):s.get(key);let value;q.onsuccess=()=>value=q.result;tx.oncomplete=()=>resolve(value);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('Enregistrement local interrompu'));});}
 function error(e){status.textContent='Erreur : '+(e?.message||e);}
-for(const b of document.querySelectorAll('[data-family]'))b.onclick=()=>{family=b.dataset.family;chooser.hidden=true;frame.hidden=false;status.textContent='Ouverture de l’essai '+family+'…';frame.src='reader.html?trial=4';};
+for(const b of document.querySelectorAll('[data-family]'))b.onclick=()=>{family=b.dataset.family;chooser.hidden=true;frame.hidden=false;status.textContent='Ouverture de l’essai '+family+'…';frame.src='reader.html?trial=5';};
 addEventListener('message',async e=>{if(e.origin!==location.origin||e.source!==frame.contentWindow)return;const m=e.data;
 try{
- if(m.type==='CDQ_READER_READY'&&!frame.hidden){const blob=await stored(family)||await(await fetch(family+'.pdf?trial=4')).blob();e.source.postMessage({type:'CDQ_READER_OPEN',blob,fileId:'trial-2788-'+family,name:'ESSAI '+family+'.pdf',desktop:matchMedia('(min-width:800px)').matches},location.origin);}
+ if(m.type==='CDQ_READER_READY'&&!frame.hidden){const blob=await stored(family)||await(await fetch(family+'.pdf?trial=5')).blob();e.source.postMessage({type:'CDQ_READER_OPEN',blob,fileId:'trial-2788-'+family,name:'ESSAI '+family+'.pdf',desktop:matchMedia('(min-width:800px)').matches},location.origin);}
  if(m.type==='CDQ_READER_OPENED')status.textContent='Essai '+family+' — modifications locales seulement.';
  if(m.type==='CDQ_READER_SAVE'){
   try{if(!(m.blob instanceof Blob))throw Error('PDF absent');await stored(family,m.blob);if(savedUrl)URL.revokeObjectURL(savedUrl);savedUrl=URL.createObjectURL(m.blob);download.href=savedUrl;download.download='CDQ-essai-'+family+'.pdf';download.hidden=false;e.source.postMessage({type:'CDQ_READER_SAVED',requestId:m.requestId,ok:true},location.origin);status.textContent='Essai enregistré dans ce navigateur. Aucun fichier envoyé à Drive.';}

@@ -44,7 +44,10 @@ export function restoreBlankConclusionV2738(surface){
  const inputs=[...surface.querySelectorAll('.buttonWidgetAnnotation.checkBox input')];
  const green=inputs.find(input=>input.name==='Bouton_Conforme');
  const red=inputs.find(input=>input.name==='Bouton_NonConforme');
- if(!green||!red||red.checked||green.checked)return false;
+ if(!green||!red)return false;
+ // A previous blank-state DOM restoration must never survive a real red result.
+ if(red.checked){const changed=green.checked;green.checked=false;return changed;}
+ if(green.checked)return false;
  const hasReading=[...surface.querySelectorAll('input,textarea')].some(input=>
   /^(?:charge_point_\d+_(?:avant|apres)_correction(?:_2)?|excentricite_(?:avant|apres)_.+|B4_.+_(?:Avant|Apres)Correction)$/.test(input.name||'')&&
   !!String(input.value??'').replace(/[\s\u00a0\u202f]/g,''));
