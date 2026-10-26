@@ -93,7 +93,7 @@ function centerSerializedT05Text(pdf,L){
 export function installT05Font(){
   if(typeof document==='undefined'||document.getElementById('cdq-t05-font'))return;
   const style=document.createElement('style');style.id='cdq-t05-font';
-  style.textContent=`@font-face{font-family:CDQRoboto850;src:url("${new URL('../../pc/assets/fonts/t05-roboto850.ttf',import.meta.url).href}") format("truetype");font-weight:850;font-style:normal;font-display:swap}#viewer[data-cdq-t05="true"] button.cdq-choice-field{padding-left:0!important;padding-right:0!important}`;
+  style.textContent=`@font-face{font-family:CDQRoboto850;src:url("${new URL('../../pc/assets/fonts/t05-roboto850.ttf',import.meta.url).href}") format("truetype");font-weight:850;font-style:normal;font-display:swap}#viewer[data-cdq-t05="true"] button.cdq-choice-field{padding-left:0!important;padding-right:0!important}#viewer[data-cdq-t05="true"] .textWidgetAnnotation.hasOwnCanvas:has(>input[name="type_balance"][data-cdq-auto-field="true"]){border-color:transparent!important}`;
   document.head.append(style);
 }
 
