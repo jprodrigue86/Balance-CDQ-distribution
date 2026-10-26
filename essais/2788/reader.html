@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="fr"><head><base href="/Balance-CDQ-distribution/pc/"><script type="importmap">{"imports": {"/Balance-CDQ-distribution/pc/reader-v2525.mjs": "/Balance-CDQ-distribution/essais/2788/reader-v2525.mjs", "/Balance-CDQ-distribution/pc/reader-t05.mjs": "/Balance-CDQ-distribution/essais/2788/reader-t05.mjs", "/Balance-CDQ-distribution/pc/reader-results-v2648.mjs": "/Balance-CDQ-distribution/essais/2788/reader-results-v2648.mjs", "/Balance-CDQ-distribution/essais/2788/": "/Balance-CDQ-distribution/pc/"}}</script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>PDF — CDQ</title>
+<script src="./runtime-compat-v2658.js"></script>
+<link rel="stylesheet" href="./vendor/pdfjs-6.3.289/web/pdf_viewer.css">
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#101820;color:#eaf3fa;font-family:Arial,sans-serif}header{height:64px;display:flex;align-items:center;gap:10px;padding:8px 14px;background:#102a40;border-bottom:1px solid #335065}button,label.action{cursor:pointer;border:1px solid #3b596d;background:#183b54;color:#f5fbff;border-radius:9px;min-height:44px;padding:10px 14px;font:600 14px Arial}button.primary{background:#0876bc;border-color:#1591d8}button:disabled{opacity:.5;cursor:default}#name{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:600}#container{position:absolute;top:64px;bottom:30px;left:0;right:0;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y pinch-zoom}#empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:12px}#file{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0}#status{position:absolute;bottom:0;left:0;right:0;height:30px;padding:7px 14px;font-size:13px;background:#102a40;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}#more{position:absolute;z-index:50;right:12px;top:62px;width:250px;padding:8px;background:#17374b;border:1px solid #416478;border-radius:12px;box-shadow:0 14px 40px #0009}#more button,#more label{display:block;width:100%;text-align:left;margin:4px 0}#zoom{min-width:42px;text-align:center;font-size:13px}.pdfViewer{padding:0}.pdfViewer .page{margin:0 auto 10px;border:none}
+/* Le document doit glisser à un doigt, même si le geste commence sur la page
+   ou sur un champ du formulaire. Le pincement à deux doigts reste disponible. */
+#container,#viewer,.pdfViewer,.pdfViewer .page,.canvasWrapper,.canvasWrapper canvas,.annotationLayer,.annotationLayer section,.annotationLayer :is(input,textarea,select,a){touch-action:pan-x pan-y!important}
+/* Retirer aussi l'image de surbrillance PDF.js : background-color seul ne la
+   retire pas. Garder le fond cyan /MK/BG du PDF, identique pour tous les champs. */
+.annotationLayer :is(.textWidgetAnnotation,.choiceWidgetAnnotation) :is(input,textarea,select){background-image:none!important;box-shadow:none!important;opacity:1}
+.annotationLayer :is(input,textarea,select,a):is(:focus,:focus-visible,:active,:hover){outline:none!important;outline-offset:0!important;box-shadow:none!important;filter:none!important}
+.annotationLayer :is(.textWidgetAnnotation,.choiceWidgetAnnotation) :is(input,textarea,select):focus-visible{outline:1px solid #07536b!important;outline-offset:-1px!important}
+.annotationLayer .buttonWidgetAnnotation :is(input,button,a):is(:focus,:focus-visible,:active,:hover){outline:none!important;background:transparent!important;box-shadow:none!important;filter:none!important}
+#container{overflow-anchor:none}#formNav{position:absolute;z-index:40;bottom:30px;left:0;right:0;height:48px;display:flex;justify-content:center;gap:8px;padding:2px 8px;background:#102a40;border-top:1px solid #335065}#formNav[hidden]{display:none}body.form-navigation #container{bottom:30px}
+@media(max-width:600px){header{height:106px;flex-wrap:wrap;gap:6px;padding:7px 8px}#container{top:106px}#name{flex-basis:calc(100% - 65px);font-size:15px}.zoom-button{min-width:44px}#save{margin-left:auto}#more{top:104px}button{padding:10px}#back{font-size:0}#back:before{content:'←';font-size:24px}#status{font-size:12px}}
+
+#closeDialog{max-width:460px;width:calc(100% - 24px);border:1px solid #567186;border-radius:16px;background:#142a3b;color:#f5f9fc;padding:24px;font:16px Arial}#closeDialog::backdrop{background:#0009}#closeDialog h2{margin-top:0;font-size:21px}#closeDialog p{line-height:1.5}#closeDialog button{display:block;width:100%;margin-top:10px;text-align:center}#closeError{color:#ffd19a}#discard{color:#ffb9b9}#savingMask{position:absolute;inset:64px 0 30px;z-index:45;background:#142a3b55;cursor:wait}#savingMask[hidden]{display:none}#viewer{color-scheme:only light}.annotationLayer input,.annotationLayer select,.annotationLayer textarea{color-scheme:only light}.annotationLayer :is(input,textarea,select):disabled{opacity:1!important;-webkit-text-fill-color:currentColor}#container{scrollbar-gutter:stable}button:focus-visible{outline:2px solid #8cdfff;outline-offset:2px}@media(max-width:600px){#savingMask{top:106px}#status{padding-left:8px;padding-right:8px}}
+/* CDQ PDFs embed NimbusSans-Bold/Helvetica-Bold. Match this weight in the live widgets. */
+#viewer .annotationLayer :is(.textWidgetAnnotation,.choiceWidgetAnnotation) :is(input,textarea,select){font-family:Arial,Helvetica,sans-serif!important;font-weight:700!important;color:#000!important;-webkit-text-fill-color:#000!important;opacity:1!important;filter:none!important}
+#viewer .annotationLayer .choiceWidgetAnnotation select{
+  text-align:center!important;text-align-last:center!important;padding-left:0!important;padding-right:0!important
+}
+#viewer .annotationLayer .choiceWidgetAnnotation select[name="legal_pour_commerce"]{
+  -webkit-appearance:none!important;appearance:none!important;
+  text-align:center!important;text-align-last:center!important;
+  padding-left:26px!important;padding-right:26px!important;
+  background-image:
+    linear-gradient(45deg,transparent 50%,#111 50%),
+    linear-gradient(135deg,#111 50%,transparent 50%)!important;
+  background-position:calc(100% - 13px) 50%,calc(100% - 8px) 50%!important;
+  background-size:5px 5px,5px 5px!important;background-repeat:no-repeat!important
+}
+#viewer .annotationLayer .choiceWidgetAnnotation select option{text-align:center!important}
+#viewer .annotationLayer .buttonWidgetAnnotation :is(input,button,a){opacity:1!important;filter:none!important;color-scheme:only light;forced-color-adjust:none}
+#viewer .annotationLayer .buttonWidgetAnnotation :is(input,button,a):disabled{opacity:1!important}
+#viewer .annotationLayer :is(input,select,textarea){min-height:0;min-width:0;margin:0}
+/* V25.50 - champs calcules/remplis automatiquement: visibles, mais jamais
+   selectionnes par Suivant/Precedent ni par un toucher accidentel. */
+#viewer .annotationLayer :is(input,textarea,select)[data-cdq-auto-field="true"]{
+  pointer-events:none!important;cursor:default!important;caret-color:transparent!important;user-select:none!important
+}
+header{background:#161a20;border-color:#3d4652}header button,#more button{background:#293541;border-color:#718190;color:#fff}header #save{background:#087ab5;border-color:#4dc7ff}
+
+/* One composite page, one canvas: no moving detail tile layered over the PDF. */
+#container{cursor:grab;isolation:isolate;scroll-behavior:auto}#container.dragging{cursor:grabbing;user-select:none}
+.pdfViewer .page{background:white;isolation:isolate}.canvasWrapper{background:white;backface-visibility:hidden}
+.annotationLayer :is(input,textarea,select){cursor:text;opacity:1!important;color:#000!important;-webkit-text-fill-color:#000!important}
+#container.dragging .annotationLayer{pointer-events:none}header{box-shadow:none}
+@media(max-width:600px){header{height:96px;padding:4px 8px}#container{top:96px}#savingMask{top:96px}#more{top:94px}}
+
+/* V25.46 — interface lecteur mobile compacte, zones système respectées. */
+#zoomControls{display:flex;align-items:center;justify-content:center;gap:6px;flex:0 0 auto}
+#back{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+/* V25.51 — fidélité PDF: la couche interactive reste transparente et les
+   apparences embarquées dans le PDF gardent leurs couleurs originales. */
+#viewer .annotationLayer .buttonWidgetAnnotation:is(.checkBox,.radioButton) input{
+  background:none!important;background-image:none!important;background-color:transparent!important;
+  border:0!important;box-shadow:none!important;opacity:1!important;filter:none!important
+}
+#viewer .annotationLayer .buttonWidgetAnnotation:is(.checkBox,.radioButton) [data-canvas-name],
+#viewer .annotationLayer .buttonWidgetAnnotation.pushButton [data-canvas-name]{
+  filter:none!important;opacity:1!important
+}
+#viewer .annotationLayer .buttonWidgetAnnotation.pushButton > a{
+  filter:none!important;opacity:1!important
+}
+.canvasWrapper{backface-visibility:visible!important}
+.canvasWrapper canvas{backface-visibility:visible!important;will-change:auto!important}
+/* V25.56 — après le premier rendu réussi, un zoom/déplacement garde le
+   composite visible pendant que PDF.js prépare la nouvelle résolution. */
+.pdfViewer .page[data-cdq-painted-v2556="true"].loadingIcon.loading::after{
+  display:none!important;transition:none!important
+}
+@media(max-width:600px){
+  html{--reader-safe-top:max(10px,env(safe-area-inset-top,0px))}
+  html,body{height:100%;min-height:100%;overflow:hidden}
+  header#readerTop{
+    position:absolute;top:0;left:0;right:0;height:calc(104px + var(--reader-safe-top))!important;
+    display:grid;grid-template-columns:46px minmax(0,1fr) auto 46px;
+    grid-template-areas:"back name save menu" "zoom zoom zoom zoom";
+    align-items:center;gap:6px 8px;padding:calc(var(--reader-safe-top) + 6px) 8px 8px!important;
+    background:#121820;border-bottom:1px solid #2d3944
+  }
+  #back{grid-area:back;width:44px;min-width:44px;min-height:42px;padding:0;border-radius:12px;font-size:0}
+  #back:before{content:'←';font-size:26px;line-height:1}
+  #back span{display:none}
+  #name{grid-area:name;min-width:0;flex:none;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #save{grid-area:save;margin:0!important;min-height:42px;padding:8px 11px;border-radius:12px}
+  #menu{grid-area:menu;width:44px;min-width:44px;min-height:42px;padding:0;border-radius:12px;font-size:24px;line-height:1}
+  #zoomControls{
+    grid-area:zoom;justify-self:center;display:grid;grid-template-columns:44px 72px 44px;
+    align-items:center;gap:2px;padding:3px;border:1px solid #34424d;border-radius:14px;background:#1a232c
+  }
+  #zoomControls button{min-width:0;min-height:36px;padding:0;border:0;border-radius:10px;background:transparent;font-size:22px}
+  #zoom{min-width:0;text-align:center;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+  #container{position:absolute!important;top:calc(104px + var(--reader-safe-top))!important;bottom:30px!important;left:0!important;right:0!important;width:auto!important;min-height:0}
+  #formNav{position:absolute!important;bottom:30px!important;left:0!important;right:0!important;height:48px;padding:3px 8px;background:#121820;border-top:1px solid #2d3944}
+  #formNav button{min-height:40px;border-radius:11px;padding:7px 11px;background:#223442;border-color:#536777}
+  body.form-navigation #container{bottom:30px!important}
+  #status{position:absolute!important;bottom:0!important;left:0!important;right:0!important;height:30px;padding:7px 8px;background:#111820}
+  #more{position:absolute;right:8px;top:calc(102px + var(--reader-safe-top));width:min(260px,calc(100vw - 16px));z-index:70}
+  #savingMask{position:absolute!important;top:calc(104px + var(--reader-safe-top))!important;bottom:30px!important;left:0!important;right:0!important}
+  /* V25.49 — saisie mobile: dès qu’un champ texte prend le focus, la
+     barre de zoom, les actions non nécessaires et l’état disparaissent pour
+     laisser le maximum d’espace au PDF au-dessus du clavier Android. */
+  body.cdq-keyboard-field header#readerTop{
+    height:calc(46px + var(--reader-safe-top))!important;
+    grid-template-columns:40px minmax(0,1fr)!important;
+    grid-template-areas:"back name"!important;
+    grid-template-rows:1fr!important;
+    gap:6px!important;
+    padding:calc(var(--reader-safe-top) + 3px) 6px 3px!important
+  }
+  body.cdq-keyboard-field #back{width:40px!important;min-width:40px!important;min-height:36px!important;border-radius:10px!important}
+  body.cdq-keyboard-field #name{font-size:13px!important}
+  body.cdq-keyboard-field #zoomControls,
+  body.cdq-keyboard-field #save,
+  body.cdq-keyboard-field #menu,
+  body.cdq-keyboard-field #status{display:none!important}
+  body.cdq-keyboard-field #container{
+    top:calc(46px + var(--reader-safe-top))!important;
+    bottom:44px!important
+  }
+  body.cdq-keyboard-field.form-navigation #container{bottom:44px!important}
+  body.cdq-keyboard-field #formNav{
+    bottom:0!important;height:44px!important;padding:2px 6px!important
+  }
+  body.cdq-keyboard-field #formNav button{
+    min-height:38px!important;padding:5px 9px!important;border-radius:10px!important
+  }
+  body.cdq-keyboard-field #savingMask{
+    top:calc(46px + var(--reader-safe-top))!important;bottom:0!important
+  }
+  body.cdq-keyboard-field #more{display:none!important}
+}
+
+/* V25.63 — visionneuse mobile plus compacte : une seule rangée en haut,
+   aucune barre d'état permanente et navigation de formulaire collée au bas. */
+@media(max-width:600px){
+  header#readerTop{
+    height:calc(54px + var(--reader-safe-top))!important;
+    grid-template-columns:44px minmax(0,1fr) 36px 36px 44px!important;
+    grid-template-areas:"back name minus plus menu"!important;
+    grid-template-rows:1fr!important;
+    gap:5px!important;
+    padding:calc(var(--reader-safe-top) + 5px) 7px 5px!important
+  }
+  #save{display:none!important}
+  #zoomControls{display:contents!important}
+  #zoom{display:none!important}
+  #minus{grid-area:minus!important}
+  #plus{grid-area:plus!important}
+  #minus,#plus{
+    min-width:36px!important;width:36px!important;min-height:38px!important;height:38px!important;
+    padding:0!important;border:1px solid #3f4e5b!important;border-radius:10px!important;
+    background:#1a232c!important;font-size:22px!important
+  }
+  #menu{grid-area:menu!important;width:42px!important;min-width:42px!important;min-height:40px!important}
+  #container{
+    top:calc(54px + var(--reader-safe-top))!important;
+    bottom:0!important
+  }
+  body.form-navigation #container{bottom:0!important}
+  #formNav{
+    bottom:0!important;height:46px!important;padding:2px 6px!important;
+    background:#121820!important
+  }
+  #formNav button{
+    min-height:40px!important;padding:6px 10px!important;border-radius:10px!important
+  }
+  #savingMask{
+    top:calc(54px + var(--reader-safe-top))!important;
+    bottom:0!important
+  }
+  #more{
+    top:calc(52px + var(--reader-safe-top))!important
+  }
+  /* L'état reste disponible aux lecteurs d'écran et comme petit message
+     flottant lors d'une sauvegarde/erreur, sans réserver 30 px en permanence. */
+  #status{
+    position:absolute!important;left:50%!important;right:auto!important;bottom:50px!important;
+    width:auto!important;max-width:calc(100vw - 24px)!important;height:auto!important;
+    min-height:0!important;padding:6px 10px!important;border-radius:9px!important;
+    transform:translateX(-50%)!important;background:#111820e8!important;
+    font-size:12px!important;z-index:65!important;pointer-events:none!important;
+    opacity:0!important;white-space:nowrap!important
+  }
+  #status[data-active="true"]{opacity:1!important}
+  body.cdq-keyboard-field #status{display:none!important}
+}
+
+/* Reveal the fully composed first page in one frame. Preserve layout while it paints. */
+#viewer:not([data-ready="true"]){opacity:0;pointer-events:none}
+</style><link rel="stylesheet" href="./reader-ui-v2572.css"><style id="cdqInterfaceCssV2710">/* Rich black pages; borders, bright artwork and accent lines carry contrast. */
+html.cdq-mobile-layout[data-cdq-palette]:not([data-cdq-palette=light]){--cdq-page:#030508;--cdq-surface:#030508;--cdq-raised:#10151c;--cdq-selected:#0b1b27;--cdq-line:#294352}
+html.cdq-mobile-layout.cdq-mobile-layout[data-cdq-palette=metal]{--cdq-line:#35434c;--cdq-selected:#111c24}
+html.cdq-mobile-layout.cdq-mobile-layout[data-cdq-palette=violet]{--cdq-line:#49345e;--cdq-selected:#191020}
+html.cdq-mobile-layout.cdq-mobile-layout[data-cdq-palette=electric]{--cdq-line:#244b6c;--cdq-selected:#081b2b}
+html.cdq-mobile-layout.cdq-mobile-layout[data-cdq-palette=steel]{--cdq-line:#354958;--cdq-selected:#101a22}
+html.cdq-mobile-layout body .container{background:var(--cdq-surface)!important}
+html.cdq-mobile-layout body :is(.cdq-workspace-page,#cdqInvoicePageV2590,#cdqInventoryModernV2592,#cdqCalibrationDialogV2565,#cdqReportOverlayV2578){background:var(--cdq-surface)!important;box-shadow:inset 0 2px 0 var(--cdq-page-accent,var(--cdq-accent))!important}
+#cdqDrivePageV2638{--cdq-page-accent:#ef5a9c}#cdqCalculPageV2638{--cdq-page-accent:#f4a552}#cdqOpportunitiesPageV2638{--cdq-page-accent:#4bdd85}#cdqInventoryModernV2592{--cdq-page-accent:#b878ec}#cdqInvoicePageV2590{--cdq-page-accent:#e9c55d}#cdqCalibrationDialogV2565,#cdqReportOverlayV2578{--cdq-page-accent:#55dbea}
+html.cdq-mobile-layout body [data-cdq-heading-layout-v2675]{background:var(--cdq-surface)!important;border-bottom:1px solid var(--cdq-page-accent,var(--cdq-line))!important}
+html.cdq-mobile-layout body #cdqCalibrationDialogV2565 .cdq-cal-head[data-cdq-heading-layout-v2675]{border-bottom:1px solid #00deee!important}
+html.cdq-desktop-v2676.cdq-mobile-layout body .bottom-nav .bottom-nav-item[data-cdq-current=true]{background:var(--cdq-page)!important;box-shadow:inset 3px 0 var(--cdq-nav-accent)!important;border-color:var(--cdq-line)!important}
+html.cdq-desktop-v2676 body #cdqPcHomeHeading{background:var(--cdq-surface)!important;border-bottom-color:#55caff}
+/* Equal tool slots make the button text and page title share one center. */
+html.cdq-mobile-layout body .company-wrapper.company-wrapper{display:grid!important;grid-template-columns:var(--cdq-chooser-tool-width,40px) minmax(0,1fr) var(--cdq-chooser-tool-width,40px)!important;gap:7px!important;align-items:center!important}
+html.cdq-mobile-layout body .company-wrapper.company-wrapper::before{content:'';grid-column:1;grid-row:1}
+html.cdq-mobile-layout body .company-wrapper.company-wrapper #companyButton{grid-column:2;grid-row:1;width:100%!important;min-width:0!important;box-sizing:border-box!important;justify-self:stretch}
+html.cdq-mobile-layout body .company-wrapper.company-wrapper #cdqCreateClientV2640{grid-column:3;grid-row:1}
+/* Phones use the entire row; the edit button owns only its actual width. */
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body .company-wrapper.company-wrapper{grid-template-columns:minmax(0,1fr) auto!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body .company-wrapper.company-wrapper::before{content:none}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body .company-wrapper.company-wrapper #companyButton{grid-column:1}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body .company-wrapper.company-wrapper #cdqCreateClientV2640{grid-column:2}
+html.cdq-mobile-layout body #cdqCreateClientV2640{box-sizing:border-box!important;overflow:hidden!important;display:flex!important;align-items:center!important;justify-content:center!important}
+html.cdq-mobile-layout body #cdqCreateClientV2640>span.cdq-secondary-icon-v2710{width:100%!important;height:100%!important;min-width:0!important;min-height:0!important}
+html.cdq-mobile-layout body #cdqCreateClientV2640 svg{width:66%!important;height:66%!important;min-width:0!important;min-height:0!important;max-width:66%!important;max-height:66%!important}
+html.cdq-desktop-v2676.cdq-mobile-layout body #cdqCreateClientV2640 svg{width:20px!important;height:20px!important;min-width:20px!important;min-height:20px!important;max-width:20px!important;max-height:20px!important}
+.cdq-secondary-icon-v2710{display:inline-flex!important;align-items:center;justify-content:center;flex-shrink:0;vertical-align:middle;width:24px;height:24px;line-height:1;background:none!important;text-shadow:none!important;pointer-events:none}
+.cdq-secondary-icon-v2710>svg{display:block!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important}
+.cdq-drive-original-v2710{display:block;flex:0 0 auto;background:none!important;filter:none!important}
+html.cdq-mobile-layout body .cdq-workspace-row>.open>.cdq-drive-original-v2710{width:32px!important;height:36px!important}
+
+html.cdq-desktop-v2676 body #cdqPcFileMenu .cdq-action-art-v2655{width:28px!important;height:28px!important;min-width:28px!important}
+
+/* Save indicators keep their space when idle so a file title stays in place. */
+html body #filesContainer .file-pending-v2708[hidden]{display:inline-flex!important;visibility:hidden!important}
+html body #filesContainer .file-row>.file-today-done-badge[hidden]{display:inline-flex!important;visibility:hidden!important}
+
+/* A touched selected file keeps the same marker during the PDF handoff freeze.
+   The separator keeps its original width so selection never moves another row.
+   Desktop focus and keyboard styling stay outside this phone-only override. */
+html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) body #filesContainer .file-row.selected{
+  --cdq-phone-selection-outline:#28b7ff;
+  --cdq-phone-selection-halo:rgba(40,183,255,.14);
+  --cdq-phone-selection-bar:#ffd23f;
+  background:var(--cdq-selected,#123b59)!important;
+  border:0!important;
+  border-bottom:1px solid var(--cdq-row-border,var(--cdq-line,#1d3b52))!important;
+  outline:2px solid var(--cdq-phone-selection-outline)!important;
+  outline-offset:-2px!important;
+  box-shadow:0 0 0 2px var(--cdq-phone-selection-halo),inset 5px 0 0 var(--cdq-phone-selection-bar)!important;
+}
+html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) body.light #filesContainer .file-row.selected{
+  --cdq-phone-selection-outline:#008bd4;
+  --cdq-phone-selection-halo:rgba(0,139,212,.12);
+  --cdq-phone-selection-bar:#e6a900;
+}
+html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) body.cdq-theme-violet #filesContainer .file-row.selected{
+  --cdq-phone-selection-outline:#d264ff;
+  --cdq-phone-selection-halo:rgba(210,100,255,.15);
+}
+html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) body #filesContainer .file-row.selected:last-child{border-bottom-width:0!important}
+
+</style>
+<script id="cdqReaderArtworkV2710">(function(){
+  'use strict';
+  const colors={move:'#5ccfa2',copy:'#54b8ec',duplicate:'#eb648a',favorite:'#efb937',send:'#449cef',note:'#f4c448',photo:'#48d6ef',rename:'#e7a349',delete:'#db4656',protect:'#a18ae4',unlock:'#a18ae4',finish:'#b9c4cf'};
+  // Standalone silhouettes: no common chip frame and no scaled inner groups.
+  const glyphs={
+    move:'<path d="M6 18V9h19l7 9h24v35H6z"/><path class="detail" d="M9 23h30M27 37h22M41 29l8 8-8 8"/><path class="light" d="M9 14h14M10 28v20"/>',
+    copy:'<path d="M12 8h25l8 8v34H12z"/><path d="M23 18h24l8 8v31H23z"/><path class="detail" d="M47 18v9h8M29 34h17M29 41h17M29 48h12"/>',
+    duplicate:'<path d="M12 8h25l8 8v34H12z"/><path d="M23 18h24l8 8v31H23z"/><path class="detail" d="M47 18v9h8"/><circle cx="39" cy="43" r="10" class="accent"/><path class="light" d="M39 37v12M33 43h12"/>',
+    favorite:'<path class="accent" d="M32 7 39.5 23 57 25.5 44.5 37.5 47.5 55 32 47 16.5 55 19.5 37.5 7 25.5 24.5 23z"/><path class="light" d="m32 14 5.5 12 13 2-9.5 9"/><path class="detail" d="m32 24-4 12 4 11 12.5-9.5"/>',
+    send:'<path class="accent" d="M7 27 57 7 40 57 29 37z"/><path class="detail" d="M29 37 57 7 21 31M29 37l-3 15 8-9"/><path class="light" d="m11 26 39-14M40 49l12-32"/>',
+    note:'<path d="M16 7h25l11 11v40H16z"/><path class="detail" d="M41 7v12h11M23 29h21M23 37h21M23 45h16"/><path class="light" d="M20 11h17M20 22v29"/>',
+    photo:'<path d="M7 21h12l5-10h16l5 10h12v32H7z"/><circle cx="32" cy="36" r="13" class="detail-fill"/><circle cx="32" cy="36" r="9" class="accent"/><circle cx="32" cy="36" r="5" class="detail-fill"/><path class="light" d="M48 27h4M24 31a9 9 0 0 1 10-4"/>',
+    rename:'<path d="m13 40-4 16 16-4L56 21 43 8z"/><path class="accent" d="m36 15 13 13 7-7L43 8z"/><path class="detail" d="m13 40 12 12M19 44l26-26M9 56l9-2-7-7"/><path class="light" d="m16 38 22-22"/>',
+    delete:'<path d="M18 21h29l-4 36H22z"/><path d="M12 15h40v7H12zM25 8h14v7H25z"/><path class="detail" d="m25 28 2 23M32 28v23M39 28l-2 23M22 35h22M23 44h20"/><path class="light" d="M16 18h31M21 26l2 26"/>',
+    protect:'<path d="m32 6 23 8v17c0 12-10 21-23 28C19 52 9 43 9 31V14z"/><rect x="21" y="29" width="22" height="19" rx="3" class="accent"/><path class="detail" d="M25 29v-7a7 7 0 0 1 14 0v7M32 36v6"/><path class="light" d="m14 18 18-6 18 6"/>',
+    unlock:'<path d="m32 6 23 8v17c0 12-10 21-23 28C19 52 9 43 9 31V14z"/><rect x="21" y="29" width="22" height="19" rx="3" class="accent"/><path class="detail" d="M25 29v-7a7 7 0 0 1 14 0M32 36v6"/><path class="light" d="m14 18 18-6 18 6"/>',
+    finish:'<path d="m14 8 18 18L50 8l6 6-18 18 18 18-6 6-18-18-18 18-6-6 18-18L8 14z"/><path class="light" d="m14 14 18 18 18-18M14 50l13-13"/>'
+  };
+  Object.assign(colors,{download:'#48d6ef',save:'#69e654',cancel:'#f35065',back:'#fa57c4',settings:'#c574f5',search:'#59aaff',add:'#69e654',offline:'#ffad43',refresh:'#55d6ed',print:'#65a9ed',share:'#48d6ef',minus:'#f35065',check:'#69e654',expand:'#59aaff',collapse:'#59aaff',login:'#69e654',logout:'#f35065',filter:'#c574f5'});
+  Object.assign(glyphs,{
+    download:'<path d="M24 7h16v23h13L32 51 11 30h13z"/><path class="detail" d="M9 46v12h46V46"/>',
+    save:'<path d="M9 7h39l8 8v42H9z"/><path class="detail" d="M19 7v19h26V7M19 57V35h28v22"/><path class="light" d="M36 11v11"/>',
+    cancel:'<circle cx="32" cy="32" r="24"/><path class="detail" d="m15 15 34 34"/>',
+    back:'<path d="M28 9 7 29l21 20V36h8c13 0 19 7 21 17V32c0-12-9-17-29-17z"/>',
+    settings:'<path d="m27 6 10 0 2 8 7 3 8-3 5 9-6 6v7l6 6-5 9-8-3-7 3-2 8H27l-2-8-7-3-8 3-5-9 6-6v-7l-6-6 5-9 8 3 7-3z"/><circle cx="32" cy="32" r="10" class="detail"/>',
+    search:'<circle cx="27" cy="27" r="19"/><path d="m41 41 16 16-5 5-16-16"/><circle cx="27" cy="27" r="13" class="detail"/>',
+    add:'<path d="M24 7h16v17h17v16H40v17H24V40H7V24h17z"/>',
+    minus:'<path d="M7 24h50v16H7z"/>',
+    offline:'<path d="M10 47c-12-8-2-24 10-21C16 6 45 6 47 24c19 0 21 26 2 26H16"/><path class="detail" d="m7 7 50 50"/>',
+    refresh:'<path d="M52 26a22 22 0 1 0-2 22M52 8v18H34"/>',
+    print:'<path d="M18 21V7h28v14M16 44H7V22h50v22H48M18 36h28v21H18z"/><path class="detail" d="M22 43h20M22 49h20M46 28h5"/>',
+    check:'<path d="m8 32 14 14 33-33 7 7-40 40L1 39z"/>',
+    expand:'<path d="M7 25V7h18M39 7h18v18M57 39v18H39M25 57H7V39"/>',
+    collapse:'<path d="M25 7v18H7M57 25H39V7M39 57V39h18M7 39h18v18"/>',
+    filter:'<path d="M7 9h50L39 31v23L25 47V31z"/>',
+    login:'<path d="M35 7h20v50H35M7 32h34M29 20l12 12-12 12"/>',
+    logout:'<path d="M29 7H9v50h20M23 32h34M45 20l12 12-12 12"/>'
+  });
+  Object.assign(colors,{inventory:'#aa4dff',price:'#ffd839',scanner:'#00deee',history:'#b45dff',import:'#48d6ef'});
+  Object.assign(glyphs,{
+   inventory:'<path d="m8 17 24-11 24 11v30L32 59 8 47z"/><path class="detail" d="m8 17 24 12 24-12M32 29v30M20 12l24 11"/>',
+   price:'<path d="M15 10h34v48H15z"/><path class="detail" d="M25 9V5h14v4M32 21v26M39 25c-12-8-23 5-7 9s5 17-7 8"/>',
+   scanner:'<path d="m8 10 38-4 11 23-31 9-7 20H7l9-25z"/><path class="accent" d="m11 14 29-3 4 9-28 7z"/><path class="detail" d="M31 39v19M37 39v19M43 39v19M50 39v19M55 39v19"/>',
+   history:'<circle cx="32" cy="34" r="23"/><path class="detail" d="M32 18v17l12 7M9 14V3M9 14h12"/><path class="light" d="M10 14a26 26 0 0 1 44 6"/>',
+   import:'<path d="M8 41h48v16H8zM20 6h24v30H20z"/><path class="accent" d="M27 20h10v19h9L32 53 18 39h9z"/>'
+  });
+  glyphs.share=glyphs.send;
+  const tileKeys=['photo','note','rename','copy','move','duplicate','send','favorite','protect','unlock','delete','finish','download','save','cancel','back','settings','search','add','offline'];
+  const columns=[18,267,516,765],rows=[100,361,624,896,1168];
+  const cache=new Map();
+  window.cdqActionArtworkV2657=function(key,id='current',palette='dark'){
+    if(!glyphs[key])key='note';
+    if(!['current','minimal','dark-pro','metal-music','isometric'].includes(id))id='current';
+    const signature=key+'|'+id+'|'+palette;if(cache.has(signature))return cache.get(signature);
+    let result;
+    const tile=tileKeys.indexOf(key==='share'?'send':key);
+    const inventoryTile=['inventory','price','scanner','history','import'].indexOf(key);
+    if(id==='metal-music'&&inventoryTile>=0){
+      const asset=new URL('./assets/action-v2713/inventory-metal.png',document.baseURI).href;
+      result='<svg data-action-icon="'+key+'" data-icon-theme="'+id+'" data-artwork-version="2713" data-action-model="metal-cdq-1" viewBox="0 0 512 512" overflow="hidden" aria-hidden="true" focusable="false"><image x="-'+(inventoryTile%3*512)+'" y="-'+(Math.floor(inventoryTile/3)*512)+'" width="1536" height="1024" href="'+asset+'"/></svg>';
+    }else if(id==='metal-music'&&tile>=0){
+      const filter='cdq-action-matte-v2710-'+key;
+      const asset=new URL('./assets/action-v2710/metal-cdq.png',document.baseURI).href;
+      result='<svg data-action-icon="'+key+'" data-icon-theme="'+id+'" data-artwork-version="2710" data-action-model="metal-cdq-1" viewBox="0 0 244 218" overflow="hidden" aria-hidden="true" focusable="false"><defs><filter id="'+filter+'" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 8 8 8 0 -0.9"/></filter></defs><image x="-'+columns[tile%4]+'" y="-'+rows[Math.floor(tile/4)]+'" width="1024" height="1536" href="'+asset+'" filter="url(#'+filter+')"/></svg>';
+    }else{
+      const color=colors[key]||colors.note,light=palette==='light',ink=light?'#203141':'#0b1724';
+      const defs='<defs><linearGradient id="face" x2=".3" y2="1"><stop stop-color="'+(['dark-pro','metal-music'].includes(id)?'#effaff':color)+'"/><stop offset=".42" stop-color="'+(['dark-pro','metal-music'].includes(id)?'#a0bcd1':color)+'"/><stop offset="1" stop-color="'+(['dark-pro','metal-music'].includes(id)?'#415a70':ink)+'"/></linearGradient><radialGradient id="disc"><stop stop-color="#172c3d"/><stop offset="1" stop-color="#03070d"/></radialGradient></defs>';
+      const minimal=id==='minimal',face=minimal?'none':'url(#face)',rim=minimal?(light?'#233849':'#f4f9ff'):id==='dark-pro'?'#d4edff':color;
+      const body=glyphs[key];
+      const disc=id==='dark-pro'?'<circle cx="32" cy="32" r="30" fill="url(#disc)" stroke="#93bedb" stroke-width="1.8"/><circle cx="32" cy="32" r="26.5" fill="none" stroke="'+color+'" stroke-opacity=".55"/>':'';
+      const base=id==='isometric'?'<ellipse cx="32" cy="53" rx="29" ry="8" fill="#06111e" stroke="'+color+'" stroke-width="2"/><ellipse cx="32" cy="51" rx="24" ry="5" fill="none" stroke="'+color+'" stroke-opacity=".65"/>':'';
+      const transform=id==='dark-pro'?'translate(9 9) scale(.72)':id==='isometric'?'matrix(.78,-.07,.04,.78,4,2)':'translate(2 2) scale(.94)';
+      const style='<style>.drawing path,.drawing rect,.drawing circle{fill:'+face+';stroke:'+rim+';stroke-width:'+(minimal?'2.8':'1.7')+';stroke-linejoin:round;stroke-linecap:round}.drawing .detail{fill:none;stroke:'+(minimal?rim:ink)+';stroke-width:2.5}.drawing .detail-fill{fill:'+ink+';stroke:'+rim+'}.drawing .accent{fill:'+(minimal?'none':color)+';stroke:'+rim+'}.drawing .light{fill:none;stroke:'+(minimal?rim:'#f6fbff')+';stroke-width:1.3;opacity:.8}</style>';
+      const extrusion=id==='isometric'?'<g transform="translate(2 4)" opacity=".55">'+body+'</g>':'';
+      const vector='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'+defs+style+disc+base+'<g class="drawing" transform="'+transform+'">'+extrusion+body+'</g></svg>';
+      result='<svg data-action-icon="'+key+'" data-icon-theme="'+id+'" data-artwork-version="2710" viewBox="0 0 64 64" aria-hidden="true" focusable="false"><image width="64" height="64" href="data:image/svg+xml,'+encodeURIComponent(vector)+'"/></svg>';
+    }
+    cache.set(signature,result);return result;
+  };
+})();
+</script>
+<style id="cdq-operation-feedback-v2767">
+body #status,body.cdq-reader-pc #status,body.cdq-keyboard-field #status{
+ display:block!important;position:fixed!important;top:calc(48px + var(--reader-safe-top,env(safe-area-inset-top,0px)))!important;
+ left:5px!important;right:5px!important;bottom:auto!important;transform:none!important;width:auto!important;max-width:none!important;
+ height:auto!important;padding:5px 0 8px!important;line-height:1.2!important;white-space:normal!important;
+ border:0!important;border-radius:0!important;background:var(--reader-panel,#101820)!important;
+ opacity:0!important;pointer-events:none!important;z-index:90!important;
+}
+body #status[data-active="true"]{opacity:1!important}
+body #status::before{display:none!important}
+body #status::after{content:'';display:block;height:4px;margin-top:5px;background:#269dff;border-radius:3px;}
+body #status[data-busy="true"]::after{width:38%;animation:cdq-blue-operation-v2767 1.4s ease-in-out infinite}
+@keyframes cdq-blue-operation-v2767{0%,100%{transform:translateX(0)}50%{transform:translateX(155%)}}
+@media(prefers-reduced-motion:reduce){body #status[data-busy="true"]::after{width:100%;animation:none}}
+</style></head><body>
+<header id="readerTop"><button id="back" aria-label="Retour dans CDQ"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg><span>Retour</span></button><div id="zoomControls" aria-label="Zoom du PDF"><button id="minus" class="zoom-button" aria-label="Réduire"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><span id="zoom">100 %</span><button id="plus" class="zoom-button" aria-label="Agrandir"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button></div><button id="menu" aria-label="Options du PDF" aria-expanded="false"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></header>
+<div id="more" role="menu" hidden><button id="fit" role="menuitem">Ajuster à la largeur</button><button id="download" role="menuitem">Télécharger</button><button id="save" role="menuitem" class="primary" disabled>Enregistrer</button><button id="cancelMenu" role="menuitem" title="Fermer le menu et continuer la saisie">Annuler</button><button id="quitMenu" role="menuitem">Quitter</button></div><footer id="readerNameBar" aria-label="Nom du rapport"><span id="name">PDF</span></footer>
+<div id="container"><div id="viewer" class="pdfViewer"></div><div id="empty"><label class="action" for="file">Ouvrir un PDF</label></div></div><input id="file" type="file" accept="application/pdf,.pdf"><div id="status" role="status">Chargement du lecteur…</div>
+<nav id="formNav" aria-label="Saisie du formulaire" hidden><button id="previousField">↑ Précédent</button><button id="nextField">Suivant ↓</button><button id="dismissKeyboard" aria-label="Fermer le clavier et regarder le PDF">OK</button><button id="doneFields">Terminer</button></nav>
+<div id="savingMask" hidden></div><dialog id="closeDialog" aria-labelledby="closeTitle"><h2 id="closeTitle">Terminer ce PDF ?</h2><p>Que voulez-vous faire avec les modifications ?</p><p id="closeError" role="status"></p><button id="saveClose" class="primary">✓ Enregistrer les modifications</button><button id="discard">Fermer sans enregistrer</button><button id="keepEditing">Annuler</button></dialog>
+<script type="module" src="reader-v2525.mjs"></script><script type="module" src="./cursor-v2721.mjs"></script>
+<script id="cdqInterfaceV2710">(() => {
+ 'use strict';
+ const root=document.documentElement;
+ const ids={menu:'settings',back:'back',minus:'minus',plus:'add',fit:'expand',quitMenu:'finish',clientNoteButton:'note',clientPhotoButton:'photo',cdqV19OfflineStatus:'offline',cdqTopDisplayButtonV2204:'settings',cdqCreateClientV2640:'rename',cdqPcFileSearch:'search',cdqImClose:'finish',cdqImBack:'back',cdqImRefresh:'refresh',cdqDiagnosticSettingsButton:'settings',cdqAdminSettingsButton:'settings',cdqInstallShareSettingsButton:'share'};
+ const attributes={'data-pc-clear-client':'finish','data-cdq-heading-close-v2671':'finish','data-cdq-heading-back-v2671':'back','data-workspace-close':'finish','data-inv-close':'finish','data-report-close':'finish','data-cal-close':'finish','data-report-back':'back','data-cal-back':'back','data-drive-refresh':'refresh','data-drive-back':'back','data-op-save':'save'};
+ const rules=[[/importer|import/i,'import'],[/scanner|code.barres|barcode/i,'scanner'],[/historique|history/i,'history'],[/liste de prix/i,'price'],[/inventaire général/i,'inventory'],[/déprot|unlock/i,'unlock'],[/protég|protect/i,'protect'],[/hors ligne|offline/i,'offline'],[/photo|camera|gallery/i,'photo'],[/renommer|rename|modifier|éditer|edit/i,'rename'],[/dupliquer|duplicate/i,'duplicate'],[/copier|copy/i,'copy'],[/déplacer|move/i,'move'],[/supprimer|delete|trash/i,'delete'],[/annuler|cancel/i,'cancel'],[/fermer|close|finish/i,'finish'],[/retour|revenir|back/i,'back'],[/télécharger|download|export/i,'download'],[/enregistrer|sauvegarder|save/i,'save'],[/rechercher|search/i,'search'],[/réglages|paramètres|settings|display/i,'settings'],[/actualiser|rafraîchir|refresh|reload/i,'refresh'],[/imprimer|print/i,'print'],[/favori|favorite|\bpin\b/i,'favorite'],[/ajouter|nouveau|nouvelle|add|create/i,'add'],[/envoyer|send/i,'send'],[/partager|share/i,'share'],[/note/i,'note'],[/zoom.*moins|réduire|minus/i,'minus'],[/zoom.*plus|agrandir|plus/i,'add'],[/filtrer|filter/i,'filter'],[/déconnexion|logout/i,'logout'],[/connexion|login/i,'login']];
+ function theme(){
+  if(window.cdqIconThemesV2514?.getStyle)return window.cdqIconThemesV2514.getStyle();
+  try{if(parent!==window&&parent.cdqIconThemesV2514?.getStyle)return parent.cdqIconThemesV2514.getStyle()}catch(_){}
+  try{const owner=localStorage.getItem('cdqLastUnlockEmailV2511')||'',saved=JSON.parse(localStorage.getItem('cdqIconThemeV2514:'+owner.trim().toLowerCase())||'null');if(['current','minimal','dark-pro','metal-music','isometric'].includes(saved?.style))return saved.style}catch(_){}
+  return 'current';
+ }
+ function palette(){return root.dataset.cdqPalette||root.dataset.readerTheme||'dark'}
+ function action(button){
+  if(button.id==='cdqCreateClientV2640')return button.dataset.companyAction==='rename'?'rename':'add';
+  if(ids[button.id])return ids[button.id];
+  if(button.matches('.cdq-im-tile,.cdq-im-scanmini')){const key={list:'inventory',price:'price',scanner:'scanner',history:'history'}[button.dataset.view];if(key)return key;}
+  for(const [attribute,key]of Object.entries(attributes))if(button.hasAttribute(attribute))return key;
+  if(button.classList.contains('cdq-settings-close-v2708'))return 'finish';
+  const text=(button.getAttribute('aria-label')||button.title||button.textContent||'').trim();
+  for(const [pattern,key]of rules)if(pattern.test(text))return key;
+  for(const [pattern,key]of rules)if(pattern.test(button.id+' '+button.className))return key;
+  return '';
+ }
+ function paintIcon(icon,key){
+  const signature=theme()+'|'+key+'|'+palette();
+  if(icon.dataset.secondaryDrawing===signature&&icon.querySelector('image'))return;
+  const source=window.cdqActionArtworkV2657?.(key,theme(),palette());if(!source)return;
+  if(icon.tagName.toLowerCase()==='svg'){
+   const host=document.createElement('div');host.innerHTML=source;const svg=host.firstElementChild;
+   icon.setAttribute('viewBox',svg.getAttribute('viewBox'));icon.innerHTML=svg.innerHTML;
+   for(const a of svg.attributes)if(a.name.startsWith('data-'))icon.setAttribute(a.name,a.value);
+  }else icon.innerHTML=source;
+  icon.classList.add('cdq-secondary-icon-v2710');icon.setAttribute('aria-hidden','true');icon.dataset.secondaryDrawing=signature;
+ }
+ function paint(){
+  if(!window.cdqActionArtworkV2657)return;
+  for(const button of document.querySelectorAll('button,[role="button"]')){
+   if(button.closest('.bottom-nav,.cdq-icon-choice-v2514,[data-cdq-heading-icon-v2675],[data-pc-home-art],.cdq-preview-item-v2651')||button.matches('.cdq-swipe-action,[data-file-action]'))continue;
+   const key=action(button);if(!key)continue;
+   let icon=button.querySelector(':scope > svg:not([data-file-artwork]),:scope > [data-cdq-home-icon],:scope > .action-icon,:scope > .ico,:scope > .icon,:scope > .cdq-secondary-icon-v2710');
+   if(!icon&&/^[×✕Xx+−–✎⚙★☆↻←]+$/.test(button.textContent.trim())){icon=document.createElement('span');button.replaceChildren(icon);}
+   if(!icon&&button.firstChild?.nodeType===Node.TEXT_NODE&&/^\s*[←↻★☆⚙×✕+−–]\s+/.test(button.firstChild.nodeValue)){const label=button.firstChild;label.nodeValue=' '+label.nodeValue.replace(/^\s*[←↻★☆⚙×✕+−–]\s+/,'');icon=document.createElement('span');button.insertBefore(icon,label);}
+   if(!icon&&['photo','import','scanner','history','inventory','price'].includes(key)){icon=document.createElement('span');if(button.firstChild?.nodeType===Node.TEXT_NODE)button.firstChild.nodeValue=button.firstChild.nodeValue.replace(/^\s*[📷▧▥◇◷]\s*/u,'');button.prepend(icon);}
+   if(icon)paintIcon(icon,key);
+  }
+  for(const icon of document.querySelectorAll('.cdq-pc-file-search > svg'))paintIcon(icon,'search');
+  for(const wrapper of document.querySelectorAll('.company-wrapper')){
+   const button=wrapper.querySelector('#cdqCreateClientV2640'),width=button?.getBoundingClientRect().width||0,value=width+'px';
+   if(wrapper.style.getPropertyValue('--cdq-chooser-tool-width')!==value)wrapper.style.setProperty('--cdq-chooser-tool-width',value);
+  }
+ }
+ let queued=false;
+ function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;paint()})}
+ function start(){
+  paint();
+  new MutationObserver(records=>{if(records.some(r=>r.type==='attributes'||r.type==='characterData'||r.addedNodes.length))schedule()}).observe(document.body,{subtree:true,childList:true,characterData:true});
+  new MutationObserver(schedule).observe(root,{attributes:true,attributeFilter:['data-cdq-palette','data-cdq-icon-style','data-reader-theme']});
+  document.addEventListener('cdq:icons-changed',schedule);document.addEventListener('input',schedule);window.addEventListener('resize',schedule);window.addEventListener('storage',schedule);
+ }
+ window.cdqInterfaceV2710={paint,schedule,theme};
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
+</script>
+</body></html>
+
