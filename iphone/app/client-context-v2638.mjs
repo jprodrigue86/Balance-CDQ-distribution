@@ -19,5 +19,5 @@ export async function completeClientContext(values,clientId){
  }
  for(const key of keys)if(!result[key]&&found[key]?.size===1)result[key]=found[key].values().next().value;
  if(!result.client_code_postal&&result.client_adresse){const m=result.client_adresse.toUpperCase().match(/\b[ABCEGHJKLMNPRSTVXY]\d[ABCEGHJKLMNPRSTVWXYZ]\s?\d[ABCEGHJKLMNPRSTVWXYZ]\d\b/);if(m)result.client_code_postal=m[0].replace(/\s/g,'').replace(/^(.{3})/,'$1 ');}
- guard();const values={};for(const field of keys)if(result[field])values[field]=result[field];cache.set(key,{at:Date.now(),values});while(cache.size>12)cache.delete(cache.keys().next().value);return result;
+ guard();const contextValues={};for(const field of keys)if(result[field])contextValues[field]=result[field];cache.set(key,{at:Date.now(),values:contextValues});while(cache.size>12)cache.delete(cache.keys().next().value);return result;
 }
