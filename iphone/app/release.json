@@ -1,10 +1,10 @@
 {
   "platform": "iphone-pwa",
-  "version": "27.91",
-  "release": "2001cce0ba6ad42962281e8fceb14d74cba4191fe97f9531b9213b202266ceab",
+  "version": "27.92",
+  "release": "74cabbb55b9dd3ff9457dcea261bb2d6927a1d1b2951171c185522fadb61ddd5",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.28-v27.91-closure",
-  "androidSelectorSha256": "b851344a960bd0205fbde7368cabbe5c758f18c8bb2596d64465ecc6e56e5782",
-  "generatedFrom": "scripts/build-iphone-v2784.mjs",
+  "androidSourceBuild": "2026.10.28-v27.92-reader-drive-speed",
+  "androidSelectorSha256": "3aebe7834ce7b55a5ab5b44731137c5b8a277fc7a5174d53ad3066ad0d9e2bcf",
+  "generatedFrom": "patches/update-2792/integration/assemble.py",
   "files": 898
 }

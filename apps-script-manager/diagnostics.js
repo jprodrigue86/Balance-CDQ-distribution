@@ -188,13 +188,13 @@ async function startVersionDiagnosticV43({id,files,deployments,deploymentsReadOk
   try{
     if(typeof window!=='undefined'){
       // Ensure a quick automatic login cannot race with the deferred module tag.
-      if(!window.CDQLocalAutomationV58?.run)await import('./qa-automation-v58.mjs?v=58');
-      if(window.CDQLocalAutomationV58?.run)
-        localProof=await window.CDQLocalAutomationV58.run({reason:'private-diagnostic'});
+      if(!window.CDQLocalAutomationV59?.run)await import('./qa-automation-v59.mjs?v=59');
+      if(window.CDQLocalAutomationV59?.run)
+        localProof=await window.CDQLocalAutomationV59.run({reason:'private-diagnostic'});
     }
   }catch(_){}
   if(!current())return;
-  r.localTests=diagnosticLocalTestsV58(localProof);
+  r.localTests=diagnosticLocalTestsV59(localProof);
   r.completedAt=new Date().toISOString();r.automation=diagnosticAutomationV53(r);CDQ_DIAGNOSTIC_V43.report=r;diagnosticRenderV43(r);
   if(!S.deployBusy&&id===CDQ_PRODUCTION_SCRIPT_ID){
     S.productionBuild=r.production.content?.backendBuild||r.production.content?.selectorBuild||'';
@@ -299,19 +299,19 @@ function initializeVersionDiagnosticV43(){
 if(typeof document!=='undefined')initializeVersionDiagnosticV43();
 
 
-// Compact V58 test receipt for the existing optional private Drive diagnostic.
+// Compact V59 test receipt for the existing optional private Drive diagnostic.
 // It never certifies Android, authentication, real PDFs or publication.
-function diagnosticLocalTestsV58(value){
+function diagnosticLocalTestsV59(value){
   const checked=Number(value?.checkedAt),fresh=Number.isFinite(checked)&&checked>0&&
     checked<=Date.now()&&Date.now()-checked<=12*60*60*1000;
-  const suiteValid=window.CDQLocalAutomationV58?.validateReport?.(value?.report)?.ok===true;
-  const passed=suiteValid&&value?.schema==='cdq-manager-automation-v2'&&value?.version==='V58'&&
+  const suiteValid=window.CDQLocalAutomationV59?.validateReport?.(value?.report)?.ok===true;
+  const passed=suiteValid&&value?.schema==='cdq-manager-automation-v2'&&value?.version==='V59'&&
     value?.status==='passed'&&fresh&&/^[a-f0-9]{64}$/.test(String(value?.fingerprint||''))&&
     value?.report?.total===value?.report?.passed&&
     value?.report?.failed===0&&value?.negativeControls?.rejected===6&&
     value?.appValidation===false&&value?.authenticatedDriveValidation===false&&
     value?.androidNativeValidation===false&&value?.publicationApproved===false;
-  return {status:passed?'passed':'unverified',source:'manager-shared-js-v58',
+  return {status:passed?'passed':'unverified',source:'manager-shared-js-v59',
     checkedAt:passed?new Date(checked).toISOString():null,
     fingerprint:passed?value.fingerprint:null,
     cases:passed?value.report.total:0,negativeControls:passed?6:0,

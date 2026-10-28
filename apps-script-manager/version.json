@@ -1,6 +1,6 @@
 {
-  "version": "V58",
-  "build": "2026.10.25-v58-file-state-calibration-regressions",
+  "version": "V59",
+  "build": "2026.10.28-v59-verified-storage-dependency",
   "diagnosticSchema": "cdq-version-diagnostic-v1",
   "testSchema": "cdq-manager-local-tests-v2",
   "releaseChecks": "local-synthetic-only"

@@ -140,8 +140,13 @@ export function installTouchNavigation({container, surface, getViewer, now = Dat
     }
   }
   function end(e) {
-    finish(e.type !== 'touchcancel' && (gesture?.mode==='pinch'||e.touches.length===0));
-    if(e.type==='touchcancel')stopInertia();
+    const previousMode=gesture?.mode,cancelled=e.type==='touchcancel';
+    finish(!cancelled && (previousMode==='pinch'||e.touches.length===0));
+    if(cancelled)stopInertia();
+    // A cancelled native scroll cannot resume inside the same touch sequence.
+    // Continue the already-owned pinch with its remaining finger; untouched
+    // one-finger gestures still use the browser's native scrolling.
+    else if(previousMode==='pinch'&&e.touches.length===1)startPan(e.touches[0]);
   }
   function click(e) {
     if (now() < suppressClickUntil) { e.preventDefault(); e.stopPropagation(); }

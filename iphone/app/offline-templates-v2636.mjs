@@ -1,7 +1,7 @@
 import {DELETED_REPORT_MESSAGE_V2784,isDeletedReportV2784,recoveryContextV2784,recoveryNameV2784} from './deleted-report-v2784.mjs';
 import {createLocalReaderSessionsV2761} from './file-edit-session-v2756.mjs';
 import {reportContextV2754,reportFieldsV2754,reportPayloadV2754} from './report-engine-client-v2754.mjs';
-import {prepareReportPdfV2759} from './prepared-report-pdf-v2759.mjs';
+import {prepareReportPdfV2759,downloadRecoveryCopyV2792} from './prepared-report-pdf-v2759.mjs';
 import {equipmentValuesV2697} from './equipment-list-v2697.mjs';
 import {nameFromReport,nextNumberedReportNameV2731,identificationReportName} from './report-name-v2648.mjs';
 import {pdfWorkV2729,validatedPdfSaveInfoV2753} from './pdf-work-v2729.mjs';
@@ -98,6 +98,16 @@ export function nextSync(copy,protocol=0) {
     return {type:'CDQ_OFFLINE_SAVE',requestId:copy.id,clientId:copy.destination.clientId,fileName:copy.name,driveId:copy.filledDriveId||copy.driveId,revision:copy.revision||'',uploadId:copy.uploadId,blob:copy.blob,folderId:copy.destination.folderId,...(copy.autoReportName?{reportName:copy.name,clientId:copy.destination.clientId}:{})};
   return null;
 }
+// Typed receipts take precedence over translated text. Older endpoints still
+// use the compatibility message classifier. The existing two-retry budget is
+// retained; accepted engine requests reconcile STATUS with their original IDs.
+export function retryableOfflineFailureV2792(data){
+  const code=String(data?.code||'');
+  if(/conflict|revision|forbidden|unauthorized|access|^INVALID_|^SCOPE_MISMATCH$|^IDEMPOTENCY_|^REPORT_DELETED$/i.test(code))return false;
+  if(code==='REPORT_PUBLICATION_PENDING'||data?.retryable===true)return true;
+  if(data?.retryable===false)return false;
+  return /répond pas|temporair|réessay|timeout|réseau|connexion interrompue|indisponible|quota|surcharg/i.test(String(data?.message||''));
+}
 export function applyResult(copy,data) {
   if(!copy||copy.removed||data.requestId!==copy.id)return copy;
   const c={...copy};
@@ -151,9 +161,9 @@ async function storeAction(name,mode,fn) {
   });
 }
 const nativeStorage={get:(s,id)=>storeAction(s,'readonly',o=>o.get(id)),put:(s,v)=>storeAction(s,'readwrite',o=>o.put(v)),all:s=>storeAction(s,'readonly',o=>o.getAll()),remove:(s,id)=>storeAction(s,'readwrite',o=>o.delete(id))};
-function download(blob,name) {
-  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();
-  setTimeout(()=>URL.revokeObjectURL(url),30000);
+async function download(blob,name) {
+  const {downloadPdf}=await import('./pdf-download-v2657.mjs');
+  return downloadPdf(blob,name);
 }
 export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPdf,openSheetFile=openSheet,storage=nativeStorage}) {
   let session=null,appliedSession=null,appliedOnline=null,localEmail='',profile=null,chain=Promise.resolve(),epoch=0,documentReaderWarmed=false;
@@ -450,8 +460,8 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
         if(section.hidden)return;
         text(section,'Copies retirées de l’attente');
         for(const c of archived){const row=document.createElement('div');section.append(row);text(row,c.name);button(row,'Télécharger la copie',async()=>{
-          const latest=await get('copies',c.id);if(stamp!==epoch||!allowed(email)||latest?.email!==email||!latest.retiredAt||!latest.blob)throw Error('Cette copie n’est plus disponible.');
-          download(latest.blob,latest.name);
+          const read=async()=>{const latest=await get('copies',c.id);if(stamp!==epoch||!allowed(email)||latest?.email!==email||!latest.retiredAt)throw Error('Cette copie n’est plus disponible.');return latest;};
+          await downloadRecoveryCopyV2792({read,download,owner:email,isCurrent:()=>stamp===epoch&&allowed(email)});
         });}
       });recover.setAttribute('aria-expanded','false');content.append(section);if(openSections.has(section.getAttribute('aria-label')))recover.click();
     }
@@ -469,7 +479,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
           const currentCopy=async()=>{const latest=await get('copies',c.id);if(stamp!==epoch||!allowed(email)||latest?.email!==email||latest.removed)throw Error('Cette copie n’est plus disponible.');return latest;};
           button(row,'Ouvrir la copie',async()=>{const latest=await currentCopy();return openPdf({...engineReaderV2754(latest,email),blob:latest.blob,readerPreparedVersion:latest.readerPreparedVersion,initialValues:latest.initialValues||null,name:latest.name,fileId:latest.id,modeleId:latest.modeleId,autoReportName:latest.autoReportName===true,readOnly:!p.canWrite,
             onSave:p.canWrite?(blob,requestId,name,provenance)=>saveCopy(latest.id,email,blob,requestId,provenance):null});});
-          button(row,'Télécharger la copie',async()=>{const latest=await currentCopy();download(latest.blob,latest.name);});
+          button(row,'Télécharger la copie',()=>downloadRecoveryCopyV2792({read:currentCopy,download,owner:email,isCurrent:()=>stamp===epoch&&allowed(email)}));
         }
       });pendingButton.setAttribute('aria-expanded','false');content.append(section);if(openSections.has(section.getAttribute('aria-label')))pendingButton.click();
     }
@@ -971,7 +981,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
           status.textContent=reason;notifyDocument(updated);
           // Only transient failures retry automatically. Permission, missing
           // client/folder and invalid PDF errors require user attention.
-          if(/répond pas|temporair|réessay|timeout|réseau|connexion interrompue|indisponible|quota|surcharg/i.test(reason))
+          if(retryableOfflineFailureV2792(data))
             retrySyncV2740(data.requestId,stamp,current.email,reason,job.uploadId);
           else{pausedSyncV2740.add(data.requestId);reportSyncFailureV2740(data.requestId,reason,job.uploadId).catch(()=>{});}
         }

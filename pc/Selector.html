@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.91" data-cdq-pc-release="b195616f6f9c09168f03d68ab4f4bb62163352b145856f04cf94d35ba947fb9c">
+<html data-cdq-pc-version="27.92" data-cdq-pc-release="5cfd86881c3568f4aaf655cab1ee9bec67e6e98999bde6d9b12133e69af907f1">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -910,7 +910,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.28-v27.91-closure">
+<meta name="cdq-package-build" content="2026.10.28-v27.92-reader-drive-speed">
 
 
 <script id="cdqBridgeV23">
@@ -964,7 +964,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.28-v27.91-closure'
+    build:'2026.10.28-v27.92-reader-drive-speed'
   });
 }
 
@@ -977,7 +977,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.28-v27.91-closure'
+        build:'2026.10.28-v27.92-reader-drive-speed'
       });
     }
   } catch(e) {}
@@ -11828,7 +11828,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.28-v27.91-closure";
+  const CDQ_BUILD = "2026.10.28-v27.92-reader-drive-speed";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14190,7 +14190,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.28-v27.91-closure";
+const CDQ_V19_BUILD = "2026.10.28-v27.92-reader-drive-speed";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15773,11 +15773,11 @@ const cdqPdfFetchJobsV2554=new Map();
 const cdqPdfRecentReadsV2729=new Map();
 async function cdqLoadPdfRecord(id,{background=false}={}){
   id=String(id||'');const account=cdqReaderOwnerV2520(),key=account+'|'+id;
-  if(cdqPdfFetchJobsV2554.has(key))return cdqPdfFetchJobsV2554.get(key);
+  if(cdqPdfFetchJobsV2554.has(key)){const shared=cdqPdfFetchJobsV2554.get(key);if(!background){shared.cdqBackgroundV2792=false;window.cdqRpcBudgetV2751?.promote?.(JSON.stringify(['pdf',id]));}return shared;}
   const job=Promise.resolve().then(()=>cdqLoadPdfRecordImplV2522(id,background)).finally(()=>{
     if(cdqPdfFetchJobsV2554.get(key)===job)cdqPdfFetchJobsV2554.delete(key);
   });
-  cdqPdfFetchJobsV2554.set(key,job);
+  job.cdqBackgroundV2792=background;cdqPdfFetchJobsV2554.set(key,job);
   return job;
 }
 // This is the only send bridge out of the private reader/storage closure.
@@ -15837,7 +15837,7 @@ async function cdqLoadPdfRecordImplV2522(id,background=false){
   }
   if(pending)return {...old,id,nom:pending.fileName,revision:pending.expectedRevision,pendingSaveId:pending.id,readerPreparedVersion:pending.readerPreparedVersion===2730?2730:undefined,blob:await pdfActionBlobV2751(pending)};
   if(navigator.onLine===false){if(old?.blob)return old;throw new Error('Choisissez ce PDF dans Hors ligne avec Internet pour le conserver sur cet appareil.');}
-  const readRpc=(name,args)=>{const send=()=>cdqV19Gs(name,args);return window.cdqRpcBudgetV2751?window.cdqRpcBudgetV2751.withPriority(background?'background':'foreground',send):send();};
+  const readRpc=(name,args)=>{const send=()=>cdqV19Gs(name,args),speculative=cdqPdfFetchJobsV2554.get(email+'|'+id)?.cdqBackgroundV2792??background;return window.cdqRpcBudgetV2751?window.cdqRpcBudgetV2751.withPriority(speculative?'background':'foreground',send):send();};
   const meta=await readRpc('obtenirPdfLecteurCDQV2520',[id,old?.revision||'']);cdqReaderGuardV2520(email);
   if(meta.unchanged&&old?.blob&&old.blob.size===meta.taille)return finishRead({...old,...meta,readerPreparedVersion:old.readerPreparedVersion===2730?2730:undefined});
   const parts=[];
@@ -16158,10 +16158,10 @@ function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoch,curre
           await new Promise(resolve=>setTimeout(resolve,1200));if(!valid(email,stamp))return true;
           result=receipt(await call('status',{reportId:payload.reportId,clientId:payload.clientId}));
         }
-        if(result.pdf?.status!=='confirmed')throw Error('Données synchronisées. La mise à jour du PDF dans Drive reste en cours.');
+        if(result.pdf?.status!=='confirmed')throw Object.assign(Error('Données synchronisées. La mise à jour du PDF dans Drive reste en cours.'),{code:'REPORT_PUBLICATION_PENDING',retryable:true});
         const file={id:result.pdf.fileId,revision:result.pdf.driveRevision,name:payload.name,nom:payload.name,reportRevision:expected,reportIdV2754:payload.reportId,reportRevisionV2754:expected,_cdqCommittedUploadV2660:data.uploadId};
         instant?.confirm?.(file,payload.clientId,payload.destinationId,{type:'PDF'});reply('CDQ_REPORT_ENGINE_SAVE_V2754_RESULT',{ok:true,...file,pdf:result.pdf});publish('cdq:report-pdf-confirmed-v2754',{...file,owner:email,clientId:payload.clientId,reportId:payload.reportId,sourceId:payload.fileId||result.pdf.fileId,saveId:payload.requestId,fields:payload.fields,pdf:result.pdf,revision:expected});
-      }catch(error){reply('CDQ_REPORT_ENGINE_SAVE_V2754_RESULT',{ok:false,message:error.message,code:error.code||''});}
+      }catch(error){reply('CDQ_REPORT_ENGINE_SAVE_V2754_RESULT',{ok:false,message:error.message,code:error.code||'',...(typeof error.retryable==='boolean'?{retryable:error.retryable}:{})});}
       return attempt>0;
     })();
     receiptFlightsV2757.set(flightKey,flight);
@@ -17903,7 +17903,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.28-v27.91-closure";
+const CDQ_V20_BUILD = "2026.10.28-v27.92-reader-drive-speed";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -18750,7 +18750,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.28-v27.91-closure";
+const CDQ_V21_BUILD = "2026.10.28-v27.92-reader-drive-speed";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -23165,7 +23165,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.28-v27.91-closure',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.28-v27.92-reader-drive-speed',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;

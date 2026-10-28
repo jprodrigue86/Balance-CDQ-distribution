@@ -1,3 +1,10 @@
+/* Keep the PDF page and its annotation layer on one stable CSS-pixel grid.
+   PDF.js changes its bitmap rounding denominator when the delayed raster
+   starts. Letting that denominator resize the page moves the anchored PDF
+   point after a zoom and shifts every following page. The canvas keeps its
+   existing pixel budget and scales inside the same stable page rectangle. */
+#viewer.pdfViewer .page{--scale-round-x:1px!important;--scale-round-y:1px!important}
+
 :root{--reader-bg:#09121c;--reader-panel:#101f2e;--reader-raised:#1a2e41;--reader-line:#355064;--reader-text:#edf5fc;--reader-accent:#087ab5;--reader-dialog:#101f2e;--reader-choice-line:#355064;color-scheme:dark}
 :root[data-reader-theme=light]{--reader-bg:#e8eef3;--reader-panel:#fff;--reader-raised:#f1f5f8;--reader-line:#b7c8d5;--reader-text:#142a3b;--reader-dialog:#fff;--reader-choice-line:#d3e1e7;color-scheme:light}
 :root[data-reader-theme=metal]{--reader-bg:#050607;--reader-panel:#111317;--reader-raised:#25292e;--reader-line:#535a62;--reader-text:#f5f5f5;--reader-dialog:#111317;--reader-choice-line:#3b3f45;--reader-accent:#3c647e}

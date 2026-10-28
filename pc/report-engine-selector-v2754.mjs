@@ -129,10 +129,10 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
           await new Promise(resolve=>setTimeout(resolve,1200));if(!valid(email,stamp))return true;
           result=receipt(await call('status',{reportId:payload.reportId,clientId:payload.clientId}));
         }
-        if(result.pdf?.status!=='confirmed')throw Error('Données synchronisées. La mise à jour du PDF dans Drive reste en cours.');
+        if(result.pdf?.status!=='confirmed')throw Object.assign(Error('Données synchronisées. La mise à jour du PDF dans Drive reste en cours.'),{code:'REPORT_PUBLICATION_PENDING',retryable:true});
         const file={id:result.pdf.fileId,revision:result.pdf.driveRevision,name:payload.name,nom:payload.name,reportRevision:expected,reportIdV2754:payload.reportId,reportRevisionV2754:expected,_cdqCommittedUploadV2660:data.uploadId};
         instant?.confirm?.(file,payload.clientId,payload.destinationId,{type:'PDF'});reply('CDQ_REPORT_ENGINE_SAVE_V2754_RESULT',{ok:true,...file,pdf:result.pdf});publish('cdq:report-pdf-confirmed-v2754',{...file,owner:email,clientId:payload.clientId,reportId:payload.reportId,sourceId:payload.fileId||result.pdf.fileId,saveId:payload.requestId,fields:payload.fields,pdf:result.pdf,revision:expected});
-      }catch(error){reply('CDQ_REPORT_ENGINE_SAVE_V2754_RESULT',{ok:false,message:error.message,code:error.code||''});}
+      }catch(error){reply('CDQ_REPORT_ENGINE_SAVE_V2754_RESULT',{ok:false,message:error.message,code:error.code||'',...(typeof error.retryable==='boolean'?{retryable:error.retryable}:{})});}
       return attempt>0;
     })();
     receiptFlightsV2757.set(flightKey,flight);

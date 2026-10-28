@@ -16,6 +16,24 @@ const base64=bytes=>{let bin='';for(let i=0;i<bytes.length;i+=16384)bin+=String.
 const hash=async text=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text))),b=>b.toString(16).padStart(2,'0')).join('');
 const fileKey=f=>[String(f.id),f.nom||f.name||'',f.mimeType||f.type||'',sourceRev(f),String(f.version||''),f.md5Checksum||f.sha256Checksum||''];
 const snapshotKey=s=>JSON.stringify([s.name,s.files.map(fileKey),s.folders,s.listFolderId,fileKey(s.list)]);
+export function balanceSnapshotChangesV2792(before,after){
+ const changes=[],fields=['id','name','type','revision','version','checksum'];
+ const compare=(kind,a,b)=>{const left=fileKey(a),right=fileKey(b),changed=fields.filter((_,i)=>left[i]!==right[i]);if(changed.length)changes.push({kind,id:String(b?.id||a?.id||''),name:String(b?.nom||b?.name||a?.nom||a?.name||''),fields:changed});};
+ if(before.name!==after.name)changes.push({kind:'client',fields:['name']});
+ if(JSON.stringify(before.folders)!==JSON.stringify(after.folders))changes.push({kind:'folders',fields:['membership']});
+ if(before.listFolderId!==after.listFolderId)changes.push({kind:'list',id:String(after.list?.id||before.list?.id||''),fields:['destination']});
+ compare('list',before.list,after.list);
+ const left=new Map(before.files.map(f=>[String(f.id),f])),right=new Map(after.files.map(f=>[String(f.id),f]));
+ for(const [id,file]of left)if(!right.has(id))changes.push({kind:'report',id,name:String(file.nom||file.name||''),fields:['removed']});else compare('report',file,right.get(id));
+ for(const [id,file]of right)if(!left.has(id))changes.push({kind:'report',id,name:String(file.nom||file.name||''),fields:['added']});
+ return changes;
+}
+function snapshotChangedV2792(before,after){
+ const changes=balanceSnapshotChangesV2792(before,after),first=changes[0],labels={id:'identifiant',name:'nom',type:'type',revision:'révision',version:'version',checksum:'empreinte',destination:'dossier de destination',membership:'dossiers',added:'ajout',removed:'retrait'};
+ const subject=first?.kind==='list'?'La liste de balance':first?.kind==='report'?'Le rapport « '+(first.name||first.id)+' »':first?.kind==='client'?'Le nom du client':'Les dossiers de rapports';
+ const error=Error('Les rapports ou la liste ont changé pendant la préparation. '+subject+' : '+(first?.fields||[]).map(field=>labels[field]||field).join(', ')+'.');
+ error.code='LIST_SNAPSHOT_CHANGED';error.changes=changes.slice(0,20);error.changedCount=changes.length;return error;
+}
 // A rejected lane must release the caller even if another read never answers.
 // RPCs already sent cannot be cancelled: fence every late callback instead.
 export async function readBalanceListGroupV20261028(items,read,{stillCurrent=()=>true,onProgress=()=>{},timeoutMs=180000,pulseMs=1000}={}){
@@ -65,7 +83,20 @@ function completeSheet(snapshot,file,clientId){
 
 // Two authorised folder snapshots replace N individual metadata requests and
 // the server's re-download/rebuild. Missing or changed sources abort the write.
-export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,loadSheet,library,cachedSignature,stillCurrent,onSaved=()=>{},onSourceRead=()=>{},previousState=null,hashText=hash,render=null,sourceIndex=null,guardedSave=false,indexOnly=false,listDestinationId='',onProgress=()=>{}}){
+export async function updateBalanceListFastV2729(options){
+ for(let attempt=0;attempt<2;attempt++){
+  try{return await prepareBalanceListFastV2792(options);}
+  catch(error){
+   if(error?.code!=='LIST_SNAPSHOT_CHANGED')throw error;
+   error.stabilizationAttempts=attempt;
+   if(attempt||!options.stillCurrent())throw error;
+   options.onProgress?.({phase:'stabilizing',done:0,total:0,changes:error.changes});
+   await new Promise(resolve=>setTimeout(resolve,350));
+   if(!options.stillCurrent())throw Error('Le client, le compte ou une sauvegarde a changé.');
+  }
+ }
+}
+async function prepareBalanceListFastV2792({clientId,fileId,rpc,loadPdf,loadSheet,library,cachedSignature,stillCurrent,onSaved=()=>{},onSourceRead=()=>{},previousState=null,hashText=hash,render=null,sourceIndex=null,guardedSave=false,indexOnly=false,listDestinationId='',onProgress=()=>{}}){
  // V27.77: an initial engine import has no list PDF to reopen or render.
  // It must still inspect and recheck a COMPLETE authorised Drive snapshot.
  const bootstrap=indexOnly===true&&!fileId;
@@ -115,7 +146,7 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
  let unchanged=previousState?.fileId===String(fileId)&&String(previousState.clientId||'')===String(clientId)&&previousState.updatedAt===sourceRev(before.list)&&previousState.listStamp===JSON.stringify(fileKey(before.list))&&previousState.digest===digest;
  if(!indexOnly&&indexed){
   // A value-identical update still needs fresh membership verification.
-  if(previousState?.digest===digest)return updateBalanceListFastV2729({...arguments[0],sourceIndex:null});
+  if(previousState?.digest===digest)return prepareBalanceListFastV2792({...arguments[0],sourceIndex:null});
   existing={id:String(fileId),clientId:String(clientId),revision:sourceIndex.listRevision};old={getAuthor:()=>sourceIndex.author||''};
  }else if(!indexOnly&&!unchanged){
   existing=await loadPdf(fileId,sourceRev(before.list));guard();
@@ -131,7 +162,7 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
  }
  // Validate membership and every source revision after rendering, immediately
  // before saving, even when the existing list needs no PDF write.
- const after=indexed?before:await snapshot();guard();if(beforeKey!==snapshotKey(after))throw Error('Les rapports ou la liste ont changé pendant la préparation.');
+ const after=indexed?before:await snapshot();guard();if(beforeKey!==snapshotKey(after))throw snapshotChangedV2792(before,after);
  const exhaustiveIndex={version:1,exhaustive:true,clientId:String(clientId),fileId:String(fileId),listRevision:sourceRev(before.list),list:{...before.list},name:before.name,author:old?.getAuthor?.()||sourceIndex?.author||previousState?.sourceIndexV2751?.author||'',authorKnown:!!old||sourceIndex?.authorKnown===true||previousState?.sourceIndexV2751?.authorKnown===true,folders:before.folders,listFolderId:before.listFolderId,sources:before.files.map(file=>({id:String(file.id),revision:sourceRev(file),name:file.nom||file.name||'',file:{...file},signature:signatures.get(String(file.id))}))};
  const result={sourceIndexV2751:exhaustiveIndex,status:'ready',fileId:String(fileId),clientId:String(clientId),folderId:after.listFolderId,count:rows.length,listRevision:'v2728-client',listStamp:JSON.stringify(fileKey(after.list)),digest,rows,checkedAt:new Date().toISOString(),updatedAt:sourceRev(before.list),clientSnapshot:after};
  if(indexOnly)return {...result,indexOnly:true};

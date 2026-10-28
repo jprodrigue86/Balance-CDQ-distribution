@@ -1,0 +1,21 @@
+{
+  "status": "TECHNICAL_CHECKS_PASSED",
+  "version": "27.92",
+  "versionCode": 2792,
+  "source": "636167e432fe6186e091a30cb5f0679995005f39",
+  "nativeTestsPassed": 166,
+  "signature": "496030d9cd10e81ff4e9486c38491bc15389112c0c295c61c295981c101c4436",
+  "apkSha256": "8b9b6bda42ceda0054548e037681defe7ad46e4b9a3561960c7818b8685a184c",
+  "apkBytes": 116942841,
+  "nativeManifestSha256": "1d2f0b18b5d041d9030eaae8ceb47b594723b0236431d5193f1f5c3e2cad5a4f",
+  "candidateLockSha256": "d00b10a6fd4a929123b8a1c011f2d67a83d96c52206eca0702e92d8bd0ef87d8",
+  "platformFileCounts": {
+    "native": 897,
+    "pc": 909,
+    "iphone/app": 900,
+    "apps-script-manager": 51
+  },
+  "pdfsUnchanged": 13,
+  "physicalAndroidDriveValidation": "not-performed",
+  "clientDataWrites": 0
+}
