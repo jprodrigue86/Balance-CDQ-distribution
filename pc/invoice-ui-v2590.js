@@ -39,8 +39,35 @@ function invoicePurchaseTotalRankV2745(line){
   if(/^vente\s+total(?:e)?(?=\s*(?:$|[:$€]|\d|(?:cad|cdn)\b))/.test(line))return 2;
   return /^total\s+(?:carb(?:urant)?s?|essence|diesel|fuel|gasoline)(?=\s*(?:$|[:$€]|\d|(?:cad|cdn)\b))/.test(line)?1:0;
 }
+function invoiceSpacedTotalV2790(line){return String(line||'').replace(/\bT\s+O\s+T\s+A\s+L\b/gi,'TOTAL')}
+function invoiceTotalConsistentV2790(rows,total){
+  // Check a printed total; never manufacture one from a calculation.
+  var values=new Map(),ambiguous=false;
+  rows.forEach(function(row,index){
+    if(row.meta.suggestion||row.suggestionBlock)return;
+    var label=row.meta.text,kind=/^(?:sous\s*total|subtotal|sub\s*total)\b/.test(label)?'subtotal':/^(?:tps|gst)\b/.test(label)?'gst':/^(?:tvq|qst)\b/.test(label)?'qst':/^(?:taxes?|tax)\b/.test(label)?'tax':/^(?:pourboire|tip|gratuity)\b/.test(label)?'tip':'';
+    if(!kind)return;
+    var amounts=lineAmounts(row.line);
+    if(!amounts.length&&!row.noAdjacent&&rows[index+1]&&!rows[index+1].meta.rank)amounts=invoiceOnlyAmount(rows[index+1].line);
+    if(amounts.length!==1)return;
+    var cents=Math.round(amounts[0]*100);
+    if(values.has(kind)&&values.get(kind)!==cents)ambiguous=true;
+    values.set(kind,cents);
+  });
+  if(ambiguous)return false;
+  if(!values.has('subtotal')||!['gst','qst','tax'].some(k=>values.has(k)))return true;
+  // Discounts, deposits and service charges need their own explicit accounting;
+  // partial arithmetic cannot invalidate an otherwise unambiguous printed total.
+  if(rows.some(r=>/\b(?:rabais|remises?|discount|coupon|depot|deposit|acompte|service\s+charge|frais)\b/.test(r.meta.text)&&lineAmounts(r.line).length))return true;
+  var taxes=(values.get('gst')||0)+(values.get('qst')||0);
+  if(values.has('tax')){
+    if((values.has('gst')||values.has('qst'))&&Math.abs(values.get('tax')-taxes)>2)return false;
+    taxes=values.get('tax');
+  }
+  return Math.abs(Math.round(total*100)-(values.get('subtotal')+taxes+(values.get('tip')||0)))<=2;
+}
 function invoiceAmountLabel(line){
-  var l=String(line||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[-–—]/g,' ').replace(/\s+/g,' ').trim();
+  var l=invoiceSpacedTotalV2790(line).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[-–—]/g,' ').replace(/\s+/g,' ').trim();
   var suggestion=/\b(?:exemples?|examples?|sugg\w*|recommand\w*|recommend\w*|propos\w*)\b/.test(l)||/\b(?:guide|options?|choix)\b.*\b(?:pourboire|tip|gratuity)\b/.test(l);
   var paid=/\b(?:total\s+(?:paye|paid|regle)|montant\s+paye|amount\s+paid|paid\s+(?:amount|total))\b/.test(l);
   var bareTotal=/^total(?:\s+(?:ttc|tax(?:es?)?\s+(?:comprises?|inclus\w*|included)))?(?=\s*(?:$|[:$€]|\d|(?:cad|cdn)\b))/.test(l);
@@ -113,14 +140,14 @@ function parseAmount(t,layout){
   // immediately by a complete decimal amount, never for arbitrary identifiers.
   var geometry=invoiceLayoutRowsV2734(layout),physical=geometry!==null,sourceRows=physical?geometry.map(function(line){return {line:line,noAdjacent:true}}):invoiceColumnRowsV2734(textLines(t)),rows=[],suggestionBlock=false,labels=[];
   sourceRows.forEach(function(sourceRow){
-    var line=sourceRow.line.replace(/^(T[O0]TA[LI]|TOTAL(?:\s+(?:PAY[EÉ]|PAID|TTC))?|GRAND\s+TOTAL)(?=\d{1,5}\s*[,.]\s*\d{2}(?:\s|\$|$))/i,'$1 ');
+    var line=invoiceSpacedTotalV2790(sourceRow.line).replace(/^(T[O0]TA[LI]|TOTAL(?:\s+(?:PAY[EÉ]|PAID|TTC))?|GRAND\s+TOTAL)(?=\d{1,5}\s*[,.]\s*\d{2}(?:\s|\$|$))/i,'$1 ');
     if(physical)line=line.replace(/^(?:T0TAL|TOTAI)(?=\s*(?:$|[:$]|\d|PAY[EÉ]\b|PAID\b|TTC\b))/i,'TOTAL');
     var meta=invoiceAmountLabel(line);
     if(physical&&meta.rank&&!invoicePurchaseTotalRankV2745(meta.text)&&!/^(?:(?:total(?:\s+(?:paye|paid|regle|ttc|final|general|tax(?:es?)?\s+(?:comprises?|inclus\w*|included)))?)|grand\s+total|(?:montant\s+(?:total|paye|a\s+payer|du)|net\s+a\s+payer|solde\s+a\s+payer|amount\s+(?:due|paid)|paid\s+(?:amount|total)|balance\s+due|a\s+payer))(?=\s*(?:$|[:$€]|\d|(?:cad|cdn)\b))/.test(meta.text))meta.rank=0;
     if(meta.suggestion)suggestionBlock=true;
     else if(/^(?:visa|mastercard|transaction|paiement\s+(?:effectue|confirme)|payment\s+(?:confirmed|completed|approved))\b/.test(meta.text))suggestionBlock=false;
     var blocked=meta.excluded||meta.suggestion||suggestionBlock;
-    rows.push({line:line,meta:meta,blocked:blocked,noAdjacent:sourceRow.noAdjacent});
+    rows.push({line:line,meta:meta,blocked:blocked,suggestionBlock:suggestionBlock,noAdjacent:sourceRow.noAdjacent});
   });
   // A separate tax/tip/subtotal label owns its following amount. If none
   // follows, the preceding amount is ambiguous and cannot supply TOTAL.
@@ -137,7 +164,7 @@ function parseAmount(t,layout){
   if(!priority)return NaN;
   var chosen=NaN,uncertain=false;
   labels.forEach(function(label){if(label.rank!==priority)return;if(!label.amounts.length){uncertain=true;return}label.amounts.forEach(function(amount){if(!Number.isFinite(chosen))chosen=amount;else if(Math.round(chosen*100)!==Math.round(amount*100))uncertain=true})});
-  return uncertain?NaN:chosen;
+  return uncertain||!invoiceTotalConsistentV2790(rows,chosen)?NaN:chosen;
 }
 function parseDate(t){var text=String(t||''),m=text.match(/\b(20\d{2})[\/-](0?[1-9]|1[0-2])[\/-](0?[1-9]|[12]\d|3[01])\b/);if(m)return m[1]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[3]).padStart(2,'0');m=text.match(/\b(0?[1-9]|[12]\d|3[01])[\/-](0?[1-9]|[12]\d|3[01])[\/-](20\d{2})\b/);if(!m)return'';var a=Number(m[1]),b=Number(m[2]),month,day;if(a<=12&&b>12){month=a;day=b}else if(a>12&&b<=12){day=a;month=b}else{month=a;day=b}if(month<1||month>12||day<1||day>31)return'';return m[3]+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0')}
 function merchant(t){var bad=/^(bienvenue|welcome|merci|thank|total|sous[- ]?total|tps|tvq|taxe|date|facture|re[çc]u|receipt|station|pompe|tel|tél|www\.|http|visa|mastercard|débit|debit|bronze|generic)/i;return (textLines(t).slice(0,18).find(function(l){return /[A-Za-zÀ-ÿ]{3}/.test(l)&&!bad.test(l)&&!/^\d/.test(l)&&!(/\b(QC|Québec|Quebec)\b/i.test(l)&&/\d/.test(l))&&!/\b(?:blvd|boulevard|rue|street|route|autoroute)\b/i.test(l)})||'').slice(0,80)}
@@ -152,7 +179,7 @@ function invoiceFuelV2742(line){var l=invoicePurchaseTextV2742(line);return !/\b
 function invoiceToolsV2742(line,hardware){var l=invoicePurchaseTextV2742(line);return !/\b(?:abonnement|internet|television|telephone|virement|transfert|transfer|fil\s+(?:de\s+)?(?:transaction|discussion|dossier)|service\s+(?:de\s+)?cable)\b/.test(l)&&(/\b(?:outils?|perceuses?|quincaillerie|douilles?|sockets?|meuleuses?|scies?|ratchets?|cliquets?|tournevis|pinces?|cles?\s+(?:a\s+cliquet|a\s+molette|allen|hexagonales?)|fils?|wires?|cables?\s*(?:electriques?|coaxiaux?|reseau|usb)?|pompe\s+electrique|multimetres?|sertisseuses?|denudeurs?|marteaux?|visseuses?|boulonneuses?|clef?s? dynamometriques?|forets?|meches?|lames? de scie|niveaux? laser|soudeuses?|etaux|ponceuses?|sanders?|drills?|wrenches?|hammers?)\b/.test(l)||hardware&&/\b(?:cafetieres?|machines?\s+(?:a\s+)?cafe)\b/.test(l))}
 function invoiceCategoryEvidenceV2741(t){
   var lines=textLines(t),normal=lines.map(invoicePurchaseTextV2742),text=normal.join('\n');
-  var purchased=function(i){return !invoiceAdministrativeV2742(lines[i])&&!/\b(?:inclus\w*|included|gratuit\w*|free|coupon|rabais|discount)\b/.test(normal[i])};
+  var purchased=function(i){return !invoiceAdministrativeV2742(lines[i])&&!/\b(?:inclus\w*|included|gratuit\w*|free|coupon|rabais|discount|promotion|promotional|prochaine\s+visite|next\s+visit)\b/.test(normal[i])};
   var charged=function(i){return purchased(i)&&(lineAmounts(lines[i]).some(function(n){return n>0})||(i+1<lines.length&&invoiceOnlyAmount(lines[i+1]).some(function(n){return n>0})))};
   var lodging=normal.some(function(l,i){return !invoiceRoomNumberV2741(l)&&!/\b(?:room\s*service|service\s*(?:aux?|de)\s*chambres?|chambre\s*(?:a\s*air|froide))\b/.test(l)&&/\b(?:chambre|nuits?|nuitees?|sejour|hebergement|room|nights?|accommodation|lodging)\b/.test(l)&&charged(i)});
   var mealItem=lines.find(function(l,i){return invoiceMealV2741(normal[i])&&charged(i)});
@@ -163,7 +190,8 @@ function invoiceCategoryEvidenceV2741(t){
   var litrePrice=normal.some(function(l,i){return purchased(i)&&/(?:\$\s*\d+[.,]\d{2,3}\s*\/\s*(?:l\b|litres?\b)|\d+[.,]\d{2,3}\s*\$?\s*\/\s*(?:l\b|litres?\b)|(?:prix|price)\s*(?:par\s*)?(?:litre|liter)\b|(?:prix|price)\s*\/\s*(?:l\b|litres?\b|liters?\b)\s*[:=]?\s*\$?\s*\d+[.,]\d{2,3})/.test(l)});
   var fuelGrade=normal.some(function(l,i){return purchased(i)&&(/^(?:regulier|regular|super|premium|supreme|diesel|sans\s*plomb|unleaded|v[- ]?power)\b/.test(l)||invoiceFuelV2742(l))});
   fuel=fuel||fuelGrade&&volume&&litrePrice;
-  var repair=normal.some(function(l,i){return /\b(?:reparations?|vidanges?|pneus?|mecanique|alignement|freins?|chambre\s+a\s*air|main\s*d['’ ]?oeuvre)\b/.test(l)&&!invoiceToolsV2742(l)&&charged(i)});
+  var automotiveMerchant=/\bcanadian\s+tire\b/.test(text);
+  var repair=normal.some(function(l,i){return /\b(?:reparations?|vidanges?|pneus?|mecanique|alignement|freins?|chambre\s+a\s*air|main\s*d['’ ]?oeuvre)\b/.test(l)&&!invoiceToolsV2742(l)&&charged(i)||charged(i)&&(automotiveMerchant&&/\b020[- ]?0530[- ]?0\b/.test(l)||/\b(?:ampoules?|bulbs?|essuie[- ]?glaces?|wiper|filtres?\s+a\s+huile|oil\s+filter)\b/.test(l)&&/\b(?:motomaster|automobile|vehicule|automotive|3157\s*a)\b/.test(l))});
   var hardware=normal.some(function(l,i){return !invoiceAdministrativeV2742(lines[i])&&/\b(?:quincaillerie|materiel|equipements?)\b/.test(l)});
   var tools=normal.some(function(l,i){return invoiceToolsV2742(l,hardware)&&charged(i)});
   var service=/\b(?:addition|serveur|serveuse|servi|served)\b|\btable\s*[#:]*\s*\d/.test(text),tip=/\b(?:pourboire|gratuity|tips?)\b/.test(text);

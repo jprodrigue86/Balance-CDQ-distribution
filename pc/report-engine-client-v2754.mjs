@@ -1,3 +1,4 @@
+import {createReportEngineStorageV20261028} from './report-engine-storage-20261028.mjs';
 import {DELETED_REPORT_MESSAGE_V2784,isDeletedReportV2784,recoveryContextV2784,recoveryNameV2784} from './deleted-report-v2784.mjs';
 import {observedReportStateV2784} from './file-observation-v2784.mjs';
 import {prepareReportPdfV2759} from './prepared-report-pdf-v2759.mjs';
@@ -78,8 +79,7 @@ export function reportPayloadV2754(context,fields,requestId,name){
   if(typeof name!=='string'||!name.trim()||name.length>220||!name.toLowerCase().endsWith('.pdf'))throw Error('Nom du rapport invalide.');
   return {...meta,requestId:id,name,fields:reportFieldsV2754(fields)};
 }
-function openDatabaseV2754(){return new Promise((resolve,reject)=>{const request=indexedDB.open('cdq-report-engine-v2754',1);request.onupgradeneeded=()=>{for(const name of ['reports','outbox'])if(!request.result.objectStoreNames.contains(name))request.result.createObjectStore(name,{keyPath:'key'});};request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);});}
-export function reportEngineStorageV2754(){return {async get(key){const db=await openDatabaseV2754();return new Promise((resolve,reject)=>{const tx=db.transaction('reports','readonly'),request=tx.objectStore('reports').get(key);let result;request.onsuccess=()=>{result=request.result;};tx.oncomplete=()=>{db.close();resolve(result||null);};tx.onerror=tx.onabort=()=>{db.close();reject(tx.error||Error('Lecture locale impossible.'));};});},async all(){const db=await openDatabaseV2754();return new Promise((resolve,reject)=>{const tx=db.transaction('reports','readonly'),request=tx.objectStore('reports').getAll();let result;request.onsuccess=()=>{result=request.result;};tx.oncomplete=()=>{db.close();resolve(result||[]);};tx.onerror=tx.onabort=()=>{db.close();reject(tx.error||Error('Lecture locale impossible.'));};});},async commit(record,pending=true){const db=await openDatabaseV2754();return new Promise((resolve,reject)=>{const tx=db.transaction(['reports','outbox'],'readwrite');tx.objectStore('reports').put(record);if(pending)tx.objectStore('outbox').put({key:record.key,requestId:record.payload.requestId});else tx.objectStore('outbox').delete(record.key);tx.oncomplete=()=>{db.close();resolve(record);};tx.onerror=tx.onabort=()=>{db.close();reject(tx.error||Error('Enregistrement local impossible. Le rapport reste ouvert.'));};});}};}
+export const reportEngineStorageV2754=createReportEngineStorageV20261028;
 // Shared by native, web and PC shells. Existing legacy copies remain separate
 // until their imported fields and the first server PDF are both confirmed.
 export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2754(),getAccount,canWrite=()=>true,onChange=()=>{},isOnline=()=>globalThis.navigator?.onLine!==false}={}){
@@ -122,12 +122,15 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
     try{return await flight;}finally{if(deletionReadsV2760.get(record.key)===flight)deletionReadsV2760.delete(record.key);}
   }
   function syncRecord(record){
+    // Check before deferring: an offline save must not turn into an unrelated
+    // automatic upload when the caller reconnects to resume one chosen report.
+    if(!record?.pending||record.blocked||record.remoteDeletedV2784||record.account!==getAccount()||!canWrite()||!isOnline())return Promise.resolve();
     const prior=syncFlightsV2789.get(record.key);if(prior)return prior;
     const stamp=generation;
-    const flight=Promise.resolve().then(()=>sendRecordV2789(record)).finally(async()=>{
+    const flight=Promise.resolve().then(()=>stamp===generation?sendRecordV2789(record):undefined).finally(async()=>{
       if(syncFlightsV2789.get(record.key)===flight)syncFlightsV2789.delete(record.key);
       const latest=await storage.get(record.key).catch(()=>null);
-      if(stamp===generation&&record.account===getAccount()&&canWrite()&&latest?.pending&&latest.payload.requestId!==record.payload.requestId)queueMicrotask(()=>syncRecord(latest));
+      if(stamp===generation&&record.account===getAccount()&&canWrite()&&latest?.pending&&!latest.blocked&&latest.payload.requestId!==record.payload.requestId)queueMicrotask(()=>syncRecord(latest));
     });
     syncFlightsV2789.set(record.key,flight);return flight;
   }
@@ -160,7 +163,7 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
       if(['conflict','error'].includes(result.pdf?.status)){await serial(record.key,async()=>{const current=await storage.get(record.key);if(!valid()||!current||current.payload.requestId!==attempt||current.deleted&&current.deleteAck&&!current.pending)return;const updated={...current,error:result.pdf.message||'La publication Drive nécessite une vérification.',blocked:result.pdf.status==='conflict',pending:true};await storage.commit(updated,true);notify(updated);if(!updated.blocked)schedule(record.key,5000);});}
       else if(deleting||result.deleted){if(result.drivePending!==false)schedule(record.key,1500);}
       else if(result.pdf?.status!=='confirmed')schedule(record.key,1500);
-    }catch(error){await serial(record.key,async()=>{const current=await storage.get(record.key);if(!valid()||!current||current.payload.requestId!==attempt||current.deleted&&current.deleteAck&&!current.pending)return;const remoteDeleted=isDeletedReportV2784(error),conflict=remoteDeleted||/conflict|revision|forbidden|unauthorized|access/i.test(String(error.code||''));const updated={...current,...(remoteDeleted?{remoteDeletedV2784:true}:{}),error:remoteDeleted?DELETED_REPORT_MESSAGE_V2784:error.message,blocked:conflict,pending:true};await storage.commit(updated,true);notify(updated);if(!conflict)schedule(record.key,5000);});}
+    }catch(error){await serial(record.key,async()=>{const current=await storage.get(record.key);if(!valid()||!current||current.payload.requestId!==attempt||current.deleted&&current.deleteAck&&!current.pending)return;const remoteDeleted=isDeletedReportV2784(error),conflict=remoteDeleted||/conflict|revision|forbidden|unauthorized|access|^INVALID_|^SCOPE_MISMATCH$|^IDEMPOTENCY_/i.test(String(error.code||''));const updated={...current,...(remoteDeleted?{remoteDeletedV2784:true}:{}),error:remoteDeleted?DELETED_REPORT_MESSAGE_V2784:error.message,blocked:conflict,pending:true};await storage.commit(updated,true);notify(updated);if(!conflict)schedule(record.key,5000);});}
     finally{sends.delete(record.key);}
   }
   function schedule(id,delay){if(timers.has(id))return;const stamp=generation;timers.set(id,setTimeout(async()=>{timers.delete(id);if(stamp!==generation)return;const record=await storage.get(id).catch(()=>null);if(record?.pending&&!record.blocked)syncRecord(record);},delay));}
@@ -222,12 +225,12 @@ async remove(context){
       const normalized=reportFieldsV2754(fields),observation=observedReportStateV2784(old,{revision,fields:normalized,name}),publication=pdf||{status:'confirmed',fileId:meta.fileId,revision},pending=publication.status!=='confirmed'||Number(publication.revision)!==revision,record={key:id,account,context:{...meta,baseRevision:revision},fields:normalized,name,serverRevision:revision,dataSaved:true,pending,blocked:!!(observation.requestId&&old.blocked),error:observation.requestId?old.error||'':'',savedAt:observation.savedAt,observationOnlyV2784:observation.observationOnlyV2784,pdf:publication,payload:observation.requestId?old.payload:{...meta,baseRevision:revision,requestId:crypto.randomUUID(),name,fields:normalized}};
       await storage.commit(record,pending);notify(record);if(pending)queueMicrotask(()=>syncRecord(record));return record;
     });
-  },async get(context){const account=getAccount();if(!account)return null;if(typeof context==='string')return storage.get(key(account,context));if(context?.reportId)return storage.get(key(account,context.reportId));if(context?.fileId)return (await storage.all()).find(record=>record.account===account&&(record.context.fileId===context.fileId||record.pdf?.fileId===context.fileId))||null;return null;},async all(){const account=getAccount();return (await storage.all()).filter(record=>record.account===account);},async synchronizeReportV2789(reportId){
+  },async get(context){const account=getAccount();if(!account)return null;if(typeof context==='string')return storage.get(key(account,context));if(context?.reportId)return storage.get(key(account,context.reportId));if(context?.fileId)return storage.byFileId?storage.byFileId(account,context.fileId):(await storage.all(account)).find(record=>record.account===account&&(record.context.fileId===context.fileId||record.pdf?.fileId===context.fileId))||null;return null;},async all(){const account=getAccount();return account?(await storage.all(account)).filter(record=>record.account===account):[];},async metadata({clientId}={}){const account=getAccount();if(!account)return [];return storage.metadata?storage.metadata(account,clientId):(await storage.all(account)).filter(record=>record.account===account&&(!clientId||record.context?.clientId===clientId));},async synchronizeReportV2789(reportId){
     const account=getAccount(),stamp=generation;if(!account)return;
     let record=await storage.get(key(account,reportId));
     if(stamp!==generation||account!==getAccount()||!canWrite()||!record?.pending)return;
     if(record.deleted&&record.blocked)record=await reconcileDeletedV2760(record);
     if(stamp!==generation||account!==getAccount()||!canWrite()||!record?.pending||record.blocked)return;
     await syncRecord(record);
-  },async resume({reportIds}={}){const account=getAccount(),selected=Array.isArray(reportIds)?new Set(reportIds):null;for(const record of await storage.all())if(record.account===account&&record.pending&&(!selected||selected.has(record.context.reportId))){if(record.deleted)reconcileDeletedV2760(record).then(recovered=>{if(recovered?.pending&&!recovered.blocked)syncRecord(recovered);}).catch(()=>{});else if(!record.blocked)syncRecord(record);}},lock(){generation++;for(const timer of timers.values())clearTimeout(timer);timers.clear();},stats:()=>({inflight:sends.size,queuedTimers:timers.size})};
+  },async resume({reportIds}={}){const account=getAccount(),selected=Array.isArray(reportIds)?new Set(reportIds):null;if(!account)return;const records=storage.pending?await storage.pending(account,reportIds):await storage.all(account);for(const record of records)if(record.account===account&&record.pending&&(!selected||selected.has(record.context.reportId))){if(record.deleted)reconcileDeletedV2760(record).then(recovered=>{if(recovered?.pending&&!recovered.blocked)syncRecord(recovered);}).catch(()=>{});else if(!record.blocked)syncRecord(record);}},lock(){generation++;for(const timer of timers.values())clearTimeout(timer);timers.clear();},stats:()=>({inflight:sends.size,queuedTimers:timers.size})};
 }

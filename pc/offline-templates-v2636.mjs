@@ -343,28 +343,41 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
     if(!session||!known(key)||requested.has(session.email+':'+key))return;
     requested.add(session.email+':'+key);send({type:'CDQ_OFFLINE_PREPARE',modeleId:key});
   }
+  let refreshSequenceV2790=0,panelFingerprintV2790='',panelOwnerV2790='';
+  const visibleContentV2790=content;
   async function refresh() {
-    const stamp=epoch,p=await get('state','profile');if(stamp!==epoch)return;
+    const sequence=++refreshSequenceV2790,stamp=epoch,p=await get('state','profile');
+    const stale=()=>stamp!==epoch||sequence!==refreshSequenceV2790;
+    if(stale())return;
     profile=p;
     const copiesHere=!session&&navigator.onLine===false&&p?(await all('copies')).some(c=>c.email===p.email&&(c.removed?c.retiredAt&&c.blob:c.kind==='prepared'||c.kind==='sheet'||!confirmedLocalCopyV2755(c))):false;
-    if(stamp!==epoch)return;
+    if(stale())return;
     launch.hidden=true;
     if(!session&&copiesHere&&navigator.onLine===false)panel.hidden=false;
     close.hidden=!session&&navigator.onLine===false;
     launch.style.display=launch.hidden?'none':'block';launch.textContent='Documents hors ligne';
     if(panel.hidden)return;
-    content.replaceChildren();
+    if(panelOwnerV2790!==(p?.email||'')||!p||!allowed(p.email)){visibleContentV2790.replaceChildren();panelFingerprintV2790='';panelOwnerV2790=p?.email||'';}
     if(!p){status.textContent='Ouvrez CDQ avec Internet pour préparer vos modèles.';return;}
     if(!allowed(p.email)){
       status.textContent='Déverrouillez les fichiers préparés sur cet appareil.';
-      button(content,'Déverrouiller avec la sécurité de l’appareil',async()=>{
+      button(visibleContentV2790,'Déverrouiller avec la sécurité de l’appareil',async()=>{
         await unlock(p.email);if(stamp!==epoch)throw new Error('Demande annulée.');localEmail=p.email;await refresh();
       });return;
     }
     const email=p.email,templates=await Promise.all(Object.keys(MODELS).map(k=>loadTemplate(email,k)));
     const destinations=(await all('destinations')).filter(d=>d.email===email).sort((a,b)=>b.savedAt-a.savedAt);
-    const copies=(await all('copies')).filter(c=>c.email===email&&!c.removed).sort((a,b)=>b.createdAt-a.createdAt);
-    if(stamp!==epoch||!allowed(email))return;
+    const allCopies=await all('copies');
+    const copies=allCopies.filter(c=>c.email===email&&!c.removed).sort((a,b)=>b.createdAt-a.createdAt);
+    const archived=allCopies.filter(c=>c.email===email&&c.retiredAt&&c.blob);
+    if(stale()||!allowed(email))return;
+    // Compare display/handler inputs without serializing PDF blobs or base64.
+    const describe=c=>[c.id,c.name,c.kind,c.status,c.createdAt,c.editVersion,c.uploadId,c.syncedUploadId,c.confirmed,c.driveId,c.revision,c.error,c.remoteDeletedV2784,c.readerPreparedVersion,c.destination,c.retiredAt,c.engineDeleteConfirmedV2754,c.cancelledDeleteConfirmed];
+    const fingerprint=JSON.stringify([stamp,email,p.canWrite,session?.canWrite,session?.protocol,navigator.onLine,templates.map(t=>[t?.modeleId,validTemplate(t)]),destinations,copies.map(describe),archived.map(describe)]);
+    if(fingerprint===panelFingerprintV2790)return;
+    const selectedDestination=visibleContentV2790.querySelector('#cdq-local-destination')?.value||'';
+    const openSections=new Set([...visibleContentV2790.querySelectorAll('section[aria-label]')].filter(el=>!el.hidden).map(el=>el.getAttribute('aria-label')));
+    const content=document.createDocumentFragment();
     const count=templates.filter(validTemplate).length;
     status.textContent=count+' / '+Object.keys(MODELS).length+' modèles prêts sur cet appareil.';
     const sheets=copies.filter(c=>c.kind==='sheet').sort((a,b)=>a.destination.name.localeCompare(b.destination.name,'fr'));
@@ -429,8 +442,6 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
     }
     text(content,'Les originaux restent inchangés. Une copie créée ici est conservée sur cet appareil, puis ajoutée au dossier client après reconnexion et déverrouillage.');
     if(session?.canWrite)button(content,'Réessayer la synchronisation',()=>serial(()=>{resetRetriesV2740();return sync();}));
-    const archived=(await all('copies')).filter(c=>c.email===email&&c.retiredAt&&c.blob);
-    if(stamp!==epoch||!allowed(email))return;
     if(archived.length){
       const section=document.createElement('section');section.hidden=true;section.setAttribute('aria-label','Rapports retirés récupérables');
       const recover=button(content,'Récupérer un rapport retiré',()=>{
@@ -442,7 +453,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
           const latest=await get('copies',c.id);if(stamp!==epoch||!allowed(email)||latest?.email!==email||!latest.retiredAt||!latest.blob)throw Error('Cette copie n’est plus disponible.');
           download(latest.blob,latest.name);
         });}
-      });recover.setAttribute('aria-expanded','false');content.append(section);
+      });recover.setAttribute('aria-expanded','false');content.append(section);if(openSections.has(section.getAttribute('aria-label')))recover.click();
     }
     const pendingCopiesV2760=copies.filter(c=>c.kind!=='prepared'&&c.kind!=='sheet'&&!confirmedLocalCopyV2755(c));
     if(pendingCopiesV2760.length){
@@ -460,8 +471,11 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
             onSave:p.canWrite?(blob,requestId,name,provenance)=>saveCopy(latest.id,email,blob,requestId,provenance):null});});
           button(row,'Télécharger la copie',async()=>{const latest=await currentCopy();download(latest.blob,latest.name);});
         }
-      });pendingButton.setAttribute('aria-expanded','false');content.append(section);
+      });pendingButton.setAttribute('aria-expanded','false');content.append(section);if(openSections.has(section.getAttribute('aria-label')))pendingButton.click();
     }
+    if(select&&destinations.some(d=>d.folderId===selectedDestination))select.value=selectedDestination;
+    // All asynchronous reads finished before replacing the visible tree.
+    visibleContentV2790.replaceChildren(content);panelFingerprintV2790=fingerprint;panelOwnerV2790=email;
   }
   async function saveCopy(id,email,blob,readerRequestId,provenance={}) {
     const stamp=epoch,accessVersion=readAccessVersion;

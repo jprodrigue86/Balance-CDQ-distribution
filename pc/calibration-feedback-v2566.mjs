@@ -7,7 +7,9 @@ export function calibrationRpc(name,...args){
   return new Promise((resolve,reject)=>{
     if(typeof cdqApiRun!=='function')return reject(Error('Connexion au serveur indisponible.'));
     let settled=false,timer;const arm=ms=>{clearTimeout(timer);timer=setTimeout(()=>{if(!settled){settled=true;reject(Error('Le serveur ne répond pas. Le retour reste en attente.'));}},ms);};
-    const started=()=>arm(name==='cdqActualiserListeBalanceV2665'?180000:name==='cdqScannerCalibrationV2668'?60000:25000);arm(90000);
+    // Complete legacy Sheets scans can outlive an ordinary metadata request.
+    // Keep the queue bound and all write deadlines unchanged.
+    const started=()=>arm(name==='cdqActualiserListeBalanceV2665'?180000:['cdqScannerCalibrationV2668','cdqLireConformiteRapportV2775','obtenirSnapshotGoogleSheetHorsLigne'].includes(name)?60000:25000);arm(90000);
     const done=(fn,value)=>{if(!settled){settled=true;clearTimeout(timer);fn(value);}};
     try{let runner=cdqApiRun().withSuccessHandler(v=>done(resolve,v)).withFailureHandler(e=>done(reject,Error(e?.message||String(e))));if(cdqApiRun.cdqBudgetV2751)runner=runner.withStartHandler(started);else started();runner[name](...args);}catch(e){done(reject,e);}
   });

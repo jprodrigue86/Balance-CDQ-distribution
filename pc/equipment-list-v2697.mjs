@@ -17,13 +17,13 @@ export async function equipmentSnapshotV2697(blob,L){
  if(!(blob instanceof Blob))throw Error('PDF absent');const worker=pdfWorkV2729();if(worker)return (await worker.inspect(blob)).equipment;
  const pdf=await L.PDFDocument.load(await blob.arrayBuffer(),{updateMetadata:false});return equipmentValuesV2697(pdf.getForm());
 }
-export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,storage=localStorage}){
+export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,storage=localStorage,onStorageError=()=>{}}){
  let owner='',epoch=0,data={reports:{},saves:{},sequence:0},scan=null,readDirty=false;const analyses=new Map();
  const account=()=>{const value=identity();return String(value?.email??value??'').trim().toLowerCase();};
  const storageKey=()=> 'cdqEquipmentListV2703:'+owner;
  function sync(){const email=account();if(owner===email)return;owner=email;epoch++;readDirty=false;try{data=owner&&JSON.parse(storage.getItem(storageKey())||'null')||{reports:{},saves:{},sequence:0};}catch{data={reports:{},saves:{},sequence:0}}data.reports??={};data.saves??={};if(!Number.isSafeInteger(data.sequence))data.sequence=0;scan=null;}
  function valid(email,generation){sync();return !!email&&owner===email&&epoch===generation;}
- function persist(){if(!owner||owner!==account())return;try{storage.setItem(storageKey(),JSON.stringify(data));}catch{}}
+ function persist(){if(!owner||owner!==account())return false;try{storage.setItem(storageKey(),JSON.stringify(data));return true;}catch(cause){readDirty=true;onStorageError(Object.assign(Error('Les rapports analysés ne peuvent pas être conservés sur cet appareil. Libérez de l’espace puis reprenez l’analyse.'),{code:'LOCAL_CHECKPOINT_FAILED',cause,owner}));return false;}}
  const stamp=f=>JSON.stringify([f.modifiedTime||f.dateModification||f.revision||'',String(f.version||''),f.md5Checksum||f.sha256Checksum||'']);
  const completeSignature=s=>{try{const value=JSON.parse(s);return value===null||Array.isArray(value)&&value.length===6&&value.slice(0,5).every(v=>typeof v==='string')&&['conforming','nonconforming','unknown'].includes(value[5]);}catch{return false;}};
  async function snapshot(blob){return equipmentSnapshotV2697(blob,await library());}
@@ -73,6 +73,6 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
  // Persist those fields so a later scan or a fresh app session cannot download
  // every report again merely to recover values already read for this list.
  function rememberRead(file,signature,clientId='',persistNow=true){sync();if(!owner||!file?.id||!String(file.modifiedTime||file.dateModification||file.revision||'')||!completeSignature(signature)||data.reports[file.id]?.local)return false;data.reports[file.id]={signature,stamp:stamp(file),clientId:String(clientId||''),verifiedReadV2729:true};readDirty=true;if(persistNow)flushReads();return true;}
- function flushReads(){sync();if(readDirty){persist();readDirty=false;}}
+ function flushReads(){sync();if(readDirty){if(!persist())throw Object.assign(Error('Les rapports analysés ne peuvent pas être conservés sur cet appareil. Libérez de l’espace puis reprenez l’analyse.'),{code:'LOCAL_CHECKPOINT_FAILED'});readDirty=false;}return true;}
  return {noteSave,decision,awaitDecision,acknowledge,retire,signature,signatureForSave,confirmedSignature,rememberRead,flushReads,inspect};
 }

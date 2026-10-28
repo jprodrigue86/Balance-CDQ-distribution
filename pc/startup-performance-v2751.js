@@ -11,9 +11,12 @@ function createRpcBudgetV2751({limit=3,backgroundLimit=1,context=()=>'',defer=qu
     }
   }
   function schedule(){if(!scheduled){scheduled=true;defer(pump);}}
-  function run(send,{kind=priority,write=false,interactive=false,label='rpc',traceId,valid=()=>true}={}){if(write)kind='foreground';interactive=interactive&&kind!=='background'&&!write;return new Promise((resolve,reject)=>{const id=traceId??sequence++;trace(id,'queued',label);queue.push({send,resolve,reject,owner:context(),priority:kind,interactive,label,valid,rank:interactive?-1:write?0:kind==='background'?2:1,sequence:id});schedule();});}
+  function run(send,{kind=priority,write=false,interactive=false,label='rpc',traceId,readKey='',valid=()=>true}={}){if(write)kind='foreground';interactive=interactive&&kind!=='background'&&!write;return new Promise((resolve,reject)=>{const id=traceId??sequence++;trace(id,'queued',label);queue.push({send,resolve,reject,owner:context(),priority:kind,interactive,label,valid,readKey:write?'':readKey,rank:interactive?-1:write?0:kind==='background'?2:1,sequence:id});schedule();});}
+  // Promote the already coalesced read in this queue, without a second RPC.
+  // Running jobs retain their dispatch classification for correct accounting.
+  function promote(readKey){const job=queue.find(item=>readKey&&item.readKey===readKey&&item.owner===context()&&item.valid());if(!job)return false;job.priority='foreground';job.interactive=true;job.rank=-1;trace(job.sequence,'promoted',job.label);schedule();return true;}
   function withPriority(kind,fn){const prior=priority;priority=kind;try{return fn();}finally{priority=prior;}}
-  return {run,withPriority,state:()=>({running,normalRunning,backgroundRunning,queued:queue.length})};
+  return {run,promote,withPriority,state:()=>({running,normalRunning,backgroundRunning,queued:queue.length})};
 }
 
 // The permission event can precede creation of the clients promise. Recheck
@@ -67,6 +70,7 @@ function wrapRpcRunnerV2751(original,budget,{report=()=>{}}={}){
         }
         if(/^(?:actualiserContenuClient|cdqStartupMaintenanceV2686)$/.test(name))options.kind='background';
         options.traceId=traceId;options.label=label;
+        if(name==='obtenirContenuDossierParesseux')options.readKey=JSON.stringify(['folder',String(args[0]),String(args[1])]);
         options.interactive=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirDiagnosticApplication|obtenirPdfLecteurCDQV2520|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&String(args[0])==='read';
         const clientBound=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirChunkDocumentPdfCDQ|obtenirPdfLecteurCDQV2520|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&String(args[0])==='read';
         if(clientBound){const selected=typeof compagnieSelectionnee==='undefined'?'':String(compagnieSelectionnee);options.valid=()=>selected===(typeof compagnieSelectionnee==='undefined'?'':String(compagnieSelectionnee));}
