@@ -1,6 +1,31 @@
 // Keep every report revision, including non-equipment reports and duplicate
 // identifications. Presentation is the only place that selects one winner.
 const norm=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
+// Reuse only raw legacy rows whose revision was accepted by the server.
+// This is a read cache, never proof of present folder membership: the caller
+// still obtains and compares two complete, authorised Drive snapshots.
+export function balanceEngineReadCacheV2791(result,clientId){
+ if(result?.ok!==true||result.baselineComplete!==true||String(result.clientId)!==String(clientId)||!Array.isArray(result.sources)||!Array.isArray(result.items)||result.sources.length>500)return null;
+ const sources=new Map(),rows=new Map();
+ for(const source of result.sources){if(!source?.id||!source.revision||sources.has(String(source.id)))return null;sources.set(String(source.id),String(source.revision));}
+ for(const row of result.items){const id=String(row.fileId||row.id||'');if(!id)continue;rows.set(id,rows.has(id)?null:row);}
+ const entries=[];
+ for(const [id,revision] of sources){
+  const row=rows.get(id);if(!row||row.local||row.reportId||row.pdf?.status!=='legacy'||row.pdf.driveRevision!==revision)continue;
+  const values=[row.fabricant,row.modele,row.capacite,row.echelon,row.identification,row.conformity];
+  const signature=JSON.stringify(values);if(!balanceSignatureValuesV2751(signature))continue;
+  entries.push({id,revision,signature});
+ }
+ return {clientId:String(clientId),entries};
+}
+export function balanceEngineSignatureV2791(cache,file,clientId){
+ if(!cache||cache.clientId!==String(clientId)||!file?.id||file._cdqPendingSaveV2660||String(file.id).startsWith('cdq-local-')||!Array.isArray(cache.entries))return null;
+ const revision=String(file.modifiedTime||file.dateModification||file.revision||'');
+ if(!revision)return null;
+ const rows=cache.entries.filter(row=>row.id===String(file.id));
+ const row=rows.length===1?rows[0]:null;
+ return row?.revision===revision&&balanceSignatureValuesV2751(row.signature)?.values?row.signature:null;
+}
 export function balanceSignatureValuesV2751(signature){
  if(typeof signature!=='string'||!signature)return null;
  try{const value=JSON.parse(signature);return value===null||Array.isArray(value)&&value.length===6&&value.slice(0,5).every(v=>typeof v==='string')&&['conforming','nonconforming','unknown'].includes(value[5])?{values:value}:null;}catch{return null;}
