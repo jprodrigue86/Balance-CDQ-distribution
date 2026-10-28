@@ -1,7 +1,7 @@
 import {createBalanceSheetReaderV2788} from './balance-sheet-summary-v2788.mjs';
 import {balanceListMessagesV2782} from './file-operation-state-v2782.mjs';
 import {equipmentEditSignatureV2746} from './balance-list-live-v2746.mjs';
-import {replaceBalanceSourceV2751,balanceSourceRowsV2751,balanceDisplayRowsV2751,balanceSignatureValuesV2751} from './balance-list-index-v2751.mjs';
+import {balanceEngineReadCacheV2791,balanceEngineSignatureV2791,replaceBalanceSourceV2751,balanceSourceRowsV2751,balanceDisplayRowsV2751,balanceSignatureValuesV2751} from './balance-list-index-v2751.mjs';
 import {calibrationIdentity,calibrationRpc} from './calibration-feedback-v2566.mjs';
 import {createEquipmentTrackerV2697} from './equipment-list-v2697.mjs';
 import './balance-list-conformity-v2728.mjs';
@@ -93,7 +93,7 @@ async function refreshEngineListV2754(id,{repair=false,hydrate=false}={}){
   }
   const old=states.get(k)||{},rows=engineMergedRowsV2754(id,result.items),entry=engineListsV2754.get(k)||{fingerprint:clientFingerprint(id)},reconciliationRequired=typeof result.reconciliationRequired==='boolean'?result.reconciliationRequired:!repair&&!!entry.reconciliationRequired,pdf=reconciliationRequired?{...result.pdf,status:'conflict',errorCode:'CONFLICT_EXTERNAL_DRIVE'}:result.pdf,managed=new Map(entry.managed||[]);
   for(const row of result.items)if(row.reportId&&row.pdf?.fileId&&row.pdf?.driveRevision)managed.set(String(row.pdf.fileId),String(row.pdf.driveRevision));
-  const baseline={...entry,reportId:result.reportId||entry.reportId,managed:[...managed],pdf,reconciliationRequired,polls:pdf?.status==='confirmed'?0:entry.polls||0};engineListsV2754.set(k,baseline);
+  const baseline={...entry,sourceReadCacheV2791:balanceEngineReadCacheV2791(result,id),reportId:result.reportId||entry.reportId,managed:[...managed],pdf,reconciliationRequired,polls:pdf?.status==='confirmed'?0:entry.polls||0};engineListsV2754.set(k,baseline);
   // The imported legacy source index belongs to the preceding PDF. Retaining
   // it here would make projection.project prefer stale rows over engine data.
   const record={...old,status:'ready',rows,count:rows.length,clientId:String(id),folderId:result.destinationId||old.folderId,sourceIndexV2751:null,fileId:pdf?.fileId||'',updatedAt:pdf?.driveRevision||'',reconciliationRequired,enginePdfV2754:pdf,engineBaselineV2754:baseline};
@@ -132,7 +132,7 @@ async function importEngineIndexV2754(id,state){
 async function reconcileEngineSourcesV2754(id){
  const k=key(id),state=states.get(k);if(!canWrite()||engineCurrentV2754(id)||state?.reconciliationRequired||!state?.fileId)return state;
  const version=epoch,account=calibrationIdentity().email,fingerprint=clientFingerprint(id),current=()=>version===epoch&&account===calibrationIdentity().email&&canWrite()&&fingerprint===clientFingerprint(id);
- const result=await updateBalanceListFastV2729({clientId:id,fileId:state.fileId,indexOnly:true,rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision),loadSheet:(file,clientId,revision)=>readBalanceSheetV2788(file,clientId,revision),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true),onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,true),onProgress:progress=>reportListReadProgressV20261028(id,progress),previousState:state,stillCurrent:current});
+ const result=await updateBalanceListFastV2729({clientId:id,fileId:state.fileId,indexOnly:true,rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision),loadSheet:(file,clientId,revision)=>readBalanceSheetV2788(file,clientId,revision),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true)||balanceEngineSignatureV2791(engineListsV2754.get(k)?.sourceReadCacheV2791,file,id),onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,true),onProgress:progress=>reportListReadProgressV20261028(id,progress),previousState:state,stillCurrent:current});
  if(!current())throw Error('Le compte, le client ou les sources ont changé.');
  states.set(k,{...state,...result,engineBaselineV2754:engineListsV2754.get(k)});return importEngineIndexV2754(id,states.get(k));
 }
