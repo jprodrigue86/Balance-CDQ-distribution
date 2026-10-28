@@ -16,11 +16,38 @@ const base64=bytes=>{let bin='';for(let i=0;i<bytes.length;i+=16384)bin+=String.
 const hash=async text=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text))),b=>b.toString(16).padStart(2,'0')).join('');
 const fileKey=f=>[String(f.id),f.nom||f.name||'',f.mimeType||f.type||'',sourceRev(f),String(f.version||''),f.md5Checksum||f.sha256Checksum||''];
 const snapshotKey=s=>JSON.stringify([s.name,s.files.map(fileKey),s.folders,s.listFolderId,fileKey(s.list)]);
-async function groups(items,read){
- const out=new Array(items.length);let next=0,failed=false,error;
- await Promise.all(Array.from({length:Math.min(3,items.length)},async()=>{while(!failed){const i=next++;if(i>=items.length)return;try{out[i]=await read(items[i]);}catch(e){if(!failed){failed=true;error=e;}}}}));
- if(failed)throw error;return out;
+// A rejected lane must release the caller even if another read never answers.
+// RPCs already sent cannot be cancelled: fence every late callback instead.
+export async function readBalanceListGroupV20261028(items,read,{stillCurrent=()=>true,onProgress=()=>{},timeoutMs=180000,pulseMs=1000}={}){
+ const out=new Array(items.length),active=new Map(),controller=new AbortController();let next=0,done=0,stopped=null;
+ const check=()=>{if(stopped)throw stopped;if(!stillCurrent())throw Error('Le client, le compte ou une sauvegarde a changé.');};
+ const announce=()=>{if(stopped)return;try{onProgress({phase:'analyse',done,total:items.length,active:[...active.values()].map(({file,started})=>({id:String(file.id),name:String(file.nom||file.name||file.id),elapsedMs:Date.now()-started}))});}catch{}};
+ const stop=error=>{if(!stopped){stopped=error;controller.abort();}return stopped;};
+ const pulse=setInterval(()=>{try{check();announce();}catch(error){stop(error);}},pulseMs);
+ announce();
+ try{
+  await Promise.all(Array.from({length:Math.min(3,items.length)},async()=>{
+   while(!stopped){check();const i=next++;if(i>=items.length)return;const file=items[i];active.set(i,{file,started:Date.now()});announce();
+    let timer,onAbort;
+    try{
+     out[i]=await Promise.race([
+      Promise.resolve().then(()=>{check();return read(file,check);}),
+      new Promise((_,reject)=>{
+       onAbort=()=>reject(stopped||Error('Lecture interrompue.'));controller.signal.addEventListener('abort',onAbort,{once:true});
+       timer=setTimeout(()=>{const error=Error('Délai de lecture dépassé.');error.code='LIST_SOURCE_TIMEOUT';reject(error);},timeoutMs);
+      })]);
+     check();done++;
+    }catch(cause){
+     if(stopped)throw stopped;
+     const error=Error('Lecture interrompue : « '+String(file.nom||file.name||file.id)+' » ('+done+' / '+items.length+' analysés). '+String(cause?.message||cause));
+     error.code=cause?.code||'LIST_SOURCE_READ_FAILED';error.sourceId=String(file.id);error.completed=done;error.total=items.length;
+     throw stop(error);
+    }finally{clearTimeout(timer);controller.signal.removeEventListener('abort',onAbort);active.delete(i);announce();}
+   }
+  }));check();return out;
+ }finally{clearInterval(pulse);stop(stopped||Error('Analyse terminée.'));}
 }
+const groups=readBalanceListGroupV20261028;
 const incomplete=value=>value?.charge===false||value?.complete===false||value?.incomplete===true||value?.tronque===true||value?.truncated===true||value?.partial===true||!!value?.nextPageToken;
 function folderContent(response,id){
  const folder=response?.contenu;
@@ -72,15 +99,14 @@ export async function updateBalanceListFastV2729({clientId,fileId,rpc,loadPdf,lo
  const indexed=guardedSave===true&&validBalanceSourceIndexV2751(sourceIndex,clientId,fileId);
  const before=indexed?{name:sourceIndex.name||'',files:sourceIndex.sources.map(source=>({...source.file,id:source.id,revision:source.revision,modifiedTime:source.revision,dateModification:source.revision})),folders:sourceIndex.folders,listFolderId:sourceIndex.listFolderId,list:{...sourceIndex.list,revision:sourceIndex.listRevision,modifiedTime:sourceIndex.listRevision,dateModification:sourceIndex.listRevision}}:await snapshot(),beforeKey=snapshotKey(before),records=[],signatures=new Map();let L,existing,old,libraryPromise;
  const pdfLibrary=async()=>{libraryPromise??=Promise.resolve().then(library);L=await libraryPromise;guard();return L;};
- let progressCount=0;const announce=()=>{try{onProgress({phase:'analyse',done:progressCount,total:before.files.length});}catch{}};announce();
- await groups(before.files,async file=>{
+ await groups(before.files,async(file,guard)=>{
   guard();let signature=indexed?sourceIndex.sources.find(source=>source.id===String(file.id))?.signature:cachedSignature?.(file),parsed=signatureValues(signature);
   if(!parsed){if(sheet(file)){const returned=await loadSheet(file.id,clientId,sourceRev(file));guard();signature=balanceSheetSignatureV2788(returned,file,{clientId});}
    else{const record=await loadPdf(file.id,sourceRev(file));guard();if(!record?.blob||record.id&&String(record.id)!==String(file.id)||rev(record)!==sourceRev(file)||record.clientId&&String(record.clientId)!==String(clientId))throw Error('Un rapport a changé pendant la préparation.');signature=await equipmentSnapshotV2697(record.blob,await pdfLibrary());}
    guard();onSourceRead(file,signature);}
-  guard();parsed=signatureValues(signature);if(!parsed)throw Error('Données de balance incomplètes.');const {values}=parsed;signatures.set(String(file.id),signature);if(values===null){progressCount++;announce();return;}
-  const [fabricant,modele,capacite,echelon,identification,conformity]=values;records.push({id:String(file.id),source:file.nom||file.name||'',revision:sourceRev(file),fabricant,modele,capacite,echelon,identification,conformity});progressCount++;announce();
- });
+  guard();parsed=signatureValues(signature);if(!parsed)throw Error('Données de balance incomplètes.');const {values}=parsed;signatures.set(String(file.id),signature);if(values===null)return;
+  const [fabricant,modele,capacite,echelon,identification,conformity]=values;records.push({id:String(file.id),source:file.nom||file.name||'',revision:sourceRev(file),fabricant,modele,capacite,echelon,identification,conformity});
+ },{stillCurrent,onProgress});
  const rows=balanceDisplayRowsV2751(records);
  const digest=await hashText(JSON.stringify([String(clientId),before.name,rows.map(r=>[r.fabricant,r.modele,r.capacite,r.echelon,r.identification,r.conformity])]));guard();
  // A confirmed revision/digest receipt survives an app restart. Rechecking an

@@ -8,7 +8,7 @@ import {createBundledOpeningV2753} from './reader-bundled-opening-v2753.mjs';
 import {validatedReaderStaticArtworkV2753} from './reader-static-artwork-binding-v2753.mjs';
 
 // Filled only by the final package builder; source checkouts use worker OPEN.
-const BUNDLED_OPENING_PIN_V2753=Object.freeze({"build":"2026.10.27-v27.89-fast-operations","manifestSha256":"88c3b8d1cdf800439322078744ffa521d89c0dbe80ee3266ca1ea721040fe85d","normalizerSha256":"48b6bbdce24527599b957eec286793782c4d33bc4886c9f14611f11489027150"});
+const BUNDLED_OPENING_PIN_V2753=Object.freeze({"build":"2026.10.28-v27.90-consolidation","manifestSha256":"20bdb137d7247ea1dd988039380979c585df6aa97a61dfb0342634687a21e9bc","normalizerSha256":"9072638c9f54d94a8f4508ffdcd34c7af5a95fab1b4cb900aedb8339c688482d"});
 const bundledOpeningV2753=createBundledOpeningV2753({pin:BUNDLED_OPENING_PIN_V2753});
 
 let active=null;

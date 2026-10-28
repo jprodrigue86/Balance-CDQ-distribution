@@ -55,12 +55,12 @@ export function createReportEngineActionsV2754({engine,owner,canWrite,guard=()=>
     const capability=await engine.capabilities();check(email,clientId);
     if(!capability?.ready){if(capability?.configured===false)return legacy(selection);throw failure('Le moteur de rapports doit être joignable pour vérifier la suppression.','CDQ_DELETE_UNCONFIRMED');}
     const targets=new Map(),lists=new Map(),managedFiles=new Set(),files=[...new Set([...selection.fileIds,...descendantIds].map(String))];
-    const localClient=await engine.client(),cachedRecords=typeof localClient.all==='function'?await localClient.all():null;check(email,clientId);
+    const localClient=await engine.client(),cachedRecords=localClient.metadata?await localClient.metadata({clientId}):typeof localClient.all==='function'?await localClient.all():null;check(email,clientId);
     const classified=await parallelV2789(files,async fileId=>{const record=await find(fileId,clientId,cachedRecords);check(email,clientId);return {fileId,record};});
     for(const {fileId,record} of classified){if(record?.kind==='list')lists.set(fileId,record.context);else if(record&&record.kind!=='legacy-list'){targets.set(record.context.reportId,record);managedFiles.add(fileId);}}
     if(selection.folderIds.length){
       const folders=folderScope(clientId,selection),listing=await engine.call('list',{clientId});check(email,clientId);
-      for(const record of await (await engine.client()).all())if(record.context.clientId===clientId&&folders.has(record.context.destinationId))targets.set(record.context.reportId,record);
+      for(const record of await (localClient.metadata?localClient.metadata({clientId}):localClient.all()))if(record.context.clientId===clientId&&folders.has(record.context.destinationId))targets.set(record.context.reportId,record);
       for(const payload of saves.values())if(payload.clientId===clientId&&folders.has(payload.destinationId)){const prior=targets.get(payload.reportId);targets.set(payload.reportId,{...prior,context:{...contextOf(payload),...prior?.context,fields:payload.fields,name:payload.name}});}
       for(const managed of listing.managedReports||[])if(folders.has(managed.destinationId)&&!targets.has(managed.reportId)){
         const read=await engine.call('read',{clientId,reportId:managed.reportId});check(email,clientId);if(read.found)targets.set(managed.reportId,{context:contextOf(read),deleted:read.deleted,deleteAck:read.deleted,pending:read.drivePending!==false,pdf:read.pdf});
@@ -98,10 +98,10 @@ export function createReportEngineActionsV2754({engine,owner,canWrite,guard=()=>
   }
   async function snapshotList(fileId,list,verify){
     const payload={kind:'list',reportId:list.reportId,fileId,clientId:list.clientId},client=await engine.client();verify();
-    const pendingLocal=async()=>{const records=await client.all();verify();return records.some(record=>record.context?.clientId===list.clientId&&record.pending&&!record.dataSaved);};
+    const pendingLocal=async()=>{const records=await (client.metadata?client.metadata({clientId:list.clientId}):client.all());verify();return records.some(record=>record.context?.clientId===list.clientId&&record.pending&&!record.dataSaved);};
     for(let n=0;n<attempts;n++){
-      const records=await client.all();verify();const prepared=await prepareListSend(list.clientId,{...list,acceptedSaves:records.filter(record=>record.context?.clientId===list.clientId&&record.dataSaved&&!record.deleted).map(record=>({reportId:record.context.reportId,requestId:record.payload?.requestId}))});verify();
-      await client.resume();verify();
+      const records=await (client.metadata?client.metadata({clientId:list.clientId}):client.all());verify();const prepared=await prepareListSend(list.clientId,{...list,acceptedSaves:records.filter(record=>record.context?.clientId===list.clientId&&record.dataSaved&&!record.deleted).map(record=>({reportId:record.context.reportId,requestId:record.payload?.requestId}))});verify();
+      await client.resume({reportIds:records.filter(record=>record.context?.clientId===list.clientId&&record.pending).map(record=>record.context.reportId)});verify();
       if(!prepared?.ready||await pendingLocal()){await wait(1200);verify();continue;}
       const read=await engine.call('status',payload);verify();
       if(!read?.ok||read.engine!==2754||read.kind!=='list'||!Number.isSafeInteger(read.revision)||read.revision<1||read.reportId!==list.reportId||read.clientId!==list.clientId||read.pdf?.fileId!==fileId)throw failure('La liste sélectionnée a été remplacée.','CONFLICT_LIST_FILE');
@@ -134,7 +134,7 @@ export function createReportEngineActionsV2754({engine,owner,canWrite,guard=()=>
       verify();const cached=await client.get({reportId});verify();
       if(cached?.deleted||known?.deleted)throw failure('Ce rapport a été supprimé.','REPORT_DELETED');
       if(cached?.blocked)throw failure(cached.error||'La publication Drive doit être vérifiée.','PDF_CONFLICT');
-      await client.resume();verify();
+      await client.resume({reportIds:[reportId]});verify();
       const read=await engine.call('read',{reportId,clientId});verify();if(read.deleted)throw failure('Ce rapport a été supprimé.','REPORT_DELETED');
       const currentLocal=await readLocal(fileId);verify();
       const desired=saves.get(reportId),snapshot=read.snapshot||read.report?.snapshot||read.report||{},waitingLocal=cached?.pending&&!cached.dataSaved&&snapshot.requestId!==cached.payload?.requestId;
