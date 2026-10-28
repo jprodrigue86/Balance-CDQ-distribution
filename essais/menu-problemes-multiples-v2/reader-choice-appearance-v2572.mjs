@@ -104,6 +104,45 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary,onPrepar
   return prepared(true);
 }
 
+function nativeTrialChoiceAppearanceV2(pdf,form,L,field,text){
+  const N=L.PDFName.of,dr=form.acroForm.dict.lookupMaybe(N('DR'),L.PDFDict);
+  const fonts=dr?.lookupMaybe(N('Font'),L.PDFDict),fontRef=fonts?.get(N('FRC'));
+  const font=fontRef?pdf.context.lookup(fontRef,L.PDFDict):null;
+  if(!font||font.lookup(N('Encoding'))?.toString()!=='/WinAnsiEncoding')return false;
+  const first=font.lookup(N('FirstChar'),L.PDFNumber).asNumber(),widths=font.lookup(N('Widths'),L.PDFArray);
+  const codes=Array.from(text,char=>char.codePointAt(0));
+  if(codes.some(code=>code<32||code>255||(code>=128&&code<160)||code<first||code-first>=widths.size()))return false;
+  const units=codes.reduce((sum,code)=>sum+widths.lookup(code-first,L.PDFNumber).asNumber(),0);
+  const encoded='<'+codes.map(code=>code.toString(16).padStart(2,'0')).join('')+'>';
+  const color=(array,stroke=false)=>{
+    if(!(array instanceof L.PDFArray)||![1,3,4].includes(array.size()))return '';
+    const values=Array.from({length:array.size()},(_,i)=>array.lookup(i,L.PDFNumber).asNumber());
+    const op={1:'g',3:'rg',4:'k'}[values.length];return values.join(' ')+' '+(stroke?op.toUpperCase():op);
+  };
+  for(const widget of field.acroField.getWidgets()){
+    const {width:w,height:h}=widget.getRectangle();
+    const da=(widget.dict.lookup(N('DA'))||field.acroField.dict.lookup(N('DA')))?.decodeText?.()||'';
+    const match=/\/FRC\s+([\d.]+)\s+Tf/.exec(da),size=Number(match?.[1]);
+    if(!(size>0))return false;
+    const length=units*size/1000;
+    if(length>w-6)return false;
+    const align=(widget.dict.lookup(N('Q'))||field.acroField.dict.lookup(N('Q')))?.asNumber?.()??0;
+    const x=align===1?(w-length)/2:align===2?w-3-length:3,y=(h-size)/2+size*.22;
+    const mk=widget.dict.lookupMaybe(N('MK'),L.PDFDict),bs=widget.dict.lookupMaybe(N('BS'),L.PDFDict);
+    const fill=color(mk?.lookup(N('BG'))),stroke=color(mk?.lookup(N('BC')),true);
+    const border=bs?.lookup(N('W'))?.asNumber?.()??0;
+    const commands=['/Tx BMC q'];
+    if(fill)commands.push(fill+` 0 0 ${w} ${h} re f`);
+    if(stroke&&border>0)commands.push(stroke+` ${border} w ${border/2} ${border/2} ${w-border} ${h-border} re S`);
+    commands.push(`1 1 ${Math.max(0,w-2)} ${Math.max(0,h-2)} re W n`, 'BT',da,`1 0 0 1 ${x.toFixed(3)} ${y.toFixed(3)} Tm ${encoded} Tj`,'ET Q EMC');
+    const stream=pdf.context.flateStream(commands.join('\n'),{
+      Type:'XObject',Subtype:'Form',BBox:[0,0,w,h],Resources:{Font:{FRC:fontRef}}
+    });
+    widget.dict.set(N('AP'),pdf.context.obj({N:pdf.context.register(stream)}));
+  }
+  return true;
+}
+
 function persistTrialProblemReadOnlyV2(form){
   const menu=form.getFieldMaybe('essai_cdq_probleme_constate');
   if(menu?.isMultiselect?.()!==true||typeof menu.getSelected!=='function')return;
@@ -180,7 +219,9 @@ export async function saveEditableFormAppearance(bytes,providedLibrary,onPrepare
   // A dropdown owns one text appearance. Earlier masters also contained
   // display-only mirror widgets, which produced two displaced copies on save.
   const dropdowns=form.getFields().filter(field=>typeof field.getSelected==='function');
-  const font=dropdowns.length?await pdf.embedFont(StandardFonts.HelveticaBold):null;
+  const trialMenu=form.getFieldMaybe('essai_cdq_probleme_constate');
+  const nativeTrial=trialMenu?.isMultiselect?.()===true;
+  let font=null;
   for(const field of dropdowns){
     const options=field.acroField.getOptions();
     const selected=field.getSelected();
@@ -190,6 +231,17 @@ export async function saveEditableFormAppearance(bytes,providedLibrary,onPrepare
     const problemCount=compactProblems?selected.filter(value=>value!=='aucun').length:0;
     const text=compactProblems?(problemCount?problemCount+' problème'+(problemCount>1?'s sélectionnés':' sélectionné'):'Aucun problème constaté'):
       selected.map(value=>{const option=options.find(o=>o.value.decodeText()===value);return option?.display?.decodeText()||value;}).join(' + ');
+    if(nativeTrial&&(compactProblems||field.getName()==='essai_cdq_frequence_etalonnage')){
+      const widgets=field.acroField.getWidgets();
+      const nativeFrequency=!compactProblems&&widgets.length>0&&widgets.every(widget=>{
+        const normal=widget.dict.lookupMaybe(PDFName.of('AP'),L.PDFDict)?.lookup(PDFName.of('N'));
+        return normal instanceof L.PDFRawStream&&normal.contents.length>0;
+      });
+      // PDF.js already preserves the frequency's native RC/cyan appearance.
+      // Only the multi-choice counter needs a new appearance after a save.
+      if(nativeFrequency||nativeTrialChoiceAppearanceV2(pdf,form,L,field,text))continue;
+    }
+    font??=await pdf.embedFont(StandardFonts.HelveticaBold);
     for(const widget of field.acroField.getWidgets()){
       let rect;try{rect=widget.getRectangle();}catch{continue;}
       const {width:w,height:h}=rect,available=w-2;
