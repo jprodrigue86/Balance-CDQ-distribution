@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CDQ — Essai Plancher, conclusion</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101820;color:#eaf3fa;font-family:Arial,sans-serif}
+iframe{display:block;width:100%;height:100%;border:0;background:#101820}
+#overlay{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:20px;background:#101820}
+#overlay[hidden]{display:none}
+.panel{max-width:420px;text-align:center}
+.panel h1{font-size:20px;margin:0 0 12px}
+.panel p{color:#b6c6d4;font-size:15px;line-height:1.55}
+.spinner{width:30px;height:30px;border-radius:50%;border:3px solid #466577;border-top-color:#4bcaff;margin:0 auto 19px;animation:spin .8s linear infinite}
+button{font:600 15px Arial;padding:12px 18px;border-radius:10px;background:#007dc2;color:#fff;border:1px solid #42b6f0;cursor:pointer}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style></head><body>
+<div id="overlay" role="status" aria-live="polite"><div class="panel">
+<div id="spinner" class="spinner"></div>
+<h1 id="heading">Ouverture de la visionneuse CDQ</h1>
+<p id="message">Chargement automatique du dernier formulaire Plancher — bloc 5, conclusion.</p>
+<button id="retry" hidden>Réessayer</button>
+</div></div>
+<iframe id="cdqReader" title="Visionneuse CDQ — PDF d'essai Plancher" referrerpolicy="strict-origin-when-cross-origin" allow="fullscreen"></iframe>
+<script>
+(function(){
+'use strict';
+const PDF_NAME='CDQ_Plancher_Conclusion_Essai_2026-10-28.pdf',EXPECTED_BYTES=316137;
+const pdfUrl=new URL('./'+PDF_NAME,location.href);
+const readerUrl=new URL('../reader-v2525.html',location.href);
+const frame=document.getElementById('cdqReader'),overlay=document.getElementById('overlay');
+const heading=document.getElementById('heading'),message=document.getElementById('message');
+const retry=document.getElementById('retry'),spinner=document.getElementById('spinner');
+let sent=false,opened=false;
+function status(title,detail,error){
+ overlay.hidden=false;heading.textContent=title;message.textContent=detail;
+ retry.hidden=!error;spinner.hidden=!!error;
+}
+function fail(error){
+ const reason=String(error?.message||error||'Erreur inconnue').slice(0,220);
+ status('Impossible d’ouvrir le PDF d’essai',reason,true);
+}
+retry.addEventListener('click',()=>location.reload());
+const pdfPromise=fetch(pdfUrl.href,{cache:'no-store',credentials:'same-origin'}).then(async r=>{
+ if(!r.ok)throw Error('Téléchargement du document impossible (HTTP '+r.status+').');
+ const blob=await r.blob();
+ if(blob.size!==EXPECTED_BYTES||(await blob.slice(0,5).text())!=='%PDF-')
+   throw Error('Le fichier d’essai est absent ou ne correspond pas au PDF prévu.');
+ return new Blob([blob],{type:'application/pdf'});
+});
+window.addEventListener('message',event=>{
+ if(event.origin!==location.origin||event.source!==frame.contentWindow)return;
+ const d=event.data||{};
+ if(d.type==='CDQ_READER_READY'&&!sent){
+   sent=true;status('Visionneuse CDQ prête','Ouverture du PDF d’essai…',false);
+   pdfPromise.then(blob=>{
+     frame.contentWindow.postMessage({
+       type:'CDQ_READER_OPEN',readerRequestId:'cdq-conclusion-20261028',
+       blob,name:PDF_NAME,readOnly:false
+     },location.origin);
+   }).catch(fail);
+ }
+ if(d.type==='CDQ_READER_OPENED'){
+   opened=true;overlay.hidden=true;document.title='CDQ — '+PDF_NAME;
+ }
+ if(d.type==='CDQ_READER_INIT_FAILED_V2731'||d.type==='CDQ_READER_OPEN_FAILED_V2731')fail(d.error||'Le lecteur CDQ n’a pas pu charger le document.');
+ if(d.type==='CDQ_READER_CLOSE'&&opened){
+   status('Essai terminé','Le PDF de test est fermé. Réessayer permet de le rouvrir.',true);
+   heading.textContent='Essai terminé';retry.textContent='Rouvrir le PDF';
+ }
+});
+frame.src=readerUrl.href;
+setTimeout(()=>{if(!opened&&!retry.hidden)return;if(!opened)fail('Le lecteur prend trop de temps à démarrer. Rechargez l’essai.');},35000);
+})();
+</script></body></html>
