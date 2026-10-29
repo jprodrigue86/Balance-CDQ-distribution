@@ -1,0 +1,42 @@
+/* CDQ V27.93: stable, readable portal actions and QR. */
+dialog.cdq-portal-dialog-v2793{box-sizing:border-box;width:min(620px,calc(100vw - 24px));max-height:calc(100dvh - 32px);overflow-y:auto;border:1px solid #65717b;border-radius:15px;background:#10161b;color:#eef2f5;padding:0;box-shadow:0 18px 48px #000b;font:14px/1.45 system-ui,sans-serif}
+dialog.cdq-portal-dialog-v2793::backdrop{background:#000b}
+.cdq-portal-head-v2793{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;justify-content:space-between;padding:12px 16px;background:#171f25;border-bottom:1px solid #45535e}
+.cdq-portal-head-v2793 h2{font:700 20px/1.25 system-ui;margin:0}
+.cdq-portal-body-v2793{padding:16px}
+.cdq-portal-status-v2793{margin:0 0 12px;font-size:13px;color:#d3dde3;overflow-wrap:anywhere}
+.cdq-portal-body-v2793 input{box-sizing:border-box;width:100%;min-height:44px;padding:10px;color:#f4f7f9;background:#090e12;border:1px solid #607380;border-radius:8px;font:12px/1.45 monospace}
+.cdq-portal-actions-v2793{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+.cdq-portal-dialog-v2793 button{box-sizing:border-box;min-height:42px;border-radius:9px;border:1px solid #697984;background:#29343d;color:#f6f9fb;padding:9px 10px;font:600 13px/1.25 system-ui;cursor:pointer}
+.cdq-portal-dialog-v2793 button:disabled{opacity:.55;cursor:default}
+.cdq-portal-primary-v2793{background:#2e4351!important;border-color:#89a4b5!important}
+.cdq-portal-utility-v2793{display:block;width:100%;margin-top:8px}
+.cdq-portal-revoke-v2793{border:1px solid #633c43;border-radius:8px;padding:10px;margin-top:16px}
+.cdq-portal-revoke-v2793 summary{color:#f4c1c4;font-weight:700;cursor:pointer}
+.cdq-portal-revoke-v2793 p{font-size:13px}
+.cdq-portal-revoke-v2793 button{background:#693039;border-color:#a95663}
+.cdq-portal-qr-v2793{box-sizing:border-box;display:flex;justify-content:center;align-items:center;width:min(340px,100%);min-height:296px;margin:14px auto 6px;padding:14px;border:1px solid #e0e0e0;border-radius:9px;background:#fff}
+.cdq-portal-qr-v2793[hidden]{display:none!important}
+.cdq-portal-qr-v2793 svg{display:block!important;box-sizing:border-box!important;width:288px!important;max-width:100%!important;height:auto!important;aspect-ratio:1/1;overflow:visible!important}
+@media(max-width:420px){.cdq-portal-body-v2793{padding:10px}.cdq-portal-actions-v2793{gap:5px}.cdq-portal-dialog-v2793 button{font-size:11.5px;padding:7px 4px}.cdq-portal-qr-v2793{min-height:0}}
+/* PC: four client actions on one row, with search preserved on the right.
+   The responsive search wraps only when width is genuinely constrained. */
+html.cdq-desktop-v2676 body #cdqClientActionsV2640{
+ grid-template-columns:repeat(4,minmax(120px,165px)) minmax(180px,1fr)!important;
+ align-items:center!important;
+}
+html.cdq-desktop-v2676 body #cdqClientActionsV2640 > #cdqClientPortalButton20261028{
+ display:flex!important;align-items:center;justify-content:center;
+ min-width:0!important;grid-column:auto!important;grid-row:auto!important;
+}
+html.cdq-desktop-v2676 body #cdqClientActionsV2640 > .cdq-pc-file-search{
+ grid-column:auto!important;grid-row:auto!important;min-width:0!important;
+}
+@media(max-width:1100px){
+ html.cdq-desktop-v2676 body #cdqClientActionsV2640{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ }
+ html.cdq-desktop-v2676 body #cdqClientActionsV2640 > .cdq-pc-file-search{
+  grid-column:1/-1!important;grid-row:auto!important;max-width:370px!important;justify-self:end!important;
+ }
+}

@@ -1,10 +1,10 @@
 {
   "platform": "pc-pwa",
-  "version": "27.92",
-  "release": "5cfd86881c3568f4aaf655cab1ee9bec67e6e98999bde6d9b12133e69af907f1",
+  "version": "27.93",
+  "release": "2149b212596f5b4f71fa18a474e7aab5505a55b8d15889b5dcd0eb208c5d9382",
   "desktopModel": 3,
-  "androidSourceBuild": "2026.10.28-v27.92-reader-drive-speed",
+  "androidSourceBuild": "2026.10.29-v27.93-backgrounds",
   "androidSelectorSha256": "3aebe7834ce7b55a5ab5b44731137c5b8a277fc7a5174d53ad3066ad0d9e2bcf",
-  "generatedFrom": "patches/update-2792/integration/assemble.py",
-  "files": 906
+  "generatedFrom": "patches/update-2793/integration/apply.py",
+  "files": 913
 }

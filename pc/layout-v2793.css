@@ -1,0 +1,89 @@
+/* CDQ V27.93 — same compact layout for every selected background.
+ * Existing legacy theme without background selection remains unchanged.
+ * The approved banner is shared: only the background skin changes.
+ * No fixed pixel overlays or screenshot cut-and-paste.
+ */
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #appHeader{
+ position:relative!important;
+ box-sizing:border-box!important;
+ overflow:hidden!important;
+ border:1px solid var(--cdq-line,#65727a)!important;
+ border-radius:16px!important;
+ background-image:url("./assets/background-v2793/approved-brushed-header.avif")!important;
+ background-size:100% 100%!important;
+ background-position:center!important;
+ background-repeat:no-repeat!important;
+ background-color:var(--cdq-bg-base-v2793,#101215)!important;
+ height:clamp(77px,22.5vw,124px)!important;
+ min-height:clamp(77px,22.5vw,124px)!important;
+ box-shadow:none!important;
+}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #appHeader .header-metal-banner{
+ visibility:hidden!important;opacity:0!important;pointer-events:none!important;
+}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #cdqTopActionsV2204{
+ display:grid!important;
+ grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ gap:7px!important;
+ padding:9px 9px 3px!important;
+ margin:0!important;
+ border:1px solid var(--cdq-line,#5e6e7a)!important;
+ border-bottom:0!important;
+ border-radius:16px 16px 0 0!important;
+ box-shadow:none!important;
+ background-color:var(--cdq-surface,#101820)!important;
+}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #cdqClientActionsV2640{
+ display:grid!important;
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ align-items:stretch!important;
+ gap:7px!important;
+ padding:3px 9px 9px!important;
+ margin-top:0!important;margin-bottom:0!important;
+ border:1px solid var(--cdq-line,#5e6e7a)!important;
+ border-top:0!important;
+ border-radius:0 0 16px 16px!important;
+ box-shadow:none!important;
+ background-color:var(--cdq-surface,#101820)!important;
+}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body
+:is(#cdqTopActionsV2204 .cdq-top-action,#cdqClientActionsV2640 > button){
+ box-sizing:border-box!important;min-width:0!important;
+ min-height:47px!important;
+ max-height:none!important;
+ border:1px solid var(--cdq-line,#5e6e7a)!important;
+ border-radius:11px!important;
+ background:var(--cdq-raised,#13191d)!important;
+ color:var(--cdq-ink,#eff4f7)!important;
+ box-shadow:none!important;
+ transition:none!important;
+}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #cdqClientActionsV2640 >button{
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ gap:6px!important;
+ font-size:clamp(11px,2.7vw,14px)!important;
+ padding:7px 5px!important;
+}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #filesContainer{
+ margin-top:10px!important;
+ border:1px solid var(--cdq-line,#5e6e7a)!important;
+ border-radius:16px!important;
+ box-shadow:none!important;
+ overflow:hidden!important;
+}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #filesContainer :is(.file-row,.folder-header){
+ border-bottom-color:var(--cdq-line,#3b444b)!important;
+}
+/* The footer retains its pre-existing position (above navigation); only add the fine lines. */
+html.cdq-mobile-layout[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body .brand-footer span{
+ background:#e93241!important;box-shadow:0 0 5px #c02d3677!important;
+}
+html.cdq-mobile-layout[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body .brand-footer em{
+ color:#f2f3f5!important;
+}
+@media(max-width:359px){
+ html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body
+ #cdqTopActionsV2204{gap:5px!important;padding:7px 6px 2px!important}
+ html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body
+ #cdqClientActionsV2640{gap:5px!important;padding:2px 6px 7px!important}
+}

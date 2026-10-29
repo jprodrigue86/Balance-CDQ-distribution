@@ -1,0 +1,24 @@
+{
+  "version": "27.93",
+  "state": "SIGNED_QUALIFICATION_NOT_PUBLISHED",
+  "source": "1d7e2bea9079f3abc69d1ba4df3478cd291d4795",
+  "testsPassed": 166,
+  "signature": "496030d9cd10e81ff4e9486c38491bc15389112c0c295c61c295981c101c4436",
+  "apkSha256": "1dc355185f0d98b95ee59c4b261fe5644debc9786053ac6aee2c9cd8a4f06fe0",
+  "apkBytes": 116959822,
+  "nativeManifestSha256": "54ae5455167442857baea37cb14de769e41718943e2b513bee57ac46a142d38a",
+  "pdfAssetsUnchanged": 13,
+  "physicalAndroidDriveTest": "not-performed",
+  "clientDataWrites": 0,
+  "status": "TECHNICAL_CHECKS_PASSED",
+  "pcIphoneProofSha256": "16c71b1b4f031da830297bf5ed9e4b77e5507f6895cd3ab4ec812b2d3a522b8a",
+  "managerVersion": "V59",
+  "managerTestsPassed": 125,
+  "chromiumUiWidths": [
+    320,
+    384,
+    412
+  ],
+  "simulatedClientPortalQrVerified": true,
+  "publicationStatus": "STAGED_NOT_PUBLISHED"
+}

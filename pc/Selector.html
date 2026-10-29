@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.92" data-cdq-pc-release="5cfd86881c3568f4aaf655cab1ee9bec67e6e98999bde6d9b12133e69af907f1">
+<html data-cdq-pc-version="27.93" data-cdq-pc-release="2149b212596f5b4f71fa18a474e7aab5505a55b8d15889b5dcd0eb208c5d9382">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -311,6 +311,13 @@ for(const name of ["workspace-v2638.mjs","opportunity-fields-v2699.mjs","drive-f
 })();
 </script>
 <script id="cdqThemeBootV2651">(function(){let t='dark';try{t=localStorage.getItem('cdqTheme')||(localStorage.getItem('modeRapports')==='light'?'light':'dark')}catch(_){}if(!['dark','light','metal','electric','steel','violet'].includes(t))t='dark';document.documentElement.dataset.cdqPalette=t;window.cdqThemeBootV2651=t;})();</script>
+<script id="cdqBackgroundBootV2793">(function(){
+try{var root=document.documentElement,p=root.dataset.cdqPalette||localStorage.getItem("cdqTheme")||"dark",
+ stored=localStorage.getItem("cdqBackgroundV2793:device")||"current";
+ root.dataset.cdqBackgroundV2793=p==="metal"&&stored==="current"?"brushed":stored;
+}catch(error){document.documentElement.dataset.cdqBackgroundV2793=
+ document.documentElement.dataset.cdqPalette==="metal"?"brushed":"current";}
+})();</script>
 <script id="cdqHomeIconsV2571">
 /* One live drawing per home action. Theme alternatives are data, not hidden DOM. */
 (function () {
@@ -910,7 +917,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.28-v27.92-reader-drive-speed">
+<meta name="cdq-package-build" content="2026.10.29-v27.93-backgrounds">
 
 
 <script id="cdqBridgeV23">
@@ -964,7 +971,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.28-v27.92-reader-drive-speed'
+    build:'2026.10.29-v27.93-backgrounds'
   });
 }
 
@@ -977,7 +984,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.28-v27.92-reader-drive-speed'
+        build:'2026.10.29-v27.93-backgrounds'
       });
     }
   } catch(e) {}
@@ -6088,6 +6095,10 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
 @media(prefers-reduced-motion:reduce){#cdqProgressModal[data-indeterminate="true"] .cdq-progress-fill::after,#cdqProgressModal[data-busy="true"] .cdq-progress-fill::after{animation:none;opacity:0}}
 </style>
 <link rel="stylesheet" href="./mobile-selection-v2783.css">
+<link id="cdqBackgroundStylesV2793" rel="stylesheet" href="./background-v2793.css">
+<link id="cdqMetalNoirStylesV2793" rel="stylesheet" href="./metal-noir-v2793.css">
+<link id="cdqLayoutStylesV2793" rel="stylesheet" href="./layout-v2793.css">
+<link id="cdqPortalStylesV2793" rel="stylesheet" href="./portal-v2793.css">
 </head>
 
 
@@ -11828,7 +11839,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.28-v27.92-reader-drive-speed";
+  const CDQ_BUILD = "2026.10.29-v27.93-backgrounds";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14190,7 +14201,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.28-v27.92-reader-drive-speed";
+const CDQ_V19_BUILD = "2026.10.29-v27.93-backgrounds";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -17903,7 +17914,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.28-v27.92-reader-drive-speed";
+const CDQ_V20_BUILD = "2026.10.29-v27.93-backgrounds";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -18750,7 +18761,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.28-v27.92-reader-drive-speed";
+const CDQ_V21_BUILD = "2026.10.29-v27.93-backgrounds";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -23165,7 +23176,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.28-v27.92-reader-drive-speed',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.29-v27.93-backgrounds',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -24387,7 +24398,8 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
 <link rel="stylesheet" href="./workspace-v2638.css">
 <script type="module" src="./workspace-v2638.mjs"></script>
 <script type="module" src="./balance-list-v2638.mjs"></script>
-<script type="module" src="./client-portal-ui-20261028.mjs"></script>
+<script type="module" src="./client-portal-ui-v2793.mjs"></script>
+<script type="module" src="./background-v2793.mjs"></script>
 <script type="module" src="./inventory-zoho-v2642.mjs"></script>
 <style id="cdq-nav-current-v2647">
 html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route][data-cdq-current]::after{content:''!important;display:block!important;position:absolute!important;bottom:0!important;left:20%!important;right:20%!important;height:3px!important;border-radius:3px!important;background:transparent!important;box-shadow:none!important}
@@ -24578,9 +24590,15 @@ html.cdq-desktop-v2676 body #filesContainer .file-row :is(.file-actions,.file-me
  const root=document.documentElement,$=(s,r=document)=>r.querySelector(s),all=(s,r=document)=>[...r.querySelectorAll(s)];
  const get=(k,f)=>{try{return localStorage.getItem(k)??f}catch{return f}},put=(k,v)=>{try{localStorage.setItem(k,v)}catch{}};
  const owner=()=>{try{return String(utilisateurCourantEmail||'').toLowerCase()}catch{return ''}};
- const initial=['home','dossier','calibration','calcul','inventory','catalog','invoices','opportunities','trash'];
+ const initial=['home','dossier','calibration','calcul','inventory','catalog','invoices','opportunities','settings','trash'];
  const orderKey=()=> 'cdqNavOrderV2708:'+owner();
- function savedOrder(){let a=[];try{a=JSON.parse(get(orderKey(),'[]'))}catch{}if(!Array.isArray(a))a=[];const retired=a.includes('opportunityBoard');a=[...new Set(a.filter(k=>initial.includes(k)))];for(const [key,after]of [['catalog','inventory']])if(!a.includes(key)&&a.includes(after))a.splice(a.indexOf(after)+1,0,key);const order=[...new Set([...a,...initial])];if(retired)put(orderKey(),JSON.stringify(order));return order;}
+ function savedOrder(){let a=[];try{a=JSON.parse(get(orderKey(),'[]'))}catch{}if(!Array.isArray(a))a=[];const retired=a.includes('opportunityBoard');a=[...new Set(a.filter(k=>initial.includes(k)))];for(const [key,after]of [['catalog','inventory']])if(!a.includes(key)&&a.includes(after))a.splice(a.indexOf(after)+1,0,key);const order=[...new Set([...a,...initial])];
+ if(!a.includes('settings')){
+  const current=order.indexOf('settings');if(current>=0)order.splice(current,1);
+  const beforeTrash=order.indexOf('trash');
+  order.splice(beforeTrash<0?order.length:beforeTrash,0,'settings');
+ }
+ if(retired)put(orderKey(),JSON.stringify(order));return order;}
  function motion(){root.dataset.cdqReducedMotionV2708=get('cdqReducedMotionV2708','false');}
  function button(text,fn){const b=document.createElement('button');b.type='button';b.textContent=text;b.onclick=fn;return b;}
  function section(title,help){const s=document.createElement('section'),h=document.createElement('h3');h.textContent=title;s.append(h);if(help){const p=document.createElement('p');p.textContent=help;s.append(p)}return s;}
