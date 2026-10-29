@@ -16,14 +16,14 @@ html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brus
  overflow:hidden!important;background-color:#0a0d10!important;
  background-image:url("./assets/background-v2793/approved-brushed-header.avif")!important;
  background-position:center!important;background-repeat:no-repeat!important;
- background-size:100% 100%!important;box-shadow:none!important;
+ background-size:contain!important;box-shadow:none!important;
 }
 html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"] #appHeader .header-metal-banner{
  visibility:hidden!important;opacity:0!important;pointer-events:none!important;
 }
 html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"] #appHeader{
- min-height:clamp(77px,22.5vw,124px)!important;
- height:clamp(77px,22.5vw,124px)!important;
+ min-height:0!important;
+ height:auto!important;aspect-ratio:680 / 160!important;
 }
 html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"] body
 :is(#companyButton,#cdqTopActionsV2204 .cdq-top-action,#cdqClientActionsV2640 >button){

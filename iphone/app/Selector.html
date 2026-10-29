@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="27.97" data-cdq-iphone-release="9be61777bf9df8a927a7527d9b9043071f50009cb1585c017ba3ac4eac4fe045">
+<html data-cdq-iphone-version="27.98" data-cdq-iphone-release="5775d0cbec055879198774ac139adf587f012ef03c6647da910b87436f088978">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdq-durable-resume-v2751">
@@ -587,6 +587,7 @@ try{var root=document.documentElement,p=root.dataset.cdqPalette||localStorage.ge
   window.cdqFitButtonWordsV2534 = function ({unit,topLabel,label}) {
     if (!document.documentElement.classList.contains('cdq-mobile-layout')) return;
     group(document.querySelector('.quick-buttons'), ':scope > .quick-button', ':scope > .quick-name', ':scope > .quick-icon', topLabel, unit);
+    if (document.documentElement.classList.contains('cdq-desktop-v2676'))
     group(document.getElementById('cdqTopActionsV2204'), ':scope > .cdq-top-action', ':scope > span:last-child:not(:first-child)', ':scope > svg, :scope > span:first-child:not(:last-child)', topLabel, unit);
     const nav = document.querySelector('.bottom-nav');
     if (nav && usable(nav) > 0) {
@@ -627,7 +628,7 @@ try{var root=document.documentElement,p=root.dataset.cdqPalette||localStorage.ge
     }
     // The refresh icon grows with the same slider; its own tile must grow too.
     const reset = document.querySelector('.company-reset-button');
-    if (reset) {
+    if (reset && (document.documentElement.classList.contains('cdq-desktop-v2676') || !document.documentElement.dataset.cdqBackgroundV2793 || document.documentElement.dataset.cdqBackgroundV2793==='current')) {
       const s = getComputedStyle(reset), icon = reset.querySelector('svg');
       const needed = (icon?icon.getBoundingClientRect().width:number(s.fontSize)) + 4*unit;
       const size = Math.max(reset.getBoundingClientRect().width,needed);
@@ -913,7 +914,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.29-v27.97-startup-register">
+<meta name="cdq-package-build" content="2026.10.29-v27.98-home-cascade">
 
 
 <script id="cdqBridgeV23">
@@ -967,7 +968,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.29-v27.97-startup-register'
+    build:'2026.10.29-v27.98-home-cascade'
   });
 }
 
@@ -980,7 +981,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.29-v27.97-startup-register'
+        build:'2026.10.29-v27.98-home-cascade'
       });
     }
   } catch(e) {}
@@ -11806,7 +11807,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.29-v27.97-startup-register";
+  const CDQ_BUILD = "2026.10.29-v27.98-home-cascade";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14169,7 +14170,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.29-v27.97-startup-register";
+const CDQ_V19_BUILD = "2026.10.29-v27.98-home-cascade";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -17882,7 +17883,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.29-v27.97-startup-register";
+const CDQ_V20_BUILD = "2026.10.29-v27.98-home-cascade";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -18729,7 +18730,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.29-v27.97-startup-register";
+const CDQ_V21_BUILD = "2026.10.29-v27.98-home-cascade";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -22290,9 +22291,26 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     return value === null ? 50 : clamp(value);
   };
   const px = n => (Math.round(n * 10) / 10) + 'px';
+  // 27.98: the mobile sizing engine owns density, not the selected home skin.
+  // Previously its inline !important writes overruled the shipped styles after
+  // every resize/theme/icon refresh. Release those properties at their writer.
+  function homeStyleOwnsV2798(el, key) {
+    if (root.classList.contains('cdq-desktop-v2676')) return false;
+    if (el.id === 'cdqTopDisplayButtonV2204' && key === 'display') return true;
+    if (!root.dataset.cdqBackgroundV2793 || root.dataset.cdqBackgroundV2793 === 'current') return false;
+    if (key === 'background' && (el === document.body || el.matches('.container,.top-bar,.bottom-nav,#appHeader,#companyButton,#cdqTopActionsV2204,#cdqTopActionsV2204 > .cdq-top-action,#cdqClientActionsV2640,#filesContainer,.file-row,.folder-header'))) return true;
+    if (el.id === 'cdqCreateClientV2640' && ['width','min-width','max-width','height','min-height','max-height','flex','padding-left','padding-right'].includes(key)) return true;
+    if (el.id === 'appHeader' && ['height','min-height','max-height'].includes(key)) return true;
+    if (el.matches('.bottom-nav') && ['border','border-radius','box-shadow'].includes(key)) return true;
+    if (el.id === 'cdqTopActionsV2204' && ['padding','gap','margin-top','margin-bottom'].includes(key)) return true;
+    if (el.matches('#cdqTopActionsV2204 > .cdq-top-action') && ['height','min-height','max-height','padding','gap','font-size','line-height'].includes(key)) return true;
+    return false;
+  }
+
   function set(el, props) {
     if (!el) return;
     Object.entries(props).forEach(([key, value]) => {
+      if (homeStyleOwnsV2798(el,key)) { el.style.removeProperty(key); return; }
       if (el.style.getPropertyValue(key) !== value || el.style.getPropertyPriority(key) !== 'important')
         el.style.setProperty(key, value, 'important');
     });
@@ -22323,6 +22341,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     const density = window.cdqPersonalSizing?.factor('General',g,x=>around50(x,.78,1.25)) ?? around50(g,.78,1.25), unit = reference * density;
     const textScale = window.cdqPersonalSizing?.factor('Text',t,x=>around50(x,.78,1.35)) ?? around50(t,.78,1.35), iconScale = window.cdqPersonalSizing?.factor('Icon',i,x=>around50(x,.65,1.5)) ?? around50(i,.65,1.5);
     lastMenuMetrics = {unit, textScale};
+    root.style.setProperty("--cdq-home-action-height-v2798",px(Math.max(49*unit,18*unit*iconScale+8*unit,8*unit*textScale*2.25+6*unit)));
     const top = 18 * unit * iconScale, bottom = 22 * unit * iconScale;
     const label = 8 * unit * textScale, text = 18.5 * unit * textScale;
     const action = 16 * unit * iconScale;
@@ -22474,7 +22493,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
         }
       }
       if(chromeChanged)schedule();
-    }).observe(root, {subtree:true,childList:true,attributes:true,attributeOldValue:true,attributeFilter:['class','hidden','open','data-cdq-palette','data-cdq-current','data-workspace-route','data-cdq-workspace']});
+    }).observe(root, {subtree:true,childList:true,attributes:true,attributeOldValue:true,attributeFilter:['class','hidden','open','data-cdq-palette','data-cdq-current','data-workspace-route','data-cdq-workspace','data-cdq-background-v2793']});
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once: true});
   else start();
@@ -23145,7 +23164,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.29-v27.97-startup-register',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.29-v27.98-home-cascade',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;

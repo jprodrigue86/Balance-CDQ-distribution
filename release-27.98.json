@@ -1,0 +1,25 @@
+{
+  "version": "27.98",
+  "status": "SIGNED_TECHNICAL_CHECKS_PASSED",
+  "privateSource": "77575217ad1dbb00e8c72a4aaa97e27df83f916a",
+  "publicBase": "866bd72fa27dacc953ca564e945e9583e6580b14",
+  "signature": "496030d9cd10e81ff4e9486c38491bc15389112c0c295c61c295981c101c4436",
+  "apkSha256": "6453c24689757ed2e06d648485718b10cb6e5408e01c21a5bde6a11e6870c9d6",
+  "apkBytes": 116972543,
+  "managerTestsRerun": false,
+  "managerHistoricalPassed": 125,
+  "managerInputsUnchanged": 81,
+  "homeBrowserWidths": [
+    320,
+    384,
+    412
+  ],
+  "homeBrowserChecksPerWidth": 11,
+  "physicalAndroidDriveTest": "not-performed",
+  "scope": "mobile home style ownership, banner proportions, seven equal actions, settings navigation",
+  "limitations": [
+    "Browser home validation uses synthetic company/capabilities and static-only network",
+    "Historical Manager module results reused; not rerun",
+    "No physical Android or authenticated Drive test"
+  ]
+}

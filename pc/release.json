@@ -1,11 +1,11 @@
 {
-  "platform": "pc-pwa",
-  "version": "27.97",
-  "release": "4ac90f96b0489baeeb80001ae8f817781d1b59aae2d09a78f2f18d5c98d37a65",
-  "desktopModel": 3,
-  "androidSourceBuild": "2026.10.29-v27.97-startup-register",
   "androidSelectorSha256": "3aebe7834ce7b55a5ab5b44731137c5b8a277fc7a5174d53ad3066ad0d9e2bcf",
-  "generatedFrom": "patches/update-2797/stage.py",
+  "androidSourceBuild": "2026.10.29-v27.98-home-cascade",
+  "build": "2026.10.29-v27.98-home-cascade",
+  "desktopModel": 3,
   "files": 920,
-  "build": "2026.10.29-v27.97-startup-register"
+  "generatedFrom": "patches/update-2798/stage.py",
+  "platform": "pc-pwa",
+  "release": "4fbdd65b84ebb01481886c617c16b4fc1c52c0d200fecf6b8db393b331e3b2e7",
+  "version": "27.98"
 }

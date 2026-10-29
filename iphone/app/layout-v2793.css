@@ -10,12 +10,12 @@ html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([d
  border:1px solid var(--cdq-line,#65727a)!important;
  border-radius:16px!important;
  background-image:url("./assets/background-v2793/approved-brushed-header.avif")!important;
- background-size:100% 100%!important;
+ background-size:contain!important;
  background-position:center!important;
  background-repeat:no-repeat!important;
  background-color:var(--cdq-bg-base-v2793,#101215)!important;
- height:clamp(77px,22.5vw,124px)!important;
- min-height:clamp(77px,22.5vw,124px)!important;
+ height:auto!important;aspect-ratio:680 / 160!important;
+ min-height:0!important;
  box-shadow:none!important;
 }
 html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #appHeader .header-metal-banner{
