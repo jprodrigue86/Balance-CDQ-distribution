@@ -1,0 +1,16 @@
+{
+  "version": "27.94",
+  "status": "TECHNICAL_CHECKS_PASSED",
+  "privateSource": "b7fdaab6f9f18ff726768cf6411961f5e4f1c2f7",
+  "baseVersion": "27.93",
+  "apkSha256": "87af9a0ce9c2c6642ec5c1733dc57a72c450af2fff9525cb3c20221a777be792",
+  "apkBytes": 116959822,
+  "signature": "496030d9cd10e81ff4e9486c38491bc15389112c0c295c61c295981c101c4436",
+  "nativeManifestSha256": "cc0703f04011b37ca72b72d010c06f08b44fba6ffe8fb8364bfd02c976c442ae",
+  "nativeTestsReused": 166,
+  "managerTestsReused": 125,
+  "startupGateTestsPassed": 4,
+  "pdfMastersUnchanged": 13,
+  "driveWrites": 0,
+  "physicalAndroidDriveTest": "not-performed"
+}
