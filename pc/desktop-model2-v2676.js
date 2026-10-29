@@ -7,6 +7,7 @@
   let queued=false,menu=null,menuOwner=null,menuButtons=[];
   function closeMenu(focus=false){if(!menu)return;const owner=menuOwner;for(const [button,parent]of menuButtons){button.removeAttribute('role');if(parent.isConnected)parent.append(button);}menuButtons=[];menu.remove();menu=null;menuOwner=null;if(focus&&owner?.isConnected)owner.focus();}
   function showRowMenu(row,point){
+    if(window.cdqDesktopActionsV2797)return window.cdqDesktopActionsV2797.open(row,point);
     closeMenu();const entries=[...row.querySelectorAll(':scope > .cdq-swipe-overlay > button')].filter(b=>!b.hidden&&getComputedStyle(b).display!=='none');if(!entries.length)return;
     menu=document.createElement('div');menu.id='cdqPcFileMenu';menu.setAttribute('role','menu');menu.setAttribute('aria-label','Actions du fichier');menuOwner=row;
     for(const b of entries){menuButtons.push([b,b.parentElement]);b.setAttribute('role','menuitem');menu.append(b);}document.body.append(menu);

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.93" data-cdq-pc-release="2149b212596f5b4f71fa18a474e7aab5505a55b8d15889b5dcd0eb208c5d9382">
+<html data-cdq-pc-version="27.97" data-cdq-pc-release="4ac90f96b0489baeeb80001ae8f817781d1b59aae2d09a78f2f18d5c98d37a65">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -310,7 +310,7 @@ for(const name of ["workspace-v2638.mjs","opportunity-fields-v2699.mjs","drive-f
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
 </script>
-<script id="cdqThemeBootV2651">(function(){let t='dark';try{t=localStorage.getItem('cdqTheme')||(localStorage.getItem('modeRapports')==='light'?'light':'dark')}catch(_){}if(!['dark','light','metal','electric','steel','violet'].includes(t))t='dark';document.documentElement.dataset.cdqPalette=t;window.cdqThemeBootV2651=t;})();</script>
+<script id="cdqThemeBootV2651">(function(){let t='metal';try{const saved=localStorage.getItem('cdqTheme');t=saved||(localStorage.getItem('modeRapports')==='light'?'light':'metal');if(!saved)localStorage.setItem('cdqTheme',t)}catch(_){}if(!['dark','light','metal','electric','steel','violet'].includes(t))t='metal';document.documentElement.dataset.cdqPalette=t;window.cdqThemeBootV2651=t;})();</script>
 <script id="cdqBackgroundBootV2793">(function(){
 try{var root=document.documentElement,p=root.dataset.cdqPalette||localStorage.getItem("cdqTheme")||"dark",
  stored=localStorage.getItem("cdqBackgroundV2793:device")||"current";
@@ -917,7 +917,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.29-v27.93-backgrounds">
+<meta name="cdq-package-build" content="2026.10.29-v27.97-startup-register">
 
 
 <script id="cdqBridgeV23">
@@ -971,7 +971,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.29-v27.93-backgrounds'
+    build:'2026.10.29-v27.97-startup-register'
   });
 }
 
@@ -984,7 +984,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.29-v27.93-backgrounds'
+        build:'2026.10.29-v27.97-startup-register'
       });
     }
   } catch(e) {}
@@ -6099,6 +6099,10 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
 <link id="cdqMetalNoirStylesV2793" rel="stylesheet" href="./metal-noir-v2793.css">
 <link id="cdqLayoutStylesV2793" rel="stylesheet" href="./layout-v2793.css">
 <link id="cdqPortalStylesV2793" rel="stylesheet" href="./portal-v2793.css">
+<link rel="stylesheet" href="./approved-metal-v2796.css">
+<script type="module" src="./company-search-v2797.mjs"></script>
+<link rel="stylesheet" href="./interface-v2797.css">
+<script type="module" src="./desktop-actions-v2797.mjs"></script>
 </head>
 
 
@@ -11839,7 +11843,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.29-v27.93-backgrounds";
+  const CDQ_BUILD = "2026.10.29-v27.97-startup-register";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -12263,12 +12267,13 @@ function cdqNavigateDesktop(id){
     }).withFailureHandler(function(e){button.disabled=false;afficherErreur(e);}).definirFavoriDossier(folder.id,next,compagnieSelectionnee||"");
   }
 
-  function cdqRenderCompanyRows(companies,allowVisible=false){
+  function cdqRenderCompanyRows(companies,allowVisible=false,ranked=false){
     if(!allowVisible && window.cdqCompanyChooserV2674?.defer())return;
     const list=document.getElementById("companyList"); if(!list) return;
     list.innerHTML="";
     const reset=document.createElement("div"); reset.className="company-item company-reset-item"; reset.textContent="↩️ Aucune compagnie sélectionnée"; reset.onclick=deselectionnerCompagnie; list.appendChild(reset);
     const sorted=Array.from(new Map((companies||[]).filter(c=>c&&c.id).map(c=>[String(c.id),c])).values()).sort(function(a,b){
+      if(ranked)return 0;
       if(!!a.favori!==!!b.favori) return a.favori?-1:1;
       return String(a.nom||"").localeCompare(String(b.nom||""),"fr",{sensitivity:"base"});
     });
@@ -12289,7 +12294,7 @@ function cdqNavigateDesktop(id){
   window.remplirListeCompagnies=function(){ cdqRenderCompanyRows(toutesLesCompagnies||[]); };
   window.filtrerCompagnies=function(){
     const q=((document.getElementById("companySearch")||{}).value||"").toLowerCase().trim();
-    cdqRenderCompanyRows((toutesLesCompagnies||[]).filter(function(c){return String(c.nom||"").toLowerCase().includes(q);}),true);
+    cdqRenderCompanyRows(window.cdqCompanySearchV2797?window.cdqCompanySearchV2797.rankCompanies(toutesLesCompagnies||[],q):(toutesLesCompagnies||[]).filter(function(c){return String(c.nom||"").toLowerCase().includes(q);}),true,true);
   };
 
   const originalChoisirCompagnie=window.choisirCompagnie;
@@ -12535,7 +12540,7 @@ function cdqInstallFolderInteractions(row,folder){
       try{ row.releasePointerCapture(e.pointerId); }catch(err){}
       const dx=e.clientX-sx,dy=e.clientY-sy; pid=null;
       if(longFired) return;
-      if(modeSelectionFichiers) return;
+      if(modeSelectionFichiers || document.documentElement.classList.contains("cdq-desktop-v2676")) return;
       const seuil=obtenirSeuilGlissement(),ratio=obtenirRatioGlissement();
       if(Math.abs(dx)>=seuil && Math.abs(dx)>Math.abs(dy)*ratio){
         row.dataset.cdqSuppressClick="1";
@@ -12568,6 +12573,7 @@ function cdqInstallFolderInteractions(row,folder){
 
   
 function cdqInstallSwipeGesture(row){
+    if(document.documentElement.classList.contains("cdq-desktop-v2676"))return;
     let sx=0,sy=0,pid=null;
     row.addEventListener("pointerdown",function(e){
       if(modeSelectionFichiers||e.target.closest("button"))return;
@@ -12597,6 +12603,7 @@ function cdqInstallSwipeGesture(row){
   function cdqSwipeButton(text,cls,fn){ const b=document.createElement("button");b.type="button";b.className="cdq-swipe-action "+(cls||"");b.textContent=text;b.onclick=fn;window.cdqFileActionsV2655.paint(b,String(cls||'').split(' ')[0],String(text).replace(/^[^A-Za-zÀ-ÿ]+/,''));return b; }
   function cdqCloseSwipes(except){ document.querySelectorAll(".file-row.cdq-swiped-left,.file-row.cdq-swiped-right,.folder-header.cdq-swiped-left,.folder-header.cdq-swiped-right,.cdq-desktop-folder-row.cdq-swiped-left,.cdq-desktop-folder-row.cdq-swiped-right").forEach(function(r){if(r!==except)r.classList.remove("cdq-swiped-left","cdq-swiped-right");}); }
   function cdqSelectOnly(row){
+    if(document.documentElement.classList.contains("cdq-desktop-v2676")){if(row.querySelector(".file-checkbox")?.checked)return;dossiersSelectionnes.clear();}
     document.querySelectorAll(".file-checkbox").forEach(function(c){c.checked=false;});
     const c=row.querySelector(".file-checkbox"); if(c)c.checked=true; modeSelectionFichiers=true; mettreAJourInterface();
   }
@@ -14201,7 +14208,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.29-v27.93-backgrounds";
+const CDQ_V19_BUILD = "2026.10.29-v27.97-startup-register";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -17914,7 +17921,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.29-v27.93-backgrounds";
+const CDQ_V20_BUILD = "2026.10.29-v27.97-startup-register";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -18761,7 +18768,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.29-v27.93-backgrounds";
+const CDQ_V21_BUILD = "2026.10.29-v27.97-startup-register";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -23176,7 +23183,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.29-v27.93-backgrounds',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.29-v27.97-startup-register',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -24400,6 +24407,7 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
 <script type="module" src="./balance-list-v2638.mjs"></script>
 <script type="module" src="./client-portal-ui-v2793.mjs"></script>
 <script type="module" src="./background-v2793.mjs"></script>
+<script type="module" src="./approved-metal-v2796.mjs"></script>
 <script type="module" src="./inventory-zoho-v2642.mjs"></script>
 <style id="cdq-nav-current-v2647">
 html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route][data-cdq-current]::after{content:''!important;display:block!important;position:absolute!important;bottom:0!important;left:20%!important;right:20%!important;height:3px!important;border-radius:3px!important;background:transparent!important;box-shadow:none!important}

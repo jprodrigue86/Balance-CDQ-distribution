@@ -1,0 +1,133 @@
+
+/* CDQ V27.96 — user-approved 2026-10-29 Metal brossé noir reference.
+ * Responsive live UI only; never embed example clients, PDFs or Drive data.
+ * No changes to Smoke/Lava/Letter/Rock and other palette skins.
+ */
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676){
+ --metal-2796:repeating-linear-gradient(0deg,rgba(225,232,236,.036) 0 1px,transparent 1px 3px,rgba(0,0,0,.063) 4px 5px,transparent 5px 7px),linear-gradient(98deg,#060809 0%,#252729 23%,#101315 48%,#23272a 73%,#080a0b 100%);
+ --metal-2796-sprite:url("./assets/approved-metal-v2796/icons.jpg");
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body{
+ background:var(--metal-2796)!important;background-color:#0a0c0d!important;color:#f8f8f8!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body > .container,
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body .desktop-main{
+ background:transparent!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #appHeader{
+ background-image:url("./assets/background-v2793/approved-brushed-header.avif")!important;
+ background-size:100% 100%!important;background-repeat:no-repeat!important;
+ border:1px solid #9ca4a6!important;border-radius:16px!important;box-shadow:inset 0 1px 0 #ffffff20!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body .company-wrapper{
+ gap:7px!important;margin-top:7px!important;margin-bottom:7px!important;align-items:stretch!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #companyButton{
+ min-height:44px!important;padding:7px 12px!important;font-size:clamp(17px,4.9vw,24px)!important;
+ text-align:left!important;color:#fff!important;background:var(--metal-2796)!important;
+ border:1px solid #a2a7aa!important;border-radius:11px!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #cdqCreateClientV2640{
+ position:relative!important;flex:0 0 44px!important;width:44px!important;min-width:44px!important;
+ min-height:44px!important;max-height:48px!important;padding:0!important;
+ border:1px solid #a1a4a9!important;border-radius:11px!important;background:#090b0c!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #cdqCreateClientV2640[data-company-action="rename"] > *{opacity:0!important}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #cdqCreateClientV2640[data-company-action="rename"]::after{
+ content:""!important;position:absolute!important;inset:3px!important;
+ background:var(--metal-2796-sprite) no-repeat -245px 0!important;background-size:280px 35px!important;
+ width:35px;height:35px;margin:auto!important;pointer-events:none!important;
+}
+/* Four visible toolbar actions on one row. Preserve fifth hidden settings node
+ * for the V27.95 startup count; never disable the actual settings implementation. */
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > #cdqTopDisplayButtonV2204{
+ display:none!important;
+}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > #cdqClientPortalButton20261028{
+ display:flex!important;grid-row:auto!important;grid-column:auto!important;order:4!important;
+}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body .bottom-nav :is(#cdqSettingsNavButtonV2793,#displayModeButton,[data-workspace-route="settings"]){display:none!important}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204{
+ display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;align-items:stretch!important;
+ gap:5px!important;margin:5px 0 0!important;padding:7px 6px 4px!important;
+ background:var(--metal-2796)!important;border:1px solid #9fa5a9!important;
+ border-bottom:0!important;border-radius:13px 13px 0 0!important;box-shadow:none!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028){
+ display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;
+ gap:2px!important;min-width:0!important;height:49px!important;min-height:49px!important;
+ margin:0!important;padding:3px 2px!important;order:0!important;
+ font:650 clamp(8.5px,2.55vw,12px)/1.16 system-ui,sans-serif!important;white-space:normal!important;
+ background:#0b0d0e!important;border:1px solid #a1a5a8!important;border-radius:10px!important;
+ box-shadow:inset 0 1px 0 #ffffff22!important;color:#f7f7f7!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028) > :is(svg,.cdq-action-art-v2655,span:first-child:not(:last-child)){display:none!important}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028)::before{
+ content:""!important;display:block!important;flex:0 0 34px!important;width:34px!important;height:34px!important;
+ background-image:var(--metal-2796-sprite)!important;background-size:272px 34px!important;background-repeat:no-repeat!important;
+ pointer-events:none!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"] body #cdqV19OfflineStatus::before{background-position:0 0!important}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"] body #clientNoteButton::before{background-position:-34px 0!important}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"] body #clientPhotoButton::before{background-position:-68px 0!important}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"] body #cdqClientPortalButton20261028::before{background-position:-102px 0!important}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"] body #cdqClientPortalButton20261028:disabled{opacity:.65!important}
+/* All three client actions retain their native click handlers. */
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640{
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ gap:5px!important;align-items:stretch!important;margin:0 0 7px!important;padding:4px 6px 7px!important;
+ background:var(--metal-2796)!important;border:1px solid #9fa5a9!important;border-top:0!important;
+ border-radius:0 0 13px 13px!important;box-shadow:none!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report]){
+ display:flex!important;align-items:center!important;justify-content:center!important;flex-direction:row!important;
+ min-width:0!important;min-height:52px!important;height:52px!important;gap:3px!important;
+ margin:0!important;padding:3px 2px!important;white-space:normal!important;
+ text-align:left!important;color:#f8f8f8!important;font:650 clamp(9px,2.55vw,12px)/1.18 system-ui,sans-serif!important;
+ background:#0b0d0e!important;border:1px solid #a1a5a8!important;border-radius:10px!important;box-shadow:inset 0 1px 0 #ffffff18!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report])::before{
+ content:""!important;display:block!important;flex:0 0 39px!important;width:39px!important;height:39px!important;
+ background-image:var(--metal-2796-sprite)!important;background-size:312px 39px!important;background-repeat:no-repeat!important;
+ pointer-events:none!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"] body [data-client-folder]::before{background-position:-156px 0!important}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"] body [data-client-list]::before{background-position:-195px 0!important}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"] body [data-client-report]::before{background-position:-234px 0!important}
+/* Client rows are live and unaltered; appearance alone matches chosen model. */
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #filesContainer{
+ margin-top:7px!important;border:1px solid #a7abad!important;border-radius:15px!important;
+ background:var(--metal-2796)!important;overflow:hidden!important;box-shadow:none!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #filesContainer :is(.file-row,.folder-header){
+ margin:0!important;border-radius:0!important;min-height:54px!important;max-height:none!important;
+ padding:7px 10px!important;border:0!important;border-bottom:1px solid #55585a!important;
+ background:var(--metal-2796)!important;color:#fafafa!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #filesContainer .file-name{
+ font-size:clamp(13px,3.6vw,19px)!important;line-height:1.13!important;font-weight:750!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #filesContainer :is(.file-date,.file-meta){
+ font-size:clamp(10px,2.6vw,13px)!important;color:#bbb!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #filesContainer .file-row.selected{
+ background-color:#162733!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body .brand-footer{
+ margin:11px 0 8px!important;gap:7px!important;background:transparent!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body .brand-footer span{
+ max-width:none!important;background:#f42035!important;box-shadow:0 0 6px #fc1726ac!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body .brand-footer em{
+ font-size:clamp(14px,4.8vw,22px)!important;color:#fff!important;white-space:nowrap!important;
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body .bottom-nav{
+ border:1px solid #a6a9ac!important;border-radius:13px!important;
+ background:var(--metal-2796)!important;box-shadow:none!important;
+}
+@media(max-width:359px){
+ html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204{gap:3px!important;padding:5px 4px 3px!important}
+ html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640{gap:3px!important;padding:3px 4px 6px!important}
+}
+

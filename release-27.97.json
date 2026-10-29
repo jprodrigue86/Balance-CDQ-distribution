@@ -1,0 +1,17 @@
+{
+  "version": "27.97",
+  "status": "SIGNED_TECHNICAL_CHECKS_PASSED",
+  "privateSource": "b4f374117409cfe3711f503e214d0d91545f46da",
+  "publicBase": "247b3e6a445c261707aa04d36c32183a27771e0d",
+  "signature": "496030d9cd10e81ff4e9486c38491bc15389112c0c295c61c295981c101c4436",
+  "apkSha256": "8e3a6b0585776e137913eefcbbee5125c8a3fee4f518af1347cff22c0188d78d",
+  "apkBytes": 116972543,
+  "managerTests": 125,
+  "physicalAndroidDriveTest": "not-performed",
+  "scope": "startup, approved metal, company search, PC commands, receipt safeguards",
+  "limitations": [
+    "No automatic receipt quadrilateral/perspective correction",
+    "Ambiguous copy outcomes stop for reconciliation",
+    "No physical Android or authenticated Drive test"
+  ]
+}

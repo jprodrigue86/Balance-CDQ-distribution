@@ -181,20 +181,22 @@ function invoiceValidDateV2791(value){
   return date.getUTCFullYear()===parts[0]&&date.getUTCMonth()===parts[1]-1&&date.getUTCDate()===parts[2];
 }
 function parseDate(t){
-  var dates=new Set(),uncertain=false,months={jan:1,fev:2,feb:2,mar:3,avr:4,apr:4,mai:5,may:5,juin:6,jun:6,juil:7,jul:7,aou:8,aug:8,sep:9,oct:10,nov:11,dec:12};
-  function add(y,m,d){var value=y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');if(invoiceValidDateV2791(value))dates.add(value);else uncertain=true;}
+  var dates=new Set(),ambiguous=[],invalid=false,months={jan:1,fev:2,feb:2,mar:3,avr:4,apr:4,mai:5,may:5,juin:6,jun:6,juil:7,jul:7,aou:8,aug:8,sep:9,oct:10,nov:11,dec:12};
+  function value(y,m,d){return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
+  function add(y,m,d){var v=value(y,m,d);if(invoiceValidDateV2791(v))dates.add(v);else invalid=true;}
   textLines(t).forEach(function(line){
     var text=line.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-    // A printing/delivery/due date alone must not become the expense date.
     if(/\b(?:imprime|impression|printed|printing|livraison|delivery|echeance|due\s+date|expiration)\b/.test(text))return;
-    text=text.replace(/\b(20\d{2})[\/-](\d{1,2})[\/-](\d{1,2})\b/g,function(all,y,m,d){add(+y,+m,+d);return ' ';});
-    text=text.replace(/\b(\d{1,2})[\/-](\d{1,2})[\/-](20\d{2})\b/g,function(all,a,b,y){a=+a;b=+b;if(a<=12&&b>12)add(+y,a,b);else if(a>12&&b<=12)add(+y,b,a);else if(a===b)add(+y,a,b);else uncertain=true;return ' ';});
+    text=text.replace(/\b(20\d{2})\s*[-/.]\s*(\d{1,2})\s*[-/.]\s*(\d{1,2})\b/g,function(all,y,m,d){add(+y,+m,+d);return ' ';});
+    text=text.replace(/\b(\d{1,2})\s*[-/.]\s*(\d{1,2})\s*[-/.]\s*(20\d{2})\b/g,function(all,a,b,y){a=+a;b=+b;if(a<=12&&b>12)add(+y,a,b);else if(a>12&&b<=12)add(+y,b,a);else if(a===b)add(+y,a,b);else if(a>=1&&b>=1&&a<=12&&b<=12)ambiguous.push([value(+y,a,b),value(+y,b,a)]);else invalid=true;return ' ';});
     var named=/\b(?:(\d{1,2})\s+([a-z]+)\.?\s+(20\d{2})|([a-z]+)\.?\s+(\d{1,2}),?\s+(20\d{2}))\b/g,m;
     while((m=named.exec(text))){var word=m[2]||m[4],month=months[word]||months[word.slice(0,4)]||months[word.slice(0,3)];if(month)add(+(m[3]||m[6]),month,+(m[1]||m[5]));}
   });
-  return !uncertain&&dates.size===1?[...dates][0]:'';
+  if(invalid||dates.size!==1)return '';
+  var chosen=[...dates][0];return ambiguous.every(pair=>pair.includes(chosen))?chosen:'';
 }
-function merchant(t){var bad=/^(bienvenue|welcome|merci|thank|total|sous[- ]?total|tps|tvq|taxe|date|facture|re[çc]u|receipt|station|pompe|tel|tél|www\.|http|visa|mastercard|débit|debit|bronze|generic)/i;return (textLines(t).slice(0,18).find(function(l){return /[A-Za-zÀ-ÿ]{3}/.test(l)&&!bad.test(l)&&!/^\d/.test(l)&&!(/\b(QC|Québec|Quebec)\b/i.test(l)&&/\d/.test(l))&&!/\b(?:blvd|boulevard|rue|street|route|autoroute)\b/i.test(l)})||'').slice(0,80)}
+
+function merchant(t){var bad=/^(airbag|srs|steering|volant|bienvenue|welcome|merci|thank|total|sous[- ]?total|tps|tvq|taxe|date|facture|re[çc]u|receipt|station|pompe|tel|tél|www\.|http|visa|mastercard|débit|debit|bronze|generic)/i;return (textLines(t).slice(0,18).find(function(l){return /[A-Za-zÀ-ÿ]{3}/.test(l)&&!bad.test(l)&&!/^\d/.test(l)&&!(/\b(QC|Québec|Quebec)\b/i.test(l)&&/\d/.test(l))&&!/\b(?:blvd|boulevard|rue|street|route|autoroute)\b/i.test(l)})||'').slice(0,80)}
 // V27.41 classification only: printed room-number forms do not prove lodging.
 // V27.42: classify purchased items/services; payment, pump and tax lines are not purchases.
 function invoiceCategoryTextV2741(t){return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/œ/g,'oe').replace(/\b0(eufs?)(?=avec|\b)/g,'o$1').replace(/\bcham(?:be|8re|rn?bre)\b/g,'chambre').replace(/\bh0tel\b/g,'hotel').replace(/\b(?:rest0rant|restauramt)\b/g,'restaurant').replace(/\brest0\b/g,'resto').replace(/\bbistr0\b/g,'bistro').replace(/\bpourb(?:[o0][i1l]re|otre)\b/g,'pourboire').replace(/(\d)([a-z])/g,'$1 $2').replace(/\s+/g,' ').trim()}
@@ -310,6 +312,7 @@ function applyOcr(t,layout){
  var amount=numberMoney($('#cdqInvoiceAmountV2590',page).value),date=$('#cdqInvoiceDateV2590',page).value,warnings=[];
  if(!Number.isFinite(amount))warnings.push(invoicePaymentAmbiguousV2791(t)?'Plusieurs états de paiement : saisissez le montant réellement payé.':'Total absent ou ambigu : saisissez le montant réellement payé.');
  if(!invoiceValidDateV2791(date))warnings.push('Date absente ou ambiguë : choisissez la date du reçu.');
+ if(!$('#cdqInvoiceMerchantV2590',page).value.trim())warnings.push('Commerçant absent : saisissez le nom imprimé sur le reçu.');
  if(textLines(t).some(line=>invoiceAmountLabel(line).suggestion)&&!textLines(t).some(line=>invoiceAmountLabel(line).paid))warnings.push('Pourboire suggéré non ajouté : vérifiez le total réellement payé.');
  var manual=Object.values(manualFieldsV2791).some(Boolean);
  detected(warnings.length?'Informations à vérifier':'Informations détectées',warnings.join(' ')||(manual?'Vos corrections manuelles sont conservées. Vérifiez les champs avant d’enregistrer.':'Vérifiez les champs avant d’enregistrer.'),warnings.length?'idle':'ok');

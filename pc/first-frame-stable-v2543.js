@@ -27,7 +27,7 @@
   }
   function decode(src){
     if(decoded.has(src))return decoded.get(src);
-    const promise=(async()=>{const img=new Image();img.src=src;await img.decode();if(!img.naturalWidth)throw Error('Image non chargée');})();
+    const promise=(async()=>{const img=new Image();let timer;try{img.src=src;await Promise.race([img.decode(),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Image trop lente')),5000);})]);if(!img.naturalWidth)throw Error('Image non chargée');return true;}catch(error){document.documentElement.dataset.cdqStartupArtworkDegradedV2797='true';return false;}finally{clearTimeout(timer);}})();
     decoded.set(src,promise);promise.catch(()=>decoded.delete(src));return promise;
   }
   function snapshot(){
@@ -35,7 +35,22 @@
     const locked=document.documentElement.dataset.cdqWorkspaceUnlocked==='false'&&document.documentElement.dataset.cdqConnectingV2648!=='true';
     const laidOut=el=>!!el&&getComputedStyle(el).display!=='none'&&el.getBoundingClientRect().width>0&&el.getBoundingClientRect().height>0;
     const shown=locked?laidOut:visible;
-    const ready=nav.length===routes.length&&nav.every((button,i)=>button.dataset.workspaceRoute===routes[i]&&shown(button)&&shown(button.querySelector('small'))&&button.querySelector('small').textContent.trim()===labels[i]&&button.querySelector(':scope > span'))&&document.querySelectorAll('#cdqTopActionsV2204 > button').length===4;
+    // 27.94: accept Settings and user-customized order; reject duplicates/unknown routes.
+    const expected=new Map(routes.map((route,i)=>[route,labels[i]]));
+    if(nav.some(button=>button.dataset.workspaceRoute==='settings'))expected.set('settings','Réglages');
+    const ready=nav.length===expected.size
+      &&new Set(nav.map(button=>button.dataset.workspaceRoute)).size===nav.length
+      &&nav.every(button=>expected.has(button.dataset.workspaceRoute)
+        &&shown(button)&&shown(button.querySelector('small'))
+        &&button.querySelector('small').textContent.trim()===expected.get(button.dataset.workspaceRoute)
+        &&button.querySelector(':scope > span'))
+      &&(() => {
+        const topActions=[...document.querySelectorAll('#cdqTopActionsV2204 > button')];
+        const portal=topActions.filter(button=>button.id==='cdqClientPortalButton20261028');
+        // Four original actions plus one optional client portal.
+        // A missing optional portal must not make all CDQ inaccessible.
+        return portal.length<=1&&topActions.length===4+portal.length;
+      })();
     const signature=controls().map(control=>[control,...control.querySelectorAll('*')].map(node=>{
       const r=node.getBoundingClientRect(),s=getComputedStyle(node);
       return [node.tagName,node.getAttribute('class'),node.getAttribute('src'),node.textContent,r.x,r.y,r.width,r.height,s.font,s.color,s.display,s.visibility,s.backgroundImage].join('|');

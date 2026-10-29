@@ -1,10 +1,11 @@
 {
   "platform": "iphone-pwa",
-  "version": "27.93",
-  "release": "63f6e569c3d99b8bf2bd97119de2c9f0983ef0d2de3cd82b18ca21cf1f912f71",
+  "version": "27.97",
+  "release": "9be61777bf9df8a927a7527d9b9043071f50009cb1585c017ba3ac4eac4fe045",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "androidSourceBuild": "2026.10.29-v27.93-backgrounds",
+  "androidSourceBuild": "2026.10.29-v27.97-startup-register",
   "androidSelectorSha256": "3aebe7834ce7b55a5ab5b44731137c5b8a277fc7a5174d53ad3066ad0d9e2bcf",
-  "generatedFrom": "patches/update-2793/integration/apply.py",
-  "files": 905
+  "generatedFrom": "patches/update-2797/stage.py",
+  "files": 910,
+  "build": "2026.10.29-v27.97-startup-register"
 }
