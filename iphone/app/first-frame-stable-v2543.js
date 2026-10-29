@@ -35,7 +35,17 @@
     const locked=document.documentElement.dataset.cdqWorkspaceUnlocked==='false'&&document.documentElement.dataset.cdqConnectingV2648!=='true';
     const laidOut=el=>!!el&&getComputedStyle(el).display!=='none'&&el.getBoundingClientRect().width>0&&el.getBoundingClientRect().height>0;
     const shown=locked?laidOut:visible;
-    const ready=nav.length===routes.length&&nav.every((button,i)=>button.dataset.workspaceRoute===routes[i]&&shown(button)&&shown(button.querySelector('small'))&&button.querySelector('small').textContent.trim()===labels[i]&&button.querySelector(':scope > span'))&&document.querySelectorAll('#cdqTopActionsV2204 > button').length===4;
+    // A current navigation may include the new "Réglages" route (V27.93).
+    // Check membership, labels and visibility without depending on drag order.
+    const expected=new Map(routes.map((route,i)=>[route,labels[i]]));
+    if(nav.some(button=>button.dataset.workspaceRoute==='settings'))expected.set('settings','Réglages');
+    const ready=nav.length===expected.size
+      &&new Set(nav.map(button=>button.dataset.workspaceRoute)).size===nav.length
+      &&nav.every(button=>expected.has(button.dataset.workspaceRoute)
+        &&shown(button)&&shown(button.querySelector('small'))
+        &&button.querySelector('small').textContent.trim()===expected.get(button.dataset.workspaceRoute)
+        &&button.querySelector(':scope > span'))
+      &&document.querySelectorAll('#cdqTopActionsV2204 > button').length===4;
     const signature=controls().map(control=>[control,...control.querySelectorAll('*')].map(node=>{
       const r=node.getBoundingClientRect(),s=getComputedStyle(node);
       return [node.tagName,node.getAttribute('class'),node.getAttribute('src'),node.textContent,r.x,r.y,r.width,r.height,s.font,s.color,s.display,s.visibility,s.backgroundImage].join('|');
