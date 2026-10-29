@@ -1,24 +1,9 @@
-/* CDQ 27.93 — Five quiet dark backgrounds; no geometry or PDF changes. */
-html[data-cdq-background-v2793="brushed"]{
- --cdq-bg-v2793:repeating-linear-gradient(0deg,transparent 0px,rgba(225,233,240,.019) 1px,transparent 2px,rgba(0,0,0,.045) 4px),linear-gradient(93deg,#090b0d 0%,#202226 28%,#111417 52%,#25262b 74%,#0c0e11 100%);
- --cdq-bg-base-v2793:#101215;
-}
-html[data-cdq-background-v2793="smoke"]{
- --cdq-bg-v2793:radial-gradient(ellipse 85% 26% at 44% 82%,rgba(117,121,131,.24),transparent 87%),radial-gradient(ellipse 65% 32% at 20% 36%,rgba(101,109,118,.22),transparent 83%),radial-gradient(ellipse 58% 29% at 88% 18%,rgba(84,93,101,.21),transparent 86%),radial-gradient(ellipse 60% 24% at 67% 62%,rgba(158,158,165,.14),transparent 89%),linear-gradient(145deg,#080a0e,#1d2026 47%,#07090c);
- --cdq-bg-base-v2793:#0e1014;
-}
-html[data-cdq-background-v2793="lava"]{
- --cdq-bg-v2793:repeating-linear-gradient(131deg,rgba(245,245,245,.035) 0 1px,transparent 2px 44px,rgba(255,255,255,.012) 45px 47px,transparent 49px 113px),radial-gradient(ellipse 78% 74% at 35% 37%,#28292b 0%,#101114 55%,transparent 80%),radial-gradient(ellipse 100% 65% at 83% 85%,#353537 0%,transparent 62%),linear-gradient(160deg,#050608,#151618,#050506);
- --cdq-bg-base-v2793:#101113;
-}
-html[data-cdq-background-v2793="letter"]{
- --cdq-bg-v2793:repeating-linear-gradient(115deg,rgba(197,201,205,.029) 0px,transparent 1px,rgba(0,0,0,.034) 2px,transparent 5px),repeating-linear-gradient(25deg,transparent 0 5px,rgba(215,220,225,.017) 6px,transparent 8px),linear-gradient(145deg,#0a0b0d,#1b1c20 54%,#090b0e);
- --cdq-bg-base-v2793:#101114;
-}
-html[data-cdq-background-v2793="rock"]{
- --cdq-bg-v2793:repeating-linear-gradient(41deg,rgba(222,223,226,.023) 0px,transparent 1px 14px,rgba(0,0,0,.033) 16px,transparent 20px 53px),repeating-linear-gradient(132deg,rgba(235,236,238,.022) 0px,transparent 2px 21px,rgba(0,0,0,.03) 27px,transparent 32px 69px),radial-gradient(ellipse at 18% 18%,#303135,#151719 57%,#08090b);
- --cdq-bg-base-v2793:#111215;
-}
+/* 27.99 real material images, shared by app views and their picker previews. */
+html[data-cdq-background-v2793="brushed"],#cdqSettingsModalV2294 [data-cdq-background-option-v2793="brushed"]{--cdq-bg-v2793:url("./assets/material-v2799/brushed.png");--cdq-bg-base-v2793:#0a0b0c;}
+html[data-cdq-background-v2793="smoke"],#cdqSettingsModalV2294 [data-cdq-background-option-v2793="smoke"]{--cdq-bg-v2793:url("./assets/material-v2799/smoke.png");--cdq-bg-base-v2793:#0a0b0c;}
+html[data-cdq-background-v2793="lava"],#cdqSettingsModalV2294 [data-cdq-background-option-v2793="lava"]{--cdq-bg-v2793:url("./assets/material-v2799/lava.png");--cdq-bg-base-v2793:#0a0b0c;}
+html[data-cdq-background-v2793="leather"],#cdqSettingsModalV2294 [data-cdq-background-option-v2793="leather"]{--cdq-bg-v2793:url("./assets/material-v2799/leather.png");--cdq-bg-base-v2793:#0a0b0c;}
+html[data-cdq-background-v2793="rock"],#cdqSettingsModalV2294 [data-cdq-background-option-v2793="rock"]{--cdq-bg-v2793:url("./assets/material-v2799/rock.png");--cdq-bg-base-v2793:#0a0b0c;}
 /* A background is not a palette. Preserve all legacy colors, spacing and icons. */
 html[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body,
 html.cdq-mobile-layout[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body,
@@ -100,22 +85,12 @@ html:is(.android,.ios,.mobile-device) #cdqClientActionsV2640 > #cdqClientPortalB
 #cdqSettingsModalV2294 [data-cdq-background-option-v2793="current"] .cdq-bg-thumb-v2793{
  background:linear-gradient(150deg,#090d12,#24303a);
 }
-#cdqSettingsModalV2294 [data-cdq-background-option-v2793="brushed"] .cdq-bg-thumb-v2793{
- background-image:repeating-linear-gradient(0deg,#ffffff0b 0 1px,transparent 1px 4px),linear-gradient(90deg,#101114,#303135,#101113);
-}
-#cdqSettingsModalV2294 [data-cdq-background-option-v2793="smoke"] .cdq-bg-thumb-v2793{
- background-image:radial-gradient(ellipse at 30% 70%,#686b7288,transparent 70%),radial-gradient(ellipse at 78% 35%,#54565e88,transparent 80%),linear-gradient(#0b0c10,#191a1e);
-}
-#cdqSettingsModalV2294 [data-cdq-background-option-v2793="lava"] .cdq-bg-thumb-v2793{
- background-image:repeating-linear-gradient(135deg,transparent 0 14px,#ffffff12 15px,transparent 17px 40px),linear-gradient(120deg,#262729,#090a0b);
-}
-#cdqSettingsModalV2294 [data-cdq-background-option-v2793="letter"] .cdq-bg-thumb-v2793{
- background-image:repeating-linear-gradient(45deg,#ffffff0b 0 1px,transparent 1px 6px),linear-gradient(#17191b,#070809);
-}
-#cdqSettingsModalV2294 [data-cdq-background-option-v2793="rock"] .cdq-bg-thumb-v2793{
- background-image:repeating-linear-gradient(60deg,#ffffff10 0 1px,transparent 1px 15px),repeating-linear-gradient(130deg,transparent 0 5px,#0006 6px 9px),linear-gradient(135deg,#303035,#0b0c0e);
-}
 @media(max-width:359px){
  #cdqSettingsModalV2294 .cdq-background-grid-v2793{gap:6px}
  #cdqSettingsModalV2294 .cdq-background-grid-v2793 button{padding:5px;font-size:11px}
 }
+
+/* Calibration owns an inner shell that must expose the selected material. */
+html[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) #cdqCalibrationDialogV2565 :is(.cdq-cal-shell,.cdq-cal-body){background:transparent!important}
+/* Its original decorative SVG is retired by the existing heading owner. */
+#cdqCalibrationDialogV2565 .cdq-cal-head > .cdq-calibration-indicator[hidden]{display:none!important}

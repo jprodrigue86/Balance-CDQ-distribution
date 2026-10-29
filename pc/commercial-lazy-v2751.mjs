@@ -2,6 +2,7 @@ const catalogueMetalV2725=new URL('./assets/catalogue-v2725/catalogue-metal-plat
 const esc=v=>String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]));
 export function opportunityTabs(view='create'){return '<nav class="cdq-opportunity-tabs" aria-label="Menu des opportunités"><button type="button" data-opportunity-view="create" data-new-op aria-pressed="'+(view==='create')+'">Créer une opportunité</button><button type="button" data-opportunity-view="manage" aria-pressed="'+(view==='manage')+'">Gestion des opportunités</button></nav>';}
 export function commercialIcon(key,theme='current'){
+ const material=window.cdqMaterialIconV2799?.(key,theme);if(material)return material;
  if(key==='catalog'&&theme==='metal-music')return '<svg data-commercial-icon="catalog" data-icon-theme="metal-music" data-cdq-catalogue-art-v2725="platinum" viewBox="0 0 32 32" aria-hidden="true"><image href="'+esc(catalogueMetalV2725)+'" width="32" height="32"/></svg>';
  const paths={catalog:'<path d="M5 7l11-3 11 3v21l-11-3-11 3zM16 4v21M8 11l5-1m-5 6 5-1m7-3 4 1m-4 4 4 1"/>',opportunityBoard:'<rect x="3" y="4" width="26" height="24" rx="3"/><path d="M11 8v17M21 8v17M6 10h2v5H6zm8 2h4v5h-4zm10 5h2v6h-2z"/>',root:'<path d="M4 14L16 4l12 10M8 12v16h16V12M13 28v-9h6v9"/>',refresh:'<path d="M27 12A12 12 0 006 7L3 11m0-8v8h8M5 20a12 12 0 0021 5l3-4m0 8v-8h-8"/>'};
  if(!paths[key])return '';

@@ -1,10 +1,6 @@
 /* Structure shared across the five backgrounds; their existing palettes remain. */
 html.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqTopActionsV2204{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 html.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqClientActionsV2640{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report])::before{content:"";display:block;flex:0 0 32px;width:32px;height:32px;background-image:url('./assets/approved-metal-v2796/icons.jpg');background-size:256px 32px;background-repeat:no-repeat}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676) body [data-client-folder]::before{background-position:-128px 0}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676) body [data-client-list]::before{background-position:-160px 0}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676) body [data-client-report]::before{background-position:-192px 0}
 /* PC selection state is retained; its old mobile command strip is removed. */
 html.cdq-desktop-v2676 body #selectionBar{display:none!important;pointer-events:none!important}
 html.cdq-desktop-v2676 body #filesContainer :is(.file-row,.folder-header) > .cdq-swipe-overlay{display:none!important;pointer-events:none!important}

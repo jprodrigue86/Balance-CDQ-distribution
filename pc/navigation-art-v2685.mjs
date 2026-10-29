@@ -33,6 +33,7 @@ new MutationObserver(records=>{
   scheduled=true;queueMicrotask(()=>{scheduled=false;prepareSharedNavigationArtV2685().catch(()=>{});});
 }).observe(document.documentElement,{childList:true,subtree:true});
 export function sharedNavigationIconV2685(key,className,attribute,size=32){
+  const material=window.cdqMaterialIconV2799?.(key,'metal-music');if(material)return material.replace('<svg ','<svg class="'+className+'" '+attribute+'="metal-music" width="'+Number(size)+'" height="'+Number(size)+'" ');
   const tile=atlas.extras[key];if(!tile)throw Error('Unknown navigation artwork: '+key);
   const dimensions=Number(size);
   const artwork=tile.asset?new URL('./'+tile.asset,import.meta.url).href:source;

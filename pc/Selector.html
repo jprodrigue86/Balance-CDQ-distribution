@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="27.98" data-cdq-pc-release="4fbdd65b84ebb01481886c617c16b4fc1c52c0d200fecf6b8db393b331e3b2e7">
+<html data-cdq-pc-version="27.99" data-cdq-pc-release="b50e5c5318e54b8f94626f354333fb87b4a2bd673bd382a783361d6ebe7d8006">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -213,6 +213,7 @@ for(const name of ["workspace-v2638.mjs","opportunity-fields-v2699.mjs","drive-f
   const columns=[18,267,516,765],rows=[100,361,624,896,1168];
   const cache=new Map();
   window.cdqActionArtworkV2657=function(key,id='current',palette='dark'){
+    const material=window.cdqMaterialIconV2799?.(key,id);if(material)return material;
     if(!glyphs[key])key='note';
     if(!['current','minimal','dark-pro','metal-music','isometric'].includes(id))id='current';
     const signature=key+'|'+id+'|'+palette;if(cache.has(signature))return cache.get(signature);
@@ -314,10 +315,22 @@ for(const name of ["workspace-v2638.mjs","opportunity-fields-v2699.mjs","drive-f
 <script id="cdqBackgroundBootV2793">(function(){
 try{var root=document.documentElement,p=root.dataset.cdqPalette||localStorage.getItem("cdqTheme")||"dark",
  stored=localStorage.getItem("cdqBackgroundV2793:device")||"current";
+ if(stored==='letter'){stored='leather';localStorage.setItem('cdqBackgroundV2793:device',stored);}
  root.dataset.cdqBackgroundV2793=p==="metal"&&stored==="current"?"brushed":stored;
 }catch(error){document.documentElement.dataset.cdqBackgroundV2793=
  document.documentElement.dataset.cdqPalette==="metal"?"brushed":"current";}
 })();</script>
+<script id="cdqMaterialArtworkV2799">// 27.99: the selected icon family owns its images, independently of palette
+// and background. All consumers receive the same alpha PNG and crop geometry.
+window.cdqMaterialIconV2799=function(key,theme='current'){
+ if(theme!=='metal-music')return '';
+ const tiles={offline:0,note:1,photo:2,photos:2,portal:3,newfolder:4,list:5,report:6,rename:7,home:8,folder:9,dossier:9,calibration:10,calcul:11,inventory:12,catalog:13};
+ const n=tiles[key];if(n===undefined)return '';
+ const size=313.5,x=n%4*size,y=Math.floor(n/4)*size;
+ const source=new URL('./assets/material-v2799/icons.png',document.baseURI).href;
+ return '<svg data-action-icon="'+key+'" data-commercial-icon="'+key+'" data-icon-theme="metal-music" data-artwork-version="2799" viewBox="0 0 '+size+' '+size+'" overflow="hidden" aria-hidden="true" focusable="false"><image x="-'+x+'" y="-'+y+'" width="1254" height="1254" href="'+source+'"/></svg>';
+};
+</script>
 <script id="cdqHomeIconsV2571">
 /* One live drawing per home action. Theme alternatives are data, not hidden DOM. */
 (function () {
@@ -340,7 +353,8 @@ try{var root=document.documentElement,p=root.dataset.cdqPalette||localStorage.ge
     if(!button||!icons[key])return;
     const icon=button.firstElementChild,caption=button.lastElementChild;
     if(button.children.length!==2||icon?.dataset.cdqHomeIcon!==key||caption?.tagName!=='SPAN'){
-      button.innerHTML=icons[key]+'<span></span>';
+      const material=window.cdqMaterialIconV2799?.(key,window.cdqIconThemesV2514?.getStyle?.());
+      button.innerHTML=(material?material.replace('<svg ','<svg data-cdq-home-icon="'+key+'" '):icons[key])+'<span></span>';
       button.lastElementChild.textContent=label;
     }else if(key!=='offline'&&caption.textContent!==label)caption.textContent=label;
     // Offline progress may update the caption; the cloud never changes shape.
@@ -918,7 +932,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.29-v27.98-home-cascade">
+<meta name="cdq-package-build" content="2026.10.29-v27.99-material-settings">
 
 
 <script id="cdqBridgeV23">
@@ -972,7 +986,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.29-v27.98-home-cascade'
+    build:'2026.10.29-v27.99-material-settings'
   });
 }
 
@@ -985,7 +999,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.29-v27.98-home-cascade'
+        build:'2026.10.29-v27.99-material-settings'
       });
     }
   } catch(e) {}
@@ -6097,10 +6111,12 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
 </style>
 <link rel="stylesheet" href="./mobile-selection-v2783.css">
 <link id="cdqBackgroundStylesV2793" rel="stylesheet" href="./background-v2793.css">
-<link id="cdqMetalNoirStylesV2793" rel="stylesheet" href="./metal-noir-v2793.css">
-<link id="cdqLayoutStylesV2793" rel="stylesheet" href="./layout-v2793.css">
+<link rel="stylesheet" href="./material-ui-v2799.css">
+<link rel="stylesheet" href="./material-art-v2799.css">
+
+
 <link id="cdqPortalStylesV2793" rel="stylesheet" href="./portal-v2793.css">
-<link rel="stylesheet" href="./approved-metal-v2796.css">
+
 <script type="module" src="./company-search-v2797.mjs"></script>
 <link rel="stylesheet" href="./interface-v2797.css">
 <script type="module" src="./desktop-actions-v2797.mjs"></script>
@@ -6192,7 +6208,7 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
 <div class="container">
 
 
-<header class="app-header app-header-banner" id="appHeader">
+<header class="app-header app-header-banner" id="appHeader"><svg class="cdq-material-header-frame" viewBox="0 0 1000 210" preserveAspectRatio="none" aria-hidden="true"><defs><clipPath id="cdqMaterialHeaderClipV2799" clipPathUnits="objectBoundingBox"><path transform="scale(.001 .004761904762)" d="M 35 2 H 965 Q 998 2 998 35 V 155 Q 998 182 973 182 H 870 Q 852 182 838 194 L 829 201 Q 819 208 800 208 H 200 Q 181 208 171 201 L 162 194 Q 148 182 130 182 H 27 Q 2 182 2 155 V 35 Q 2 2 35 2 Z"/></clipPath></defs><path d="M 35 2 H 965 Q 998 2 998 35 V 155 Q 998 182 973 182 H 870 Q 852 182 838 194 L 829 201 Q 819 208 800 208 H 200 Q 181 208 171 201 L 162 194 Q 148 182 130 182 H 27 Q 2 182 2 155 V 35 Q 2 2 35 2 Z" fill="none" stroke="#a6aaad" stroke-width="1.3" vector-effect="non-scaling-stroke"/></svg>
   <img class="header-metal-banner" src="./bundles/balance-cdq/v25.17/banner-original.webp" alt="Bannière Balance CDQ heavy metal">
 </header>
 
@@ -11844,7 +11860,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.29-v27.98-home-cascade";
+  const CDQ_BUILD = "2026.10.29-v27.99-material-settings";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14209,7 +14225,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.29-v27.98-home-cascade";
+const CDQ_V19_BUILD = "2026.10.29-v27.99-material-settings";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -17922,7 +17938,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.29-v27.98-home-cascade";
+const CDQ_V20_BUILD = "2026.10.29-v27.99-material-settings";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -18769,7 +18785,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.29-v27.98-home-cascade";
+const CDQ_V21_BUILD = "2026.10.29-v27.99-material-settings";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -21786,6 +21802,7 @@ function openSettings(){
   if(window.cdqOrganizeSettings)window.cdqOrganizeSettings(modal);
   window.cdqSaveRetirementV2707?.ensureSettings(modal);
   modal.style.display='flex';
+  window.dispatchEvent(new CustomEvent('cdq:settings-opened'));
 }
 window.cdqOpenSettingsV2294=openSettings;
 
@@ -22334,8 +22351,11 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
   function homeStyleOwnsV2798(el, key) {
     if (root.classList.contains('cdq-desktop-v2676')) return false;
     if (el.id === 'cdqTopDisplayButtonV2204' && key === 'display') return true;
+    if (el.id === 'cdqClientPortalButton20261028' && key === 'display') return true;
+    if(el.matches('#cdqCreateClientV2640[data-company-action="rename"] svg')&&['width','height','min-width','max-width','min-height','max-height','font-size'].includes(key))return true;
+    if (el.matches('#cdqTopActionsV2204 > .cdq-top-action > svg,#cdqTopActionsV2204 > .cdq-top-action > span:first-child:not(:last-child),#cdqTopActionsV2204 > .cdq-top-action > span:first-child > svg') && ['width','height','min-width','max-width','min-height','max-height','flex','font-size'].includes(key)) return true;
     if (!root.dataset.cdqBackgroundV2793 || root.dataset.cdqBackgroundV2793 === 'current') return false;
-    if (key === 'background' && (el === document.body || el.matches('.container,.top-bar,.bottom-nav,#appHeader,#companyButton,#cdqTopActionsV2204,#cdqTopActionsV2204 > .cdq-top-action,#cdqClientActionsV2640,#filesContainer,.file-row,.folder-header'))) return true;
+    if (key === 'background' && (el === document.body || el.matches('.container,.top-bar,.bottom-nav,#appHeader,#companyButton,#cdqTopActionsV2204,#cdqTopActionsV2204 > .cdq-top-action,#cdqClientActionsV2640,#filesContainer,.file-row,.folder-header,.folder-content'))) return true;
     if (el.id === 'cdqCreateClientV2640' && ['width','min-width','max-width','height','min-height','max-height','flex','padding-left','padding-right'].includes(key)) return true;
     if (el.id === 'appHeader' && ['height','min-height','max-height'].includes(key)) return true;
     if (el.matches('.bottom-nav') && ['border','border-radius','box-shadow'].includes(key)) return true;
@@ -22380,6 +22400,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     const textScale = window.cdqPersonalSizing?.factor('Text',t,x=>around50(x,.78,1.35)) ?? around50(t,.78,1.35), iconScale = window.cdqPersonalSizing?.factor('Icon',i,x=>around50(x,.65,1.5)) ?? around50(i,.65,1.5);
     lastMenuMetrics = {unit, textScale};
     root.style.setProperty("--cdq-home-action-height-v2798",px(Math.max(49*unit,18*unit*iconScale+8*unit,8*unit*textScale*2.25+6*unit)));
+    root.style.setProperty("--cdq-material-action-icon",px(34*unit*iconScale/1.5));
     const top = 18 * unit * iconScale, bottom = 22 * unit * iconScale;
     const label = 8 * unit * textScale, text = 18.5 * unit * textScale;
     const action = 16 * unit * iconScale;
@@ -22795,7 +22816,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
   ];
   const names = ['Accueil','Favoris','Dossier','Inventaire','Factures','Corbeille'];
   const centers = [230,454,681,909,1136,1360];
-  const navigationAtlasV2685 = {"width":1536,"height":1296,"styles":{"current":[{"x":306,"y":5,"crop":82,"width":1536,"height":1024,"source":"original"},{"x":515,"y":5,"crop":82,"width":1536,"height":1024,"source":"original"},{"x":721,"y":5,"crop":82,"width":1536,"height":1024,"source":"original"},{"x":928,"y":5,"crop":82,"width":1536,"height":1024,"source":"original"},{"x":1136,"y":5,"crop":82,"width":1536,"height":1024,"source":"original"},{"x":1357,"y":5,"crop":82,"width":1536,"height":1024,"source":"original"}],"minimal":[{"x":172,"y":260,"crop":116},{"x":396,"y":260,"crop":116},{"x":623,"y":260,"crop":116},{"x":851,"y":260,"crop":116},{"x":1078,"y":260,"crop":116},{"x":1302,"y":260,"crop":116}],"dark-pro":[{"x":154,"y":400,"crop":152},{"x":378,"y":400,"crop":152},{"x":605,"y":400,"crop":152},{"x":833,"y":400,"crop":152},{"x":1060,"y":400,"crop":152},{"x":1284,"y":400,"crop":152}],"metal-music":[{"x":56,"y":142,"crop":298,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"home"},{"x":372,"y":559,"crop":164},{"x":421,"y":168,"crop":270,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"folder"},{"x":42,"y":573,"crop":326,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"inventory"},{"x":390,"y":570,"crop":323,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"invoices"},{"x":1083,"y":563,"crop":331,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"trash"}],"isometric":[{"x":148,"y":720,"crop":164},{"x":372,"y":720,"crop":164},{"x":599,"y":720,"crop":164},{"x":827,"y":720,"crop":164},{"x":1054,"y":720,"crop":164},{"x":1278,"y":720,"crop":164}]},"extras":{"calibration":{"x":748,"y":131,"crop":311,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"calibration"},"calcul":{"x":1101,"y":131,"crop":311,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"calcul"},"opportunities":{"x":738,"y":580,"crop":313,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"opportunities"},"drive":{"x":796,"y":1036,"crop":256},"home":{"x":56,"y":142,"crop":298,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"home"},"folder":{"x":421,"y":168,"crop":270,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"folder"},"inventory":{"x":42,"y":573,"crop":326,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"inventory"},"invoices":{"x":390,"y":570,"crop":323,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"invoices"},"trash":{"x":1083,"y":563,"crop":331,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"trash"}}};
+  const navigationAtlasV2685 = {"width":1536,"height":1296,"styles":{"current":[{"x":306,"y":5,"crop":82,"width":1536,"height":1024,"source":"original"},{"x":515,"y":5,"crop":82,"width":1536,"height":1024,"source":"original"},{"x":721,"y":5,"crop":82,"width":1536,"height":1024,"source":"original"},{"x":928,"y":5,"crop":82,"width":1536,"height":1024,"source":"original"},{"x":1136,"y":5,"crop":82,"width":1536,"height":1024,"source":"original"},{"x":1357,"y":5,"crop":82,"width":1536,"height":1024,"source":"original"}],"minimal":[{"x":172,"y":260,"crop":116},{"x":396,"y":260,"crop":116},{"x":623,"y":260,"crop":116},{"x":851,"y":260,"crop":116},{"x":1078,"y":260,"crop":116},{"x":1302,"y":260,"crop":116}],"dark-pro":[{"x":154,"y":400,"crop":152},{"x":378,"y":400,"crop":152},{"x":605,"y":400,"crop":152},{"x":833,"y":400,"crop":152},{"x":1060,"y":400,"crop":152},{"x":1284,"y":400,"crop":152}],"metal-music":[{"x":0.0,"y":627.0,"crop":313.5,"width":1254,"height":1254,"asset":"assets/material-v2799/icons.png","key":"material-alpha"},{"x":372,"y":559,"crop":164},{"x":313.5,"y":627.0,"crop":313.5,"width":1254,"height":1254,"asset":"assets/material-v2799/icons.png","key":"material-alpha"},{"x":0.0,"y":940.5,"crop":313.5,"width":1254,"height":1254,"asset":"assets/material-v2799/icons.png","key":"material-alpha"},{"x":390,"y":570,"crop":323,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"invoices"},{"x":1083,"y":563,"crop":331,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"trash"}],"isometric":[{"x":148,"y":720,"crop":164},{"x":372,"y":720,"crop":164},{"x":599,"y":720,"crop":164},{"x":827,"y":720,"crop":164},{"x":1054,"y":720,"crop":164},{"x":1278,"y":720,"crop":164}]},"extras":{"calibration":{"x":748,"y":131,"crop":311,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"calibration"},"calcul":{"x":1101,"y":131,"crop":311,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"calcul"},"opportunities":{"x":738,"y":580,"crop":313,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"opportunities"},"drive":{"x":796,"y":1036,"crop":256},"home":{"x":56,"y":142,"crop":298,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"home"},"folder":{"x":421,"y":168,"crop":270,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"folder"},"inventory":{"x":42,"y":573,"crop":326,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"inventory"},"invoices":{"x":390,"y":570,"crop":323,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"invoices"},"trash":{"x":1083,"y":563,"crop":331,"width":1448,"height":1086,"asset":"assets/navigation-v2701/icons.png","key":"trash"}}};
   const savedPresentation = new WeakMap();
   function presentation(element, active, properties) {
     if (active) {
@@ -22842,7 +22863,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     element.dataset.artSource = style.id === 'current' ? 'original' : 'transparent';
     if(tile.asset){
       element.style.setProperty('--cdq-icon-art-v2514','url("'+new URL('./'+tile.asset,location.href).href+'")');
-      element.dataset.cdqPhotoIconV2690=tile.key;
+      if(tile.key==='material-alpha')delete element.dataset.cdqPhotoIconV2690;else element.dataset.cdqPhotoIconV2690=tile.key;
     }else{
       element.style.removeProperty('--cdq-icon-art-v2514');
       delete element.dataset.cdqPhotoIconV2690;
@@ -23202,7 +23223,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.29-v27.98-home-cascade',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.10.29-v27.99-material-settings',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -24426,7 +24447,7 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
 <script type="module" src="./balance-list-v2638.mjs"></script>
 <script type="module" src="./client-portal-ui-v2793.mjs"></script>
 <script type="module" src="./background-v2793.mjs"></script>
-<script type="module" src="./approved-metal-v2796.mjs"></script>
+
 <script type="module" src="./inventory-zoho-v2642.mjs"></script>
 <style id="cdq-nav-current-v2647">
 html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route][data-cdq-current]::after{content:''!important;display:block!important;position:absolute!important;bottom:0!important;left:20%!important;right:20%!important;height:3px!important;border-radius:3px!important;background:transparent!important;box-shadow:none!important}
@@ -24664,7 +24685,7 @@ html.cdq-desktop-v2676 body #filesContainer .file-row :is(.file-actions,.file-me
  const touchGuards=new WeakSet();
  function applyOrder(){if(root.classList.contains('cdq-desktop-v2676')||dragging)return;const order=savedOrder();for(const nav of all('.bottom-nav'))if(!touchGuards.has(nav)){touchGuards.add(nav);nav.addEventListener('touchmove',e=>{if(dragging?.nav===nav&&dragging.active)e.preventDefault()},{passive:false})}for(const b of all('.bottom-nav>.bottom-nav-item')){const i=order.indexOf(b.dataset.workspaceRoute);if(i>=0&&b.style.order!==String(i))b.style.setProperty('order',String(i),'important')}}
  function finish(cancel=false){if(!dragging)return;clearTimeout(dragging.timer);cancelAnimationFrame(dragging.scrollFrame);const {nav,button:b,original,active,pointer,scrolling}=dragging;if(active){if(cancel)put(dragging.key,JSON.stringify(original));else put(dragging.key,JSON.stringify(all('.bottom-nav-item',nav).sort((a,b)=>Number(a.style.order)-Number(b.style.order)).map(x=>x.dataset.workspaceRoute)));nav.classList.remove('cdq-nav-dragging-v2708');b.classList.remove('cdq-nav-held-v2708');b.setAttribute('aria-grabbed','false');try{nav.releasePointerCapture(pointer)}catch{};announce(cancel?'Déplacement annulé.':'Ordre des icônes enregistré.')}if(active||scrolling)nav.dataset.suppressClickUntilV2708=String(Date.now()+800);dragging=null;if(active)applyOrder();}
- document.addEventListener('pointerdown',e=>{const b=e.target.closest?.('.bottom-nav>.bottom-nav-item');if(!b||root.classList.contains('cdq-desktop-v2676')||e.button>0)return;const nav=b.parentElement;dragging={button:b,nav,pointer:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,active:false,scroll:nav.scrollLeft,key:orderKey(),original:savedOrder()};const current=dragging;current.timer=setTimeout(()=>{if(dragging!==current)return;current.active=true;nav.classList.add('cdq-nav-dragging-v2708');b.classList.add('cdq-nav-held-v2708');b.setAttribute('aria-grabbed','true');try{nav.setPointerCapture(e.pointerId)}catch{};const scroll=()=>{if(dragging!==current||!current.active)return;const rect=nav.getBoundingClientRect();if(current.lastX<rect.left+24)nav.scrollLeft-=4;else if(current.lastX>rect.right-24)nav.scrollLeft+=4;current.scrollFrame=requestAnimationFrame(scroll)};current.scrollFrame=requestAnimationFrame(scroll);navigator.vibrate?.(30);announce('Glissez l’icône à la place voulue.');},Number(get('cdqNavHoldMsV2708','700')))},true);
+ document.addEventListener('pointerdown',e=>{const b=e.target.closest?.('.bottom-nav>.bottom-nav-item');if(!b||root.classList.contains('cdq-desktop-v2676')||e.button>0)return;const nav=b.parentElement;delete nav.dataset.suppressClickUntilV2708;dragging={button:b,nav,pointer:e.pointerId,x:e.clientX,y:e.clientY,lastX:e.clientX,active:false,scroll:nav.scrollLeft,key:orderKey(),original:savedOrder()};const current=dragging;current.timer=setTimeout(()=>{if(dragging!==current)return;current.active=true;nav.classList.add('cdq-nav-dragging-v2708');b.classList.add('cdq-nav-held-v2708');b.setAttribute('aria-grabbed','true');try{nav.setPointerCapture(e.pointerId)}catch{};const scroll=()=>{if(dragging!==current||!current.active)return;const rect=nav.getBoundingClientRect();if(current.lastX<rect.left+24)nav.scrollLeft-=4;else if(current.lastX>rect.right-24)nav.scrollLeft+=4;current.scrollFrame=requestAnimationFrame(scroll)};current.scrollFrame=requestAnimationFrame(scroll);navigator.vibrate?.(30);announce('Glissez l’icône à la place voulue.');},Number(get('cdqNavHoldMsV2708','700')))},true);
  document.addEventListener('pointermove',e=>{const d=dragging;if(!d||e.pointerId!==d.pointer)return;d.lastX=e.clientX;if(!d.active){if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>10){clearTimeout(d.timer);d.scrolling=true;if(e.pointerType==='mouse'){d.nav.scrollLeft=d.scroll-(e.clientX-d.x);e.preventDefault()}}return}e.preventDefault();const buttons=all('.bottom-nav-item',d.nav).sort((a,b)=>Number(a.style.order)-Number(b.style.order)),nearest=buttons.reduce((a,b)=>Math.abs(b.getBoundingClientRect().left+b.getBoundingClientRect().width/2-e.clientX)<Math.abs(a.getBoundingClientRect().left+a.getBoundingClientRect().width/2-e.clientX)?b:a);if(nearest===d.button)return;const from=buttons.indexOf(d.button),to=buttons.indexOf(nearest);buttons.splice(from,1);buttons.splice(to,0,d.button);buttons.forEach((b,i)=>b.style.setProperty('order',String(i),'important'));},{capture:true,passive:false});
  document.addEventListener('pointerup',e=>{if(dragging?.pointer===e.pointerId){if(dragging.active||dragging.scrolling){e.preventDefault();e.stopImmediatePropagation();dragging.nav.dataset.suppressClickUntilV2708=String(Date.now()+800)}finish()}},true);
  document.addEventListener('pointercancel',e=>{if(dragging?.pointer===e.pointerId)finish(true)},true);addEventListener('blur',()=>finish(true));

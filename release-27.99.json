@@ -1,0 +1,25 @@
+{
+  "apkBytes": 133336967,
+  "apkSha256": "e044a90da94c59a8c4f7f646dd33b497a06217a32224e2223db7924ab38be5b0",
+  "browserWidths": [
+    320,
+    384,
+    412
+  ],
+  "limitations": [
+    "Browser validation uses synthetic company/capabilities and static-only network",
+    "Historical Manager module results reused; not rerun",
+    "No physical Android or authenticated Drive test"
+  ],
+  "managerHistoricalPassed": 125,
+  "managerInputsUnchanged": 81,
+  "managerTestsRerun": false,
+  "physicalAndroidDriveTest": "not-performed",
+  "privateSource": "19fe6b792bd58c2aa3ea2985c2593ce4444e1eb0",
+  "publicBase": "2b6f5ea8f52116655215194caf659fe13ceff253",
+  "qualificationSha256": "e8c71845be5674a312f4b8dfeb2d475ea2b2c9e25922bcce213343ba28cd5a65",
+  "scope": "material backgrounds, theme text colors, visible settings navigation",
+  "signature": "496030d9cd10e81ff4e9486c38491bc15389112c0c295c61c295981c101c4436",
+  "status": "SIGNED_TECHNICAL_CHECKS_PASSED",
+  "version": "27.99"
+}

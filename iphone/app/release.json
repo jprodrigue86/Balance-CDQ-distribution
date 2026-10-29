@@ -1,11 +1,11 @@
 {
   "androidSelectorSha256": "3aebe7834ce7b55a5ab5b44731137c5b8a277fc7a5174d53ad3066ad0d9e2bcf",
-  "androidSourceBuild": "2026.10.29-v27.98-home-cascade",
-  "build": "2026.10.29-v27.98-home-cascade",
+  "androidSourceBuild": "2026.10.29-v27.99-material-settings",
+  "build": "2026.10.29-v27.99-material-settings",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "files": 910,
-  "generatedFrom": "patches/update-2798/stage.py",
+  "files": 920,
+  "generatedFrom": "patches/update-2799/stage.py",
   "platform": "iphone-pwa",
-  "release": "5775d0cbec055879198774ac139adf587f012ef03c6647da910b87436f088978",
-  "version": "27.98"
+  "release": "64d733eecacb79ffe86017e19f37742c35719e23b7e64ecd520f3606f01a38ba",
+  "version": "27.99"
 }

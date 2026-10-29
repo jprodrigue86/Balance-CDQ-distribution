@@ -92,10 +92,11 @@ function place(){
  const mobile=target===top;
  b.classList.toggle('cdq-top-action',mobile);b.classList.toggle('cdq-client-portal-top-v2793',mobile);
  if(mobile){
-  const art='<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="cdqPortalV2793" x2="1" y2="1"><stop stop-color="#d5e2ed"/><stop offset=".6" stop-color="#4b829d"/><stop offset="1" stop-color="#152733"/></linearGradient></defs><path d="M3 57v-9a13 13 0 0 1 13-13h11a13 13 0 0 1 13 13v9" fill="#18425a" stroke="#79c5e2" stroke-width="2.5"/><path d="M31 56v-9a11 11 0 0 1 11-11h7a12 12 0 0 1 12 12v8" fill="#1b3951" stroke="#79c5e2" stroke-width="2"/><path d="M11 16q1-13 15-13 15 0 15 13l-3 11-5 4v5H18v-5l-5-4z" fill="url(#cdqPortalV2793)" stroke="#bad3dc" stroke-width="1.8"/><path d="M39 14q3-8 12-5 7 3 6 13l-3 10-9 2-7-5z" fill="#9babb7" stroke="#b5d7e8" stroke-width="1.5"/><path d="m16 19 8-3 3 7-6 3zm20 0-8-3-3 7 6 3z" fill="#101b29"/><path d="M23 29h7l-4 4z" fill="#142234"/><path d="m42 20 5-2 3 4-5 3z" fill="#13212f"/></svg>';
-  if(b.dataset.cdqPortalArtV2793!=='1'){b.replaceChildren();
+  const theme=window.cdqIconThemesV2514?.getStyle?.()||'current';
+  const art=window.cdqMaterialIconV2799?.('portal',theme)||'<svg viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="cdqPortalV2793" x2="1" y2="1"><stop stop-color="#d5e2ed"/><stop offset=".6" stop-color="#4b829d"/><stop offset="1" stop-color="#152733"/></linearGradient></defs><path d="M3 57v-9a13 13 0 0 1 13-13h11a13 13 0 0 1 13 13v9" fill="#18425a" stroke="#79c5e2" stroke-width="2.5"/><path d="M31 56v-9a11 11 0 0 1 11-11h7a12 12 0 0 1 12 12v8" fill="#1b3951" stroke="#79c5e2" stroke-width="2"/><path d="M11 16q1-13 15-13 15 0 15 13l-3 11-5 4v5H18v-5l-5-4z" fill="url(#cdqPortalV2793)" stroke="#bad3dc" stroke-width="1.8"/><path d="M39 14q3-8 12-5 7 3 6 13l-3 10-9 2-7-5z" fill="#9babb7" stroke="#b5d7e8" stroke-width="1.5"/><path d="m16 19 8-3 3 7-6 3zm20 0-8-3-3 7 6 3z" fill="#101b29"/><path d="M23 29h7l-4 4z" fill="#142234"/><path d="m42 20 5-2 3 4-5 3z" fill="#13212f"/></svg>';
+  if(b.dataset.cdqPortalArtV2793!==theme+'|2799'){b.replaceChildren();
   const visual=document.createElement('span');visual.className='cdq-action-art-v2655';visual.setAttribute('aria-hidden','true');visual.innerHTML=art||'▤';
-  const label=document.createElement('span');label.textContent='Page client';b.append(visual,label);b.dataset.cdqPortalArtV2793='1';}
+  const label=document.createElement('span');label.textContent='Page client';b.append(visual,label);b.dataset.cdqPortalArtV2793=theme+'|2799';}
  }else if(b.textContent!=='Page client'){b.textContent='Page client';delete b.dataset.cdqPortalArtV2793;}
  b.disabled=!id||!account||!allowed;b.title=b.disabled?'Choisir un client autorisé':'Ouvrir la page client';
  if(mobile){if(b.parentElement!==target)target.append(b);}
@@ -116,6 +117,7 @@ async function install(){
 function schedule(){place();install().catch(()=>{})}
 window.addEventListener('cdq:client-content-ready-v2745',()=>{if(currentDialog&&dialogClient!==client())close();schedule()});
 window.addEventListener('cdq:folder-render-v2627',schedule);
+document.addEventListener('cdq:icons-changed',place);
 window.addEventListener('cdq:access-ready',schedule);
 window.addEventListener('cdq:access-state-v2527',event=>{if(event.detail!=='ready')close()});
 window.addEventListener('cdq:drive-cleared-v2632',close);

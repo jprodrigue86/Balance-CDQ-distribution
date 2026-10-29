@@ -2,10 +2,11 @@
 // No remote requests, Drive operations, PDF changes, timers or publication actions.
 export const CDQ_BACKGROUND_CHOICES_V2793=Object.freeze([
  ['current','Actuel'],['brushed','Métal brossé noir'],['smoke','Smoke'],
- ['lava','Lava'],['letter','Letter'],['rock','Rock']
+ ['lava','Lava'],['leather','Leather'],['rock','Rock']
 ]);
 export const CDQ_BACKGROUND_IDS_V2793=Object.freeze(CDQ_BACKGROUND_CHOICES_V2793.map(x=>x[0]));
 export function cdqBackgroundChoiceV2793(value){
+ if(value==='letter')value='leather';
  return CDQ_BACKGROUND_IDS_V2793.includes(value)?value:'current';
 }
 export function cdqEffectiveBackgroundV2793(choice,palette){
@@ -35,7 +36,8 @@ function selected(){
  const palette=d?.documentElement?.dataset?.cdqPalette||read('cdqTheme','dark');
  const fallback=palette==='metal'?'brushed':'current';
  const name=owner();
- const saved=read(name?storageKey+':'+name:storageKey+':device',read(storageKey+':device',fallback));
+ let saved=read(name?storageKey+':'+name:storageKey+':device',read(storageKey+':device',fallback));
+ if(saved==='letter'){saved='leather';write(name?storageKey+':'+name:storageKey+':device',saved);}
  return cdqEffectiveBackgroundV2793(saved,palette);
 }
 function reflect(value){
@@ -80,7 +82,7 @@ function picker(){
  let group=panel.querySelector('.cdq-background-picker-v2793');
  if(!group){
   group=d.createElement('section');group.className='cdq-background-picker-v2793';
-  const title=d.createElement('h3');title.textContent='Background';
+  const title=d.createElement('h3');title.textContent='Fond de l’application';
   const help=d.createElement('p');help.textContent='Choisir un fond pour Accueil, Dossier, Calibration, Calcul, Inventaire, Catalogue et les autres onglets. Les icônes et les dimensions restent inchangées.';
   const grid=d.createElement('div');grid.className='cdq-background-grid-v2793';
   for(const [id,label] of CDQ_BACKGROUND_CHOICES_V2793){
@@ -100,6 +102,7 @@ if(d&&w){
  css();select(selected(),false);
  d.addEventListener('DOMContentLoaded',sync,{once:true});
  w.addEventListener('cdq:access-ready',sync);
+ w.addEventListener('cdq:settings-opened',sync);
  // Palette transitions change the automatic backdrop without overriding preferences.
  new MutationObserver(records=>{if(records.some(r=>r.attributeName==='data-cdq-palette'))select(selected(),false)})
   .observe(d.documentElement,{attributes:true,attributeFilter:['data-cdq-palette']});
