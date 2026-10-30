@@ -1,0 +1,48 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V28.03",
+  "build": "2026.10.30-v28.03-client-pdf-replace",
+  "title": "CDQ — remplacer le PDF de la même balance sur la page client",
+  "requiresBuild": [
+    "2026.10.30-v28.02-email-portal"
+  ],
+  "patches": [
+    {
+      "id": "backend-v2803",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "expected": 1,
+      "search": "const CDQ_BACKEND_BUILD_ = '2026.10.30-v28.02-email-portal';",
+      "replacement": "const CDQ_BACKEND_BUILD_ = '2026.10.30-v28.03-client-pdf-replace';"
+    },
+    {
+      "id": "source-identity-direct-send-v2803",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "expected": 1,
+      "search": "    archiveEnvoi = cdqArchiverPiecesEnvoyeesV2622_(piecesJointes, idCompagnie, {\n      sessionId: sessionId,\n      email: email,\n      nomCompagnie: nomCompagnie\n    });",
+      "replacement": "    archiveEnvoi = cdqArchiverPiecesEnvoyeesV2622_(piecesJointes, idCompagnie, {\n      sessionId: sessionId,\n      email: email,\n      nomCompagnie: nomCompagnie,\n      sourceFileIds: fichiersIds,\n      sourceMode: 'convertir'\n    });"
+    },
+    {
+      "id": "source-identity-selected-send-v2803",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "expected": 1,
+      "search": "      archiveEnvoi = cdqArchiverPiecesEnvoyeesV2622_(piecesJointes, idCompagnie, {\n        sessionId: sessionId,\n        email: email,\n        nomCompagnie: nomCompagnie\n      });",
+      "replacement": "      archiveEnvoi = cdqArchiverPiecesEnvoyeesV2622_(piecesJointes, idCompagnie, {\n        sessionId: sessionId,\n        email: email,\n        nomCompagnie: nomCompagnie,\n        sourceFileIds: fichiersReussis.concat(dossiersReussis),\n        sourceMode: mode\n      });"
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQSendArchiveV2622.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v28.03/files/CDQSendArchiveV2622.gs",
+      "sha256": "2871607e73816741602b222385bc3bc5e4a476ef1f5057b1f3aa0e54ae97433e"
+    },
+    {
+      "name": "CDQClientPortalV20261028.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v28.03/files/CDQClientPortalV20261028.gs",
+      "sha256": "76084113f28bf068e79187062641cb1c316c573fa4b212f669f34eb852b6bfa9"
+    }
+  ]
+}
