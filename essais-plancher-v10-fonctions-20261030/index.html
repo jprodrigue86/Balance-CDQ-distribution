@@ -199,7 +199,7 @@ function ordered(d){
 }
 function go(d,delta,active){
  if(d.getElementById('choiceDialog')?.open)return false;
- const fields=ordered(d),i=fields.indexOf(active)||fields.indexOf(last),target=fields[i+delta];
+ const fields=ordered(d),activeIndex=fields.indexOf(active),i=activeIndex>=0?activeIndex:fields.indexOf(last),target=fields[i+delta];
  if(i<0||!target)return false;
  last=target;target.focus({preventScroll:true});
  const box=d.getElementById('container'),r=target.getBoundingClientRect(),b=box.getBoundingClientRect();
