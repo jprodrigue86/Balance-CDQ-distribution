@@ -1,0 +1,59 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V28.02",
+  "build": "2026.10.30-v28.02-email-portal",
+  "title": "CDQ — courriel rapports avec lien privé et code QR",
+  "requiresBuild": [
+    "2026.10.28-v27.92-server-retry-r1"
+  ],
+  "patches": [
+    {
+      "id": "cdq-backend-build-email-qr-v2802",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "const CDQ_BACKEND_BUILD_ = '2026.10.28-v27.92-server-retry-r1';",
+      "replacement": "const CDQ_BACKEND_BUILD_ = '2026.10.30-v28.02-email-portal';",
+      "expected": 1
+    },
+    {
+      "id": "email-body-and-send-2",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "  });\n\n  GmailApp.sendEmail(email, sujet, corps, {\n    attachments: piecesJointes,\n    name: CONFIG.NOM_EXPEDITEUR\n  });\n\n  let archiveEnvoi = null;\n",
+      "replacement": "  });\n\n  const cdqPortalMailOutcomeV20261030 = cdqEmailPortalSendV20261030_(\n    email, sujet, corps, piecesJointes, CONFIG.NOM_EXPEDITEUR, idCompagnie, 'convertir'\n  );\n\n  let archiveEnvoi = null;\n",
+      "expected": 1
+    },
+    {
+      "id": "email-body-and-send-4",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "\n  return {\n    message: archiveErreur\n      ? 'Courriel envoyé avec succès, mais l’archive n’a pas pu être créée.'\n",
+      "replacement": "\n  return {\n    lienClientInclus: cdqPortalMailOutcomeV20261030.linkIncluded,\n    statutLienClient: cdqPortalMailOutcomeV20261030.status,\n    message: archiveErreur\n      ? 'Courriel envoyé avec succès, mais l’archive n’a pas pu être créée.'\n",
+      "expected": 1
+    },
+    {
+      "id": "email-body-and-send-6",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "\n  cdqReportEngineArchiveGuardV2754_(dossiersIds, idCompagnie, cdqArchiveGuardV2754);\n  GmailApp.sendEmail(email, sujet, corps, {\n    attachments: piecesJointes,\n    name: CONFIG.NOM_EXPEDITEUR\n  });\n\n  let archiveEnvoi = null;\n",
+      "replacement": "\n  cdqReportEngineArchiveGuardV2754_(dossiersIds, idCompagnie, cdqArchiveGuardV2754);\n  const cdqPortalMailOutcomeV20261030 = cdqEmailPortalSendV20261030_(\n    email, sujet, corps, piecesJointes, CONFIG.NOM_EXPEDITEUR, idCompagnie, mode\n  );\n\n  let archiveEnvoi = null;\n",
+      "expected": 1
+    },
+    {
+      "id": "email-body-and-send-8",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "\n  return {\n    message: messageFinal+(archiveEnvoi&&archiveEnvoi.portalPending?' La copie sur la page client reste en attente : ouvrez Page client pour la reprendre.':''),\n    total: total,\n",
+      "replacement": "\n  return {\n    lienClientInclus: cdqPortalMailOutcomeV20261030.linkIncluded,\n    statutLienClient: cdqPortalMailOutcomeV20261030.status,\n    message: messageFinal+(archiveEnvoi&&archiveEnvoi.portalPending?' La copie sur la page client reste en attente : ouvrez Page client pour la reprendre.':''),\n    total: total,\n",
+      "expected": 1
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQEmailPortalV20261030.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v28.02/files/CDQEmailPortalV20261030.gs",
+      "sha256": "5c65bb376a78cb97e998d3424526b9c5515fef3d118edb26f37b323845e7859e"
+    }
+  ]
+}
