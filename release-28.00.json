@@ -1,0 +1,22 @@
+{
+  "apkBytes": 133336967,
+  "apkSha256": "056ff2b81b66c2b759334476ad02eb74eccd10ed693054f67d8966e39dd98a29",
+  "limitations": [
+    "Local package checks are static Python analysis; real Kotlin interceptor unit tests are a required CI gate before signing.",
+    "Direct Chromium mobile observation used the published web document without synthetic identity/company or module/CSS injection; it does not execute the Android resource interceptor.",
+    "No physical Samsung launch or authenticated Drive session tested.",
+    "Optional network-filtered browser comparison timed out and supplies no evidence."
+  ],
+  "nativeAssetCount": 918,
+  "nativeContractUnitTestClass": "ca.balancecdq.android.PackagedAssetContractV2769Test",
+  "nativeContractUnitTests": 4,
+  "nativeManifestContractValidated": true,
+  "physicalAndroidDriveTest": "not-performed",
+  "privateSource": "5693a492db94c8517f33edda512ce8f1932fc715",
+  "publicBase": "30d05520d64e475c15ee47dfaa01f8e82ed911ca",
+  "qualificationSha256": "b07133e4fab3df23a4a8e9eac981da577e19f749379f4f5a639b2d3554f9e2b6",
+  "scope": "native manifest MIME/text contract and packaged resource routes",
+  "signature": "496030d9cd10e81ff4e9486c38491bc15389112c0c295c61c295981c101c4436",
+  "status": "SIGNED_TECHNICAL_CHECKS_PASSED",
+  "version": "28.00"
+}

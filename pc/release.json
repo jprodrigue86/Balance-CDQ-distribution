@@ -1,11 +1,11 @@
 {
   "androidSelectorSha256": "3aebe7834ce7b55a5ab5b44731137c5b8a277fc7a5174d53ad3066ad0d9e2bcf",
-  "androidSourceBuild": "2026.10.29-v27.99-material-settings",
-  "build": "2026.10.29-v27.99-material-settings",
+  "androidSourceBuild": "2026.10.30-v28.00-native-resource-contract",
+  "build": "2026.10.30-v28.00-native-resource-contract",
   "desktopModel": 3,
   "files": 930,
-  "generatedFrom": "patches/update-2799/stage.py",
+  "generatedFrom": "patches/update-2800/stage.py",
   "platform": "pc-pwa",
-  "release": "b50e5c5318e54b8f94626f354333fb87b4a2bd673bd382a783361d6ebe7d8006",
-  "version": "27.99"
+  "release": "8bc6e84fc4a3cfc620d81d7238f9223958b3636596d06743ad3589a3aa547968",
+  "version": "28.00"
 }
