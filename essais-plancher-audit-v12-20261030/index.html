@@ -1,0 +1,31 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font:12px monospace"><h3>Audit lecture seule du modèle original de plancher CDQ</h3><pre id="result">Chargement du modèle PDF…</pre>
+<script type="module">
+import * as pdfjsLib from '../vendor/pdfjs-6.3.289/build/pdf.mjs';
+const el=document.getElementById('result');
+const clip=(str,n=350)=>String(str||'').slice(0,n);
+async function check(){
+ try{
+ const uri='../essais-plancher-parite-v10-20261030/modele_application_copie_lecture_seule.pdf';
+ pdfjsLib.GlobalWorkerOptions.workerSrc=new URL('../vendor/pdfjs-6.3.289/build/pdf.worker.mjs',location.href).href;
+ const buf=new Uint8Array(await (await fetch(uri,{cache:'no-store'})).arrayBuffer());
+ const d=await pdfjsLib.getDocument({data:buf,enableXfa:false}).promise;
+ const fields=await d.getFieldObjects(),actions=await d.getJSActions(),ord=await d.getCalculationOrderIds();
+ const names=Object.keys(fields||{});
+ const focusNames=names.filter(x=>/charge|echelon|etendue|etalon|problem|conform|tolerance|erreur|resultat|statut|unite|identif|client/i.test(x));
+ const focus=Object.fromEntries(focusNames.map(n=>[n,(fields[n]||[]).map(x=>({
+  id:x.id,type:x.type,value:x.value,defaultValue:x.defaultValue,options:x.options,readOnly:x.readOnly,
+  actions:Object.fromEntries(Object.entries(x.actions||{}).map(([k,v])=>[k,Array.isArray(v)?v.map(z=>clip(z,550)):clip(v,550)]))
+ }))]));
+ const actionInfo=Object.entries(actions||{}).map(([k,v])=>({name:k,items:Array.isArray(v)?v.length:1,length:JSON.stringify(v).length,head:clip(JSON.stringify(v),350)}));
+ const detailedActions=Object.fromEntries(Object.entries(actions||{}).filter(([k,v])=>/doc|open|calculate|initial|script|CDQ|charge/i.test(k)).map(([k,v])=>[k,clip(JSON.stringify(v),25000)]));
+ const report={
+  size:buf.length,numPages:d.numPages,fieldsCount:names.length,
+  allNames:names,focus,calculationOrder:ord,documentActions:actionInfo,detailedActions,
+  fieldActionNames:focusNames.filter(n=>(fields[n]||[]).some(x=>x.actions&&Object.keys(x.actions).length))
+ };
+ el.textContent=JSON.stringify(report,null,2);
+ window.__CDQ_AUDIT=report;
+ }catch(e){el.textContent='AUDIT ERROR '+(e.stack||e)}
+}
+check();
+</script></body></html>
