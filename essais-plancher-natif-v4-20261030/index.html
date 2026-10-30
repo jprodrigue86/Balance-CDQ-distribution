@@ -68,7 +68,7 @@ async function loadPdf(){
    const opcode=diff[pos++];
    if(opcode===0){
      if(pos+8>diff.length)throw Error('Correctif de copie tronqué.');
-     const at=data.getUint32(pos);pos+=4,length=data.getUint32(pos);pos+=4;
+     const at=data.getUint32(pos);pos+=4;const length=data.getUint32(pos);pos+=4;
      if(at+length>source.length||offset+length>output.length)throw Error('Copie du PDF hors limites.');
      output.set(source.subarray(at,at+length),offset);offset+=length;
    }else if(opcode===1){
