@@ -1,0 +1,32 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V28.04",
+  "build": "2026.10.30-v28.04-portal-management",
+  "title": "Page client — gestion privée des PDF et ouverture plus rapide",
+  "requiresBuild": [
+    "2026.10.30-v28.03-client-pdf-replace"
+  ],
+  "patches": [
+    {
+      "id": "cdq-v2804-backend-build",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "expected": 1,
+      "search": "const CDQ_BACKEND_BUILD_ = '2026.10.30-v28.03-client-pdf-replace';",
+      "replacement": "const CDQ_BACKEND_BUILD_ = '2026.10.30-v28.04-portal-management';"
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQClientPortalV20261028.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v28.04/files/CDQClientPortalV20261028.gs",
+      "sha256": "bd58ca1053a81c2e2b2be694287abd60fbd09f538c9b034060f3aecaf1a7ceac"
+    },
+    {
+      "name": "CDQClientPortalManagementV2804.gs",
+      "url": "https://jprodrigue86.github.io/Balance-CDQ-distribution/bundles/balance-cdq/v28.04/files/CDQClientPortalManagementV2804.gs",
+      "sha256": "a0c5a829c7177ed3eda1eb29f2c97d2dc31041b763ea6398f174ce8725d5ed7d"
+    }
+  ]
+}
