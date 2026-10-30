@@ -1,0 +1,44 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="font:12px/1.4 monospace"><h3>Audit interne des objets du PDF officiel — lecture seule</h3><pre id="diag">Chargement…</pre>
+<script src="../vendor/pdf-lib-1.17.1.min.js"></script><script>
+const diag=document.getElementById('diag');
+(async()=>{
+try{
+ const url='../essais-plancher-parite-v10-20261030/modele_application_copie_lecture_seule.pdf';
+ const r=await fetch(url,{cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);
+ const bytes=new Uint8Array(await r.arrayBuffer()),L=window.PDFLib;
+ if(!L?.PDFDocument)throw Error('PDFLib non chargé');
+ const pdf=await L.PDFDocument.load(bytes,{updateMetadata:false});
+ const N=L.PDFName.of;
+ const fieldInfo=pdf.getForm().getFields().map(f=>{
+  const d=f.acroField.dict;return {name:f.getName(),type:f.constructor.name,
+   flags:d.get(N('Ff'))?.number||0,
+   value:String(d.get(N('V'))||'').slice(0,120),
+   opts:(()=>{try{return String(d.get(N('Opt'))||'').slice(0,400)}catch(e){return '?'}})(),
+   actions:(()=>{const a=pdf.context.lookup(d.get(N('AA')));return a?.keys?.().map(k=>k.decodeText?.()||String(k))||[]})()
+  };
+ });
+ const scripts=[],containsScripts=[],counts={};
+ for(const [ref,obj] of pdf.context.enumerateIndirectObjects()){
+   if(!(obj instanceof L.PDFDict))continue;
+   const raw=obj.get(N('JS'));if(!raw)continue;
+   const val=pdf.context.lookup(raw);
+   const source=typeof val?.decodeText==='function'?val.decodeText():String(val||'');
+   scripts.push({ref:String(ref),chars:source.length,script:source});
+   let pat=/\b200\b|etendue|[\/\*]\s*6\b|%\s*6\b|charge_point|kit\s*[xyz]|etalons?|arrond/i,match,spans=[];
+   while((match=pat.exec(source))!==null){const start=Math.max(0,match.index-160),end=Math.min(source.length,match.index+250);spans.push({key:match[0],start,frag:source.slice(start,end)});pat.lastIndex=match.index+Math.max(1,match[0].length);if(spans.length>=80)break;}
+   containsScripts.push({ref:String(ref),chars:source.length,spans:spans.slice(0,55),head:source.slice(0,700)});
+ }
+ const actionFields=fieldInfo.filter(x=>x.actions.length>0);
+ const list=fieldInfo.filter(x=>/charge|etendue|etalon|kit|echelon|unite|tolerance|conform|calcul|excentr/i.test(x.name));
+ const result={
+   size:bytes.length,pages:pdf.getPageCount(),fields:fieldInfo.length,fieldNames:fieldInfo.map(x=>x.name),
+   focusFields:list,actionFields,scriptCount:scripts.length,
+   scriptLengths:scripts.map(({ref,chars})=>({ref,chars})),
+   sourceFindings:containsScripts,
+   fullScripts:scripts.filter(x=>x.chars<15000).map(x=>({ref:x.ref,script:x.script.slice(0,15000)})),
+   biggestScript:scripts.slice().sort((a,b)=>b.chars-a.chars)[0]?.script.slice(0,28000)
+ };
+ diag.textContent=JSON.stringify(result,null,2);window.__AUDIT=result;
+}catch(e){diag.textContent='AUDIT ERROR '+(e.stack||e)}
+})();
+</script></body></html>
