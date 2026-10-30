@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CDQ — Balance de plancher · Essai fonctions V10</title>
+<style>
+html,body{margin:0;height:100%;background:#101820;color:#e8f2f8;font:14px Arial,sans-serif}*{box-sizing:border-box}
+#viewer{display:block;position:absolute;inset:0;width:100%;height:100%;border:0}
+#overlay{position:absolute;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:#101820e8}
+#overlay[hidden]{display:none}
+.box{max-width:410px;margin:20px;text-align:center}
+h2{font-size:19px}
+button{background:#0876bc;border:1px solid #28aaff;color:white;padding:12px 22px;border-radius:9px}
+#qa{display:none;position:fixed;z-index:99;top:0;right:0;width:min(95vw,630px);max-height:80dvh;overflow:auto;background:white;color:#111;font:11px/1.3 monospace;padding:12px;white-space:pre-wrap;box-shadow:0 0 12px #0009}
+body.qa #qa{display:block}
+</style></head><body>
+<iframe id="viewer" title="Visionneuse CDQ — Balance de plancher, modèle fonctionnel de référence" allow="fullscreen"></iframe>
+<div id="overlay"><div class="box"><h2 id="heading">Ouverture du rapport de plancher</h2><p id="status">Le PDF de référence de l’application se charge dans la Visionneuse CDQ.</p><button id="retry" hidden>Réessayer</button></div></div>
+<pre id="qa">En attente du PDF.</pre>
+<script>
+(()=>{
+'use strict';
+const frame=document.getElementById('viewer'),overlay=document.getElementById('overlay'),status=document.getElementById('status'),heading=document.getElementById('heading'),retry=document.getElementById('retry');
+const ORIGIN=location.origin,PATH='./modele_application_copie_lecture_seule.pdf',READER='../essais/menu-problemes-multiples-v4/reader.html';
+const NAME='CDQ_Plancher_Essai_Fonctions_V10.pdf';
+let sent=false,opened=false;
+const qa=new URLSearchParams(location.search).has('qa');
+if(qa)document.body.classList.add('qa');
+const pdfPromise=fetch(PATH,{cache:'no-store'}).then(async r=>{
+ if(!r.ok)throw Error('Source de référence indisponible : HTTP '+r.status);
+ const blob=await r.blob();
+ if(blob.size!==260859||blob.type!=='application/pdf'&&!blob.type.includes('octet-stream'))throw Error('Le modèle a changé : taille/type incorrects '+blob.size);
+ const data=new Uint8Array(await blob.slice(0,5).arrayBuffer());
+ if(String.fromCharCode(...data)!=='%PDF-')throw Error('En-tête PDF non valide');
+ return new Blob([blob],{type:'application/pdf'});
+});
+function fail(e){heading.textContent='Impossible d’ouvrir le PDF';status.textContent=String(e?.message||e);retry.hidden=false;}
+pdfPromise.catch(fail);
+retry.addEventListener('click',()=>location.reload());
+function audit(){
+ if(!qa)return;
+ try{
+ const d=frame.contentDocument,v=d.getElementById('viewer');
+ const fields=[...v.querySelectorAll('.annotationLayer input,.annotationLayer select,.annotationLayer textarea,button.cdq-choice-field')];
+ const names=fields.map(f=>({tag:f.tagName,name:f.name||'',disabled:f.disabled,readOnly:f.readOnly,choice:f.dataset.cdqChoice,choiceSource:f.dataset.cdqChoiceSource,options:f.tagName==='SELECT'?[...f.options].map(x=>x.value).slice(0,12):undefined,value: f.tagName==='SELECT'?f.value:(f.value||'').slice(0,24)}));
+ const choiceButtons=fields.filter(f=>f.dataset.cdqChoice==='true').map(f=>f.name||f.dataset.cdqChoiceKey);
+ const diagnostics={opened,ready:v.dataset.ready,fieldCount:fields.length,selects:fields.filter(f=>f.tagName==='SELECT').length,choiceButtons, hasDialog:!!d.getElementById('choiceDialog'),navButtons:!!d.getElementById('nextField'),sample:names.filter(x=>/technicien|unite|legal|frequence|charge_point|excentric|probleme/i.test(x.name)).slice(0,95),navigation:names.filter(x=>x.name).slice(0,30)};
+ document.getElementById('qa').textContent=JSON.stringify(diagnostics,null,2);
+ }catch(e){document.getElementById('qa').textContent=e.stack;}
+}
+let auditInterval;
+window.addEventListener('message',e=>{
+ if(e.origin!==ORIGIN||e.source!==frame.contentWindow)return;const d=e.data||{};
+ if(d.type==='CDQ_READER_READY'&&!sent){sent=true;pdfPromise.then(blob=>frame.contentWindow.postMessage({type:'CDQ_READER_OPEN',readerRequestId:'plancher-app-model-v10',blob,name:NAME,readOnly:false},ORIGIN)).catch(fail);}
+ if(d.type==='CDQ_READER_OPENED'){opened=true;overlay.hidden=true;setTimeout(audit,400);if(qa)auditInterval=setInterval(audit,1800);document.title='CDQ — Essai V10 du PDF fonctionnel';}
+ if(d.type==='CDQ_READER_OPEN_FAILED_V2731'||d.type==='CDQ_READER_INIT_FAILED_V2731')fail(d.error||'La Visionneuse CDQ a refusé le rapport');
+});
+frame.src=new URL(READER,location.href).href;
+setTimeout(()=>{if(!opened&&retry.hidden)fail('Délai de chargement dépassé.')},45000);
+})();
+</script></body></html>
