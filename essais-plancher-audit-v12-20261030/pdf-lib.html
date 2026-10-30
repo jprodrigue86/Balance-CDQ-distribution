@@ -43,7 +43,8 @@ try{
    fullScripts:scripts.filter(x=>x.chars<15000).map(x=>({ref:x.ref,script:x.script.slice(0,15000)})),
    biggestScript:scripts.slice().sort((a,b)=>b.chars-a.chars)[0]?.script.slice(0,28000)
  };
- diag.textContent=JSON.stringify(result,null,2);window.__AUDIT=result;
+ const condensed={sourceSize:bytes.length,fields:fieldInfo.length,scripts:scripts.map(x=>({ref:x.ref,length:x.chars,script:x.script}))};
+ diag.textContent=JSON.stringify(condensed,null,2);window.__AUDIT=condensed;
 }catch(e){diag.textContent='AUDIT ERROR '+(e.stack||e)}
 })();
 </script></body></html>
