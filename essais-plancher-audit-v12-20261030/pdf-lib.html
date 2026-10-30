@@ -22,9 +22,14 @@ try{
    if(!(obj instanceof L.PDFDict))continue;
    const raw=obj.get(N('JS'));if(!raw)continue;
    const val=pdf.context.lookup(raw);
-   const source=typeof val?.decodeText==='function'?val.decodeText():String(val||'');
+   let source=typeof val?.decodeText==='function'?val.decodeText():String(val||'');
+   if(typeof val?.getContents==='function'){
+     const b=val.getContents(),filter=String(val.dict?.get(N('Filter'))||'');
+     if(filter.includes('FlateDecode'))source=await new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream('deflate'))).text();
+     else source=new TextDecoder('utf-8').decode(b);
+   }
    scripts.push({ref:String(ref),chars:source.length,script:source});
-   let pat=/\b200\b|etendue|[\/\*]\s*6\b|%\s*6\b|charge_point|kit\s*[xyz]|etalons?|arrond/i,match,spans=[];
+   let pat=/\b200\b|etendue|[\/\*]\s*6\b|%\s*6\b|charge_point|kit\s*[xyz]|etalons?|arrond/gi,match,spans=[];
    while((match=pat.exec(source))!==null){const start=Math.max(0,match.index-160),end=Math.min(source.length,match.index+250);spans.push({key:match[0],start,frag:source.slice(start,end)});pat.lastIndex=match.index+Math.max(1,match[0].length);if(spans.length>=80)break;}
    containsScripts.push({ref:String(ref),chars:source.length,spans:spans.slice(0,55),head:source.slice(0,700)});
  }
