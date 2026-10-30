@@ -19,3 +19,6 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
 #cdqReportOverlayV2578 .cdq-report-sheet-v2578 header button{background:var(--cdq-raised);color:var(--cdq-ink);border-color:var(--cdq-line)}
 #cdqReportOverlayV2578 :is(.cdq-report-choice-v2578 small,.cdq-report-sheet-v2578 header small){color:var(--cdq-muted)}
 #cdqReportOverlayV2578 .cdq-report-status-v2578:not(.error){color:var(--cdq-accent)}
+
+/* Keep the technician in normal flow, without a translucent sticky title overlay. */
+#cdqInvoicePageV2590 .cdq-invoice-shell>.cdq-invoice-title{position:relative!important;top:auto!important}

@@ -1,5 +1,5 @@
 /* One mobile material layout replaces layout2793, metal2793 and approved2796. */
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]){
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]{
  --cdq-page:#08090a;--cdq-surface:#0c0d0ee6;--cdq-raised:#151719e6;--cdq-line:#8b9093;--cdq-ink:#f7f7f7;--cdq-muted:#b9b9b9;--cdq-selected:#26333b;--cdq-accent:#d9dfe2;
  --cdq-material-panel:linear-gradient(#0003,#0003),var(--cdq-bg-v2793);
 }
@@ -8,53 +8,97 @@ html.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > #cdqCl
 html.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqTopActionsV2204{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important}
 html.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqClientActionsV2640{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}
 html.cdq-mobile-layout:not(.cdq-desktop-v2676) body :is(#cdqTopActionsV2204>.cdq-top-action,#cdqClientActionsV2640>button){height:var(--cdq-home-action-height-v2798,49px)!important;min-height:var(--cdq-home-action-height-v2798,49px)!important;box-sizing:border-box!important}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body :is(.container,.desktop-main,.top-bar,.folder-content,.cdq-workspace-body){background:transparent!important}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #appHeader{
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body :is(.container,.desktop-main,.top-bar,.folder-content,.cdq-workspace-body){background:transparent!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #appHeader{
  position:relative!important;box-sizing:border-box!important;overflow:hidden!important;height:auto!important;min-height:0!important;aspect-ratio:4.8!important;
  border:0!important;border-radius:0!important;clip-path:url(#cdqMaterialHeaderClipV2799);background:var(--cdq-material-panel)!important;background-size:100vw auto!important;background-position:center 10%!important;box-shadow:inset 0 1px 0 #ffffff28!important;
 }
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #appHeader .header-metal-banner{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #appHeader::before{
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #appHeader .header-metal-banner{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #appHeader::before{
  content:"";position:absolute;z-index:1;inset:4% 22% 6%;background:url('./assets/material-v2799/logo.png') center/contain no-repeat;pointer-events:none;
 }
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #appHeader::after{
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #appHeader::after{
  content:"";position:absolute;left:2%;right:2%;top:53%;height:2px;background:linear-gradient(90deg,transparent,#ff1534 8%,#fff 12%,#f0102a 17%,transparent 29%,transparent 71%,#f0102a 83%,#fff 88%,#ff1534 92%,transparent);box-shadow:0 0 7px #f10022;pointer-events:none;
 }
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body .company-wrapper{gap:7px!important;margin:7px 0!important;align-items:stretch!important}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #companyButton{
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body .company-wrapper{gap:7px!important;margin:7px 0!important;align-items:stretch!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #companyButton{
  min-height:40px!important;padding:7px 12px!important;font-size:clamp(17px,4.9vw,24px)!important;text-align:left!important;color:#fff!important;
  background:var(--cdq-material-panel)!important;background-size:100vw auto!important;background-position:center 30%!important;border:1px solid #a2a7aa!important;border-radius:10px!important;
 }
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #cdqCreateClientV2640{
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #cdqCreateClientV2640{
  flex:0 0 40px!important;width:40px!important;min-width:40px!important;min-height:40px!important;max-height:44px!important;padding:0!important;border:1px solid #a1a4a9!important;border-radius:10px!important;background:var(--cdq-material-panel)!important;background-size:100vw auto!important;
 }
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body :is(#cdqTopActionsV2204,#cdqClientActionsV2640){
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body :is(#cdqTopActionsV2204,#cdqClientActionsV2640){
  gap:6px!important;align-items:stretch!important;padding:7px 6px 4px!important;margin:0!important;background:var(--cdq-material-panel)!important;background-size:100vw auto!important;background-position:center 30%!important;border:1px solid #9fa5a9!important;box-shadow:none!important;
 }
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #cdqTopActionsV2204{border-bottom:0!important;border-radius:13px 13px 0 0!important}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #cdqClientActionsV2640{padding:3px 6px 7px!important;margin-bottom:7px!important;border-top:0!important;border-radius:0 0 13px 13px!important}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body :is(#cdqTopActionsV2204>.cdq-top-action,#cdqClientActionsV2640>button){
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #cdqTopActionsV2204{border-bottom:0!important;border-radius:13px 13px 0 0!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #cdqClientActionsV2640{padding:3px 6px 7px!important;margin-bottom:7px!important;border-top:0!important;border-radius:0 0 13px 13px!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body :is(#cdqTopActionsV2204>.cdq-top-action,#cdqClientActionsV2640>button){
  display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;gap:2px!important;min-width:0!important;margin:0!important;padding:3px 2px!important;order:0!important;white-space:normal!important;
  color:#f7f7f7!important;font:400 clamp(8.5px,2.32vw,12px)/1.16 Arial,sans-serif!important;background:var(--cdq-material-panel)!important;background-size:100vw auto!important;background-position:center 50%!important;border:1px solid #a1a5a8!important;border-radius:10px!important;box-shadow:inset 0 1px 0 #ffffff20!important;
 }
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #cdqClientPortalButton20261028:disabled{opacity:1!important}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #filesContainer{
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #cdqClientPortalButton20261028:disabled{opacity:1!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #filesContainer{
  margin-top:7px!important;border:1px solid #a7abad!important;border-radius:14px!important;background:var(--cdq-material-panel)!important;background-size:cover!important;overflow:hidden!important;box-shadow:none!important;
 }
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #filesContainer :is(.file-row,.folder-header){
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #filesContainer :is(.file-row,.folder-header){
  margin:0!important;border-radius:0!important;min-height:54px!important;max-height:none!important;padding:7px 10px!important;border:0!important;border-bottom:1px solid #55585a!important;background:transparent!important;color:#fafafa!important;
 }
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #filesContainer .file-row.selected{background-color:#162733a8!important}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body .brand-footer{margin:11px 0 8px!important;gap:7px!important;background:transparent!important}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body .brand-footer span{max-width:none!important;height:2px!important;background:linear-gradient(90deg,#e81029,#fff 48%,#ff1735 56%,#e81029)!important;box-shadow:0 0 6px #fc1726ac!important}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body .brand-footer em{font-size:clamp(14px,4.8vw,22px)!important;color:#fff!important;white-space:nowrap!important}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body .bottom-nav{
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #filesContainer .file-row.selected{background-color:#162733a8!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body .brand-footer{margin:11px 0 8px!important;gap:7px!important;background:transparent!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body .brand-footer span{max-width:none!important;height:2px!important;background:linear-gradient(90deg,#e81029,#fff 48%,#ff1735 56%,#e81029)!important;box-shadow:0 0 6px #fc1726ac!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body .brand-footer em{font-size:clamp(14px,4.8vw,22px)!important;color:#fff!important;white-space:nowrap!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body .bottom-nav{
  border:1px solid #a6a9ac!important;border-radius:13px!important;background:var(--cdq-material-panel)!important;background-size:100vw auto!important;background-position:center 85%!important;box-shadow:none!important;
 }
 @media(max-width:359px){
- html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body :is(#cdqTopActionsV2204,#cdqClientActionsV2640){gap:3px!important;padding-left:4px!important;padding-right:4px!important}
+ html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body :is(#cdqTopActionsV2204,#cdqClientActionsV2640){gap:3px!important;padding-left:4px!important;padding-right:4px!important}
 }
 
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #appHeader>.cdq-material-header-frame{display:block!important;position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #appHeader>.cdq-material-header-frame{display:block!important;position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
 .cdq-material-header-frame{display:none}
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body #filesContainer .file-date{opacity:1!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #filesContainer .file-date{opacity:1!important}
+
+/* 28.01: the backdrop belongs to every page, while each card stays readable. */
+html[data-cdq-background-v2793] body :is(.cdq-workspace-page,#cdqDrivePageV2638,#cdqCalculPageV2638,#cdqOpportunitiesPageV2638,#cdqInventoryModernV2592,#cdqInvoicePageV2590,#cdqCalibrationDialogV2565,#cdqCatalogPageV2721,#cdqTrashPageV2713){
+ background:var(--cdq-bg-base-v2793,#000) var(--cdq-bg-v2793,none) center/cover no-repeat!important;
+}
+html[data-cdq-background-v2793] body :is(.cdq-workspace-body,.cdq-invoice-shell,.cdq-im-shell,.cdq-cal-shell,.cdq-cal-body,.cdq-catalog-layout,.cdq-catalog-start){background:transparent!important}
+html[data-cdq-background-v2793] body :is(.cdq-workspace-head,.cdq-workspace-card,.cdq-workspace-row,.cdq-invoice-panel,.cdq-im-card,.cdq-im-tile,.cdq-catalog-choice,.cdq-product-card,.cdq-catalog-filters,.cdq-product-detail,.cdq-kanban-column){
+ background-image:var(--cdq-material-panel)!important;background-color:var(--cdq-bg-base-v2793,#000)!important;background-size:100vw auto!important;background-position:center 30%!important;
+}
+/* Closed folder wrappers used to draw an extra blue rule above their header. */
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #filesContainer .folder{
+ border:0!important;margin:0!important;padding:0!important;background:transparent!important;box-shadow:none!important;
+}
+/* Native gesture controls may overlay WebView even when the reported inset is 0.
+   Keep an open frame and place its content at least 10px above that edge. */
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body .bottom-nav{
+ border-bottom:0!important;border-radius:13px 13px 0 0!important;
+ bottom:max(10px,var(--cdq-content-safe-bottom,0px),env(safe-area-inset-bottom,0px))!important;
+}
+/* Remove only pointer feedback on the chooser; keyboard focus remains visible. */
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body #companyButton{
+ -webkit-tap-highlight-color:transparent!important;
+}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body #companyButton:is(:hover,:active,:focus){
+ background:var(--cdq-material-panel)!important;background-size:100vw auto!important;background-position:center 30%!important;box-shadow:none!important;
+}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body #companyButton:focus:not(:focus-visible){outline:none!important}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676) body #companyButton:focus-visible{
+ outline:2px solid #e5d5fa!important;outline-offset:2px!important;
+}
+/* Leather's approved stitched edge follows live panel geometry. These are CSS
+   seams; icon illustrations remain their approved original artwork. */
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793="leather"] body :is(#filesContainer,#companyButton,#cdqCreateClientV2640,#cdqTopActionsV2204>.cdq-top-action,#cdqClientActionsV2640>button,.cdq-workspace-card,.cdq-workspace-row,.cdq-invoice-panel,.cdq-catalog-choice,.cdq-product-card){
+ border-color:#686761!important;outline:1px dashed #9d988a!important;outline-offset:-4px!important;box-shadow:inset 0 0 0 2px #050505,inset 0 0 5px 5px #0008!important;
+}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793="leather"] body .bottom-nav{outline:1px dashed #9d988a!important;outline-offset:-4px!important;clip-path:inset(0 0 4px 0)}
+html[data-cdq-background-v2793="leather"] #appHeader>.cdq-material-header-frame>path{stroke:#a09a8d;stroke-width:2;stroke-dasharray:5 4}
+/* Aucun is an explicit pure-black background in every route and preview. */
+html[data-cdq-background-v2793="current"]{
+ --cdq-bg-v2793:none;--cdq-bg-base-v2793:#000;--cdq-material-panel:linear-gradient(#000,#000);
+}
+html[data-cdq-background-v2793="current"] body{background:#000!important}
+html[data-cdq-background-v2793="current"] body :is(.cdq-workspace-page,#cdqInventoryModernV2592,#cdqInvoicePageV2590,#cdqCalibrationDialogV2565,#cdqReportOverlayV2578){background:#000!important}
+html #cdqSettingsModalV2294 [data-cdq-background-option-v2793="current"] .cdq-bg-thumb-v2793{background:#000!important}

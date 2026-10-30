@@ -1,0 +1,25 @@
+{
+  "apkBytes": 133332871,
+  "apkSha256": "1b861946c857da5f3e1efca760e5e5c60bec794af7d3a905ea8e203214ff6cf2",
+  "limitations": [
+    "Chromium uses the full candidate document via srcdoc/import-map and a synthetic readonly identity; it does not execute the Android interceptor.",
+    "Permission-gated catalog/inventory shells are isolated style fixtures; no authenticated Drive session is asserted.",
+    "Final invoice heading check uses an inert normal-flow shell clone from the real readonly owner; no write or permission gate is changed.",
+    "OCR transport and receipt parsers were tested with controlled fixtures; no new actual device OCR run was performed.",
+    "No physical Samsung launch or actual native gesture-bar observation occurred.",
+    "The brushed metal texture is reconstructed with imagegen from the approved reference; Leather stitches are adaptive CSS, not a pixel-identical reproduction.",
+    "The four real Kotlin interceptor tests remain required in the single Linux build before signing."
+  ],
+  "nativeAssetCount": 918,
+  "nativeContractUnitTestClass": "ca.balancecdq.android.PackagedAssetContractV2769Test",
+  "nativeContractUnitTests": 4,
+  "nativeManifestContractValidated": true,
+  "physicalAndroidDriveTest": "not-performed",
+  "privateSource": "e5084250d6bc75c0c5287e8e4b7663e9722a5b0b",
+  "publicBase": "ed44f66d7cdc6beaff3a2500db07baf701c3e095",
+  "qualificationSha256": "c9956b2d89056c67c45eff5d6ec9843f980dc3e4a15673ca2a3f44469e5a9775",
+  "scope": "material navigation, global backgrounds and invoice OCR/photo flow",
+  "signature": "496030d9cd10e81ff4e9486c38491bc15389112c0c295c61c295981c101c4436",
+  "status": "SIGNED_TECHNICAL_CHECKS_PASSED",
+  "version": "28.01"
+}

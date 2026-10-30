@@ -1,11 +1,11 @@
 {
   "androidSelectorSha256": "3aebe7834ce7b55a5ab5b44731137c5b8a277fc7a5174d53ad3066ad0d9e2bcf",
-  "androidSourceBuild": "2026.10.30-v28.00-native-resource-contract",
-  "build": "2026.10.30-v28.00-native-resource-contract",
+  "androidSourceBuild": "2026.10.30-v28.01-material-navigation-invoices",
+  "build": "2026.10.30-v28.01-material-navigation-invoices",
   "desktopModel": 3,
   "files": 930,
-  "generatedFrom": "patches/update-2800/stage.py",
+  "generatedFrom": "patches/update-2801/stage.py",
   "platform": "pc-pwa",
-  "release": "8bc6e84fc4a3cfc620d81d7238f9223958b3636596d06743ad3589a3aa547968",
-  "version": "28.00"
+  "release": "542cb974cc8a78d0e5a95765cb7c8384aa50d06470a4e791452b7ba186ab4fb8",
+  "version": "28.01"
 }

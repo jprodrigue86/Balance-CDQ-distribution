@@ -94,3 +94,22 @@ export async function prepareInvoicePhoto(file) {
     return jpeg(canvas, result.width, result.height, result.orientation);
   } finally { canvas.width = canvas.height = 1; }
 }
+
+// Only the server OCR copy is bounded to the existing service's 6 MiB limit.
+// The JPEG stored with the invoice remains the original prepared photo.
+export async function prepareInvoiceOcrPhotoV2801(dataUrl) {
+  const limit=6*1024*1024, bytes=value=>Math.floor((value.length-value.indexOf(',')-1)*3/4);
+  if(!/^data:image\/jpeg;base64,/.test(dataUrl))throw Error('Photo de reçu invalide.');
+  if(bytes(dataUrl)<=limit)return dataUrl;
+  const image=new Image();
+  await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(Error('La copie OCR de la photo ne peut pas être préparée.'));image.src=dataUrl;});
+  const canvas=document.createElement('canvas');
+  try{
+    canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;
+    const context=canvas.getContext('2d',{alpha:false});
+    if(!context)throw Error('Préparation de la photo impossible.');
+    context.drawImage(image,0,0);
+    for(const quality of [.9,.82,.72]){const result=canvas.toDataURL('image/jpeg',quality);if(bytes(result)<=limit)return result;}
+    throw Error('La photo est trop volumineuse pour la lecture automatique. Recadrez le reçu ou complétez les champs manuellement.');
+  }finally{canvas.width=canvas.height=1;}
+}

@@ -1,7 +1,7 @@
 // CDQ 27.93 — background choices and existing navigation integration.
 // No remote requests, Drive operations, PDF changes, timers or publication actions.
 export const CDQ_BACKGROUND_CHOICES_V2793=Object.freeze([
- ['current','Actuel'],['brushed','Métal brossé noir'],['smoke','Smoke'],
+ ['current','Aucun'],['brushed','Métal brossé noir'],['smoke','Smoke'],
  ['lava','Lava'],['leather','Leather'],['rock','Rock']
 ]);
 export const CDQ_BACKGROUND_IDS_V2793=Object.freeze(CDQ_BACKGROUND_CHOICES_V2793.map(x=>x[0]));
@@ -11,7 +11,7 @@ export function cdqBackgroundChoiceV2793(value){
 }
 export function cdqEffectiveBackgroundV2793(choice,palette){
  const normalized=cdqBackgroundChoiceV2793(choice);
- return palette==='metal'&&normalized==='current'?'brushed':normalized;
+ return normalized; // An explicit Aucun choice always stays pure black.
 }
 export function cdqNavOrderWithSettingsV2793(order){
  const original=Array.isArray(order)?[...new Set(order)]:[];
@@ -64,8 +64,8 @@ function settingsNav(){
   b=d.createElement('button');b.type='button';b.id=settingsId;b.className='bottom-nav-item';
   b.dataset.workspaceRoute='settings';b.setAttribute('aria-label','Réglages');b.title='Réglages';
   const host=d.createElement('span');host.className='cdq-workspace-icon cdq-settings-icon-v2793';
-  // Dedicated skull-and-metal gear: never substitute an unrelated Copy icon.
-  host.innerHTML='<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><defs><linearGradient id="cdqGearV2793" x2="1" y2="1"><stop stop-color="#e6d5fc"/><stop offset=".52" stop-color="#9a68c9"/><stop offset="1" stop-color="#493060"/></linearGradient></defs><path d="M27 4h10l3 8 7 3 8-4 6 9-6 7v10l6 7-6 9-8-4-7 3-3 8H27l-3-8-8-3-8 4-6-9 6-7V27l-6-7 6-9 8 4 8-3z" stroke="#c3a0ea" fill="url(#cdqGearV2793)" stroke-width="2.4"/><circle cx="32" cy="32" r="18" fill="#14121b" stroke="#8766ad" stroke-width="3"/><path d="M18 27c0-15 28-15 28 0l-3 11-5 3v8H26v-8l-5-3z" fill="#c8c2d4" stroke="#685c7c" stroke-width="2"/><path d="M23 29q4-5 8 1-3 5-8-1zm18 0q-4-5-8 1 3 5 8-1z" fill="#15121e"/><path d="M29 38h6l-3 4z" fill="#241b35"/></svg>';
+  // Reuse the exact ornate purple artwork used by the historical top action.
+  host.innerHTML=w?.cdqActionArtworkV2657?.('settings','metal-music','dark')||'';
   const label=d.createElement('small');label.textContent='Réglages';b.append(host,label);
   b.addEventListener('click',e=>{e.preventDefault();if(typeof w?.cdqOpenSettingsV2294==='function')w.cdqOpenSettingsV2294();});
  }
@@ -73,7 +73,10 @@ function settingsNav(){
  if(b.id!==settingsId)b.classList.add('cdq-settings-nav-v2793');
  const trash=[...nav.children].find(n=>n.dataset.workspaceRoute==='trash'||n.querySelector('small')?.textContent.trim()==='Corbeille');
  if(b.parentNode!==nav)nav.insertBefore(b,trash||null);
- b.style.setProperty('--cdq-nav-accent','#c9d0d7');
+ const host=b.querySelector('.cdq-settings-icon-v2793');
+ const art=w?.cdqActionArtworkV2657?.('settings','metal-music','dark');
+ if(host&&art&&host.innerHTML!==art)host.innerHTML=art;
+ b.style.setProperty('--cdq-nav-accent','#af8bdc');
 }
 function picker(){
  if(!d)return;

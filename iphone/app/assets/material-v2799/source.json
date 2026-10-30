@@ -1,70 +1,71 @@
 {
-  "version": "27.99",
-  "source": "Recovered original approved design series 2026-10-29 02:26 UTC, followed by image_gen extraction/reconstruction; not screenshot crops",
-  "originals": {
-    "brushed": "96d33d6e6c07679e554207b099fa2e077ca26ae87e360c519ee839869b37539c"
+  "files": {
+    "brushed.png": {
+      "bytes": 1932515,
+      "height": 1536,
+      "mode": "RGB",
+      "sha256": "bd013a7c81be71899b6d20b26dddd36f99f7487c786ad19248562c2fcfebf6db",
+      "width": 1024
+    },
+    "icons.png": {
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "bytes": 1584201,
+      "height": 1254,
+      "mode": "RGBA",
+      "sha256": "0d8b2f22a5c71df0f524c560a39a2e0f0eaa3fcf060eb4118eb0d208fcac1b72",
+      "width": 1254
+    },
+    "lava.png": {
+      "bytes": 3013143,
+      "height": 1659,
+      "mode": "RGB",
+      "sha256": "9ab2e66bf6950603f796ef2a7bbad6017f834a629656001dcc7d301cb6728dd0",
+      "width": 948
+    },
+    "leather.png": {
+      "bytes": 3294062,
+      "height": 1659,
+      "mode": "RGB",
+      "sha256": "aaa7922adcd0c950dfe63b970b12285bbe72da87435a68c962c11f12dd09c438",
+      "width": 948
+    },
+    "logo.png": {
+      "alphaExtrema": [
+        0,
+        255
+      ],
+      "bytes": 1622244,
+      "height": 793,
+      "mode": "RGBA",
+      "sha256": "98bbf95242469b51f5752783e373d9279b6382e0a9dbeea22ce0651654c823eb",
+      "width": 1983
+    },
+    "rock.png": {
+      "bytes": 3223744,
+      "height": 1659,
+      "mode": "RGB",
+      "sha256": "4bbc75cbfc0e8c272c79336970867914bd2288a223b0026f4bcb34939f570706",
+      "width": 948
+    },
+    "smoke.png": {
+      "bytes": 1683978,
+      "height": 1659,
+      "mode": "RGB",
+      "sha256": "d4ef5ec1d9055a18783fd02ba9160ab70b045528b70ebf5bea0886d62aa02550",
+      "width": 948
+    }
   },
   "limits": [
     "Originals are flat previews, not editable source files. Artwork reconstructed faithfully with imagegen; it is not pixel-identical icon source.",
     "Material match Lava9/Leather8 identified visually from original files; original verbal choice numbers unavailable."
   ],
-  "files": {
-    "smoke.png": {
-      "bytes": 1683978,
-      "sha256": "d4ef5ec1d9055a18783fd02ba9160ab70b045528b70ebf5bea0886d62aa02550",
-      "width": 948,
-      "height": 1659,
-      "mode": "RGB"
-    },
-    "lava.png": {
-      "bytes": 3013143,
-      "sha256": "9ab2e66bf6950603f796ef2a7bbad6017f834a629656001dcc7d301cb6728dd0",
-      "width": 948,
-      "height": 1659,
-      "mode": "RGB"
-    },
-    "leather.png": {
-      "bytes": 3294062,
-      "sha256": "aaa7922adcd0c950dfe63b970b12285bbe72da87435a68c962c11f12dd09c438",
-      "width": 948,
-      "height": 1659,
-      "mode": "RGB"
-    },
-    "icons.png": {
-      "bytes": 1584201,
-      "sha256": "0d8b2f22a5c71df0f524c560a39a2e0f0eaa3fcf060eb4118eb0d208fcac1b72",
-      "width": 1254,
-      "height": 1254,
-      "mode": "RGBA",
-      "alphaExtrema": [
-        0,
-        255
-      ]
-    },
-    "rock.png": {
-      "bytes": 3223744,
-      "sha256": "4bbc75cbfc0e8c272c79336970867914bd2288a223b0026f4bcb34939f570706",
-      "width": 948,
-      "height": 1659,
-      "mode": "RGB"
-    },
-    "logo.png": {
-      "bytes": 1622244,
-      "sha256": "98bbf95242469b51f5752783e373d9279b6382e0a9dbeea22ce0651654c823eb",
-      "width": 1983,
-      "height": 793,
-      "mode": "RGBA",
-      "alphaExtrema": [
-        0,
-        255
-      ]
-    },
-    "brushed.png": {
-      "bytes": 1938844,
-      "sha256": "117bb3db075717bc64364db55031b843cc69942eba57a255aa1c2ce0e1885f8d",
-      "width": 948,
-      "height": 1659,
-      "mode": "RGB"
-    }
-  }
+  "originals": {
+    "brushed": "96d33d6e6c07679e554207b099fa2e077ca26ae87e360c519ee839869b37539c"
+  },
+  "revision2801": "Horizontal brushed-metal texture reconstructed with imagegen from approved original1; other artwork unchanged",
+  "source": "Recovered original approved design series 2026-10-29 02:26 UTC, followed by image_gen extraction/reconstruction; not screenshot crops",
+  "version": "27.99"
 }

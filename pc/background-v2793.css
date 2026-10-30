@@ -5,16 +5,16 @@ html[data-cdq-background-v2793="lava"],#cdqSettingsModalV2294 [data-cdq-backgrou
 html[data-cdq-background-v2793="leather"],#cdqSettingsModalV2294 [data-cdq-background-option-v2793="leather"]{--cdq-bg-v2793:url("./assets/material-v2799/leather.png");--cdq-bg-base-v2793:#0a0b0c;}
 html[data-cdq-background-v2793="rock"],#cdqSettingsModalV2294 [data-cdq-background-option-v2793="rock"]{--cdq-bg-v2793:url("./assets/material-v2799/rock.png");--cdq-bg-base-v2793:#0a0b0c;}
 /* A background is not a palette. Preserve all legacy colors, spacing and icons. */
-html[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body,
-html.cdq-mobile-layout[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body,
-html.cdq-desktop-v2676[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body{
+html[data-cdq-background-v2793] body,
+html.cdq-mobile-layout[data-cdq-background-v2793] body,
+html.cdq-desktop-v2676[data-cdq-background-v2793] body{
  background-image:var(--cdq-bg-v2793)!important;
  background-color:var(--cdq-bg-base-v2793)!important;
  background-position:center center!important;
  background-repeat:no-repeat!important;
  background-size:cover!important;
 }
-html[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) :is(
+html[data-cdq-background-v2793] :is(
  .cdq-workspace-page,#cdqDrivePageV2638,#cdqCalculPageV2638,#cdqOpportunitiesPageV2638,
  #cdqInventoryModernV2592,#cdqInvoicePageV2590,#cdqCalibrationDialogV2565,
  #cdqReportOverlayV2578,#cdqCatalogPageV2721,#cdqTrashPageV2713
@@ -27,11 +27,11 @@ html[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) :is(
 }
 /* The central app shell must let the selected backing show through.
    Do not change the file cards or control panels. */
-html.cdq-mobile-layout[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body > .container,
-html.cdq-mobile-layout[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) body .desktop-main{
+html.cdq-mobile-layout[data-cdq-background-v2793] body > .container,
+html.cdq-mobile-layout[data-cdq-background-v2793] body .desktop-main{
  background-color:transparent!important;
 }
-html[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) .brand-footer{
+html[data-cdq-background-v2793] .brand-footer{
  background-color:transparent!important;
 }
 /* The existing navigation keeps its six visible slots and draggable sizes. */
@@ -91,6 +91,6 @@ html:is(.android,.ios,.mobile-device) #cdqClientActionsV2640 > #cdqClientPortalB
 }
 
 /* Calibration owns an inner shell that must expose the selected material. */
-html[data-cdq-background-v2793]:not([data-cdq-background-v2793="current"]) #cdqCalibrationDialogV2565 :is(.cdq-cal-shell,.cdq-cal-body){background:transparent!important}
+html[data-cdq-background-v2793] #cdqCalibrationDialogV2565 :is(.cdq-cal-shell,.cdq-cal-body){background:transparent!important}
 /* Its original decorative SVG is retired by the existing heading owner. */
 #cdqCalibrationDialogV2565 .cdq-cal-head > .cdq-calibration-indicator[hidden]{display:none!important}
