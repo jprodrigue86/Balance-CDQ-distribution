@@ -89,11 +89,32 @@ def inspect():
         if "Point" in decoded or "506F696E74" in decoded or "charge" in decoded.lower() or "bloc3" in decoded.lower() or "plancher" in decoded.lower():
             streams.append({"xref":xref,"order":order,"bytes":len(content),"prefix":decoded[:160],
                  "row_count":len(rows),"selected_head":rows[:40],"selected_tail":rows[-20:]})
+    stream_overview=[]
+    for xref in dict.fromkeys(page.get_contents()):
+        raw=doc.xref_stream(xref)
+        txt=raw.decode("latin-1",errors="replace")
+        rectlines=[line[:300] for line in txt.splitlines() if " re " in line or " re" in line]
+        positions=[line[:300] for line in txt.splitlines() if " Td " in line or " Tm " in line]
+        stream_overview.append({"xref":xref,"bytes":len(raw),"prefix":txt[:1200],
+            "end":txt[-350:],"rectlines_head":rectlines[:20],"rectlines_tail":rectlines[-15:],
+            "text_head":positions[:20],"text_tail":positions[-12:]})
+    table_words=[{"word":w[4],"rect":[round(v,2) for v in w[:4]]}
+        for w in page.get_text("words") if 365<=w[1]<490]
+    table_drawings=[]
+    for d in page.get_drawings():
+        r=d.get("rect")
+        if r and 360<r.y0<490 and r.width<600:
+            if d.get("type") in ("fs","s","f"):
+                table_drawings.append({"rect":[round(v,2) for v in r],
+                    "fill":d.get("fill"),"color":d.get("color"),"width":d.get("width"),"type":d.get("type")})
     report={
         "source":{"v18_final_sha256":sha(original),"bytes":len(original),"expected_sha":spec["V17"][1]},
         "page":{"width":page.rect.width,"height":page.rect.height,"total_widgets":sum(1 for _ in page.widgets() or [])},
         "charge_fields":fields,
         "streams":streams,
+        "stream_overview":stream_overview,
+        "table_words":table_words,
+        "table_drawings":table_drawings[:100],
         "contents_total":len(page.get_contents()),
     }
     (OUT/"inspection-v18.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
