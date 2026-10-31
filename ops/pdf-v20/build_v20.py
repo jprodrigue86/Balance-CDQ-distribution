@@ -90,7 +90,6 @@ assert fresh.page_count==1 and len(list(fresh[0].widgets() or []))==180
 new_text=fresh[0].get_text(sort=False)
 assert "INTERMÉDIAIRE" in new_text and "PLANCHER" not in new_text
 # The sole additional extracted line is the requested default form value.
-assert new_text.count("Balance de plancher")==1
 assert new_text.replace("Balance de plancher\n","",1)==original_text.replace("PLANCHER","INTERMÉDIAIRE"),"Unexpected other PDF text changes"
 after={w.field_name:fresh.xref_object(w.xref,compressed=False) for w in fresh[0].widgets() or []}
 for name,before in original_widget_objects.items():
@@ -112,16 +111,18 @@ assert orig_image.n==after_image.n
 b0,b1=orig_image.samples,after_image.samples
 stride=orig_image.stride
 mismatches=0
+header_pixels=0
+type_pixels=0
 for y in range(orig_image.height):
     for x in range(orig_image.width):
         k=y*stride+x*orig_image.n
         if b0[k:k+orig_image.n]==b1[k:k+orig_image.n]:continue
         mismatches+=1
         page_x,page_y=x/2,y/2
-        if not ((200<=page_x<=435 and 52<=page_y<=80) or
-                (174<=page_x<=309 and 290<=page_y<=307)):
-            raise AssertionError(f"Unauthorised visual pixel outside header/type: {(page_x,page_y)}")
-assert mismatches>50,"Expected visible modification missing"
+        if 200<=page_x<=435 and 52<=page_y<=80:header_pixels+=1
+        elif 174<=page_x<=309 and 290<=page_y<=307:type_pixels+=1
+        else:raise AssertionError(f"Unauthorised visual pixel outside header/type: {(page_x,page_y)}")
+assert header_pixels>50 and type_pixels>25,(header_pixels,type_pixels)
 report={
     "result":"passed","source_sha256":sha(SRC),"pdf_sha256":sha(OUTPDF.read_bytes()),
     "pdf_bytes":OUTPDF.stat().st_size,"page_count":fresh.page_count,
@@ -131,7 +132,7 @@ report={
     "type_balance_value":typew.field_value,
     "type_balance_xref":typew.xref,"pdf_widget_count":len(after),
     "untouched_widget_objects_identical":179,
-    "pixel_differences":mismatches,"no_pixel_change_outside_two_authorized_regions":True,
+    "pixel_differences":mismatches,"header_pixels":header_pixels,"type_pixels":type_pixels,"no_pixel_change_outside_two_authorized_regions":True,
     "note":"Linux PDF structure/render verified. Direct touch behavior requires Android device validation."
 }
 (OUT/"qa-v20.json").write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
