@@ -19,6 +19,7 @@ const reader=fs.readFileSync('essais/menu-problemes-multiples-v22/reader-v2525.m
 const html=fs.readFileSync('essais/menu-problemes-multiples-v22/reader.html','utf8');
 const launcher=fs.readFileSync('essais-plancher-v22-echelon-20261031/index.html','utf8');
 assert.match(reader,/field\.inputMode='decimal'/);
+assert.ok(reader.indexOf('function validateEchelonV22(')<reader.indexOf('async function requestClose('),'Validation must be accessible to save/close');
 assert.match(reader,/isEchelonDraftV22\(el\.name,value\)/);
 assert.match(reader,/validateEchelonV22\(field\)&&decimalGuard\.validate\(field\)/);
 assert.match(html,/menu-problemes-multiples-v22\/reader-v2525\.mjs/);

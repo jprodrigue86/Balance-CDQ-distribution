@@ -15,3 +15,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test reader decimal input and native PDF tolerance
         run: node ops/pdf-v22/test_echelon.mjs
+      - name: Install native PDF inspector
+        run: python -m pip install --disable-pip-version-check pymupdf==1.26.7
+      - name: Inspect the original PDF and extract its JavaScript
+        run: python ops/pdf-v22/extract_native.py
+      - name: Test original PDF calculations with 0.5 and 0,5
+        run: node ops/pdf-v22/test_native_half.cjs

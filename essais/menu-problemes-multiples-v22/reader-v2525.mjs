@@ -429,6 +429,15 @@ async function resetClosedDocumentV2730(){
   }catch{tell({type:'CDQ_READER_RESET_FAILED_V2730'});}
 }
 function close(){if(closed)return;readerSaveProgressV2758.close();clearReaderTemplatePaintV2753();qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};closedViewportV2730=readerViewportV2730(viewer);closed=true;documentGenerationV2730++;dirty=false;$('viewer').inert=true;$('viewer').style.opacity='0';try{$('closeDialog').close()}catch(_){};tell({type:'CDQ_READER_CLOSE',reusable:hosted});if(hosted)resetPromiseV2730=resetClosedDocumentV2730();else history.back();}
+function validateEchelonV22(field){
+  if(!field||field.name!==ECHELON_FIELD_V22)return true;
+  const message=echelonErrorV22(field.name,field.value);
+  field.setCustomValidity(message);
+  if(!message){field.removeAttribute('aria-invalid');return true;}
+  field.setAttribute('aria-invalid','true');status(message);
+  field.focus({preventScroll:true});field.reportValidity();return false;
+}
+
 async function requestClose(){
   if(saving){status('Enregistrement en cours…');return;}
   if(!validateEchelonV22($('viewer').querySelector('input[name="essai_cdq_echelon"]')))return;
@@ -783,14 +792,6 @@ try{
     onOpen:()=>{cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;cdqKeyboardFieldV2550(false);},
     onClose:()=>form.refresh()});
   decimalGuard=installMeasurementValidationV2736({surface:$('viewer'),getEchelon:()=>$('viewer').querySelector('[name="echelon"]')?.value||cdqStoredFieldStateV2581('echelon').value,status});
-  function validateEchelonV22(field){
-    if(!field||field.name!==ECHELON_FIELD_V22)return true;
-    const message=echelonErrorV22(field.name,field.value);
-    field.setCustomValidity(message);
-    if(!message){field.removeAttribute('aria-invalid');return true;}
-    field.setAttribute('aria-invalid','true');status(message);
-    field.focus({preventScroll:true});field.reportValidity();return false;
-  }
   $('viewer').addEventListener('input',e=>{
     if(e.target?.name!==ECHELON_FIELD_V22)return;
     e.target.setCustomValidity('');e.target.removeAttribute('aria-invalid');
