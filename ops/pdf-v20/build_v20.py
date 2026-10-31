@@ -38,7 +38,7 @@ fontref=scratch.insert_font(fontname=newfont,fontfile=str(font_path))
 scratch.insert_text((24,55),title,fontsize=size,fontname=newfont,color=(0.07451,0.533333,0.776471))
 scratch_stream="\n".join(doc.xref_stream(xref).decode("latin-1") for xref in scratch.get_contents())
 # The actual PDF font encoder, including its ToUnicode map for the accent, owns these bytes.
-match=re.search(r"(<[0-9a-fA-F]+>|\((?:\\.|[^)])*\))\s+Tj",scratch_stream)
+match=re.search(r"(\[<[0-9a-fA-F]+>\]\s*TJ|<[0-9a-fA-F]+>\s*Tj|\((?:\\.|[^)])*\)\s*Tj)",scratch_stream)
 assert match, scratch_stream[:1500]
 encoded=match.group(1)
 assert "É" not in encoded, "Only PDF-native string encoding is supported"
@@ -46,12 +46,11 @@ assert "É" not in encoded, "Only PDF-native string encoding is supported"
 doc.xref_set_key(15,"Resources/Font/"+newfont, f"{fontref} 0 R")
 head=doc.xref_stream(15).decode("latin-1")
 newx=-width/2
-newhead,n=re.subn(pattern,lambda m: f"{m.group(1)}{newx:.5f}{m.group(2)}/{newfont} 29 Tf\n34.8 TL\n{encoded} Tj",head)
-assert n==1
+assert len(re.findall(pattern,head))==1
 # Avoid repeating font operation: pattern captures old font and TL; create a
 # minimal section with exactly one font declaration using a second pass.
 oldblock=re.search(pattern,head).group(0)
-replacement=f"1 0 0 1 {newx:.5f} 0 Tm\n/{newfont} 29 Tf\n34.8 TL\n{encoded} Tj"
+replacement=f"1 0 0 1 {newx:.5f} 0 Tm\n/{newfont} 29 Tf\n34.8 TL\n{encoded}"
 newhead=head.replace(oldblock,replacement)
 assert newhead!=head and "(PLANCHER) Tj" not in newhead
 assert newhead.count(f"/{newfont} 29 Tf")==1
@@ -88,7 +87,7 @@ assert typew.field_flags==0
 header=fresh.xref_stream(15).decode("latin-1")
 assert "/FCDQV20Bold 29 Tf" in header and "(PLANCHER) Tj" not in header
 # Preserve exact original vector header except one text operator block.
-clean=lambda s: re.sub(r"1 0 0 1 [\d\-.]+ 0 Tm\s+/(?:F3\+0|FCDQV20Bold) 29 Tf\s+34\.8 TL\s+(?:\(PLANCHER\)|<[0-9a-fA-F]+>) Tj","{HEADER_TITLE}",s)
+clean=lambda s: re.sub(r"1 0 0 1 [\d\-.]+ 0 Tm\s+/(?:F3\+0|FCDQV20Bold) 29 Tf\s+34\.8 TL\s+(?:\(PLANCHER\) Tj|\[<[0-9a-fA-F]+>\]TJ)","{HEADER_TITLE}",s)
 assert clean(old_header)==clean(header)
 after_image=fresh[0].get_pixmap(matrix=fitz.Matrix(2,2),alpha=False)
 assert orig_image.width==after_image.width and orig_image.height==after_image.height
