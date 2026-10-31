@@ -95,7 +95,7 @@ def inspect():
         txt=raw.decode("latin-1",errors="replace")
         rectlines=[line[:300] for line in txt.splitlines() if " re " in line or " re" in line]
         positions=[line[:300] for line in txt.splitlines() if " Td " in line or " Tm " in line]
-        stream_overview.append({"xref":xref,"bytes":len(raw),"prefix":txt[:1200],
+        stream_overview.append({"xref":xref,"bytes":len(raw),"prefix":txt[:1200], "full_content_latin1":txt if xref==4 else None,
             "end":txt[-350:],"rectlines_head":rectlines[:20],"rectlines_tail":rectlines[-15:],
             "text_head":positions[:20],"text_tail":positions[-12:]})
     table_words=[{"word":w[4],"rect":[round(v,2) for v in w[:4]]}
