@@ -85,6 +85,8 @@ for name,before in original_widget_objects.items():
 typew=next(w for w in fresh[0].widgets() or [] if w.field_name=="essai_cdq_type_balance")
 assert typew.field_value=="Balance de plancher"
 assert list(typew.rect)==old_rect
+print("FORM_AP_SOURCE",src.xref_object(76,compressed=False)[:1500],repr(src.xref_stream(76)[:1500]))
+print("FORM_TYPE_AFTER",typew.text_font,typew.text_fontsize,typew.text_color,typew.field_value,fresh.xref_object(typew.xref,compressed=False)[:1600])
 assert typew.text_font=="FRC" and abs(typew.text_fontsize-8.984)<.02
 assert typew.field_flags==0
 header=fresh.xref_stream(15).decode("latin-1")
