@@ -78,9 +78,17 @@ text_x=(129.47814-label_width)/2
 ap_new,n=re.subn(r"1 0 0 1 64\.739 4\.223 Tm \(\) Tj",
   f"1 0 0 1 {text_x:.5f} 4.223 Tm ({label}) Tj",appearance)
 assert n==1
+# The original /AP 76 is SHARED by multiple blank fields: never mutate it.
+# Clone its original Form XObject once, then point only type_balance to the clone.
+shared=[w.field_name for w in page0.widgets() or [] if doc.xref_get_key(w.xref,"AP/N")[1]=="76 0 R"]
+assert "essai_cdq_type_balance" in shared and len(shared)>1,shared
+new_appearance_xref=doc.get_new_xref()
+doc.update_object(new_appearance_xref,doc.xref_object(76,compressed=False))
+doc.update_stream(new_appearance_xref,ap_new.encode("latin-1"),compress=True)
+doc.xref_set_key(widget.xref,"AP/N",f"{new_appearance_xref} 0 R")
 doc.xref_set_key(widget.xref,"V",f"({label})")
 doc.xref_set_key(widget.xref,"DV",f"({label})")
-doc.update_stream(76,ap_new.encode("latin-1"),compress=True)
+assert doc.xref_stream(76).decode("latin-1")==appearance
 OUTPDF=OUT/"CDQ_Plancher_Essai_Fonctionnel_V20.pdf"
 doc.save(str(OUTPDF),garbage=0,deflate=True,clean=False)
 doc.close()
@@ -92,8 +100,8 @@ assert "INTERMÉDIAIRE" in new_text and "PLANCHER" not in new_text
 # The sole additional extracted line is the requested default form value.
 # /V and the original /AP glyphs are both discoverable by PyMuPDF's
 # text extraction; the rendered appearance must still stay in one box.
-assert new_text.count("Balance de plancher\n")==2
-assert new_text.replace("Balance de plancher\n","",2)==original_text.replace("PLANCHER","INTERMÉDIAIRE"),"Other PDF text changed"
+assert new_text.count("Balance de plancher\n")==1
+assert new_text.replace("Balance de plancher\n","",1)==original_text.replace("PLANCHER","INTERMÉDIAIRE"),"Other PDF text changed"
 after={w.field_name:fresh.xref_object(w.xref,compressed=False) for w in fresh[0].widgets() or []}
 for name,before in original_widget_objects.items():
     if name=="essai_cdq_type_balance": continue
@@ -133,7 +141,7 @@ report={
     "header_font_family":"DejaVuSans-Bold","header_font_size_native":size,
     "header_rgb":[0.07451,0.533333,0.776471],
     "type_balance_value":typew.field_value,
-    "type_balance_xref":typew.xref,"pdf_widget_count":len(after),
+    "type_balance_xref":typew.xref,"type_appearance_cloned_from":76,"type_appearance_new_xref":new_appearance_xref,"other_fields_sharing_original_appearance":len(shared)-1,"pdf_widget_count":len(after),
     "untouched_widget_objects_identical":179,
     "pixel_differences":mismatches,"header_pixels":header_pixels,"type_pixels":type_pixels,"no_pixel_change_outside_two_authorized_regions":True,
     "note":"Linux PDF structure/render verified. Direct touch behavior requires Android device validation."
