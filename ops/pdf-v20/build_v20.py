@@ -90,7 +90,12 @@ assert fresh.page_count==1 and len(list(fresh[0].widgets() or []))==180
 new_text=fresh[0].get_text(sort=False)
 assert "INTERMÉDIAIRE" in new_text and "PLANCHER" not in new_text
 # The sole additional extracted line is the requested default form value.
-assert new_text.replace("Balance de plancher\n","",1)==original_text.replace("PLANCHER","INTERMÉDIAIRE"),"Unexpected other PDF text changes"
+if new_text.replace("Balance de plancher\n","",1)!=original_text.replace("PLANCHER","INTERMÉDIAIRE"):
+    import difflib
+    print("TEXT_DIFF_AP", "\\n".join(difflib.unified_diff(
+        original_text.replace("PLANCHER","INTERMÉDIAIRE").splitlines(),new_text.splitlines(),
+        fromfile="V19_expected",tofile="V20_actual"))[:4000])
+    raise AssertionError("Unexpected other PDF text changes")
 after={w.field_name:fresh.xref_object(w.xref,compressed=False) for w in fresh[0].widgets() or []}
 for name,before in original_widget_objects.items():
     if name=="essai_cdq_type_balance": continue
