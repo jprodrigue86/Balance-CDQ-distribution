@@ -311,4 +311,35 @@ install();
  window.addEventListener('message',e=>{if(e.origin===location.origin&&e.source===frame.contentWindow&&e.data?.type==='CDQ_READER_OPENED')setTimeout(state,1200);});
  setInterval(state,2200);
 })();
+</script><script id="cdq-v18-reader-start-qa">
+(()=>{
+  if(new URLSearchParams(location.search).get('qa')!=='1')return;
+  const pre=document.createElement('pre');pre.id='cdqReaderStartQaV18';
+  pre.style.cssText='position:fixed;z-index:999999;top:0;right:0;width:min(96vw,600px);max-height:70dvh;overflow:auto;padding:8px;font:12px/1.25 monospace;background:#fff;color:#111';
+  pre.textContent='QA V18 en cours';document.body.appendChild(pre);
+  let msgEvents=[];
+  addEventListener('message',e=>{if(e.origin===location.origin&&e.source===document.getElementById('viewer')?.contentWindow){msgEvents.push(e.data?.type||'?');msgEvents=msgEvents.slice(-14);}});
+  let n=0;const id=setInterval(()=>{
+    n++;
+    try{
+      const frame=document.getElementById('viewer'),doc=frame.contentDocument;
+      const report={
+        observedSeconds:n,
+        overlayHidden:document.getElementById('overlay')?.hidden,
+        heading:document.getElementById('heading')?.textContent,
+        errorMessage:document.getElementById('message')?.textContent,
+        retryShown:!document.getElementById('retry')?.hidden,
+        childReadyState:doc?.readyState,
+        childStatus:doc?.getElementById('status')?.textContent,
+        childEmpty:doc?.getElementById('empty')?.textContent?.slice(0,160),
+        childViewerReady:doc?.getElementById('viewer')?.dataset?.ready,
+        numberOfWidgets:doc?.querySelectorAll('.annotationLayer input').length,
+        pdfName:doc?.getElementById('name')?.textContent,
+        recentMessages:msgEvents
+      };
+      pre.textContent=JSON.stringify(report,null,2);
+    }catch(e){pre.textContent='QA_ERROR '+String(e?.stack||e);}
+    if(n>=65)clearInterval(id);
+  },1000);
+})();
 </script></body></html>
