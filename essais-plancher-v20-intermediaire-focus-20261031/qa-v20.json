@@ -1,0 +1,28 @@
+{
+  "result": "passed",
+  "source_sha256": "f1a79665f0005d1ca0fd5136d0cbce9b37eec8d93bee721c8fa8071c3177f92b",
+  "pdf_sha256": "a4c242bae61deed77fc78cce02e8fe67c7c01bdfecb184a127ffede56f8030ff",
+  "pdf_bytes": 695914,
+  "page_count": 1,
+  "header_original": "PLANCHER",
+  "header_updated": "INTERMÉDIAIRE",
+  "header_font_family": "DejaVuSans-Bold",
+  "header_font_size_native": 29,
+  "header_rgb": [
+    0.07451,
+    0.533333,
+    0.776471
+  ],
+  "type_balance_value": "Balance de plancher",
+  "type_balance_xref": 75,
+  "type_appearance_cloned_from": 76,
+  "type_appearance_new_xref": 333,
+  "other_fields_sharing_original_appearance": 1,
+  "pdf_widget_count": 180,
+  "untouched_widget_objects_identical": 179,
+  "pixel_differences": 5304,
+  "header_pixels": 4283,
+  "type_pixels": 1021,
+  "no_pixel_change_outside_two_authorized_regions": true,
+  "note": "Linux PDF structure/render verified. Direct touch behavior requires Android device validation."
+}

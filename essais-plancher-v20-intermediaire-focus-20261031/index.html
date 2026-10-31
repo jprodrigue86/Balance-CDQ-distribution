@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>CDQ — Intermédiaire V20 · Visionneuse</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101820;color:#eaf3fa;font-family:Arial,sans-serif}
+#viewer{display:block;width:100%;height:100%;border:0;background:#101820}
+#overlay{position:fixed;inset:0;z-index:10;display:grid;place-items:center;padding:20px;background:#101820;text-align:center}
+#overlay[hidden]{display:none}.panel{max-width:420px}.panel h1{font-size:19px}.panel p{font-size:14px;line-height:1.5;color:#b6c6d4}
+.spinner{width:32px;height:32px;border:3px solid #486477;border-top-color:#4bcaff;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}.spinner[hidden]{display:none}
+#retry{font:600 15px Arial;padding:12px 18px;border-radius:9px;background:#007dc2;border:1px solid #49b9f0;color:#fff}#retry[hidden]{display:none}@keyframes spin{to{transform:rotate(360deg)}}
+</style></head><body>
+<div id="overlay" role="status" aria-live="polite"><div class="panel"><div class="spinner" id="spinner"></div><h1 id="heading">Ouverture de la Visionneuse CDQ</h1><p id="message">Chargement du PDF V20 — états de conformité indépendants et saisie stabilisée.</p><button id="retry" hidden>Réessayer</button></div></div>
+<iframe id="viewer" title="Visionneuse CDQ — Intermédiaire V20 corrigé" allow="fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+
+
+
+
+
+
+
+
+
+
+<script>
+(()=>{
+'use strict';
+const NAME='CDQ_Plancher_Essai_Fonctionnel_V20.pdf';
+const PATH='./CDQ_Plancher_Essai_Fonctionnel_V20.pdf';
+const READER='../essais/menu-problemes-multiples-v18/reader.html?rev=imports-v18-fix-2';
+const frame=document.getElementById('viewer'),overlay=document.getElementById('overlay'),heading=document.getElementById('heading'),msg=document.getElementById('message'),retry=document.getElementById('retry'),spinner=document.getElementById('spinner');
+let sent=false,opened=false;
+const hex=bytes=>Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');
+const digest=async bytes=>hex(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)));
+function fail(e){overlay.hidden=false;spinner.hidden=true;retry.hidden=false;heading.textContent='Impossible d’ouvrir le PDF corrigé';msg.textContent=String(e?.message||e).slice(0,260);}
+retry.addEventListener('click',()=>location.reload());
+async function load(){
+  const response=await fetch(new URL(PATH,location.href).href,{cache:'no-store',credentials:'same-origin'});
+  if(!response.ok)throw Error('PDF V20 indisponible : HTTP '+response.status);
+  const bytes=new Uint8Array(await response.arrayBuffer());
+  if(bytes.byteLength<100000||String.fromCharCode(...bytes.slice(0,5))!=='%PDF-')
+    throw Error('PDF V20 incorrect ou incomplet.');
+  return new Blob([bytes],{type:'application/pdf'});
+}
+const pdfPromise=load();pdfPromise.catch(fail);
+window.addEventListener('message',e=>{
+ if(e.origin!==location.origin||e.source!==frame.contentWindow)return;
+ const d=e.data||{};
+ if(d.type==='CDQ_READER_READY'&&!sent){
+  sent=true;
+  pdfPromise.then(blob=>frame.contentWindow.postMessage({type:'CDQ_READER_OPEN',readerRequestId:'intermediaire-native-v20-20261031',blob,name:NAME,readOnly:false},location.origin)).catch(fail);
+ }
+ if(d.type==='CDQ_READER_OPENED'){opened=true;overlay.hidden=true;document.title='CDQ — '+NAME;}
+ if(d.type==='CDQ_READER_INIT_FAILED_V2731'||d.type==='CDQ_READER_OPEN_FAILED_V2731')fail(d.error||'La Visionneuse CDQ a refusé le PDF.');
+ if(d.type==='CDQ_READER_CLOSE'&&opened){overlay.hidden=false;spinner.hidden=true;retry.hidden=false;heading.textContent='Essai terminé';msg.textContent='Le PDF a été fermé.';retry.textContent='Rouvrir le PDF';}
+});
+frame.src=new URL(READER,location.href).href;
+setTimeout(()=>{if(!opened&&retry.hidden)fail('La Visionneuse CDQ prend trop de temps à démarrer.');},45000);
+})();
+</script>
+<script>
+(()=>{
+'use strict';
+const frame=document.getElementById('viewer');
+const target='#viewer .annotationLayer section:is(.textWidgetAnnotation,.choiceWidgetAnnotation)';
+let observedDoc=null,observer=null,raf=0;
+function install(){
+ let d;try{d=frame.contentDocument;}catch(_){return;}
+ if(!d?.head)return;
+ if(observedDoc!==d){observer?.disconnect();observedDoc=d;observer=null;}
+ if(!d.getElementById('cdq-one-border-owner-v7')){
+  const s=d.createElement('style');
+  s.id='cdq-one-border-owner-v7';
+  s.textContent=[
+   '/* V7: une seule bordure; aucune couche supplémentaire. */',
+   '#viewer .annotationLayer section.cdq-border-owner-v7.hasOwnCanvas:not(.sandboxModified){border:0!important;box-shadow:none!important;outline:0!important;}',
+   '#viewer .annotationLayer section.cdq-border-owner-v7:is(:not(.hasOwnCanvas),.sandboxModified){border:calc(0.6px * var(--total-scale-factor, 1)) solid rgb(110,184,201)!important;border-radius:0!important;box-shadow:none!important;outline:0!important;}',
+   '#viewer .annotationLayer section.cdq-border-owner-v7 :is(input,textarea,select){border:0!important;outline:0!important;box-shadow:none!important;background-image:none!important;}'
+  ].join('\n');
+  d.head.append(s);
+ }
+ function mark(){
+   raf=0;
+   const all=[...d.querySelectorAll(target)];
+   for(const section of all){
+     if(section.classList.contains('cdq-border-owner-v7'))continue;
+     const st=d.defaultView.getComputedStyle(section);
+     if(parseFloat(st.borderTopWidth)>0 &&
+       (section.style.border.includes('110, 184, 201')||st.borderTopColor==='rgb(110, 184, 201)'))
+        section.classList.add('cdq-border-owner-v7');
+   }
+   if(new URLSearchParams(location.search).has('qa')){
+    const names={
+      saisie:'essai_cdq_charge_point_1_charge_contrainte',
+      tolerance:'essai_cdq_charge_point_1_tolerance',
+      erreur:'essai_cdq_charge_point_1_erreur_avant',
+      commentaire:'essai_cdq_commentaire'
+    };
+    const samples=Object.fromEntries(Object.entries(names).map(([label,name])=>{
+      const el=d.querySelector('[name="'+name+'"]'),sect=el?.closest('section');
+      const style=sect?d.defaultView.getComputedStyle(sect):null;
+      const canvas=sect?.querySelector('canvas');
+      return [label,{found:!!el,name,sectionClass:sect?.className,
+        disabled:el?.disabled,readOnly:el?.readOnly,
+        sectionBorder:style?.border,sectionBorderWidth:style?.borderWidth,
+        canvasCount:sect?.querySelectorAll('canvas').length||0,
+        canvasDisplay:canvas?d.defaultView.getComputedStyle(canvas).display:null,
+        inputDisplay:el?d.defaultView.getComputedStyle(el).display:null
+      }];
+    }));
+    const marked=all.filter(x=>x.classList.contains('cdq-border-owner-v7'));
+    const qa={ready:d.getElementById('viewer')?.dataset.ready,marked:marked.length,
+      hasOwnCanvas:marked.filter(x=>x.classList.contains('hasOwnCanvas')).length,
+      noCanvas:marked.filter(x=>!x.classList.contains('hasOwnCanvas')).length,samples};
+    const panel=document.getElementById('v7QaPanel')||document.createElement('pre');
+    panel.id='v7QaPanel';
+    panel.style.cssText='position:fixed;z-index:99999;top:0;right:0;max-height:70dvh;overflow:auto;max-width:90vw;background:#fff;color:#000;padding:10px;font:12px/1.3 monospace';
+    panel.textContent=JSON.stringify(qa,null,2);
+    document.body.append(panel);
+   }
+ }
+ function schedule(){if(!raf)raf=requestAnimationFrame(mark);}
+ schedule();
+ if(!observer){observer=new MutationObserver(schedule);observer.observe(d.getElementById('viewer')||d.body,{childList:true,subtree:true});}
+}
+frame.addEventListener('load',install);
+window.addEventListener('message',e=>{
+ if(e.origin===location.origin&&e.source===frame.contentWindow &&
+ (e.data?.type==='CDQ_READER_READY'||e.data?.type==='CDQ_READER_OPENED'))install();
+});
+install();
+})();
+</script>
+<script id="cdq-nav-v10">
+(()=>{
+'use strict';
+const frame=document.getElementById('viewer');let installed=null,last=null;
+function rank(name){
+ let m=/^essai_cdq_charge_point_(\d+)_(charge_utilisee|charge_contrainte|avant_correction|apres_correction)$/.exec(name);
+ if(m)return ['charge_utilisee','charge_contrainte','avant_correction','apres_correction'].indexOf(m[2])*100+Number(m[1]);
+ if(name==='essai_cdq_charge_excentricite')return 900;
+ m=/^essai_cdq_excentricite_(avant|apres)_(arriere_gauche|avant_gauche|arriere_droit|avant_droit)$/.exec(name);
+ return m?901+(m[1]==='apres'?4:0)+['arriere_gauche','avant_gauche','arriere_droit','avant_droit'].indexOf(m[2]):null;
+}
+function ordered(d){
+ const v=d.getElementById('viewer');if(!v)return [];
+ const f=[...v.querySelectorAll('.textWidgetAnnotation :is(input,textarea),.choiceWidgetAnnotation select,button[data-cdq-choice]')].filter(x=>
+   !!x.name&&!x.disabled&&!x.readOnly&&!x.dataset.cdqChoiceSource&&x.getClientRects().length>0
+   &&d.defaultView.getComputedStyle(x).visibility!=='hidden'&&
+   (x.dataset.cdqNavIndex!==undefined||x.tabIndex>=0));
+ const q=f.map((el,i)=>({el,i,r:rank(el.name),g:el.getBoundingClientRect()}));
+ q.sort((a,b)=>{const tol=Math.max(3,Math.min(a.g.height,b.g.height)*.45),dy=a.g.top-b.g.top;
+   if(Math.abs(dy)>tol)return dy;return Math.abs(a.g.left-b.g.left)>1?a.g.left-b.g.left:a.i-b.i;});
+ const first=q.filter(x=>x.r!==null&&x.r<900).sort((a,b)=>a.r-b.r);
+ const second=q.filter(x=>x.r!==null&&x.r>=900).sort((a,b)=>a.r-b.r);
+ const out=[];let has1=false,has2=false;
+ for(const x of q){
+   if(x.r!==null&&x.r<900){if(!has1){out.push(...first.map(y=>y.el));has1=true;}}
+   else if(x.r!==null){if(!has2){out.push(...second.map(y=>y.el));has2=true;}}
+   else out.push(x.el);
+ }
+ return [...new Set(out)];
+}
+function go(d,delta,active){
+ if(d.getElementById('choiceDialog')?.open)return false;
+ const fields=ordered(d),activeIndex=fields.indexOf(active),i=activeIndex>=0?activeIndex:fields.indexOf(last),target=fields[i+delta];
+ if(i<0||!target)return false;
+ last=target;target.focus({preventScroll:true});
+ const box=d.getElementById('container'),r=target.getBoundingClientRect(),b=box.getBoundingClientRect();
+ if(r.top<b.top+40)box.scrollTop+=r.top-b.top-60;
+ else if(r.bottom>b.bottom-30)box.scrollTop+=r.bottom-b.bottom+60;
+ if(r.left<b.left+15)box.scrollLeft+=r.left-b.left-25;
+ else if(r.right>b.right-15)box.scrollLeft+=r.right-b.right+25;
+ if(target.dataset.cdqChoice==='true'&&target.tagName==='BUTTON')target.click();
+ return true;
+}
+function audit(d){
+ if(!new URLSearchParams(location.search).has('qa'))return;
+ const v=d.getElementById('viewer');
+ const sample={};for(const name of ['essai_cdq_client_technicien','essai_cdq_unite','essai_cdq_legal_commerce','essai_cdq_frequence_etalonnage','essai_cdq_probleme_constate','essai_cdq_charge_point_1_charge_contrainte','essai_cdq_bloc3_red']){
+  const el=v.querySelector('[name="'+name+'"]');sample[name]={found:!!el,type:el?.tagName,value:el?.value,options:el?.tagName==='SELECT'?[...el.options].map(x=>x.value):null};
+ }
+ const obj={ready:v.dataset.ready,menus:[...v.querySelectorAll('button.cdq-choice-field')].map(x=>x.name),navigation:ordered(d).map(x=>x.name),sample};
+ const p=document.getElementById('v10qa')||document.createElement('pre');p.id='v10qa';
+ p.style.cssText='position:fixed;right:0;bottom:0;z-index:99999;width:min(90vw,620px);max-height:55dvh;overflow:auto;padding:12px;background:white;color:black;white-space:pre-wrap;font:11px monospace';
+ p.textContent=JSON.stringify(obj,null,2);document.body.append(p);
+}
+function install(){
+ let d;try{d=frame.contentDocument;}catch(_){return}
+ if(!d?.getElementById('viewer')||installed===d)return;
+ installed=d;const v=d.getElementById('viewer');
+ v.addEventListener('focusin',e=>{if(e.target.name)last=e.target},true);
+ d.addEventListener('click',e=>{
+  const btn=e.target.closest?.('#nextField,#previousField');if(!btn||btn.disabled)return;
+  if(go(d,btn.id==='nextField'?1:-1,d.activeElement?.name?d.activeElement:last)){
+   e.preventDefault();e.stopImmediatePropagation();
+  }
+ },true);
+ d.addEventListener('keydown',e=>{
+  if(e.key!=='Tab'||e.altKey||e.ctrlKey||e.metaKey||e.isComposing||!v.contains(e.target)||!e.target.name)return;
+  if(go(d,e.shiftKey?-1:1,e.target)){e.preventDefault();e.stopImmediatePropagation();}
+ },true);
+ if(new URLSearchParams(location.search).has('qa'))setInterval(()=>audit(d),1800);
+}
+frame.addEventListener('load',install);
+window.addEventListener('message',e=>{if(e.origin===location.origin&&e.source===frame.contentWindow&&(e.data?.type==='CDQ_READER_READY'||e.data?.type==='CDQ_READER_OPENED'))setTimeout(install,200);});
+install();
+})();
+</script>
+
+<script id="cdq-autofill-neutral-v14">
+(()=>{
+'use strict';
+const frame=document.getElementById('viewer');
+function install(){
+ let d;try{d=frame.contentDocument;}catch(_){return;}
+ if(!d?.head||d.getElementById('cdq-autofill-neutral-v14'))return;
+ const style=d.createElement('style');
+ style.id='cdq-autofill-neutral-v14';
+ style.textContent=[
+  '/* Les saisies automatiques de Chrome/Samsung restent blanches, comme les autres champs. */',
+  '#viewer .annotationLayer .textWidgetAnnotation :is(input,textarea):is(:-webkit-autofill,:autofill),',
+  '#viewer .annotationLayer .choiceWidgetAnnotation select:is(:-webkit-autofill,:autofill){',
+  '  background-color:#fff!important;',
+  '  background-image:none!important;',
+  '  -webkit-box-shadow:inset 0 0 0 1000px #fff!important;',
+  '  box-shadow:inset 0 0 0 1000px #fff!important;',
+  '  -webkit-text-fill-color:#000!important;',
+  '  color:#000!important;',
+  '  caret-color:#000!important;',
+  '  transition:background-color 9999s ease-in-out 0s!important;',
+  '}'
+ ].join('\n');
+ d.head.append(style);
+}
+frame.addEventListener('load',install);
+window.addEventListener('message',e=>{
+ if(e.origin===location.origin&&e.source===frame.contentWindow
+   &&(e.data?.type==='CDQ_READER_READY'||e.data?.type==='CDQ_READER_OPENED'))install();
+});
+install();
+})();
+</script>
+<script id="cdq-v16-diagnostics">
+(()=>{
+ if(new URLSearchParams(location.search).get('qa')!=='1')return;
+ const frame=document.getElementById('viewer'),panel=document.createElement('pre');
+ panel.id='cdqV16Qa';panel.style.cssText='position:fixed;top:0;right:0;max-width:90vw;max-height:70dvh;overflow:auto;padding:12px;background:#fff;color:#000;z-index:999999;white-space:pre-wrap;font:11px monospace';
+ panel.textContent='En attente du PDF V16';document.body.append(panel);
+ function state(){
+   try{
+    const d=frame.contentDocument,v=d?.getElementById('viewer');
+    const names=['essai_cdq_echelon','essai_cdq_charge_excentricite','essai_cdq_tolerance_excentricite','essai_cdq_excentricite_avant_arriere_gauche'];
+    const fields=Object.fromEntries(names.map(n=>{
+      const e=v?.querySelector('[name="'+n+'"]'),p=e?.closest('section');
+      return [n,{found:!!e,value:e?.value,disabled:e?.disabled,readOnly:e?.readOnly,parentClass:p?.className,canvasCount:p?.querySelectorAll('canvas').length,annotationLayerReady:!!v?.querySelector('.annotationLayer')}];
+    }));
+    panel.textContent=JSON.stringify({ready:v?.dataset.ready,fields},null,2);
+   }catch(e){panel.textContent='DIAGNOSTIC ERROR '+e.stack;}
+ }
+ window.addEventListener('message',e=>{if(e.origin===location.origin&&e.source===frame.contentWindow&&e.data?.type==='CDQ_READER_OPENED')setTimeout(state,1200);});
+ setInterval(state,2200);
+})();
+</script><script id="cdq-v18-reader-start-qa">
+(()=>{
+  if(new URLSearchParams(location.search).get('qa')!=='1')return;
+  const pre=document.createElement('pre');pre.id='cdqReaderStartQaV18';
+  pre.style.cssText='position:fixed;z-index:999999;top:0;right:0;width:min(96vw,600px);max-height:70dvh;overflow:auto;padding:8px;font:12px/1.25 monospace;background:#fff;color:#111';
+  pre.textContent='QA V18 en cours';document.body.appendChild(pre);
+  let msgEvents=[];
+  addEventListener('message',e=>{if(e.origin===location.origin&&e.source===document.getElementById('viewer')?.contentWindow){msgEvents.push(e.data?.type||'?');msgEvents=msgEvents.slice(-14);}});
+  let n=0;const id=setInterval(()=>{
+    n++;
+    try{
+      const frame=document.getElementById('viewer'),doc=frame.contentDocument;
+      const report={
+        observedSeconds:n,
+        overlayHidden:document.getElementById('overlay')?.hidden,
+        heading:document.getElementById('heading')?.textContent,
+        errorMessage:document.getElementById('message')?.textContent,
+        retryShown:!document.getElementById('retry')?.hidden,
+        childReadyState:doc?.readyState,
+        childStatus:doc?.getElementById('status')?.textContent,
+        childEmpty:doc?.getElementById('empty')?.textContent?.slice(0,160),
+        childViewerReady:doc?.getElementById('viewer')?.dataset?.ready,
+        numberOfWidgets:doc?.querySelectorAll('.annotationLayer input').length,
+        pdfName:doc?.getElementById('name')?.textContent,
+        recentMessages:msgEvents
+      };
+      pre.textContent=JSON.stringify(report,null,2);
+    }catch(e){pre.textContent='QA_ERROR '+String(e?.stack||e);}
+    if(n>=65)clearInterval(id);
+  },1000);
+})();
+</script>
+<script id="cdq-v20-direct-tap-restore">
+/* V20 trial only: colored, automatic status-indicator checkboxes overlap
+   the real editable Before/After text widgets; never let them capture taps.
+   The visual red/green indicator keeps its original PDF appearance/calculations. */
+(()=>{
+ 'use strict';
+ const frame=document.getElementById('viewer');
+ const decorative=/^essai_cdq_coin_charge_point_[1-6]_(?:avant|apres)_correction_(?:green|red)$/;
+ let observed=null,observer=null,queued=false,count=0;
+ function mark(d){
+   queued=false;
+   const root=d.getElementById('viewer');if(!root)return;
+   for(const sec of root.querySelectorAll('.annotationLayer section.buttonWidgetAnnotation')){
+     const input=sec.querySelector('input[name]');
+     if(!input||!decorative.test(input.name))continue;
+     if(sec.dataset.cdqDecorativeTapShieldV20==='1')continue;
+     sec.style.setProperty('pointer-events','none','important');
+     for(const child of sec.querySelectorAll('*'))child.style?.setProperty('pointer-events','none','important');
+     sec.dataset.cdqDecorativeTapShieldV20='1';count++;
+   }
+ }
+ function attach(){
+   let d;try{d=frame.contentDocument;}catch(_){return;}
+   if(!d?.head)return;
+   if(d!==observed){observer?.disconnect();observed=d;observer=null;count=0;}
+   if(!d.getElementById('cdq-v20-decorative-tap-style')){
+     const style=d.createElement('style');
+     style.id='cdq-v20-decorative-tap-style';
+     style.textContent=[
+       '#viewer .annotationLayer section.buttonWidgetAnnotation:has(input[name^="essai_cdq_coin_charge_point_"]){pointer-events:none!important}',
+       '#viewer .annotationLayer section.buttonWidgetAnnotation:has(input[name^="essai_cdq_coin_charge_point_"]) *{pointer-events:none!important}'
+     ].join('\n');
+     d.head.append(style);
+   }
+   if(!observer){
+     const root=d.getElementById('viewer')||d.body;
+     observer=new MutationObserver(()=>{
+       if(queued)return;queued=true;d.defaultView.requestAnimationFrame(()=>mark(d));
+     });
+     observer.observe(root,{subtree:true,childList:true});
+   }
+   mark(d);
+ }
+ window.cdqV20TapProbe=()=>{
+   const d=frame.contentDocument;
+   const input=d?.querySelector('[name="essai_cdq_charge_point_1_avant_correction"]');
+   const r=input?.getBoundingClientRect();
+   const el=r?d.elementFromPoint(r.left+r.width/2,r.top+r.height/2):null;
+   return {ready:d?.getElementById('viewer')?.dataset.ready,focusTarget:input?.name,
+     inputDisabled:input?.disabled,inputReadOnly:input?.readOnly,
+     topName:el?.name,topTag:el?.tagName,topIsInput:el===input,
+     disabledDecorationCount:count};
+ };
+ frame.addEventListener('load',attach);
+ addEventListener('message',e=>{
+   if(e.origin===location.origin&&e.source===frame.contentWindow &&
+      (e.data?.type==='CDQ_READER_READY'||e.data?.type==='CDQ_READER_OPENED'))attach();
+ });
+ attach();
+})();
+</script>
+</body></html>
