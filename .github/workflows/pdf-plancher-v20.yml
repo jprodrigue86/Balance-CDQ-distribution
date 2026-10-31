@@ -17,5 +17,15 @@ jobs:
         with: {python-version: '3.11'}
       - name: PDF inspection package
         run: python -m pip install --disable-pip-version-check pymupdf==1.26.7
-      - name: Inspect original V19 source and header
-        run: python ops/pdf-v20/probe.py
+      - name: Verify PDF V20 original glyph replacement, field and unaffected pixels
+        run: python ops/pdf-v20/build_v20.py
+      - name: Preserve tested trial PDF (not the official app)
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add essais-plancher-v20-intermediaire-focus-20261031/CDQ_Plancher_Essai_Fonctionnel_V20.pdf essais-plancher-v20-intermediaire-focus-20261031/qa-v20.json
+          if ! git diff --cached --quiet; then
+            git commit -m "[skip ci] Preserve V20 isolated PDF with verified header, type and widgets"
+            git push origin HEAD:work/pdf-plancher-v20-entete-focus-20261031
+          fi
