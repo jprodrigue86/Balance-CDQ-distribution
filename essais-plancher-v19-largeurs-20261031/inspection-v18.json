@@ -1,0 +1,775 @@
+{
+  "source": {
+    "v18_final_sha256": "9676a3eb7d83a73f814dd480c897ce7a248172aeb50a142d8221ed5f7e130dc0",
+    "bytes": 620596,
+    "expected_sha": "9676a3eb7d83a73f814dd480c897ce7a248172aeb50a142d8221ed5f7e130dc0"
+  },
+  "page": {
+    "width": 612.0,
+    "height": 792.0,
+    "total_widgets": 180
+  },
+  "charge_fields": [
+    {
+      "name": "essai_cdq_charge_point_1_charge_utilisee",
+      "rect": [
+        47.4753,
+        381.3333,
+        117.3935,
+        396.4314
+      ],
+      "xref": 137,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_1_charge_contrainte",
+      "rect": [
+        119.9831,
+        381.3333,
+        193.354,
+        396.4314
+      ],
+      "xref": 139,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_1_tolerance",
+      "rect": [
+        195.9436,
+        381.3333,
+        260.6826,
+        396.4314
+      ],
+      "xref": 141,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_1_avant_correction",
+      "rect": [
+        264.1354,
+        381.3333,
+        346.1382,
+        396.4314
+      ],
+      "xref": 143,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_1_erreur_avant",
+      "rect": [
+        349.591,
+        381.3333,
+        425.5515,
+        396.4314
+      ],
+      "xref": 145,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_1_avant_correction_green",
+      "rect": [
+        264.1354,
+        381.3333,
+        346.1382,
+        396.4314
+      ],
+      "xref": 147,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_1_avant_correction_red",
+      "rect": [
+        264.1354,
+        381.3333,
+        346.1382,
+        396.4314
+      ],
+      "xref": 150,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_charge_point_1_apres_correction",
+      "rect": [
+        429.0042,
+        381.3333,
+        517.9125,
+        396.4314
+      ],
+      "xref": 152,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_1_erreur_apres",
+      "rect": [
+        521.3653,
+        381.3333,
+        596.4626,
+        396.4314
+      ],
+      "xref": 154,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_1_apres_correction_green",
+      "rect": [
+        429.0042,
+        381.3333,
+        517.9125,
+        396.4314
+      ],
+      "xref": 156,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_1_apres_correction_red",
+      "rect": [
+        429.0042,
+        381.3333,
+        517.9125,
+        396.4314
+      ],
+      "xref": 159,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_charge_point_2_charge_utilisee",
+      "rect": [
+        47.4753,
+        397.898,
+        117.3935,
+        412.9961
+      ],
+      "xref": 161,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_2_charge_contrainte",
+      "rect": [
+        119.9831,
+        397.898,
+        193.354,
+        412.9961
+      ],
+      "xref": 162,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_2_tolerance",
+      "rect": [
+        195.9436,
+        397.898,
+        260.6826,
+        412.9961
+      ],
+      "xref": 163,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_2_avant_correction",
+      "rect": [
+        264.1354,
+        397.898,
+        346.1382,
+        412.9961
+      ],
+      "xref": 164,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_2_erreur_avant",
+      "rect": [
+        349.591,
+        397.898,
+        425.5515,
+        412.9961
+      ],
+      "xref": 165,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_2_avant_correction_green",
+      "rect": [
+        264.1354,
+        397.898,
+        346.1382,
+        412.9961
+      ],
+      "xref": 166,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_2_avant_correction_red",
+      "rect": [
+        264.1354,
+        397.898,
+        346.1382,
+        412.9961
+      ],
+      "xref": 167,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_charge_point_2_apres_correction",
+      "rect": [
+        429.0042,
+        397.898,
+        517.9125,
+        412.9961
+      ],
+      "xref": 168,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_2_erreur_apres",
+      "rect": [
+        521.3653,
+        397.898,
+        596.4626,
+        412.9961
+      ],
+      "xref": 169,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_2_apres_correction_green",
+      "rect": [
+        429.0042,
+        397.898,
+        517.9125,
+        412.9961
+      ],
+      "xref": 170,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_2_apres_correction_red",
+      "rect": [
+        429.0042,
+        397.898,
+        517.9125,
+        412.9961
+      ],
+      "xref": 171,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_charge_point_3_charge_utilisee",
+      "rect": [
+        47.4753,
+        414.4627,
+        117.3935,
+        429.5608
+      ],
+      "xref": 172,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_3_charge_contrainte",
+      "rect": [
+        119.9831,
+        414.4627,
+        193.354,
+        429.5608
+      ],
+      "xref": 173,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_3_tolerance",
+      "rect": [
+        195.9436,
+        414.4627,
+        260.6826,
+        429.5608
+      ],
+      "xref": 174,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_3_avant_correction",
+      "rect": [
+        264.1354,
+        414.4627,
+        346.1382,
+        429.5608
+      ],
+      "xref": 175,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_3_erreur_avant",
+      "rect": [
+        349.591,
+        414.4627,
+        425.5515,
+        429.5608
+      ],
+      "xref": 176,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_3_avant_correction_green",
+      "rect": [
+        264.1354,
+        414.4627,
+        346.1382,
+        429.5608
+      ],
+      "xref": 177,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_3_avant_correction_red",
+      "rect": [
+        264.1354,
+        414.4627,
+        346.1382,
+        429.5608
+      ],
+      "xref": 178,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_charge_point_3_apres_correction",
+      "rect": [
+        429.0042,
+        414.4627,
+        517.9125,
+        429.5608
+      ],
+      "xref": 179,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_3_erreur_apres",
+      "rect": [
+        521.3653,
+        414.4627,
+        596.4626,
+        429.5608
+      ],
+      "xref": 180,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_3_apres_correction_green",
+      "rect": [
+        429.0042,
+        414.4627,
+        517.9125,
+        429.5608
+      ],
+      "xref": 181,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_3_apres_correction_red",
+      "rect": [
+        429.0042,
+        414.4627,
+        517.9125,
+        429.5608
+      ],
+      "xref": 182,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_charge_point_4_charge_utilisee",
+      "rect": [
+        47.4753,
+        431.0275,
+        117.3935,
+        446.1255
+      ],
+      "xref": 183,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_4_charge_contrainte",
+      "rect": [
+        119.9831,
+        431.0275,
+        193.354,
+        446.1255
+      ],
+      "xref": 184,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_4_tolerance",
+      "rect": [
+        195.9436,
+        431.0275,
+        260.6826,
+        446.1255
+      ],
+      "xref": 185,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_4_avant_correction",
+      "rect": [
+        264.1354,
+        431.0275,
+        346.1382,
+        446.1255
+      ],
+      "xref": 186,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_4_erreur_avant",
+      "rect": [
+        349.591,
+        431.0275,
+        425.5515,
+        446.1255
+      ],
+      "xref": 187,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_4_avant_correction_green",
+      "rect": [
+        264.1354,
+        431.0275,
+        346.1382,
+        446.1255
+      ],
+      "xref": 188,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_4_avant_correction_red",
+      "rect": [
+        264.1354,
+        431.0275,
+        346.1382,
+        446.1255
+      ],
+      "xref": 189,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_charge_point_4_apres_correction",
+      "rect": [
+        429.0042,
+        431.0275,
+        517.9125,
+        446.1255
+      ],
+      "xref": 190,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_4_erreur_apres",
+      "rect": [
+        521.3653,
+        431.0275,
+        596.4626,
+        446.1255
+      ],
+      "xref": 191,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_4_apres_correction_green",
+      "rect": [
+        429.0042,
+        431.0275,
+        517.9125,
+        446.1255
+      ],
+      "xref": 192,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_4_apres_correction_red",
+      "rect": [
+        429.0042,
+        431.0275,
+        517.9125,
+        446.1255
+      ],
+      "xref": 193,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_charge_point_5_charge_utilisee",
+      "rect": [
+        47.4753,
+        447.5922,
+        117.3935,
+        462.6902
+      ],
+      "xref": 194,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_5_charge_contrainte",
+      "rect": [
+        119.9831,
+        447.5922,
+        193.354,
+        462.6902
+      ],
+      "xref": 195,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_5_tolerance",
+      "rect": [
+        195.9436,
+        447.5922,
+        260.6826,
+        462.6902
+      ],
+      "xref": 196,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_5_avant_correction",
+      "rect": [
+        264.1354,
+        447.5922,
+        346.1382,
+        462.6902
+      ],
+      "xref": 197,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_5_erreur_avant",
+      "rect": [
+        349.591,
+        447.5922,
+        425.5515,
+        462.6902
+      ],
+      "xref": 198,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_5_avant_correction_green",
+      "rect": [
+        264.1354,
+        447.5922,
+        346.1382,
+        462.6902
+      ],
+      "xref": 199,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_5_avant_correction_red",
+      "rect": [
+        264.1354,
+        447.5922,
+        346.1382,
+        462.6902
+      ],
+      "xref": 200,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_charge_point_5_apres_correction",
+      "rect": [
+        429.0042,
+        447.5922,
+        517.9125,
+        462.6902
+      ],
+      "xref": 201,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_5_erreur_apres",
+      "rect": [
+        521.3653,
+        447.5922,
+        596.4626,
+        462.6902
+      ],
+      "xref": 202,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_5_apres_correction_green",
+      "rect": [
+        429.0042,
+        447.5922,
+        517.9125,
+        462.6902
+      ],
+      "xref": 203,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_5_apres_correction_red",
+      "rect": [
+        429.0042,
+        447.5922,
+        517.9125,
+        462.6902
+      ],
+      "xref": 204,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_charge_point_6_charge_utilisee",
+      "rect": [
+        47.4753,
+        464.1569,
+        117.3935,
+        479.2549
+      ],
+      "xref": 205,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_6_charge_contrainte",
+      "rect": [
+        119.9831,
+        464.1569,
+        193.354,
+        479.2549
+      ],
+      "xref": 206,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_6_tolerance",
+      "rect": [
+        195.9436,
+        464.1569,
+        260.6826,
+        479.2549
+      ],
+      "xref": 207,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_6_avant_correction",
+      "rect": [
+        264.1354,
+        464.1569,
+        346.1382,
+        479.2549
+      ],
+      "xref": 208,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_6_erreur_avant",
+      "rect": [
+        349.591,
+        464.1569,
+        425.5515,
+        479.2549
+      ],
+      "xref": 209,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_6_avant_correction_green",
+      "rect": [
+        264.1354,
+        464.1569,
+        346.1382,
+        479.2549
+      ],
+      "xref": 210,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_6_avant_correction_red",
+      "rect": [
+        264.1354,
+        464.1569,
+        346.1382,
+        479.2549
+      ],
+      "xref": 211,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_charge_point_6_apres_correction",
+      "rect": [
+        429.0042,
+        464.1569,
+        517.9125,
+        479.2549
+      ],
+      "xref": 212,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_charge_point_6_erreur_apres",
+      "rect": [
+        521.3653,
+        464.1569,
+        596.4626,
+        479.2549
+      ],
+      "xref": 213,
+      "type": "Text"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_6_apres_correction_green",
+      "rect": [
+        429.0042,
+        464.1569,
+        517.9125,
+        479.2549
+      ],
+      "xref": 214,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_coin_charge_point_6_apres_correction_red",
+      "rect": [
+        429.0042,
+        464.1569,
+        517.9125,
+        479.2549
+      ],
+      "xref": 215,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_bloc3_green",
+      "rect": [
+        454.0367,
+        334.7451,
+        597.3258,
+        356.3137
+      ],
+      "xref": 267,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_bloc3_red",
+      "rect": [
+        454.0367,
+        334.7451,
+        597.3258,
+        356.3137
+      ],
+      "xref": 270,
+      "type": "CheckBox"
+    },
+    {
+      "name": "essai_cdq_bloc3_gray",
+      "rect": [
+        454.0367,
+        334.7451,
+        597.3258,
+        356.3137
+      ],
+      "xref": 272,
+      "type": "CheckBox"
+    }
+  ],
+  "streams": [],
+  "contents_total": 5
+}
