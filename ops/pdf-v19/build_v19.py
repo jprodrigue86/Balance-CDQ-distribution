@@ -20,6 +20,10 @@ HERE = Path(__file__).resolve().parent
 source, _specs = runpy.run_path(str(HERE / "probe_v18.py"))["reconstruct"]()
 assert hashlib.sha256(source).hexdigest() == "9676a3eb7d83a73f814dd480c897ce7a248172aeb50a142d8221ed5f7e130dc0"
 
+baseline = fitz.open(stream=source, filetype="pdf")
+assert baseline.page_count == 1
+before_text = baseline[0].get_text(sort=False)
+before_pix = baseline[0].get_pixmap(matrix=fitz.Matrix(1.5,1.5),alpha=False)
 doc = fitz.open(stream=source, filetype="pdf")
 assert doc.page_count == 1
 page = doc[0]
@@ -104,8 +108,8 @@ for i,s in enumerate(lines):
     m=RE_RECT.fullmatch(s)
     if not m:continue
     x,y,w,h=map(float,m.group(2,3,4,5))
-    if abs(x-old_cols[0][0])<0.001 and abs(w-(old_cols[0][1]-old_cols[0][0]))<0.001 and
-       abs(h-15.09804)<0.01 and 312<y<397:
+    if (abs(x-old_cols[0][0])<0.001 and abs(w-(old_cols[0][1]-old_cols[0][0]))<0.001 and
+        abs(h-15.09804)<0.01 and 312<y<397):
         point_lines.append(i)
 assert len(point_lines)==6,point_lines
 for i in point_lines:
@@ -161,8 +165,6 @@ assert len(moved)==66,len(moved)
 assert sum(1 for k in moved if "coin_charge" in k)==24
 assert sum(1 for k in moved if "coin_charge" not in k)==42
 
-before_text=page.get_text(sort=False)
-before_pix=page.get_pixmap(matrix=fitz.Matrix(1.5,1.5),alpha=False)
 path=OUT/"CDQ_Plancher_Essai_Fonctionnel_V19.pdf"
 doc.save(str(path),garbage=0,deflate=True,clean=False)
 doc.close()
