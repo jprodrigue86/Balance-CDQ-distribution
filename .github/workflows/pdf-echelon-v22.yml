@@ -1,0 +1,17 @@
+name: Intermediaire V22 - echelon decimal test isole
+on:
+  push:
+    branches: [work/pdf-v22-echelon-decimal-20261031]
+    paths:
+      - ops/pdf-v22/**
+      - essais/menu-problemes-multiples-v22/**
+      - .github/workflows/pdf-echelon-v22.yml
+permissions:
+  contents: read
+jobs:
+  decimal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test reader decimal input and native PDF tolerance
+        run: node ops/pdf-v22/test_echelon.mjs
