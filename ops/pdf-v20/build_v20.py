@@ -58,7 +58,8 @@ doc.update_stream(15,newhead.encode("latin-1"),compress=True)
 doc.delete_page(-1)
 assert doc.page_count==1
 
-widget=next(w for w in doc[0].widgets() or [] if w.field_name=="essai_cdq_type_balance")
+page0=doc.load_page(0)  # keep page alive while updating its widget
+widget=next(w for w in page0.widgets() or [] if w.field_name=="essai_cdq_type_balance")
 assert not str(widget.field_value or "").strip()
 assert not(widget.field_flags&1)
 old_rect=list(widget.rect)
