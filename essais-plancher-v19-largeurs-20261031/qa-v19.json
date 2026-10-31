@@ -1,0 +1,29 @@
+{
+  "result": "passed",
+  "base_pdf": "CDQ_Plancher_Essai_Fonctionnel_V18.pdf",
+  "base_sha256": "9676a3eb7d83a73f814dd480c897ce7a248172aeb50a142d8221ed5f7e130dc0",
+  "updated_pdf": "CDQ_Plancher_Essai_Fonctionnel_V19.pdf",
+  "updated_sha256": "f1a79665f0005d1ca0fd5136d0cbce9b37eec8d93bee721c8fa8071c3177f92b",
+  "updated_size_bytes": 318402,
+  "page_count": 1,
+  "widget_count_before": 180,
+  "widget_count_after": 180,
+  "widgets_rect_resized": 66,
+  "native_rectangles_resized": 14,
+  "header_text_labels_recentered": 12,
+  "point_labels_recentered": 6,
+  "block": "Bloc 3 - Essai de charge centrale",
+  "columns": 8,
+  "rows": 6,
+  "new_equal_width_pdf_pt": 70.09855,
+  "equal_gutters_pdf_pt": 3.0,
+  "outer_bounds_pdf_pt": [
+    14.67419,
+    596.46262
+  ],
+  "pixel_identical_outside_block3": true,
+  "form_widgets_preserved": true,
+  "widget_actions_appearances_preserved": true,
+  "form_text_preserved": true,
+  "note": "GitHub Linux PDF validation; Android CDQ reader still needs real user verification."
+}
