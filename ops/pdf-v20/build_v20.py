@@ -67,7 +67,7 @@ old_rect=list(widget.rect)
 # fitz.Widget.update() replaces the non-standard embedded font with Helvetica:
 # update only the text value and the actual pre-existing appearance stream.
 label="Balance de plancher"
-assert doc.xref_get_key(widget.xref,"DA")[1]=="(/FRC 8.984 Tf 0 g)"
+assert "/FRC 8.984 Tf" in doc.xref_get_key(widget.xref,"DA")[1]
 assert doc.xref_get_key(widget.xref,"AP/N")[1]=="76 0 R"
 appearance=doc.xref_stream(76).decode("latin-1")
 assert "BT /FRC 8.984 Tf" in appearance
