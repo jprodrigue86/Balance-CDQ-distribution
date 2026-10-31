@@ -21,7 +21,7 @@ jobs:
       - name: Install PDF inspector
         run: python -m pip install --disable-pip-version-check pymupdf==1.26.7
       - name: Inspect latest trial without changing approved source
-        run: python ops/pdf-v19/inspect.py
+        run: python ops/pdf-v19/probe_v18.py
       - name: Save compact inspection evidence
         shell: bash
         run: |
