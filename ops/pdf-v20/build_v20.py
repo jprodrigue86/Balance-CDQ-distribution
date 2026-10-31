@@ -92,8 +92,8 @@ assert "INTERMÉDIAIRE" in new_text and "PLANCHER" not in new_text
 # The sole additional extracted line is the requested default form value.
 # /V and the original /AP glyphs are both discoverable by PyMuPDF's
 # text extraction; the rendered appearance must still stay in one box.
-assert new_text.count("Balance de plancher\\n")==2
-assert new_text.replace("Balance de plancher\\n","",2)==original_text.replace("PLANCHER","INTERMÉDIAIRE"),"Other PDF text changed"
+assert new_text.count("Balance de plancher\n")==2
+assert new_text.replace("Balance de plancher\n","",2)==original_text.replace("PLANCHER","INTERMÉDIAIRE"),"Other PDF text changed"
 after={w.field_name:fresh.xref_object(w.xref,compressed=False) for w in fresh[0].widgets() or []}
 for name,before in original_widget_objects.items():
     if name=="essai_cdq_type_balance": continue
