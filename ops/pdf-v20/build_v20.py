@@ -63,10 +63,24 @@ widget=next(w for w in page0.widgets() or [] if w.field_name=="essai_cdq_type_ba
 assert not str(widget.field_value or "").strip()
 assert not(widget.field_flags&1)
 old_rect=list(widget.rect)
-widget.field_value="Balance de plancher"
-widget.update()
-# Keep reset/reopen and Android viewer data source consistent.
-doc.xref_set_key(widget.xref,"DV","(Balance de plancher)")
+# Preserve the ORIGINAL /DA font FRC (RobotoCondensed-Regular) and AP resource.
+# fitz.Widget.update() replaces the non-standard embedded font with Helvetica:
+# update only the text value and the actual pre-existing appearance stream.
+label="Balance de plancher"
+assert doc.xref_get_key(widget.xref,"DA")[1]=="(/FRC 8.984 Tf 0 g)"
+assert doc.xref_get_key(widget.xref,"AP/N")[1]=="76 0 R"
+appearance=doc.xref_stream(76).decode("latin-1")
+assert "BT /FRC 8.984 Tf" in appearance
+font_base=fitz.Font(fontbuffer=doc.extract_font(9)[3])
+label_width=font_base.text_length(label,fontsize=8.984)
+assert 40<label_width<124,label_width
+text_x=(129.47814-label_width)/2
+ap_new,n=re.subn(r"1 0 0 1 64\.739 4\.223 Tm \(\) Tj",
+  f"1 0 0 1 {text_x:.5f} 4.223 Tm ({label}) Tj",appearance)
+assert n==1
+doc.xref_set_key(widget.xref,"V",f"({label})")
+doc.xref_set_key(widget.xref,"DV",f"({label})")
+doc.update_stream(76,ap_new.encode("latin-1"),compress=True)
 OUTPDF=OUT/"CDQ_Plancher_Essai_Fonctionnel_V20.pdf"
 doc.save(str(OUTPDF),garbage=0,deflate=True,clean=False)
 doc.close()
@@ -85,8 +99,6 @@ for name,before in original_widget_objects.items():
 typew=next(w for w in fresh[0].widgets() or [] if w.field_name=="essai_cdq_type_balance")
 assert typew.field_value=="Balance de plancher"
 assert list(typew.rect)==old_rect
-print("FORM_AP_SOURCE",src.xref_object(76,compressed=False)[:1500],repr(src.xref_stream(76)[:1500]))
-print("FORM_TYPE_AFTER",typew.text_font,typew.text_fontsize,typew.text_color,typew.field_value,fresh.xref_object(typew.xref,compressed=False)[:1600])
 assert typew.text_font=="FRC" and abs(typew.text_fontsize-8.984)<.02
 assert typew.field_flags==0
 header=fresh.xref_stream(15).decode("latin-1")
