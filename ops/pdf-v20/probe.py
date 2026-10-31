@@ -34,3 +34,11 @@ for im in pg.get_images(full=True):
 for ff in pg.get_fonts(full=True):
   report["fonts"].append({"xref":ff[0],"info":list(ff)[:5]})
 print(json.dumps(report,ensure_ascii=False,indent=2))
+
+hs=d.xref_stream(15).decode("latin-1","replace")
+loc=hs.index("PLANCHER")
+print("HEADER_TEXT_SNIPPET",repr(hs[max(0,loc-550):loc+320]))
+print("HEADER_FONT",d.xref_object(20,compressed=False)[:1200])
+font_meta=d.extract_font(20)
+font=fitz.Font(fontbuffer=font_meta[3])
+print("HEADER_FONT_METRIC",json.dumps({"name":font.name,"has_E_acute":font.has_glyph(ord("É")),"plancher_width":font.text_length("PLANCHER",fontsize=1),"inter_width":font.text_length("INTERMÉDIAIRE",fontsize=1),"fontmeta":font_meta[:3]}))
