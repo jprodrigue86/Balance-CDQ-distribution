@@ -32,7 +32,7 @@ for xref in range(1,doc.xref_length()):
    try:b=doc.xref_stream(jx).decode("latin-1",errors="replace")
    except:b=doc.xref_object(jx,compressed=False)
   else:b=obj
-  out["javascript"].append({"xref":xref,"obj":obj[:1200],"js_type":typ,"js_content":b[:30000]})
+  out["javascript"].append({"xref":xref,"obj":obj[:1200],"js_type":typ,"js_content":b[:90000]})
 for xref in page.get_contents():
  t=doc.xref_stream(xref).decode("latin-1")
  if " re " in t or "c\n" in t:
