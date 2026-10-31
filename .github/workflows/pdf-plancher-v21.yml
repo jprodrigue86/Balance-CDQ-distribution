@@ -1,0 +1,29 @@
+name: Plancher V21 - essais excentricite isoles
+on:
+  push:
+    branches: [work/pdf-excentricite-v21-20261031]
+    paths:
+      - ops/pdf-v21/**
+      - .github/workflows/pdf-plancher-v21.yml
+permissions:
+  contents: write
+jobs:
+  test-pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {persist-credentials: true}
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.11'}
+      - run: python -m pip install --disable-pip-version-check pymupdf==1.26.7
+      - run: python ops/pdf-v21/probe.py
+      - name: Preserve compact V20 diagnostics on work branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add essais-plancher-v21-flèches-20261031/probe-v20.json
+          if ! git diff --cached --quiet; then
+            git commit -m "[skip ci] Record V20 block4 diagnostic"
+            git push origin HEAD:work/pdf-excentricite-v21-20261031
+          fi
