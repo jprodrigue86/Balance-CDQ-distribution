@@ -1,0 +1,15 @@
+{
+  "result": "pdf_structure_passed",
+  "baseline_version": "V20",
+  "baseline_sha256": "a4c242bae61deed77fc78cce02e8fe67c7c01bdfecb184a127ffede56f8030ff",
+  "output_sha256": "7760dbbfd1265f21c7085f0fced744186a24b1fe1442d20c651fa1b01fd98afd",
+  "output_bytes": 696005,
+  "page_count": 1,
+  "all_180_widgets_unchanged": true,
+  "modified_xrefs": [
+    297
+  ],
+  "static_render_identical": true,
+  "change": "Only independent pointState from the measured corner versus charge and existing tolerance",
+  "unchanged": "Group bloc4 state, phase, missing values, other blocks, arrows graphics, all other PDF scripts"
+}
