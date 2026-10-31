@@ -7,6 +7,8 @@ function setup(){
  const world={app:{viewerType:'PDF.js',runtimeHighlight:true},display,calculate:true,
   getField(key){
    if(key==='essai_cdq_probleme_constate')return null;
+   // The original PDF defines only green/red coin badges, no gray annotation.
+   if(/^essai_cdq_coin_excentricite_(?:avant|apres)_.+_gray$/.test(key))return null;
    if(!fields.has(key))fields.set(key,{value:'',readonly:false,display:0,textSize:10,numItems:0,multipleSelection:false});
    return fields.get(key);
   },
@@ -17,7 +19,7 @@ function setup(){
   set(n,v){world.getField('essai_cdq_'+n).value=v;},
   update(){vm.runInContext('CDQ_update(this)',world,{timeout:4000});},
   color(n){
-   const states=['green','red','gray'].filter(s=>world.getField('essai_cdq_'+n+'_'+s).display===display.visible);
+   const states=['green','red','gray'].filter(s=>{const f=world.getField('essai_cdq_'+n+'_'+s);return f&&f.display===display.visible;});
    assert.equal(states.length,1,'Expected one visible state for '+n+': '+states.join(','));
    return states[0];
   },
