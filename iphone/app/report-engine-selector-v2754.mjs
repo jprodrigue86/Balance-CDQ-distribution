@@ -9,6 +9,7 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
   async function capabilities(){if(capability)return capability;if(capabilityFlight)return capabilityFlight;const email=owner(),stamp=epoch();capabilityFlight=call('capabilities').then(result=>{if(valid(email,stamp))capability=result;return result;}).catch(()=>null).finally(()=>{capabilityFlight=null;});return capabilityFlight;}
   function changed(record){
     if(record.account!==owner()||!canRead())return;
+    if(record.blocked&&record.fields&&record.payload?.fields)post({type:'CDQ_REPORT_DRAFT_PRESERVED_V2816',email:record.account,record,message:record.error});
     if(record.pending)pendingReports.add(record.context.reportId);else pendingReports.delete(record.context.reportId);
     background?.setPending?.('report-engine',pendingReports.size,record.account);
     if(record.deleted){publish('cdq:report-deleted-v2754',{owner:record.account,clientId:record.context.clientId,reportId:record.context.reportId,fileId:record.pdf?.fileId||record.context.fileId||'',pending:!!record.pending,confirmed:!!record.deleteAck&&!record.pending});return;}
@@ -113,13 +114,14 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
         if(pending&&remoteRevision<=localRevision||localRevision>remoteRevision)record={...record,context:own,fields:local.reportSnapshotV2754,name:local.nom||record.name};
       }
     }
-    const context=record.context;if(expectedClient&&context.clientId!==expectedClient)throw Object.assign(Error('Le rapport appartient à un autre client.'),{code:'SCOPE_MISMATCH'});
+    let context=record.context;if(expectedClient&&context.clientId!==expectedClient)throw Object.assign(Error('Le rapport appartient à un autre client.'),{code:'SCOPE_MISMATCH'});
     phase('template-start');
     if(!templateFlight||templateKey!==keyForTemplate(context))startTemplate(context);
     const template=await templateFlight;checkTemplateCurrent();phase('template-ready');
+    if(canWrite())context=await engine.beginEditV2816({context,fields:record.fields,name:record.name});
     return {...legacyRecord,id:String(fileId),clientId:context.clientId,folderId:context.destinationId,nom:record.name,blob:template.blob,revision:context.expectedDriveRevision,reportEngineV2754:context,reportSnapshotV2754:record.fields,readerPreparedVersion:2730};
   }
-  async function save(context,fields,requestId,name,preparedPdf){return (await client()).save(context,fields,requestId,name,preparedPdf);}
+  async function save(context,fields,requestId,name,preparedPdf){const engine=await client();if(!context.localOpeningV2816){if(context.baseRevision!==0)throw Error('Rouvrez le rapport avant de sauvegarder.');context=await engine.beginEditV2816({context,imported:true});}try{return await engine.save(context,fields,requestId,name,preparedPdf);}catch(error){if(error.localDraftV2816)post({type:'CDQ_REPORT_DRAFT_PRESERVED_V2816',email:owner(),record:error.localDraftV2816,message:error.message});throw error;}}
   async function handle(data){
     if(data.type!=='CDQ_REPORT_ENGINE_SAVE_V2754'||data.email!==owner()||!canWrite()||!data.payload)return false;
     const email=owner(),stamp=epoch(),attempt=++lease,payload=data.payload;
@@ -172,5 +174,5 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
   async function resume(){if(canRead()){await capabilities();await (await client()).resume();}}
   function reset(){lease++;receiptFlightsV2757.clear();capability=null;capabilityFlight=null;pendingReports.clear();legacyScopes.clear();clientFlight?.then(value=>value.lock()).catch(()=>{});background?.setPending?.('report-engine',0,owner());}
   function importContext(fileId){const scope=legacyScopes.get(String(fileId));return scope&&canRead()?{...scope,reportId:crypto.randomUUID(),baseRevision:0}:null;}
-  return {call,client,capabilities,recordForOpen,importContext,save,handle,resume,reset,get enabled(){return capability?.ready===true;}};
+  return {call,client,capabilities,recordForOpen,importContext,save,handle,resume,reset,endEditV2816:context=>clientFlight?.then(engine=>engine.endEditV2816(context)).catch(()=>{}),get enabled(){return capability?.ready===true;}};
 }

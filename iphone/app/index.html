@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-cdq-iphone-version="28.15" data-cdq-iphone-release="67c93b63023dac3f71bda49fcc9c2a71994c5fe00f740c05464dba2450918bc0">
+<html lang="fr" data-cdq-iphone-version="28.16" data-cdq-iphone-release="789bc5059d94ecc3ac1563386c6603f176271b06b08b1b1fc911abf11d1571f9">
 <head>
 <script id="cdq-durable-resume-v2751">
 window.cdqDurableResumeV2751=(function createDurableResumeV2751({native=null,read=()=>''}={}){
@@ -491,7 +491,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.11.01-v28.15-menus-global-speed';
+const CDQ_PWA_BUILD = '2026.11.01-v28.16-save-conflicts';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -1533,7 +1533,7 @@ if(data.type==='CDQ_GOOGLE_AUTH_ERROR'){
   document.getElementById('load-message').textContent=String(data.message||'La connexion Google a échoué. Réessayez.');
 }
 if(data.type==='CDQ_GOOGLE_AUTH_HIDE')masquerConnexionGoogleV42();
-if(String(data.type||'').startsWith('CDQ_OFFLINE_')||data.type==='CDQ_LOCAL_REPORT_OPEN_V2713'||['CDQ_REPORT_ENGINE_DATA_SAVED_V2754','CDQ_REPORT_ENGINE_SAVE_V2754_RESULT','CDQ_REPORT_ENGINE_DELETE_V2754_RESULT','CDQ_REPORT_ENGINE_SEND_STATE_V2754'].includes(data.type))cdqOffline.then(controller=>controller.handle(data));
+if(String(data.type||'').startsWith('CDQ_OFFLINE_')||data.type==='CDQ_LOCAL_REPORT_OPEN_V2713'||['CDQ_REPORT_DRAFT_PRESERVED_V2816','CDQ_REPORT_ENGINE_DATA_SAVED_V2754','CDQ_REPORT_ENGINE_SAVE_V2754_RESULT','CDQ_REPORT_ENGINE_DELETE_V2754_RESULT','CDQ_REPORT_ENGINE_SEND_STATE_V2754'].includes(data.type))cdqOffline.then(controller=>controller.handle(data));
 if(data.type==='CDQ_ACCESS_STATE' && data.state!=='ready')cdqOffline.then(controller=>controller.lock());
 if((data.type==='CDQ_ACCESS_STATE' && data.state==='ready') || (data.type==='CDQ_SELECTOR_READY' && data.accessState==='ready')){
   cdqWarmPdfReaderV2554();

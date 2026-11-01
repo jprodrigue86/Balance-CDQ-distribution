@@ -1,3 +1,4 @@
+import {recordTokenV2816,conflictV2816} from './report-edit-guard-v2816.mjs';
 // Keep the deployed v1 database compatible with already-open windows and rollback.
 // Pending lookups hydrate only the outbox; metadata retains one PDF at a time.
 const NAME='cdq-report-engine-v2754',VERSION=1;
@@ -46,9 +47,14 @@ export function createReportEngineStorageV20261028({factory=globalThis.indexedDB
    if(Array.isArray(reportIds))read([...new Set(reportIds)].map(id=>account+'|'+id));
    else{const request=tx.objectStore('outbox').getAllKeys(ownerRange(account));request.onsuccess=()=>read(request.result);}
   }),
-  commit:(record,pending=true)=>transaction(['reports','outbox'],'readwrite',(tx,done)=>{
-   tx.objectStore('reports').put(record);
-   if(pending)tx.objectStore('outbox').put({key:record.key,requestId:record.payload.requestId});else tx.objectStore('outbox').delete(record.key);done(record);
-  })
+  commit:async(record,pending=true,expected)=>{
+   if(expected===undefined)throw conflictV2816('La révision locale à remplacer est manquante. Le rapport reste ouvert.');
+   const token=recordTokenV2816(expected),result=await transaction(['reports','outbox'],'readwrite',(tx,done)=>{
+    const reports=tx.objectStore('reports'),request=reports.get(record.key);
+    request.onsuccess=()=>{if(recordTokenV2816(request.result||null)!==token){done({conflict:true});return;}
+     reports.put(record);if(pending)tx.objectStore('outbox').put({key:record.key,requestId:record.payload.requestId});else tx.objectStore('outbox').delete(record.key);done({record});};
+   });
+   if(result.conflict)throw conflictV2816();return result.record;
+  }
  };
 }
