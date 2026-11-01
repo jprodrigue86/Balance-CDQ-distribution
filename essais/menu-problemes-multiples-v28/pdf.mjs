@@ -1,6 +1,6 @@
 import {rectangleBounds,paintCrispFrame} from './crisp-rectangles.mjs';
 const cdqRectanglePathsV28=new WeakMap();
-import {createFirstPaintSchedulerV2731} from "../../../reader-first-paint-scheduler-v2731.mjs";
+import {createFirstPaintSchedulerV2731} from "../../reader-first-paint-scheduler-v2731.mjs";
 /**
  * @licstart The following is the entire license notice for the
  * JavaScript code in this page
