@@ -1,12 +1,12 @@
 {
   "androidSelectorSha256": "d93a47771c6625ad8771e912d3c3ed3e848f59137b3de458a2d903463ad6b6d1",
   "androidSourceBuild": "2026.11.01-v28.12-reader-save",
-  "build": "2026.11.01-v28.15-menus-global-speed",
+  "build": "2026.11.01-v28.15-pc-menu-fit",
   "desktopModel": 3,
   "files": 931,
-  "generatedFrom": "patches/v2815-web/scripts/stage-web.py",
+  "generatedFrom": "patches/update-2815-pc-menu/stage.py",
   "platform": "pc-pwa",
-  "release": "52ac49848a34d5704b4cc6b305983f7e21571e68d87fbe6ee500185a0fa1075f",
+  "release": "b7db3605ad1905c3726f630cb8f654d10885fa1a5f65d9b461fc738b00415274",
   "version": "28.15",
   "webBaseCommit": "2164dbd6aa65479cefa57569823ea8253bd55de9"
 }

@@ -67,3 +67,16 @@ html body #cdqDocumentPrepare .cdq24-help{font-size:13px!important;line-height:1
 html body #cdqDocumentPrepare .cdq26-offline-stored[open]{max-height:none!important;overflow:visible!important}
 html body #cdqDocumentPrepare .modal-buttons{position:static!important;padding:12px 0 0!important;background:#10161b!important}
 @media(max-width:480px){html body #cdqDocumentPrepare .modal{padding:14px!important}html body #cdqDocumentPrepare .cdq24-actions>span{width:100%}}
+
+/* PC28.15: fit the offline dialog inside the desktop workspace, not the viewport. */
+html.cdq-desktop-v2676 body #cdqDocumentPrepare .modal {
+  display:flex!important;flex-direction:column!important;
+  max-height:100%!important;min-height:0!important;
+}
+html.cdq-desktop-v2676 body #cdqDocumentPrepare .cdq-v19-title,
+html.cdq-desktop-v2676 body #cdqDocumentPrepare .modal-buttons {
+  flex:0 0 auto!important;
+}
+html.cdq-desktop-v2676 body #cdqDocumentPrepare .cdq-v19-body {
+  min-height:0!important;overflow:auto!important;
+}
