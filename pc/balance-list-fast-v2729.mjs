@@ -38,7 +38,7 @@ function snapshotChangedV2792(before,after){
 // RPCs already sent cannot be cancelled: fence every late callback instead.
 export async function readBalanceListGroupV20261028(items,read,{stillCurrent=()=>true,onProgress=()=>{},timeoutMs=180000,pulseMs=1000}={}){
  const out=new Array(items.length),active=new Map(),controller=new AbortController();let next=0,done=0,stopped=null;
- const check=()=>{if(stopped)throw stopped;if(!stillCurrent())throw Error('Le client, le compte ou une sauvegarde a changé.');};
+ const check=()=>{if(stopped)throw stopped;if(!stillCurrent())throw listSupersededV2809();};
  const announce=()=>{if(stopped)return;try{onProgress({phase:'analyse',done,total:items.length,active:[...active.values()].map(({file,started})=>({id:String(file.id),name:String(file.nom||file.name||file.id),elapsedMs:Date.now()-started}))});}catch{}};
  const stop=error=>{if(!stopped){stopped=error;controller.abort();}return stopped;};
  const pulse=setInterval(()=>{try{check();announce();}catch(error){stop(error);}},pulseMs);
@@ -66,6 +66,7 @@ export async function readBalanceListGroupV20261028(items,read,{stillCurrent=()=
  }finally{clearInterval(pulse);stop(stopped||Error('Analyse terminée.'));}
 }
 const groups=readBalanceListGroupV20261028;
+function listSupersededV2809(){return Object.assign(Error('Le client, le compte ou une sauvegarde a changé.'),{code:'LIST_CONTEXT_CHANGED'});}
 const incomplete=value=>value?.charge===false||value?.complete===false||value?.incomplete===true||value?.tronque===true||value?.truncated===true||value?.partial===true||!!value?.nextPageToken;
 function folderContent(response,id){
  const folder=response?.contenu;
@@ -92,7 +93,7 @@ export async function updateBalanceListFastV2729(options){
    if(attempt||!options.stillCurrent())throw error;
    options.onProgress?.({phase:'stabilizing',done:0,total:0,changes:error.changes});
    await new Promise(resolve=>setTimeout(resolve,350));
-   if(!options.stillCurrent())throw Error('Le client, le compte ou une sauvegarde a changé.');
+   if(!options.stillCurrent())throw listSupersededV2809();
   }
  }
 }
@@ -100,7 +101,7 @@ async function prepareBalanceListFastV2792({clientId,fileId,rpc,loadPdf,loadShee
  // V27.77: an initial engine import has no list PDF to reopen or render.
  // It must still inspect and recheck a COMPLETE authorised Drive snapshot.
  const bootstrap=indexOnly===true&&!fileId;
- if(!fileId&&!bootstrap)return null;const guard=()=>{if(!stillCurrent())throw Error('Le client, le compte ou une sauvegarde a changé.');};guard();
+ if(!fileId&&!bootstrap)return null;const guard=()=>{if(!stillCurrent())throw listSupersededV2809();};guard();
  async function snapshot(){
   const response=await rpc('obtenirContenuDossierParesseux',clientId,clientId);guard();const root=folderContent(response,clientId);
   const lists=root.fichiers.filter(f=>norm(f.nom||f.name)==='liste de balance.pdf'&&pdf(f)).map(file=>({file,folderId:String(clientId)}));

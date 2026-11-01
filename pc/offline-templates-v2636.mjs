@@ -257,12 +257,21 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
   // Les modèles locaux sont utilisés depuis les boutons principaux du Selector.
   const launch=document.createElement('button');launch.type='button';launch.id='cdq-offline-launch';launch.textContent='Modèles hors ligne';launch.hidden=true;
   launch.style.cssText='position:fixed;right:14px;bottom:110px;z-index:10001;padding:12px 18px;border:1px solid #739aab;border-radius:12px;background:#132832;color:white;font:600 15px system-ui';
-  const panel=document.createElement('section');panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label','Modèles hors ligne');
+  const panel=document.createElement('section');panel.hidden=true;panel.setAttribute('role','dialog');panel.setAttribute('aria-label','Documents hors ligne');panel.className='cdq-offline-panel-v2815';panel.tabIndex=-1;
   panel.style.cssText='position:fixed;inset:0;z-index:10002;overflow:auto;background:#101820;color:#eef4f7;padding:24px;box-sizing:border-box;font:16px system-ui';
   const header=document.createElement('h2');header.textContent='Documents hors ligne';panel.append(header);
-  const close=document.createElement('button');close.textContent='Retour';close.onclick=()=>{panel.hidden=true;};panel.append(close);
+  let panelReturnFocus=null;const close=document.createElement('button');close.type='button';close.textContent='Fermer';close.onclick=()=>{panel.hidden=true;if(panelReturnFocus?.isConnected)panelReturnFocus.focus();};panel.append(close);
+  panel.addEventListener('keydown',event=>{if(event.key==='Escape'&&!close.hidden){event.preventDefault();close.click();}});
   const status=document.createElement('p');status.setAttribute('role','status');panel.append(status);
-  const content=document.createElement('div');panel.append(content);document.body.append(launch,panel);
+  const content=document.createElement('div');content.className='cdq-offline-content-v2815';panel.append(content);document.body.append(launch,panel);
+  const panelStyle=document.createElement('style');panelStyle.textContent=`
+  .cdq-offline-panel-v2815{padding:max(16px,env(safe-area-inset-top)) max(16px,calc((100vw - 900px)/2)) 32px!important;background:#10161b!important;color:#edf2f6!important;font:14px/1.5 system-ui!important}
+  .cdq-offline-panel-v2815[hidden]{display:none!important}.cdq-offline-panel-v2815>h2{font-size:23px;margin:4px 0 12px}.cdq-offline-panel-v2815 button{min-height:44px;border:1px solid #536473!important;background:#23313d!important;color:#edf2f6!important;border-radius:10px;padding:10px 14px;font:600 13px system-ui!important;cursor:pointer}
+  .cdq-offline-panel-v2815 button:focus-visible,.cdq-offline-panel-v2815 summary:focus-visible{outline:3px solid #8dd4ec;outline-offset:3px}.cdq-offline-panel-v2815 button:disabled{opacity:.55}.cdq-offline-panel-v2815 p{overflow-wrap:anywhere}
+  .cdq-offline-content-v2815>div,.cdq-offline-content-v2815>details,.cdq-offline-content-v2815>section{padding:14px!important;border:1px solid #3a4955!important;border-radius:12px;background:#172129;margin:12px 0!important}.cdq-offline-panel-v2815 summary{cursor:pointer;font-weight:700;padding:8px 0}.cdq-offline-panel-v2815 select{background:#111b23;color:#edf2f6;border:1px solid #657a89;border-radius:8px}.cdq-offline-panel-v2815 [role=status]{color:#b7cad7}
+  `;document.head.append(panelStyle);
+  function showPanelV2815(){panelReturnFocus=document.activeElement;visibleContentV2790.replaceChildren();panelFingerprintV2790='';panelOwnerV2790='';status.textContent='Lecture des documents de cet appareil…';panel.hidden=false;close.hidden=false;close.focus();}
+
   const serial=fn=>{const p=chain.then(fn);chain=p.catch(()=>{});return p;};
   const serialCopy=(id,fn,foreground=false)=>{const key=String(id),previous=copyJobs.get(key)||Promise.resolve();const p=(foreground?Promise.resolve():chain).then(()=>previous.catch(()=>{})).then(fn);copyJobs.set(key,p);p.finally(()=>{if(copyJobs.get(key)===p)copyJobs.delete(key);}).catch(()=>{});return p;};
   const validReadStamp=readStamp=>!readStamp||(readStamp.access===readAccessVersion&&readStamp.retirement===(readRetirementVersions.get(readStamp.key)||0));
@@ -356,8 +365,8 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
   let refreshSequenceV2790=0,panelFingerprintV2790='',panelOwnerV2790='';
   const visibleContentV2790=content;
   async function refresh() {
-    const sequence=++refreshSequenceV2790,stamp=epoch,p=await get('state','profile');
-    const stale=()=>stamp!==epoch||sequence!==refreshSequenceV2790;
+    const sequence=++refreshSequenceV2790,stamp=epoch,access=readAccessVersion,p=await get('state','profile');
+    const stale=()=>stamp!==epoch||sequence!==refreshSequenceV2790||access!==readAccessVersion;
     if(stale())return;
     profile=p;
     const copiesHere=!session&&navigator.onLine===false&&p?(await all('copies')).some(c=>c.email===p.email&&(c.removed?c.retiredAt&&c.blob:c.kind==='prepared'||c.kind==='sheet'||!confirmedLocalCopyV2755(c))):false;
@@ -375,9 +384,9 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
         await unlock(p.email);if(stamp!==epoch)throw new Error('Demande annulée.');localEmail=p.email;await refresh();
       });return;
     }
-    const email=p.email,templates=await Promise.all(Object.keys(MODELS).map(k=>loadTemplate(email,k)));
-    const destinations=(await all('destinations')).filter(d=>d.email===email).sort((a,b)=>b.savedAt-a.savedAt);
-    const allCopies=await all('copies');
+    const email=p.email;
+    const [templates,destinationRows,allCopies]=await Promise.all([Promise.all(Object.keys(MODELS).map(k=>loadTemplate(email,k))),all('destinations'),all('copies')]);
+    const destinations=destinationRows.filter(d=>d.email===email).sort((a,b)=>b.savedAt-a.savedAt);
     const copies=allCopies.filter(c=>c.email===email&&!c.removed).sort((a,b)=>b.createdAt-a.createdAt);
     const archived=allCopies.filter(c=>c.email===email&&c.retiredAt&&c.blob);
     if(stale()||!allowed(email))return;
@@ -427,15 +436,16 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
       }
     }
     if(session && session.protocol<38)text(content,'La synchronisation des PDF remplis exige le serveur avec protocole 38. En attendant, vos réponses restent conservées sur cet appareil.');
+    const modelGroup=document.createElement('details');const modelSummary=document.createElement('summary');modelSummary.textContent='Modèles de rapports ('+count+')';modelGroup.append(modelSummary);content.append(modelGroup);
     let select;
     if(p.canWrite&&destinations.length){
-      const label=document.createElement('label');label.textContent='Dossier du client';label.htmlFor='cdq-local-destination';content.append(label);
+      const label=document.createElement('label');label.textContent='Dossier du client';label.htmlFor='cdq-local-destination';modelGroup.append(label);
       select=document.createElement('select');select.id='cdq-local-destination';select.style.cssText='display:block;width:100%;max-width:650px;padding:12px;margin:10px 0;font:inherit';
       const first=document.createElement('option');first.value='';first.textContent='Choisir le dossier du client';select.append(first);
-      for(const d of destinations){const o=document.createElement('option');o.value=d.folderId;o.textContent=d.name;select.append(o);}content.append(select);
-    }else if(p.canWrite)text(content,'Avec Internet, ouvrez le dossier du client et le menu de copie pour préparer cette destination.');
+      for(const d of destinations){const o=document.createElement('option');o.value=d.folderId;o.textContent=d.name;select.append(o);}modelGroup.append(select);
+    }else if(p.canWrite)text(modelGroup,'Avec Internet, ouvrez le dossier du client et le menu de copie pour préparer cette destination.');
     for(const [key,name] of Object.entries(MODELS)){
-      const row=document.createElement('div');row.style.cssText='border-top:1px solid #385360;padding-top:10px;margin-top:16px';content.append(row);
+      const row=document.createElement('div');row.style.cssText='border-top:1px solid #385360;padding-top:10px;margin-top:16px';modelGroup.append(row);
       const t=templates.find(t=>t?.modeleId===key);text(row,name+(validTemplate(t)?' — prêt':' — non préparé'));
       if(!validTemplate(t)){
         if(session&&navigator.onLine!==false)button(row,'Préparer maintenant',()=>{requested.delete(session.email+':'+key);requestModel(key);status.textContent='Préparation de '+name+' demandée…';});
@@ -450,7 +460,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
         await put('copies',copy);rememberNames(copy);await refresh();await sync();
       }));
     }
-    text(content,'Les originaux restent inchangés. Une copie créée ici est conservée sur cet appareil, puis ajoutée au dossier client après reconnexion et déverrouillage.');
+    text(modelGroup,'Les originaux restent inchangés. Une copie créée ici est conservée sur cet appareil, puis ajoutée au dossier client après reconnexion et déverrouillage.');
     if(session?.canWrite)button(content,'Réessayer la synchronisation',()=>serial(()=>{resetRetriesV2740();return sync();}));
     if(archived.length){
       const section=document.createElement('section');section.hidden=true;section.setAttribute('aria-label','Rapports retirés récupérables');
@@ -627,7 +637,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
   }
   async function handleNow(data,stamp,readStamp=null) {
     if(stamp!==epoch||!validReadStamp(readStamp))return;
-    if(data.type==='CDQ_OFFLINE_SHOW_LOCAL'){panel.hidden=false;await refresh();return;}
+    if(data.type==='CDQ_OFFLINE_SHOW_LOCAL'){await refresh();return;}
     if(data.type==='CDQ_OFFLINE_SESSION'){
       if(typeof data.email!=='string'||!data.email||data.email.length>320)return;
       const canWrite=!!data.canWrite,protocol=Number(data.protocol)||0,online=navigator.onLine;
@@ -989,18 +999,19 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
       refresh().catch(()=>{});
     }
   }
-  launch.onclick=()=>{panel.hidden=false;refresh().catch(e=>{status.textContent=e.message;});};
+  launch.onclick=()=>{showPanelV2815();refresh().catch(e=>{status.textContent=e.message;});};
   const resume=()=>serial(async()=>{await refresh();await sync();}).catch(()=>{});
   window.addEventListener('online',()=>{resetRetriesV2740();return resume();});window.addEventListener('focus',resume);
   document.addEventListener?.('visibilitychange',()=>{if(!document.hidden)resume();});
   window.addEventListener('offline',()=>serial(refresh).catch(()=>{}));
   refresh().catch(()=>{});
   return {handle(data){
+      if(data.type==='CDQ_OFFLINE_SHOW_LOCAL')showPanelV2815();
       const stamp=epoch,retirement=['CDQ_OFFLINE_REPORT_DELETED_V2714','CDQ_OFFLINE_REPORT_RETIRE_TARGET_V2714'].includes(data.type);
       // Stable creation preambles must not wait for a background refresh.
       if(data.type==='CDQ_OFFLINE_SESSION'&&data.reannounceOnlyV2730===true&&!pendingAccessTransitions&&session&&appliedSession===session&&appliedOnline===navigator.onLine&&session.email===data.email&&session.canWrite===!!data.canWrite&&session.protocol===(Number(data.protocol)||0)&&session.reportEngineV2754===(data.reportEngineV2754===true))return Promise.resolve();
       const accessChange=data.type==='CDQ_OFFLINE_SESSION'&&typeof data.email==='string'&&data.email&&data.email.length<=320&&(pendingAccessTransitions||session?.email!==data.email||session.canWrite!==!!data.canWrite||session.protocol!==(Number(data.protocol)||0)||session.reportEngineV2754!==(data.reportEngineV2754===true));
-      if(accessChange){if(session?.email!==data.email)readAccountVersion++;readAccessVersion++;pendingAccessTransitions++;}
+      if(accessChange){visibleContentV2790.replaceChildren();panelFingerprintV2790='';panelOwnerV2790='';status.textContent='Vérification de l’accès…';if(session?.email!==data.email)readAccountVersion++;readAccessVersion++;pendingAccessTransitions++;}
       const retirementTargets=retirement&&session?.canWrite&&(!data.email||data.email===session.email)?data.type==='CDQ_OFFLINE_REPORT_DELETED_V2714'?(Array.isArray(data.ids)&&data.ids.length<=500?data.ids.filter(identifier):[]):identifier(data.localId)?[data.localId]:[]:[];
       // Register confirmed deletions before asynchronous storage/receipt work.
       // Pending UI deletions never enter this protocol or this fence.
@@ -1072,6 +1083,6 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
       }
       return job.catch(e=>{status.textContent=e.message||String(e);});
     },
-    lock(){localReaderSessionsV2761.close();epoch++;confirmedDeletedV2749.clear();session=null;appliedSession=null;appliedOnline=null;localEmail='';for(const job of inflight.values())clearTimeout(job.timer);inflight.clear();resetRetriesV2740();sentJobsV2740.clear();requested.clear();readers.clear();creationDownloads.clear();identityDownloads.clear();destinationNames.clear();pendingWork.clear();copyIdentities.clear();sessionStorage.clear();panel.hidden=true;},refresh};
+    lock(){localReaderSessionsV2761.close();epoch++;confirmedDeletedV2749.clear();session=null;appliedSession=null;appliedOnline=null;localEmail='';for(const job of inflight.values())clearTimeout(job.timer);inflight.clear();resetRetriesV2740();sentJobsV2740.clear();requested.clear();readers.clear();creationDownloads.clear();identityDownloads.clear();destinationNames.clear();pendingWork.clear();copyIdentities.clear();sessionStorage.clear();visibleContentV2790.replaceChildren();status.textContent='';panelOwnerV2790='';panelFingerprintV2790='';panel.hidden=true;},refresh};
 }
 

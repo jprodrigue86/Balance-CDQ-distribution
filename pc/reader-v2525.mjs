@@ -1,5 +1,5 @@
 import {preparePcReaderCanvasBarrierV2754,installPcReaderCanvasBarrierV2754} from './reader-canvas-barrier-v2754.mjs';
-import {alignHeaderCanvasesV2788R4} from './reader-header-alignment-v2788r4.mjs';
+import {alignHeaderCanvasesV2788R4,invalidateHeaderArtworkV2812} from './reader-header-alignment-v2788r4.mjs';
 import {installT05Font,styleT05Fields} from './reader-t05.mjs';
 installT05Font();
 import {restoredReaderNeedsSaveV2784} from './file-observation-v2784.mjs';
@@ -26,7 +26,7 @@ import {refreshReportVisualV2736} from './reader-report-visual-v2736.mjs';
 import {firstReaderPaintV2682} from './reader-first-paint-v2682.mjs';
 import {paintReaderResults} from './reader-results-v2648.mjs';
 import {identificationReportName} from './report-name-v2648.mjs';
-import {installTouchNavigation,installFormNavigation,installNativeTextInput} from './reader-interactions-v2525.mjs';
+import {createZoomSchedulerV2809,installTouchNavigation,installFormNavigation,installNativeTextInput} from './reader-interactions-v2525.mjs';
 import {installReaderCalibration} from './reader-calibration-v2565.mjs';
 import {installReaderChoices} from './reader-choices-v2572.mjs';
 import {installReaderTheme,applyReaderTheme} from './reader-theme-v2572.mjs';
@@ -84,6 +84,7 @@ let staticDocumentV2788=false,staticSourceBlobV2788=null;
 let lastAttempt=null,fieldDefinitions=null,nativeInput,readerCalibration=null,choices=null,decimalGuard=null,tableColumnV2737=null;
 const visualRefreshV2730=createReaderVisualRefreshV2730(()=>{
   if(!doc||closed)return;
+  if(touch?.active)return; // onIdle schedules the final display scan.
   tableColumnV2737?.refresh();cdqRestorePrecisionToleranceV2726();refreshResults();applyFieldTypography();
 },{defer:()=>opening,setTimer:callback=>requestAnimationFrame(callback),clearTimer:handle=>cancelAnimationFrame(handle)});
 const touchedIdentity=new Set();let lateIdentity=null;
@@ -378,7 +379,7 @@ const readerEquipmentV2746=createReaderEquipmentEmitterV2746({surface:$('viewer'
     return input?.value??cdqStoredFieldStateV2581(fieldName).value;
   },send:tell});
 function paintBeforePdfWorkV2766(){return new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));}
-const status=value=>{const el=$('status');el.textContent=value;el.dataset.active=String(!!value);el.dataset.busy=String(!!value&&(saving||opening||/en attente|en cours/.test(value)));};
+const status=value=>{const el=$('status');el.textContent=value;$('savingStatus').textContent=value;el.dataset.active=String(!!value);el.dataset.busy=String(!!value&&(saving||opening||/en attente|en cours/.test(value)));};
 let readerSaveProgressRequestV2759='';
 function renderReaderSaveProgressV2758(requestId,initial=false){
   const value=readerSaveProgressV2758.text({requestId,version,dirty,closed,opening,saving});
@@ -386,14 +387,14 @@ function renderReaderSaveProgressV2758(requestId,initial=false){
   readerSaveProgressRequestV2759=requestId;
   status(value);readerSaveProgressV2758.displayed(value);return true;
 }
-function busy(value){saving=value;$('viewer').inert=value||opening||closed;$('savingMask').hidden=!value;for(const id of ['save','saveClose','doneFields','dismissKeyboard','discard','file'])$(id).disabled=value||!doc||opening||readOnly;}
+function busy(value){saving=value;document.body.classList.toggle('cdq-saving-v2812',value);if(value)$('savingMask').style.setProperty('top',Math.max(0,$('readerTop').getBoundingClientRect().bottom)+'px','important');$('viewer').inert=value||opening||closed;$('savingMask').hidden=!value;for(const id of ['save','saveClose','doneFields','dismissKeyboard','discard','file'])$(id).disabled=value||!doc||opening||readOnly;}
 function fail(error){busy(false);status(error.message||String(error));$('closeError').textContent=error.message||String(error);closeAfterSave=false;}
 let cleanSignatureV2782=null,mustSaveV2782=false,userEditedV2783=false;
 function hasChangesV2782(){if(staticDocumentV2788||readOnly)return false;return mustSaveV2782||(userEditedV2783&&(cleanSignatureV2782===null?dirty:reportValueSignatureV2782(capturePreparedReaderFieldsV2759())!==cleanSignatureV2782));}
 function modified(){if(!readOnly&&!opening){userEditedV2783=true;dirty=true;version++;status('');}}
 function resetDocumentFieldsV2730(){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};
   readerEquipmentV2746.reset();readerSaveProgressV2758.reset();readerSaveProgressRequestV2759='';
-  tableColumnV2737?.dispose();tableColumnV2737=null;visualRefreshV2730.reset();choices?.cancel();form?.reset();touch?.reset();cdqKeyboardFieldV2550(false);menu(true);
+  tableColumnV2737?.dispose();tableColumnV2737=null;visualRefreshV2730.reset();choices?.cancel();form?.reset();touch?.reset();zoomSchedulerV2809.reset();cdqKeyboardFieldV2550(false);menu(true);
   documentPaintV2730?.dispose();documentPaintV2730=null;
   doc=null;documentTask=null;fieldDefinitions=null;staticDocumentV2788=false;staticSourceBlobV2788=null;readerCalibration=null;formattedFields.clear();fieldTypography.clear();touchedIdentity.clear();lateIdentity=null;
   lastAttempt=null;pending=null;dirty=false;version=0;savedVersion=0;cleanSignatureV2782=null;mustSaveV2782=false;userEditedV2783=false;closeAfterSave=false;initialAppliedV2730=false;initialUpdatesV2730=[];
@@ -410,7 +411,7 @@ async function resetClosedDocumentV2730(){
     const candidate=canvasCandidateV2730,task=documentTask,pageView=viewer.getPageView(0),epoch=pdfWorkV2729().stats().epoch;
     const keep=viewer.currentScaleValue==='page-width'&&canRetainReaderCanvasV2730(candidate,{epoch,document:doc,pageView,controls:$('viewer').querySelectorAll('input,textarea,select,button').length,viewport:closedViewportV2730});
     canvasCandidateV2730=null;closedCanvasV2730=null;visualRefreshV2730.reset();
-    choices?.cancel();form?.reset();touch?.reset();cdqKeyboardFieldV2550(false);menu(true);
+    choices?.cancel();form?.reset();touch?.reset();zoomSchedulerV2809.reset();cdqKeyboardFieldV2550(false);menu(true);
     if(keep){
       // Resolve PageClose/WillClose before destroying the sandbox, without
       // resetting PDFViewer's already-painted page. Drain queued dispatches.
@@ -691,8 +692,10 @@ async function open(data){
   }
 }
 function menu(hide=false){$('more').hidden=hide?true:!$('more').hidden;$('menu').setAttribute('aria-expanded',String(!$('more').hidden));}
-function zoom(factor,origin){if(viewer&&doc){const target=Math.max(.35,Math.min(4,viewer.currentScale*factor));viewer.updateScale({scaleFactor:target/viewer.currentScale,origin,drawingDelay:250});}}
-$('menu').onclick=()=>menu();$('fit').onclick=()=>{if(viewer){cdqHoldRenderedLayersV2556(2200);viewer.currentScaleValue='page-width';}menu(true);};
+const zoomSchedulerV2809=createZoomSchedulerV2809({getViewer:()=>doc?viewer:null});
+function zoom(factor,origin){zoomSchedulerV2809.zoom(factor,origin)}
+$('container').addEventListener('touchstart',()=>zoomSchedulerV2809.flush(),{capture:true,passive:true});
+$('menu').onclick=()=>menu();$('fit').onclick=()=>{zoomSchedulerV2809.reset();if(viewer){cdqHoldRenderedLayersV2556(2200);viewer.currentScaleValue='page-width';}menu(true);};
 document.addEventListener('pointerdown',e=>{if(!$('more').hidden&&!e.target.closest('#more,#menu'))menu(true);},true);
 $('cancelMenu').onclick=()=>{menu(true);$('menu').focus({preventScroll:true});};
 $('quitMenu').onclick=()=>{menu(true);requestClose();};
@@ -822,7 +825,7 @@ try{
   viewer.updateScale=options=>{cdqHoldRenderedLayersV2556(2200);return cdqRawUpdateScaleV2556(options);};
   $('container').addEventListener('touchstart',()=>cdqHoldRenderedLayersV2556(1800),{passive:true,capture:true});
   $('container').addEventListener('scroll',()=>cdqHoldRenderedLayersV2556(900),{passive:true});
-  touch=installTouchNavigation({container:$('container'),surface:$('viewer'),getViewer:()=>viewer});
+  touch=installTouchNavigation({container:$('container'),surface:$('viewer'),getViewer:()=>viewer,onIdle:()=>visualRefreshV2730.schedule()});
   nativeInput=installNativeTextInput($('viewer'));
   choices=installReaderChoices({surface:$('viewer'),isReadOnly:()=>readOnly,
     onConfirm:field=>form.advance(field),
@@ -848,7 +851,7 @@ try{
       onHit:()=>{$('viewer').dataset.cdqTemplatePaintV2753='ready';}}):()=>{};
     qaFirstPageLeaseCleanupV2731=()=>{paintCleanup();leaseCleanup();};
   });
-  eventBus.on('pagerendered',event=>{if(event.pageNumber===1&&event.source===viewer.getPageView(0)){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};}if(opening)visualRefreshV2730.schedule();else refreshResults();});
+  eventBus.on('pagerendered',event=>{invalidateHeaderArtworkV2812();if(event.pageNumber===1&&event.source===viewer.getPageView(0)){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};}if(opening||touch?.active)visualRefreshV2730.schedule();else refreshResults();});
   eventBus.on('scalechanging',e=>{$('zoom').textContent=Math.round(e.scale*100)+' %';});
   eventBus.on('pagerendered',e=>{if(!e.error&&e.source?.div)e.source.div.dataset.cdqPaintedV2556='true';if(e.error)fail(e.error);});
   eventBus.on('annotationlayerrendered',e=>{if(!e.error&&e.pageNumber===1)captureReaderCanvasesV2730(canvasCandidateV2730,e.source);cdqWrapStableAnnotationLayerV2556(e.source);if(opening)return;cdqRestoreInteractiveFieldsV2581();if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();visualRefreshV2730.schedule();});

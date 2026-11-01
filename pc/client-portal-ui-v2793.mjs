@@ -7,27 +7,11 @@ const permitted=()=>['admin','technicien'].includes(identity().role);
 const isMobile=()=>document.documentElement.matches('.android,.ios,.mobile-device')||
  (!document.documentElement.classList.contains('cdq-desktop-v2676')&&window.matchMedia?.('(max-width:899px)').matches);
 let currentDialog=null,dialogClient='',epoch=0,qualification=0;
-let cachedPortalLink=null,warmTimer=null,capabilityCache=null;
-function forgetPrivateLink(){cachedPortalLink=null;clearTimeout(warmTimer);warmTimer=null;}
-function portalLinkPromise(id,owner){
- const cached=cachedPortalLink;
- if(cached&&cached.id===id&&cached.owner===owner&&Date.now()<cached.until)return cached.promise;
- const promise=calibrationRpc('cdqReportEngineV2754','portalLink',{clientId:id}).then(result=>{
-  safeUrl(result.url);return result;
- }).catch(error=>{if(cachedPortalLink?.promise===promise)cachedPortalLink=null;throw error;});
- cachedPortalLink={id,owner,promise,until:Date.now()+45000};
- return promise;
-}
-function warmPortalLink(){
- clearTimeout(warmTimer);
- const id=client(),owner=identity().email;
- if(!id||!owner||!permitted()||!window.cdqDriveEntryV2632?.canRead())return;
- // Avoid a second synchronous Drive lookup on every folder render.
- warmTimer=setTimeout(()=>{
-  if(id===client()&&owner===identity().email&&window.cdqDriveEntryV2632?.canRead())
-   portalLinkPromise(id,owner).catch(()=>{});
- },650);
-}
+let capabilityCache=null,returnFocus=null,dialogOwner='';
+function forgetPrivateLink(){} // V28.15: no private-link cache or background issuance.
+function portalLinkPromise(id){return calibrationRpc('cdqReportEngineV2754','portalLink',{clientId:id});}
+const afterPaint=()=>new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
+const clientName=()=>{try{return String(nomCompagnieSelectionnee||'Client sélectionné')}catch{return 'Client sélectionné'}};
 function portalCapabilities(owner){
  if(capabilityCache?.owner===owner&&Date.now()<capabilityCache.until)return capabilityCache.promise;
  const promise=Promise.resolve().then(()=>window.cdqReportEngineSelectorV2754?.capabilities?.())
@@ -36,8 +20,8 @@ function portalCapabilities(owner){
  return promise;
 }
 function close(){
- epoch++;const dlg=currentDialog;currentDialog=null;dialogClient='';
- if(dlg){try{if(dlg.open)dlg.close()}catch{}dlg.remove()}
+ epoch++;const dlg=currentDialog;currentDialog=null;dialogClient='';dialogOwner='';
+ if(dlg){try{if(dlg.open)dlg.close()}catch{}dlg.remove();if(returnFocus?.isConnected)returnFocus.focus();returnFocus=null;}
 }
 function button(label,handler,cssClass=''){
  const b=document.createElement('button');b.type='button';b.textContent=label;
@@ -51,18 +35,22 @@ function safeUrl(raw){
 }
 async function open(){
  close();const stamp=epoch,id=client(),owner=identity().email;
- if(!id||!owner||!permitted())return;
- const valid=()=>stamp===epoch&&id===client()&&owner===identity().email&&window.cdqDriveEntryV2632?.canRead();
+ if(!id||!owner||!permitted()||!window.cdqDriveEntryV2632?.canRead())return;
+ const valid=()=>stamp===epoch&&id===client()&&owner===identity().email&&permitted()&&window.cdqDriveEntryV2632?.canRead();
  const dlg=document.createElement('dialog');dlg.className='cdq-portal-dialog-v2793';
- currentDialog=dlg;dialogClient=id;
+ returnFocus=document.activeElement;currentDialog=dlg;dialogClient=id;dialogOwner=owner;dlg.setAttribute('aria-labelledby','cdqPortalTitleV2815');
  const head=document.createElement('header');head.className='cdq-portal-head-v2793';
- const title=document.createElement('h2');title.textContent='Page client';
+ const title=document.createElement('h2');title.id='cdqPortalTitleV2815';title.textContent='Page client';
  head.append(title,button('Fermer',close));
  const body=document.createElement('section');body.className='cdq-portal-body-v2793';
- const status=document.createElement('p');status.className='cdq-portal-status-v2793';status.setAttribute('role','status');status.textContent='Préparation du lien privé…';
+ const context=document.createElement('p');context.className='cdq-portal-context-v2815';context.textContent=clientName();body.append(context);
+ const status=document.createElement('p');status.className='cdq-portal-status-v2793';status.setAttribute('role','status');status.textContent='Lecture du lien privé…';
  const actions=document.createElement('div');actions.className='cdq-portal-actions-v2793';
- body.append(status,actions);dlg.append(head,body);document.body.append(dlg);
- dlg.addEventListener('cancel',event=>{event.preventDefault();close()});dlg.showModal();
+ const linkSection=document.createElement('section');linkSection.className='cdq-portal-group-v2815';
+ const linkTitle=document.createElement('h3');linkTitle.textContent='Partager la page';linkSection.append(linkTitle,status,actions);
+ body.append(linkSection);dlg.append(head,body);document.body.append(dlg);
+ dlg.addEventListener('cancel',event=>{event.preventDefault();close()});dlg.showModal();head.querySelector('button').focus();
+ dlg.addEventListener('click',event=>{if(event.target===dlg){const r=dlg.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)close();}});
  // App-only controls appear immediately. The private link can load in parallel.
  const manage=button('Gérer les PDF',async()=>{
   if(!valid())return;
@@ -73,18 +61,30 @@ async function open(){
   }catch(error){if(valid())status.textContent=error?.message||'Gestion des PDF indisponible.'}
   finally{if(valid())manage.disabled=false}
  },'cdq-portal-primary-v2793');
- actions.append(manage);
+ const management=document.createElement('section');management.className='cdq-portal-group-v2815';const managementTitle=document.createElement('h3');managementTitle.textContent='Documents du client';management.append(managementTitle,manage);body.append(management);
+ const retryRead=button('Réessayer la lecture',()=>{if(valid())open()});retryRead.hidden=true;linkSection.append(retryRead);
  try{
+  await afterPaint();if(!valid())return;
   const response=await portalLinkPromise(id,owner);
-  if(!valid())return close();
+  if(!valid())return;
   const url=safeUrl(response.url);
   status.textContent='Ce lien donne accès aux PDF finaux du client. Transmets-le seulement aux personnes autorisées.';
   const input=document.createElement('input');input.type='text';input.readOnly=true;input.value=url.href;
-  input.setAttribute('aria-label','Lien privé de la page client');body.insertBefore(input,actions);
+  input.setAttribute('aria-label','Lien privé de la page client');linkSection.insertBefore(input,actions);
   actions.append(
-   button('Copier le lien',async()=>{try{await navigator.clipboard.writeText(url.href);if(valid())status.textContent='Lien copié.'}catch{input.focus();input.select();status.textContent='Sélectionne puis copie le lien affiché.'}},'cdq-portal-primary-v2793'),
-   button('Ouvrir',()=>window.open(url.href,'_blank','noopener,noreferrer')),
-   button('Code QR',async()=>{
+   button('Copier le lien',async()=>{if(!valid())return;try{await navigator.clipboard.writeText(url.href);if(valid())status.textContent='Lien copié.'}catch{if(!valid())return;input.focus();input.select();status.textContent='Sélectionne puis copie le lien affiché.'}},'cdq-portal-primary-v2793'),
+   button('Ouvrir la page',()=>{if(!valid())return;
+     // V28.06 native Android opens this authenticated portal as a Custom Tab.
+     // Chrome handles the portal's blob: PDF viewer; CDQ remains intact underneath.
+     const native=window.BalanceCDQNative;
+     if(navigator.userAgent.includes('BalanceCDQAndroid/') &&
+        typeof native?.openClientPortalV2806==='function'){
+       native.openClientPortalV2806(url.href);
+       return;
+     }
+     window.open(url.href,'_blank','noopener,noreferrer');
+    }),
+   button('Code QR',async()=>{if(!valid())return;
     try{
      const {default:qrcode}=await import('./qrcode-generator-1.4.4.mjs');if(!valid())return;
      const qr=qrcode(0,'M');qr.addData(url.href);qr.make();
@@ -96,25 +96,25 @@ async function open(){
    })
   );
   const retry=button('Reprendre les copies en attente',async()=>{
-   retry.disabled=true;status.textContent='Vérification des copies en attente…';
+   if(!valid())return;retry.disabled=true;status.textContent='Vérification des copies en attente…';
    try{const r=await calibrationRpc('cdqReportEngineV2754','portalRetry',{clientId:id});if(valid())status.textContent=r.resumed+' copie(s) reprises.'}
    catch(error){if(valid())status.textContent=error.message}
    finally{retry.disabled=false}
-  },'cdq-portal-utility-v2793');body.append(retry);
+  },'cdq-portal-utility-v2793');management.append(retry);
   const danger=document.createElement('details');danger.className='cdq-portal-revoke-v2793';
   const summary=document.createElement('summary');summary.textContent='Révoquer le lien';
   const info=document.createElement('p');info.textContent='Le lien cessera de fonctionner. Les PDF resteront conservés.';
   const confirm=button('Confirmer la révocation',async()=>{
-   confirm.disabled=true;
-   try{await calibrationRpc('cdqReportEngineV2754','portalRevoke',{clientId:id});if(valid()){forgetPrivateLink();input.value='';actions.replaceChildren();actions.append(manage);retry.remove();danger.remove();status.textContent='Lien révoqué.'}}
+   if(!valid())return;confirm.disabled=true;
+   try{await calibrationRpc('cdqReportEngineV2754','portalRevoke',{clientId:id});if(valid()){forgetPrivateLink();input.value='';actions.replaceChildren();retry.remove();danger.remove();body.querySelector('[data-cdq-qr-v2793]')?.remove();status.textContent='Lien révoqué.'}}
    catch(error){if(valid())status.textContent=error.message;confirm.disabled=false}
   });
   danger.append(summary,info,confirm);body.append(danger);
  }catch(error){
-  if(valid()){status.textContent=error.message;
+  if(valid()){status.textContent=error?.message||'Lecture indisponible.';retryRead.hidden=false;
    if(/PORTAL_REVOKED|PORTAL_KEY_CHANGED/.test(error.message))
     actions.append(button('Créer un nouveau lien',async()=>{
-     try{await calibrationRpc('cdqReportEngineV2754','portalRenew',{clientId:id});forgetPrivateLink();if(valid())open()}
+     if(!valid())return;try{await calibrationRpc('cdqReportEngineV2754','portalRenew',{clientId:id});forgetPrivateLink();if(valid())open()}
      catch(e){if(valid())status.textContent=e.message}
     }));
   }
@@ -153,9 +153,10 @@ async function install(){
  if(seq!==qualification||id!==client()||owner!==identity().email)return;
  b.disabled=capability?.clientPortalProtocol!==1;b.title=b.disabled?'Portail indisponible':'Ouvrir la page client';
 }
-function schedule(){place();install().catch(()=>{})}
-window.addEventListener('cdq:client-content-ready-v2745',()=>{if(currentDialog&&dialogClient!==client())close();schedule();warmPortalLink()});
+function schedule(){if(currentDialog&&(dialogClient!==client()||dialogOwner!==identity().email||!permitted()||!window.cdqDriveEntryV2632?.canRead()))close();place();install().catch(()=>{})}
+window.addEventListener('cdq:client-content-ready-v2745',()=>{if(currentDialog&&dialogClient!==client())close();schedule()});
 window.addEventListener('cdq:folder-render-v2627',schedule);
+window.addEventListener('cdq:client-renamed',event=>{if(String(event.detail?.clientId||'')===client()){forgetPrivateLink();close();schedule()}});
 document.addEventListener('cdq:icons-changed',place);
 window.addEventListener('cdq:access-ready',schedule);
 window.addEventListener('cdq:access-state-v2527',event=>{if(event.detail!=='ready'){forgetPrivateLink();capabilityCache=null;close()}});

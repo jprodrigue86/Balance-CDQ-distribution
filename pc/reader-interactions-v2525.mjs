@@ -3,7 +3,7 @@ const clampScale = scale => Math.max(.35, Math.min(4, scale));
 const distance = (a, b) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
 const middle = (a, b) => ({x:(a.clientX + b.clientX) / 2, y:(a.clientY + b.clientY) / 2});
 
-export function installTouchNavigation({container, surface, getViewer, now = Date.now, requestFrame = requestAnimationFrame, cancelFrame = cancelAnimationFrame}) {
+export function installTouchNavigation({container, surface, getViewer, onIdle = () => {}, now = Date.now, requestFrame = requestAnimationFrame, cancelFrame = cancelAnimationFrame}) {
   let gesture = null, suppressClickUntil = 0, inertia = 0, pinchFrame = 0;
   function stopInertia(){if(inertia)cancelFrame(inertia);inertia=0;}
   function cancelPinchFrame(){if(pinchFrame)cancelFrame(pinchFrame);pinchFrame=0;}
@@ -54,15 +54,16 @@ export function installTouchNavigation({container, surface, getViewer, now = Dat
       container.scrollLeft=x+vx*dt;container.scrollTop=y+vy*dt;
       if(Math.abs(container.scrollLeft-x)<.1)vx=0;if(Math.abs(container.scrollTop-y)<.1)vy=0;
       const friction=Math.exp(-dt/325);vx*=friction;vy*=friction;
-      if(Math.hypot(vx,vy)>.035){suppressClickUntil=time+100;inertia=requestFrame(frame);}else inertia=0;
+      if(Math.hypot(vx,vy)>.035){suppressClickUntil=time+100;inertia=requestFrame(frame);}else {inertia=0;onIdle();}
     }
-    if(Math.hypot(vx,vy)>.08)inertia=requestFrame(frame);
+    if(Math.hypot(vx,vy)>.08)inertia=requestFrame(frame);else onIdle();
   }
   const resetPreview = () => {
     cancelPinchFrame();
     surface.style.transform = '';
     surface.style.transformOrigin = '';
     surface.style.willChange = '';
+    onIdle();
   };
   function finish(commit = true) {
     const previous = gesture;
@@ -80,7 +81,7 @@ export function installTouchNavigation({container, surface, getViewer, now = Dat
     // drift as the page is re-centered. When we have a page anchor, let PDF.js
     // adopt the scale first, then force-layout and restore that exact page point
     // beneath the final midpoint before the browser can paint.
-    paintPinchPreview(previous);
+    resetPreview();
     if(previous.anchor){
       viewer.updateScale({
         scaleFactor:previous.targetScale / previous.scale,
@@ -113,7 +114,7 @@ export function installTouchNavigation({container, surface, getViewer, now = Dat
         targetScale:scale, start:mid, mid, rect:surface.getBoundingClientRect(),
         anchor:capturePinchAnchor(mid)};
       surface.style.transformOrigin = '0 0';
-      surface.style.willChange = '';
+      surface.style.willChange = 'transform';
       e.preventDefault();
     } else finish(false);
   }
@@ -157,7 +158,22 @@ export function installTouchNavigation({container, surface, getViewer, now = Dat
   container.addEventListener('touchend', end, options);
   container.addEventListener('touchcancel', end, options);
   container.addEventListener('click', click, {capture:true});
-  return {reset:() => {stopInertia();finish(false)}};
+  return {get active(){return !!gesture||!!inertia;},reset:() => {stopInertia();finish(false)}};
+}
+
+export function createZoomSchedulerV2809({getViewer,requestFrame=requestAnimationFrame,cancelFrame=cancelAnimationFrame}){
+  let frame=0,target=null,origin;
+  function reset(){if(frame)cancelFrame(frame);frame=0;target=null;origin=undefined;}
+  function flush(){
+    const scale=target,point=origin;reset();const viewer=getViewer();
+    if(viewer&&scale!==null)viewer.updateScale({scaleFactor:scale/viewer.currentScale,origin:point,drawingDelay:250});
+  }
+  function zoom(factor,point){
+    const viewer=getViewer();if(!viewer||!Number.isFinite(factor)||factor<=0)return;
+    target=clampScale((target??viewer.currentScale)*factor);origin=point;
+    if(!frame)frame=requestFrame(flush);
+  }
+  return {zoom,flush,reset};
 }
 
 function normalizedName(value){

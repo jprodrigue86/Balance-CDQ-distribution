@@ -7,13 +7,13 @@ export function calibrationRpc(name,...args){
   return new Promise((resolve,reject)=>{
     if(typeof cdqApiRun!=='function')return reject(Error('Connexion au serveur indisponible.'));
     const queuedRead=/^(?:obtenirContenuDossierParesseux|obtenirMetaFichier|cdqLireConformiteRapportV2775|obtenirSnapshotGoogleSheetHorsLigne|cdqEtatListeBalanceV2638)$/.test(name)&&cdqApiRun.cdqReadQueueCancellationV2792===true,controller=queuedRead?new AbortController():null;
-    let settled=false,timer;const arm=ms=>{clearTimeout(timer);timer=setTimeout(()=>{if(!settled){settled=true;controller?.abort();reject(Error('Le serveur ne répond pas. Le retour reste en attente.'));}},ms);};
+    let settled=false,timer,dispatched=false;const arm=ms=>{clearTimeout(timer);timer=setTimeout(()=>{if(!settled){settled=true;controller?.abort();const error=queuedRead?Object.assign(Error(dispatched?'La lecture Drive a dépassé son délai.':'La lecture attendait encore son tour; elle n’a pas été envoyée au serveur.'),{name:'TimeoutError',code:dispatched?'RPC_READ_TIMEOUT':'RPC_QUEUE_TIMEOUT',phase:dispatched?'transport':'queue',method:name}):Error('Le serveur ne répond pas. Le retour reste en attente.');reject(error);}},ms);};
     // Complete legacy Sheets scans can outlive an ordinary metadata request.
     // Keep the queue bound and all write deadlines unchanged.
     const timeout=queuedRead?Number(cdqApiRun.cdqReadTransportTimeoutV2792)+1000:name==='cdqActualiserListeBalanceV2665'?180000:['cdqScannerCalibrationV2668','cdqLireConformiteRapportV2775','obtenirSnapshotGoogleSheetHorsLigne'].includes(name)?60000:25000;
     // The bridge owns the actual 90s deadline. The caller's fallback comes later,
     // so a visible failure normally coincides with release of the real slot.
-    const started=()=>arm(timeout);arm(90000);
+    const started=()=>{if(settled)return;dispatched=true;arm(timeout);};arm(90000);
     const done=(fn,value)=>{if(!settled){settled=true;clearTimeout(timer);fn(value);}};
     try{let runner=cdqApiRun().withSuccessHandler(v=>done(resolve,v)).withFailureHandler(e=>done(reject,e instanceof Error?e:Object.assign(Error(e?.message||String(e)),{code:e?.code,name:e?.name||'Error'})));if(queuedRead)runner=runner.withQueuedReadSignalV2792(controller.signal);if(cdqApiRun.cdqBudgetV2751)runner=runner.withStartHandler(started);else started();runner[name](...args);}catch(e){done(reject,e);}
   });
