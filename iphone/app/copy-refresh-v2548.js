@@ -35,8 +35,8 @@
 
   function fileMeta(result, fallback = {}, existing = {}) {
     const supplied = result?.meta || result?.fichier || result || {};
-    // A server revision describes the PDF bytes. The local confirmation time
-    // remains an ordering hint and must never replace that Drive identity.
+    // Only the server revision identifies a modification; consultation time
+    // must never become a sort key.
     const serverIdentity = supplied.revision || supplied.modifiedTime || supplied.dateModification ||
       result?.revision || result?.modifiedTime || result?.dateModification || '';
     const dateModification = serverIdentity || existing.dateModification || existing.modifiedTime || existing.revision ||
@@ -54,8 +54,7 @@
       ...(serverIdentity ? {revision:serverIdentity, modifiedTime:serverIdentity} : {}),
       favori: !!(result?.favori || result?.starred),
       notePresente: !!result?.notePresente,
-      photoPresente: !!result?.photoPresente,
-      _cdqConfirmedAt2530: Date.now()
+      photoPresente: !!result?.photoPresente
     };
   }
 
@@ -81,7 +80,15 @@
     if (!host || typeof creerLigneFichier !== 'function') return false;
     removeExistingVisibleRow(meta.id);
     const row = creerLigneFichier(meta);
-    host.prepend(row);
+    // Use the same modification order as a complete listing, including a
+    // genuinely saved local edit awaiting Drive. Never rank by last opened.
+    const root = cacheContenuCompagnies[clientId], parent = findFolder(root, parentId);
+    const ordered = (parent?.fichiers || []).slice().sort((a,b)=>fileSortTimeV2782(b)-fileSortTimeV2782(a));
+    const rank = ordered.findIndex(file=>String(file.id)===String(meta.id));
+    const following = new Set(ordered.slice(rank+1).map(file=>String(file.id)));
+    const next = Array.from(host.children).find(el=>following.has(String(el.querySelector('.file-checkbox')?.dataset.fileId||'')));
+    const folder = Array.from(host.children).find(el=>el.matches('.folder'));
+    host.insertBefore(row, next || folder || null);
     try { cdqEnhanceMobileFolders?.(); } catch (_) {}
     try { appliquerFiltresFichiers?.(); } catch (_) {}
     try { mettreAJourInterface?.(); } catch (_) {}
@@ -144,7 +151,15 @@
       // Original confirmation is authoritative. Rejected old receipts must
       // never be reinserted by this faster presentation wrapper.
       if (!confirmed) return false;
-      const painted = inject(result, clientId, parentId, fallback);
+      // Reuse the authoritative merged row: reinjecting the partial receipt
+      // would lose pending/conflict markers and force every file to PDF.
+      const locate = node => {
+        if (!node) return null;
+        const meta = (node.fichiers || []).find(file=>String(file.id)===String(result.id));
+        return meta ? {meta,parentId:node.id} : (node.dossiers || []).map(locate).find(Boolean);
+      };
+      const stored = locate(cacheContenuCompagnies[String(clientId)]);
+      const painted = stored && paintVisible(stored.meta, String(clientId), String(stored.parentId));
       if (selected && !painted && savedLexical && typeof cacheContenuCompagnies !== 'undefined') {
         const root = cacheContenuCompagnies[String(clientId || '')];
         if (root) savedLexical(root);
