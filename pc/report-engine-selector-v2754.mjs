@@ -12,10 +12,11 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     if(record.blocked&&record.fields&&record.payload?.fields)post({type:'CDQ_REPORT_DRAFT_PRESERVED_V2816',email:record.account,record,message:record.error});
     if(record.pending)pendingReports.add(record.context.reportId);else pendingReports.delete(record.context.reportId);
     background?.setPending?.('report-engine',pendingReports.size,record.account);
+    if(record.remoteDeletedV2784){publish('cdq:report-recovery-needed-v2784',{owner:record.account,clientId:record.context.clientId,reportId:record.context.reportId,name:record.name,error:record.error});return;}
     if(record.deleted){publish('cdq:report-deleted-v2754',{owner:record.account,clientId:record.context.clientId,reportId:record.context.reportId,fileId:record.pdf?.fileId||record.context.fileId||'',pending:!!record.pending,confirmed:!!record.deleteAck&&!record.pending});return;}
     const context=record.context,pdf=record.pdf,confirmed=record.dataSaved===true&&!record.pending&&pdf?.status==='confirmed'&&Number(pdf.revision)===Number(record.serverRevision),detail={owner:record.account,clientId:context.clientId,reportId:context.reportId,sourceId:pdf?.fileId||context.fileId||context.reportId,saveId:record.payload?.requestId,name:record.name,fields:record.fields,revision:record.serverRevision,pdf,dataSaved:!!record.dataSaved,pending:!!record.pending,localDurable:true,savedAt:record.savedAt};
-    if(record.pending&&context.fileId&&Number.isFinite(record.savedAt))instant?.confirm?.({id:context.fileId,nom:record.name,type:'PDF',_cdqPendingSaveV2660:record.payload.requestId,_cdqLocalSavedAtV2772:record.savedAt},context.clientId,context.destinationId,{type:'PDF'});
-    publish('cdq:report-data-saved-v2754',detail);
+    if(record.observationOnlyV2784!==true&&record.pending&&context.fileId&&Number.isFinite(record.savedAt))instant?.confirm?.({id:context.fileId,nom:record.name,type:'PDF',_cdqPendingSaveV2660:record.payload.requestId,_cdqLocalSavedAtV2772:record.savedAt},context.clientId,context.destinationId,{type:'PDF'});
+    if(record.observationOnlyV2784!==true)publish('cdq:report-data-saved-v2754',detail);
     if(confirmed){const file={id:pdf.fileId,fileId:pdf.fileId,nom:record.name,name:record.name,revision:pdf.driveRevision,modifiedTime:pdf.driveRevision,clientId:context.clientId,destinationId:context.destinationId,type:'PDF',reportIdV2754:context.reportId,reportRevisionV2754:record.serverRevision,_cdqCommittedUploadV2660:record.payload.requestId,_cdqLocalSavedAtV2772:0};instant?.confirm?.(file,context.clientId,context.destinationId,{type:'PDF'});publish('cdq:report-pdf-confirmed-v2754',{...detail,...file,revision:record.serverRevision});}
   }
   async function client(){
@@ -131,6 +132,7 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
       const reply=(type,value)=>{if(valid(email,stamp))post({...value,type,email,requestId:data.requestId,uploadId:data.uploadId,reportId:payload.reportId,clientId:payload.clientId,saveRequestIdV2757:payload.requestId});};
       let expected=data.statusOnlyV2757?data.acceptedRevisionV2757:null;
       function receipt(result,first=false){
+        if(result?.deleted===true&&result.reportId===payload.reportId&&(!result.clientId||result.clientId===payload.clientId))throw Object.assign(Error('Rapport supprimé côté serveur. Copie locale conservée. Récupérez-la dans un nouveau rapport.'),{code:'REPORT_DELETED'});
         if(!Number.isSafeInteger(result?.revision)||result.revision<1||result.deleted||result.reportId&&result.reportId!==payload.reportId||result.row?.clientId&&result.row.clientId!==payload.clientId||result.clientId&&result.clientId!==payload.clientId)throw Object.assign(Error('La réponse du serveur ne correspond pas à ce rapport.'),{code:'INVALID_REPORT_RECEIPT'});
         if(first&&expected===null){if(result.dataSaved!==true)throw Error('Les données ne sont pas encore confirmées sur le serveur.');expected=result.revision;}
         if(result.revision!==expected)throw Object.assign(Error('Une autre révision du rapport a été enregistrée. Les réponses locales restent conservées.'),{code:'revision_conflict'});

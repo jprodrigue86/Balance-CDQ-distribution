@@ -11,7 +11,10 @@ export function canonicalV2816(value){
 export const recordTokenV2816=record=>canonicalV2816(record||null);
 export const conflictV2816=(message='Ce rapport a été modifié dans une autre fenêtre. Vos réponses restent conservées dans Documents hors ligne → Modifications à vérifier.')=>Object.assign(Error(message),{code:'LOCAL_EDIT_CONFLICT'});
 export function editBasisV2816(record){
- return canonicalV2816(record?{context:record.context,fields:record.fields,name:record.name,requestId:record.payload?.requestId,deleted:!!record.deleted,remoteDeleted:!!record.remoteDeletedV2784,restoredFromRevision:record.restoredFromRevision}:null);
+ // Fresh read-only observations may mint a local bookkeeping ID. That ID is
+ // not an edit; require identity only while actual work remains outstanding.
+ // Full record CAS at commit still detects races after this semantic check.
+ return canonicalV2816(record?{context:record.context,fields:record.fields,name:record.name,requestId:record.pending||record.blocked||record.dataSaved===false?record.payload?.requestId:null,deleted:!!record.deleted,remoteDeleted:!!record.remoteDeletedV2784,restoredFromRevision:record.restoredFromRevision}:null);
 }
 export function createEditJournalV2816({factory=globalThis.indexedDB,name='cdq-report-edits-v2816',now=Date.now}={}){
  const open=()=>new Promise((resolve,reject)=>{const req=factory.open(name,1);let abandoned=false;req.onupgradeneeded=()=>{for(const key of ['drafts','requests','leases'])if(!req.result.objectStoreNames.contains(key))req.result.createObjectStore(key,{keyPath:'key'});};req.onblocked=()=>{abandoned=true;reject(Error('Le stockage des modifications est occupé. Le rapport reste ouvert.'));};req.onerror=()=>reject(req.error);req.onsuccess=()=>{const db=req.result;db.onversionchange=()=>db.close();if(abandoned)db.close();else resolve(db);};});
