@@ -59,20 +59,20 @@ export function createPdfSessionStoreV2664({read,write,remove,list,keyOf,session
     if(expired(raw)){await remove(key,raw);return null;}
     // Detach bytes from IndexedDB before deleting the persistent Blob resource.
     const r=await independent(decodePdfRecordV2664(raw));
-    if(sessionOnly(r)){if(stamp===generation)remember(key,r);await remove(key,r);}
+    if(sessionOnly(r)){if(stamp===generation)remember(key,r);try{await remove(key,r);}catch(error){forget(key);throw error;}}
     else if(rememberPersistent&&stamp===generation)remember(key,r);
     return r;
   }
   async function commit(key,value){
     // Read each Blob once. Decode the encoded bytes into detached RAM Blobs,
     // and reuse those same bytes for durable WebKit-compatible storage.
-    const stamp=generation,encoded=await encodePdfRecordV2664(value),record=decodePdfRecordV2664(encoded);
+    const stamp=generation,encoded=await encodePdfRecordV2664(value);let record=decodePdfRecordV2664(encoded);
     if(sessionOnly(value)){
       // Confirmed bytes can leave disk only after the full record is available in RAM.
-      if(stamp===generation)remember(key,record);await remove(key,record);
+      if(stamp===generation)remember(key,record);try{await remove(key,record);}catch(error){forget(key);throw error;}
     }else{
       // ArrayBuffer storage also works in WebKit environments rejecting IDB Blobs.
-      try{await write(key,encoded);}catch(error){
+      try{await write(key,encoded);record=decodePdfRecordV2664(encoded);}catch(error){
         // A full temporary cache must not block opening an already received
         // cloud PDF. Unsent work and explicit offline storage stay mandatory.
         if(!optionalPersistence(value))throw error;
@@ -99,7 +99,7 @@ export function createPdfSessionStoreV2664({read,write,remove,list,keyOf,session
 export function sessionCopyStorageV2664(storage,keep) {
   const cache=createPdfSessionStoreV2664({
     read:id=>storage.get('copies',id),write:(_,r)=>storage.put('copies',r),
-    remove:(id,r)=>storage.remove?storage.remove('copies',id):storage.put('copies',{id,email:r?.email,cdqSessionOnlyV2664:true}),
+    remove:(id,r)=>storage.remove?storage.remove('copies',id,r):storage.put('copies',{id,email:r?.email,cdqSessionOnlyV2664:true}),
     list:()=>storage.all('copies'),keyOf:r=>r.id,sessionOnly:completedWorkCopyV2664,keep
   });
   return {

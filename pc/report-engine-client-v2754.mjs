@@ -1,3 +1,4 @@
+import {createEditJournalV2816,recordTokenV2816,editBasisV2816,conflictV2816,descendantV2816,sameIntentV2816} from './report-edit-guard-v2816.mjs';
 import {createReportEngineStorageV20261028} from './report-engine-storage-20261028.mjs';
 import {DELETED_REPORT_MESSAGE_V2784,isDeletedReportV2784,recoveryContextV2784,recoveryNameV2784} from './deleted-report-v2784.mjs';
 import {observedReportStateV2784} from './file-observation-v2784.mjs';
@@ -82,11 +83,16 @@ export function reportPayloadV2754(context,fields,requestId,name){
 export const reportEngineStorageV2754=createReportEngineStorageV20261028;
 // Shared by native, web and PC shells. Existing legacy copies remain separate
 // until their imported fields and the first server PDF are both confirmed.
-export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2754(),getAccount,canWrite=()=>true,onChange=()=>{},isOnline=()=>globalThis.navigator?.onLine!==false}={}){
-  const jobs=new Map(),sends=new Map(),timers=new Map(),syncFlightsV2789=new Map();let generation=0;
+export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2754(),journal=createEditJournalV2816(),getAccount,canWrite=()=>true,onChange=()=>{},isOnline=()=>globalThis.navigator?.onLine!==false}={}){
+  const editorsV2816=new Map(),jobs=new Map(),sends=new Map(),timers=new Map(),syncFlightsV2789=new Map();let generation=0;
   const key=(account,id)=>account+'|'+id;
   const serial=(id,fn)=>{const p=(jobs.get(id)||Promise.resolve()).catch(()=>{}).then(fn);jobs.set(id,p);p.finally(()=>{if(jobs.get(id)===p)jobs.delete(id);}).catch(()=>{});return p;};
-  const notify=record=>{if(record.account===getAccount())try{onChange(record);}catch{}};
+  const notify=record=>{
+   if(record.account!==getAccount())return;
+   const editor=editorsV2816.get(record.localEditorV2816);
+   if(editor&&editor.lastRequestId===record.payload?.requestId&&(record.confirmedRequestIdV2816===record.payload.requestId||record.lineageReceiptV2816&&record.sendStartedRequestIdV2816!==record.payload.requestId)){editor.expected=structuredClone(record);editor.context=structuredClone(record.context);}
+   try{onChange(record);}catch{}
+  };
 
   // A blocked local tombstone may outlive the confirmed server deletion.
   // Reconcile that exact report with STATUS; never resend DELETE to recover it.
@@ -115,7 +121,7 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
           current.restoredFromRevision!==record.restoredFromRevision||Number(current.context.baseRevision||0)>result.revision)return current||record;
         const updated={...current,context:{...current.context,baseRevision:result.revision},serverRevision:result.revision,
           deleted:true,deleteAck:true,pending:false,blocked:false,error:'',pdf:{...current.pdf,...result.pdf,status:'deleted',fileId:current.context.fileId||current.pdf?.fileId||''}};
-        await storage.commit(updated,false);if(valid())notify(updated);return updated;
+        await storage.commit(updated,false,current);if(valid())notify(updated);return updated;
       });
     })();
     deletionReadsV2760.set(record.key,flight);
@@ -136,8 +142,19 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
   }
   async function sendRecordV2789(record){
     const stamp=generation,account=getAccount(),valid=()=>stamp===generation&&getAccount()===account&&canWrite();if(!account||record.account!==account||!valid()||!isOnline()||sends.has(record.key)||!record.pending||record.remoteDeletedV2784)return;
-    const attempt=record.payload.requestId;sends.set(record.key,attempt);
+    const attempt=record.payload.requestId,leaseOwner=crypto.randomUUID();sends.set(record.key,attempt);let leaseTimer=null,claimed=false;
     try{
+      claimed=await journal.claim(record.key,attempt,leaseOwner);
+      if(!claimed){schedule(record.key,2500);return;}
+      leaseTimer=setInterval(()=>journal.claim(record.key,attempt,leaseOwner).catch(()=>{}),20000);
+      const latest=await storage.get(record.key);
+      if(!valid()||!latest?.pending||latest.blocked||recordTokenV2816(latest.payload)!==recordTokenV2816(record.payload)||latest.deleted!==record.deleted)return;
+
+      if(!record.deleted&&!record.dataSaved){
+       record={...latest,sendStartedRequestIdV2816:attempt};await storage.commit(record,true,latest);
+       if(record.draftKeyV2816&&!await journal.bindWire(record))throw Object.assign(Error('Le contenu de cette sauvegarde a changé après son premier envoi. Les réponses restent conservées.'),{code:'IDEMPOTENCY_LOCAL_CONFLICT'});
+       if(!valid())return;
+      }
       const deleting=record.deleted===true;
       const action=deleting?(record.deleteAck?'status':'delete'):(record.dataSaved?'status':'save');
       const request=deleting?{reportId:record.context.reportId,clientId:record.context.clientId,baseRevision:record.context.baseRevision,fileId:record.context.fileId||''}:record.dataSaved?{reportId:record.context.reportId,clientId:record.context.clientId}:record.payload;
@@ -156,37 +173,76 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
       if(!deleting&&result?.deleted===true){if(result.reportId!==record.context.reportId)throw Object.assign(Error('Confirmation de suppression invalide.'),{code:'INVALID_REPORT_RECEIPT'});throw Object.assign(Error(DELETED_REPORT_MESSAGE_V2784),{code:'REPORT_DELETED'});}
       if(!result?.ok||deleting&&(result.deleted!==true||result.reportId!==record.context.reportId)||!deleting&&!result.deleted&&!(result.dataSaved||record.dataSaved&&Number.isSafeInteger(result.revision)))throw Object.assign(Error(result?.message||result?.error||'Sauvegarde serveur non confirmée.'),{code:result?.code||result?.error});
       if(!deleting&&!result.deleted&&record.dataSaved&&Number(result?.revision)!==Number(record.serverRevision))throw Object.assign(Error('Une autre révision du rapport a été enregistrée. Rouvrez le rapport avant de continuer.'),{code:'revision_conflict'});
+      if(result.pdf?.status==='confirmed'&&result.pdf.revision===result.revision)await journal.mark(record.draftKeyV2816,'confirmed');
       await serial(record.key,async()=>{const current=await storage.get(record.key);if(!valid()||!current||current.context.clientId!==record.context.clientId||current.context.destinationId!==record.context.destinationId)return;const same=current.payload.requestId===attempt;
         if(current.deleted&&current.deleteAck&&!current.pending)return;
         if(record.deleted&&!current.deleted||Number.isSafeInteger(current.restoredFromRevision)&&Number(result.revision)<=current.restoredFromRevision)return;
+        if(!same&&!current.deleted&&!descendantV2816(current,record,Number(result.revision)))return;
         if(current.deleted||result.deleted){
           // A late save receipt may identify the final Drive file, but must
           // never turn a durable deletion intent back into a queued save.
           const acknowledged=result.deleted===true,revision=Number(result.revision)||current.context.baseRevision||0,context={...current.context,baseRevision:revision,fileId:result.pdf?.fileId||current.context.fileId};
           const pending=!acknowledged||result.drivePending!==false||result.pdf?.status==='conflict';
           const updated={...current,context,deleted:true,deleteAck:acknowledged,serverRevision:revision,dataSaved:false,pending,blocked:result.pdf?.status==='conflict',error:result.pdf?.status==='conflict'?'La suppression Drive nécessite une vérification.':'',pdf:result.pdf||{status:'deleting'},payload:current.deleted?{...current.payload,baseRevision:revision,fileId:context.fileId}:{reportId:context.reportId,clientId:context.clientId,baseRevision:revision,fileId:context.fileId,requestId:crypto.randomUUID()}};
-          await storage.commit(updated,pending);notify(updated);return;
+          await storage.commit(updated,pending,current);notify(updated);return;
         }
         const revision=Number(result.revision)||0,confirmed=result.pdf?.status==='confirmed'&&Number(result.pdf.revision)===revision;
         const context={...current.context,baseRevision:revision,fileId:result.pdf?.fileId||current.context.fileId,...(result.pdf?.driveRevision?{expectedDriveRevision:result.pdf.driveRevision}:{})};
-        const updated={...current,context,serverRevision:revision,dataSaved:same,pdf:result.pdf,error:'',pending:!same||!confirmed,payload:same?current.payload:{...current.payload,baseRevision:revision,fileId:context.fileId,...(context.expectedDriveRevision?{expectedDriveRevision:context.expectedDriveRevision}:{})}};
-        await storage.commit(updated,updated.pending);notify(updated);
+        const updated={...current,context,...(!same?{lineageReceiptV2816:attempt}:{}),confirmedRequestIdV2816:attempt,serverRevision:revision,dataSaved:same,pdf:result.pdf,error:'',pending:!same||!confirmed,payload:same?current.payload:{...current.payload,baseRevision:revision,fileId:context.fileId,...(context.expectedDriveRevision?{expectedDriveRevision:context.expectedDriveRevision}:{})}};
+        await storage.commit(updated,updated.pending,current);notify(updated);
       });
-      if(['conflict','error'].includes(result.pdf?.status)){await serial(record.key,async()=>{const current=await storage.get(record.key);if(!valid()||!current||current.payload.requestId!==attempt||current.deleted&&current.deleteAck&&!current.pending)return;const updated={...current,error:result.pdf.message||'La publication Drive nécessite une vérification.',blocked:result.pdf.status==='conflict',pending:true};await storage.commit(updated,true);notify(updated);if(!updated.blocked)schedule(record.key,5000);});}
+      if(['conflict','error'].includes(result.pdf?.status)){await serial(record.key,async()=>{const current=await storage.get(record.key);if(!valid()||!current||current.payload.requestId!==attempt||current.deleted&&current.deleteAck&&!current.pending)return;const updated={...current,error:result.pdf.message||'La publication Drive nécessite une vérification.',blocked:result.pdf.status==='conflict',pending:true};await storage.commit(updated,true,current);notify(updated);if(!updated.blocked)schedule(record.key,5000);});}
       else if(deleting||result.deleted){if(result.drivePending!==false)schedule(record.key,1500);}
       else if(result.pdf?.status!=='confirmed')schedule(record.key,1500);
-    }catch(error){await serial(record.key,async()=>{const current=await storage.get(record.key);if(!valid()||!current||current.payload.requestId!==attempt||current.deleted&&current.deleteAck&&!current.pending)return;const remoteDeleted=isDeletedReportV2784(error),conflict=remoteDeleted||/conflict|revision|forbidden|unauthorized|access|^INVALID_|^SCOPE_MISMATCH$|^IDEMPOTENCY_/i.test(String(error.code||''));const updated={...current,...(remoteDeleted?{remoteDeletedV2784:true}:{}),error:remoteDeleted?DELETED_REPORT_MESSAGE_V2784:error.message,blocked:conflict,pending:true};await storage.commit(updated,true);notify(updated);if(!conflict)schedule(record.key,5000);});}
-    finally{sends.delete(record.key);}
+    }catch(error){if(error?.code==='LOCAL_EDIT_CONFLICT')return;await journal.mark(record.draftKeyV2816,'conflict',error.message);await serial(record.key,async()=>{const current=await storage.get(record.key);if(!valid()||!current||current.payload.requestId!==attempt||current.deleted&&current.deleteAck&&!current.pending)return;const remoteDeleted=isDeletedReportV2784(error),conflict=remoteDeleted||/conflict|revision|forbidden|unauthorized|access|^INVALID_|^SCOPE_MISMATCH$|^IDEMPOTENCY_/i.test(String(error.code||''));const updated={...current,...(remoteDeleted?{remoteDeletedV2784:true}:{}),error:remoteDeleted?DELETED_REPORT_MESSAGE_V2784:error.message,blocked:conflict,pending:true};await storage.commit(updated,true,current);notify(updated);if(!conflict)schedule(record.key,5000);}).catch(error=>{if(error?.code!=='LOCAL_EDIT_CONFLICT')throw error;});}
+    finally{if(leaseTimer)clearInterval(leaseTimer);if(claimed)await journal.release(record.key,leaseOwner).catch(()=>{});sends.delete(record.key);}
   }
   function schedule(id,delay){if(timers.has(id))return;const stamp=generation;timers.set(id,setTimeout(async()=>{timers.delete(id);if(stamp!==generation)return;const record=await storage.get(id).catch(()=>null);if(record?.pending&&!record.blocked)syncRecord(record);},delay));}
-  return {async save(context,fields,requestId,name,preparedPdf){const account=getAccount(),meta=reportContextV2754(context);if(!account||!canWrite()||!meta)throw Error('Déverrouillez CDQ pour enregistrer.');const id=key(account,meta.reportId),stamp=generation;const record=await serial(id,async()=>{if(stamp!==generation||account!==getAccount()||!canWrite())throw Error('Le compte ou l’accès Drive a changé.');const old=await storage.get(id);if(old&&old.context.clientId!==meta.clientId)throw Object.assign(Error('Le rapport appartient à un autre client.'),{code:'SCOPE_MISMATCH'});if(old?.remoteDeletedV2784)throw Object.assign(Error(DELETED_REPORT_MESSAGE_V2784),{code:'REPORT_DELETED'});if(old?.deleted)throw Object.assign(Error('Ce rapport a été supprimé. Il ne peut plus être enregistré.'),{code:'REPORT_DELETED'});const payload=reportPayloadV2754(old?.context||meta,fields,requestId,name);if(preparedPdf)payload.preparedPdfV2759=await prepareReportPdfV2759(payload,preparedPdf);if(stamp!==generation||account!==getAccount()||!canWrite())throw Error('Le compte ou l’accès a changé.');if(old?.payload.requestId===payload.requestId){if(JSON.stringify(old.fields)!==JSON.stringify(payload.fields))throw Error('Identifiant de sauvegarde déjà utilisé pour d’autres réponses.');return old;}const updated={key:id,account,context:old?.context||meta,payload,fields:payload.fields,name,pending:true,dataSaved:false,blocked:false,error:'',savedAt:Date.now(),pdf:old?.pdf||{status:'pending'}};await storage.commit(updated,true);notify(updated);return updated;});queueMicrotask(()=>syncRecord(record));return {queued:true,reportEngineV2754:record.context,reportSnapshotV2754:record.fields};},async recoverAsNewV2784(context){
+  return {
+ async beginEditV2816({context,fields,name,imported=false}){
+  const account=getAccount(),meta=reportContextV2754(context),stamp=generation;
+  if(!account||!meta||!canWrite())throw Error('Déverrouillez CDQ pour modifier.');
+  const expected=await storage.get(key(account,meta.reportId));
+  if(stamp!==generation||account!==getAccount())throw Error('Le compte a changé.');
+  if(imported?!!expected:!expected||recordTokenV2816(expected.context)!==recordTokenV2816(meta)||recordTokenV2816(expected.fields)!==recordTokenV2816(reportFieldsV2754(fields))||expected.name!==name)throw conflictV2816('Les réponses ont changé pendant l’ouverture. Rouvrez le rapport pour charger leur version actuelle.');
+  const token=crypto.randomUUID();editorsV2816.set(token,{account,context:meta,expected:structuredClone(expected),lastRequestId:null,payloads:new Map()});
+  return {...meta,localOpeningV2816:token};
+ },
+ endEditV2816(context){if(context?.localOpeningV2816)editorsV2816.delete(context.localOpeningV2816);},
+ async save(context,fields,requestId,name,preparedPdf){
+  const account=getAccount(),token=context?.localOpeningV2816,editor=editorsV2816.get(token),stamp=generation;
+  if(!account||!canWrite()||!editor||editor.account!==account)throw conflictV2816('Cette ouverture ne permet plus de sauvegarder. Conservez le PDF depuis le lecteur, puis rouvrez le rapport.');
+  const valid=()=>stamp===generation&&account===getAccount()&&canWrite(),id=key(account,editor.context.reportId);
+  const record=await serial(id,async()=>{
+   if(!valid())throw Error('Le compte ou l’accès Drive a changé.');
+   const observed=await storage.get(id);
+   if(editor.lastRequestId&&observed?.localEditorV2816===token&&observed.payload.requestId===editor.lastRequestId&&(observed.confirmedRequestIdV2816===editor.lastRequestId||observed.lineageReceiptV2816&&observed.sendStartedRequestIdV2816!==editor.lastRequestId)&&recordTokenV2816(observed.fields)===recordTokenV2816(editor.expected?.fields)&&observed.name===editor.expected?.name){editor.expected=structuredClone(observed);editor.context=structuredClone(observed.context);}
+   const prior=editor.payloads.get(String(requestId).replace(/^save-/,''));
+   const payload=reportPayloadV2754(prior?.context||editor.context,fields,requestId,name);
+   if(preparedPdf)payload.preparedPdfV2759=await prepareReportPdfV2759(payload,preparedPdf);
+   const updated={key:id,account,context:structuredClone(editor.context),payload,fields:payload.fields,name,pending:true,dataSaved:false,blocked:false,error:'',savedAt:Date.now(),pdf:editor.expected?.pdf||{status:'pending'},localEditorV2816:token,parentRequestsV2816:editor.expected?.pending&&!editor.expected.dataSaved?[...(editor.expected.parentRequestsV2816||[]),editor.expected.payload.requestId]:[]};
+   const kept=await journal.preserve(updated,token);updated.draftKeyV2816=kept.key;
+   try{
+    if(!valid())throw Error('Le compte ou l’accès a changé.');
+    if(kept.reused)throw Object.assign(Error('Cet identifiant a déjà servi à une autre sauvegarde. Les deux copies restent conservées dans Documents hors ligne.'),{code:'IDEMPOTENCY_LOCAL_CONFLICT'});
+    const old=await storage.get(id);
+    if(old?.payload.requestId===payload.requestId){if(!sameIntentV2816(old.payload,payload)||!old.lineageReceiptV2816&&recordTokenV2816(old.payload)!==recordTokenV2816(payload))throw conflictV2816();return old;}
+    if(editBasisV2816(old)!==editBasisV2816(editor.expected))throw conflictV2816();
+    if(old?.deleted||old?.remoteDeletedV2784)throw Object.assign(Error(DELETED_REPORT_MESSAGE_V2784),{code:'REPORT_DELETED'});
+    await storage.commit(updated,true,old);
+    editor.expected=structuredClone(updated);editor.lastRequestId=payload.requestId;editor.payloads.set(payload.requestId,{context:structuredClone(updated.context),payload:structuredClone(payload)});
+    notify(updated);return updated;
+   }catch(error){await journal.mark(kept.key,'conflict',error.message);error.localDraftV2816=updated;throw error;}
+  });
+  queueMicrotask(()=>syncRecord(record));return {queued:true,reportEngineV2754:{...record.context,localOpeningV2816:token},reportSnapshotV2754:record.fields};
+ },async recoverAsNewV2784(context){
  const account=getAccount(),stamp=generation,id=key(account,context?.reportId),valid=()=>account&&getAccount()===account&&generation===stamp&&canWrite();
  if(!valid())throw Error('Déverrouillez CDQ pour récupérer la copie.');
  const record=await serial(id,async()=>{
   let old=await storage.get(id);if(!valid())throw Error('Le compte ou l’accès a changé.');
   if(!old||old.account!==account||old.context.clientId!==context.clientId||old.context.destinationId!==context.destinationId||!old.remoteDeletedV2784||!old.fields)throw Error('La copie locale de ce rapport supprimé est introuvable.');
   let plan=old.recoveryPlanV2784;
-  if(!plan){plan={reportId:crypto.randomUUID(),requestId:crypto.randomUUID(),at:Date.now()};old={...old,recoveryPlanV2784:plan};await storage.commit(old,true);if(!valid())throw Error('Le compte a changé.');}
+  if(!plan){plan={reportId:crypto.randomUUID(),requestId:crypto.randomUUID(),at:Date.now()};const prior=old;old={...old,recoveryPlanV2784:plan};await storage.commit(old,true,prior);if(!valid())throw Error('Le compte a changé.');}
   const recoveredKey=key(account,plan.reportId),existing=await storage.get(recoveredKey);if(!valid())throw Error('Le compte a changé.');
   if(existing){if(existing.recoveredFromReportIdV2784!==old.context.reportId||existing.account!==account)throw Error('Identité de récupération différente.');return existing;}
   const meta=reportContextV2754(recoveryContextV2784(old.context,plan.reportId));if(!meta)throw Error('Le modèle de la copie ne peut pas être confirmé.');
@@ -194,14 +250,14 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
   const recovered={key:recoveredKey,account,context:meta,fields:payload.fields,name,payload,pending:true,dataSaved:false,blocked:false,error:'',pdf:{status:'pending'},savedAt:plan.at,recoveredFromReportIdV2784:old.context.reportId};
   // Persist the new copy before any request. The old fields, prepared PDF and
   // deletion marker stay intact even if publication or acknowledgement fails.
-  await storage.commit(recovered,true);if(!valid())throw Error('Le compte a changé.');notify(recovered);return recovered;
+  await storage.commit(recovered,true,null);if(!valid())throw Error('Le compte a changé.');notify(recovered);return recovered;
  });
  if(valid()&&record.pending&&!record.blocked)queueMicrotask(()=>syncRecord(record));return record;
 },
 async remove(context){
     const account=getAccount(),meta=reportContextV2754(context),stamp=generation;if(!account||!canWrite()||!meta)throw Error('Déverrouillez CDQ pour supprimer ce rapport.');const id=key(account,meta.reportId);
     let previousDeletionV2782=false;const record=await serial(id,async()=>{if(stamp!==generation||account!==getAccount()||!canWrite())throw Error('Le compte ou l’accès Drive a changé.');const old=await storage.get(id);if(old?.deleted){previousDeletionV2782=true;return old;}const normalized=old?.context||meta,payload={reportId:normalized.reportId,clientId:normalized.clientId,baseRevision:normalized.baseRevision,fileId:normalized.fileId||'',requestId:crypto.randomUUID()};
-      const updated={...old,...(context.fields?{fields:reportFieldsV2754(context.fields),name:context.name||old?.name}:{}),key:id,account,context:normalized,payload,deleted:true,deleteAck:false,dataSaved:false,pending:true,blocked:false,error:'',savedAt:Date.now(),pdf:{status:'deleting',fileId:normalized.fileId||''}};await storage.commit(updated,true);notify(updated);return updated;});
+      const updated={...old,...(context.fields?{fields:reportFieldsV2754(context.fields),name:context.name||old?.name}:{}),key:id,account,context:normalized,payload,deleted:true,deleteAck:false,dataSaved:false,pending:true,blocked:false,error:'',savedAt:Date.now(),pdf:{status:'deleting',fileId:normalized.fileId||''}};await storage.commit(updated,true,old);notify(updated);return updated;});
     if(previousDeletionV2782&&record.deleted&&record.pending){const recovered=await reconcileDeletedV2760(record);if(recovered?.pending&&!recovered.blocked)queueMicrotask(()=>syncRecord(recovered));return recovered;}
     queueMicrotask(()=>syncRecord(record));return record;
   },async restore(context){
@@ -217,14 +273,14 @@ async remove(context){
         const restoredId=old.restoredAsReportId||crypto.randomUUID(),requestId=old.restoreRequestId||crypto.randomUUID(),meta=reportContextV2754({...old.context,reportId:restoredId,fileId:'',baseRevision:0,expectedDriveRevision:''});if(!meta)throw Error('Le modèle du brouillon ne peut pas être restauré.');
         // Persist the replacement identity first. A failed second commit retries
         // that same new report, while the cancelled identity stays tombstoned.
-        await storage.commit({...old,pending:false,deleteAck:true,restoredAsReportId:restoredId,restoreRequestId:requestId},false);if(!valid())throw Error('Le compte a changé.');
+        await storage.commit({...old,pending:false,deleteAck:true,restoredAsReportId:restoredId,restoreRequestId:requestId},false,old);if(!valid())throw Error('Le compte a changé.');
         const payload=reportPayloadV2754(meta,old.fields,requestId,old.name),record={key:key(account,restoredId),account,context:meta,fields:payload.fields,name:old.name,payload,pending:true,dataSaved:false,blocked:false,error:'',pdf:{status:'pending'},restoredFromReportId:context.reportId,savedAt:Date.now()};
-        await storage.commit(record,true);notify(record);return record;
+        await storage.commit(record,true,null);notify(record);return record;
       }
       if(!result?.ok||!result.restored||result.reportId!==context.reportId||!Number.isSafeInteger(result.revision)||result.revision<=context.baseRevision)throw Object.assign(Error(result?.message||result?.error||'La restauration du rapport n’a pas été confirmée.'),{code:result?.code||'RESTORE_UNCONFIRMED'});
       const source=result.snapshot||{},meta=reportContextV2754({...old?.context,...context,...source,reportId:context.reportId,clientId:context.clientId,baseRevision:result.revision,fileId:result.pdf?.fileId||source.fileId||context.fileId||old?.context.fileId||'',expectedDriveRevision:result.pdf?.driveRevision||old?.context.expectedDriveRevision||''});
       if(!meta)throw Error('La restauration ne confirme pas le modèle du rapport.');const fields=reportFieldsV2754(source.fields||old?.fields),pdf=result.pdf||{status:'pending'},pending=pdf.status!=='confirmed'||Number(pdf.revision)!==result.revision,name=source.name||old?.name;
-      const updated={...old,key:id,account,context:meta,name,fields,payload:reportPayloadV2754(meta,fields,crypto.randomUUID(),name),deleted:false,deleteAck:false,remoteDeletedV2784:false,restoredFromRevision:context.baseRevision,serverRevision:result.revision,dataSaved:true,pending,blocked:false,error:'',pdf,savedAt:Date.now()};await storage.commit(updated,pending);notify(updated);return updated;
+      const updated={...old,key:id,account,context:meta,name,fields,payload:reportPayloadV2754(meta,fields,crypto.randomUUID(),name),deleted:false,deleteAck:false,remoteDeletedV2784:false,restoredFromRevision:context.baseRevision,serverRevision:result.revision,dataSaved:true,pending,blocked:false,error:'',pdf,savedAt:Date.now()};await storage.commit(updated,pending,old);notify(updated);return updated;
     });if(record.pending)queueMicrotask(()=>syncRecord(record));return record;
   },async remember({context,fields,name,pdf,serverRevision}){
     const account=getAccount(),meta=reportContextV2754(context),stamp=generation;if(!account||!meta)throw Error('Identité du rapport invalide.');const id=key(account,meta.reportId);
@@ -234,8 +290,8 @@ async remove(context){
       // including one accepted by the server but still awaiting its Drive PDF.
       if(moved&&!old.deleted&&(old.pending||old.blocked||old.dataSaved===false||old.serverRevision>revision))throw Object.assign(Error('Ce rapport a changé de dossier alors que des réponses locales sont en attente. Elles restent conservées; terminez leur vérification avant de rouvrir le fichier.'),{code:'REPORT_LOCATION_CONFLICT'});
       if(old?.remoteDeletedV2784||old?.deleted||old?.pending&&!old.dataSaved)return old;if(old&&old.serverRevision>revision)return old;
-      const normalized=reportFieldsV2754(fields),observation=observedReportStateV2784(old,{revision,fields:normalized,name}),publication=pdf||{status:'confirmed',fileId:meta.fileId,revision},pending=publication.status!=='confirmed'||Number(publication.revision)!==revision,record={key:id,account,context:{...meta,baseRevision:revision},fields:normalized,name,serverRevision:revision,dataSaved:true,pending,blocked:!!(observation.requestId&&old.blocked),error:observation.requestId?old.error||'':'',savedAt:observation.savedAt,observationOnlyV2784:observation.observationOnlyV2784,pdf:publication,payload:observation.requestId?old.payload:{...meta,baseRevision:revision,requestId:crypto.randomUUID(),name,fields:normalized}};
-      await storage.commit(record,pending);notify(record);if(pending)queueMicrotask(()=>syncRecord(record));return record;
+      const normalized=reportFieldsV2754(fields),observation=observedReportStateV2784(old,{revision,fields:normalized,name}),publication=pdf||{status:'confirmed',fileId:meta.fileId,revision},pending=publication.status!=='confirmed'||Number(publication.revision)!==revision,record={key:id,account,...(observation.requestId&&old.draftKeyV2816?{draftKeyV2816:old.draftKeyV2816}:{}),context:{...meta,baseRevision:revision},fields:normalized,name,serverRevision:revision,dataSaved:true,pending,blocked:!!(observation.requestId&&old.blocked),error:observation.requestId?old.error||'':'',savedAt:observation.savedAt,observationOnlyV2784:observation.observationOnlyV2784,pdf:publication,payload:observation.requestId?old.payload:{...meta,baseRevision:revision,requestId:crypto.randomUUID(),name,fields:normalized}};
+      await storage.commit(record,pending,old);if(!pending&&observation.requestId)await journal.mark(record.draftKeyV2816,'confirmed');notify(record);if(pending)queueMicrotask(()=>syncRecord(record));return record;
     });
   },async get(context){const account=getAccount();if(!account)return null;if(typeof context==='string')return storage.get(key(account,context));if(context?.reportId)return storage.get(key(account,context.reportId));if(context?.fileId)return storage.byFileId?storage.byFileId(account,context.fileId):(await storage.all(account)).find(record=>record.account===account&&(record.context.fileId===context.fileId||record.pdf?.fileId===context.fileId))||null;return null;},async all(){const account=getAccount();return account?(await storage.all(account)).filter(record=>record.account===account):[];},async metadata({clientId}={}){const account=getAccount();if(!account)return [];return storage.metadata?storage.metadata(account,clientId):(await storage.all(account)).filter(record=>record.account===account&&(!clientId||record.context?.clientId===clientId));},async synchronizeReportV2789(reportId){
     const account=getAccount(),stamp=generation;if(!account)return;
@@ -244,5 +300,5 @@ async remove(context){
     if(record.deleted&&record.blocked)record=await reconcileDeletedV2760(record);
     if(stamp!==generation||account!==getAccount()||!canWrite()||!record?.pending||record.blocked)return;
     await syncRecord(record);
-  },async resume({reportIds}={}){const account=getAccount(),selected=Array.isArray(reportIds)?new Set(reportIds):null;if(!account)return;const records=storage.pending?await storage.pending(account,reportIds):await storage.all(account);for(const record of records)if(record.account===account&&record.pending&&(!selected||selected.has(record.context.reportId))){notify(record);if(record.deleted)reconcileDeletedV2760(record).then(recovered=>{if(recovered?.pending&&!recovered.blocked)syncRecord(recovered);}).catch(()=>{});else if(!record.blocked)syncRecord(record);}},lock(){generation++;for(const timer of timers.values())clearTimeout(timer);timers.clear();},stats:()=>({inflight:sends.size,queuedTimers:timers.size})};
+  },async resume({reportIds}={}){const account=getAccount(),selected=Array.isArray(reportIds)?new Set(reportIds):null;if(!account)return;const records=storage.pending?await storage.pending(account,reportIds):await storage.all(account);for(const record of records)if(record.account===account&&record.pending&&(!selected||selected.has(record.context.reportId))){notify(record);if(record.deleted)reconcileDeletedV2760(record).then(recovered=>{if(recovered?.pending&&!recovered.blocked)syncRecord(recovered);}).catch(()=>{});else if(!record.blocked)syncRecord(record);}},lock(){generation++;editorsV2816.clear();for(const timer of timers.values())clearTimeout(timer);timers.clear();},stats:()=>({inflight:sends.size,queuedTimers:timers.size})};
 }
