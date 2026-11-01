@@ -38,7 +38,7 @@ const assets=new URL('../../vendor/pdfjs-6.3.289/',import.meta.url).href;
 function loadReaderModulesV2730(load,base){
   // pdf_viewer.mjs reads the global installed by pdf.mjs during evaluation.
   // The sandbox module is independent and can load alongside the core.
-  const core=load(new URL('./pdf.mjs',import.meta.url).href),sandbox=load(base+'build/pdf.sandbox.mjs');
+  const core=load(new URL('./pdf.mjs?rev=crisp-v28-2',import.meta.url).href),sandbox=load(base+'build/pdf.sandbox.mjs');
   const ui=core.then(()=>load(base+'web/pdf_viewer.mjs'));
   return Promise.all([core,ui,sandbox]);
 }
