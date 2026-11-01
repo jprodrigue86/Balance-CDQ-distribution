@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.17" data-cdq-pc-release="2472f1d2eb63963b146104b0a6794e7f6bbe3bb6a93b0328a2d106d6571573d9">
+<html data-cdq-pc-version="28.18" data-cdq-pc-release="161898ec4ae204ed122ee957964324d0804492016a7c3fd18d4262d3ad87a8f6">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -932,7 +932,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.11.01-v28.17-packaged-selector">
+<meta name="cdq-package-build" content="2026.11.01-v28.18-observation-reader">
 
 
 <script id="cdqBridgeV23">
@@ -986,7 +986,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.01-v28.17-packaged-selector'
+    build:'2026.11.01-v28.18-observation-reader'
   });
 }
 
@@ -999,7 +999,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.01-v28.17-packaged-selector'
+        build:'2026.11.01-v28.18-observation-reader'
       });
     }
   } catch(e) {}
@@ -11868,7 +11868,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.01-v28.17-packaged-selector";
+  const CDQ_BUILD = "2026.11.01-v28.18-observation-reader";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14233,7 +14233,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.01-v28.17-packaged-selector";
+const CDQ_V19_BUILD = "2026.11.01-v28.18-observation-reader";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -16088,7 +16088,7 @@ function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoch,curre
     const context=record.context,pdf=record.pdf,confirmed=record.dataSaved===true&&!record.pending&&pdf?.status==='confirmed'&&Number(pdf.revision)===Number(record.serverRevision),detail={owner:record.account,clientId:context.clientId,reportId:context.reportId,sourceId:pdf?.fileId||context.fileId||context.reportId,saveId:record.payload?.requestId,name:record.name,fields:record.fields,revision:record.serverRevision,pdf,dataSaved:!!record.dataSaved,pending:!!record.pending,localDurable:true,savedAt:record.savedAt};
     if(record.observationOnlyV2784!==true&&record.pending&&context.fileId&&Number.isFinite(record.savedAt))instant?.confirm?.({id:context.fileId,nom:record.name,type:'PDF',_cdqPendingSaveV2660:record.payload.requestId,_cdqLocalSavedAtV2772:record.savedAt},context.clientId,context.destinationId,{type:'PDF'});
     if(record.observationOnlyV2784!==true)publish('cdq:report-data-saved-v2754',detail);
-    if(confirmed){const file={id:pdf.fileId,fileId:pdf.fileId,nom:record.name,name:record.name,revision:pdf.driveRevision,modifiedTime:pdf.driveRevision,clientId:context.clientId,destinationId:context.destinationId,type:'PDF',reportIdV2754:context.reportId,reportRevisionV2754:record.serverRevision,_cdqCommittedUploadV2660:record.payload.requestId,_cdqLocalSavedAtV2772:0};instant?.confirm?.(file,context.clientId,context.destinationId,{type:'PDF'});publish('cdq:report-pdf-confirmed-v2754',{...detail,...file,revision:record.serverRevision});}
+    if(record.observationOnlyV2784!==true&&confirmed){const file={id:pdf.fileId,fileId:pdf.fileId,nom:record.name,name:record.name,revision:pdf.driveRevision,modifiedTime:pdf.driveRevision,clientId:context.clientId,destinationId:context.destinationId,type:'PDF',reportIdV2754:context.reportId,reportRevisionV2754:record.serverRevision,_cdqCommittedUploadV2660:record.payload.requestId,_cdqLocalSavedAtV2772:0};instant?.confirm?.(file,context.clientId,context.destinationId,{type:'PDF'});publish('cdq:report-pdf-confirmed-v2754',{...detail,...file,revision:record.serverRevision});}
   }
   async function client(){
     if(!clientFlight){
@@ -18002,7 +18002,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.01-v28.17-packaged-selector";
+const CDQ_V20_BUILD = "2026.11.01-v28.18-observation-reader";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -18849,7 +18849,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.01-v28.17-packaged-selector";
+const CDQ_V21_BUILD = "2026.11.01-v28.18-observation-reader";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -23287,7 +23287,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.01-v28.17-packaged-selector',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.01-v28.18-observation-reader',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
