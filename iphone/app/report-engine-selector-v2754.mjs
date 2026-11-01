@@ -37,6 +37,21 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     // A fresh authorized read can overlap local storage; editing still awaits it.
     let freshRead=null;
     if(requireFresh&&!localOnly){phase('read-start');freshRead=call('read',{fileId:String(fileId),clientId:expectedClient});freshRead.catch(()=>{});}
+    // Independent local I/O overlaps the authorized server read. No local
+    // answers become editable until all fresh scope/revision checks finish.
+    const localRead=Promise.resolve().then(()=>readLocal(String(fileId)));
+    localRead.catch(()=>{});
+    let templateFlight=null,templateKey='';
+    const checkTemplateCurrent=()=>{checkCurrent();if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');};
+    const keyForTemplate=context=>JSON.stringify([context?.family,context?.template]);
+    const startTemplate=context=>{
+      if(!context?.template)return;
+      templateKey=keyForTemplate(context);
+      // Only an immutable, registry-pinned blank master is prefetched. Client
+      // fields and permission decisions are never supplied by this promise.
+      templateFlight=Promise.resolve().then(()=>loadTemplate(context.template,{family:context.family,checkCurrent:checkTemplateCurrent}));
+      templateFlight.catch(()=>{});
+    };
     const engine=await client();let record=await engine.get({fileId:String(fileId)});checkCurrent();phase('lookup-ready');if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');
     const deleted=()=>{throw Object.assign(Error('Ce rapport a été supprimé. Ses réponses conservées ne seront pas renvoyées.'),{code:'REPORT_DELETED'});};
     async function rememberRead(result){
@@ -53,6 +68,7 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
       if(movedClient&&(record.pending||record.blocked||record.dataSaved===false))throw Object.assign(Error('Ce rapport a changé de dossier alors que des réponses locales sont en attente. Elles restent conservées; terminez leur vérification avant de rouvrir le fichier.'),{code:'REPORT_LOCATION_CONFLICT'});
       if(movedClient&&localOnly)return null;
       if(movedClient&&!isOnline())throw Object.assign(Error('Connectez-vous pour vérifier le nouvel emplacement de ce rapport.'),{code:'SCOPE_MISMATCH'});
+      if(!movedClient)startTemplate(record.context);
       if(!localOnly&&isOnline()){
         try{
           if(!freshRead)phase('read-start');const result=await (freshRead||call('read',{...(movedClient?{}:{reportId:record.context.reportId}),clientId:expectedClient||record.context.clientId,fileId:String(fileId)}));
@@ -78,7 +94,7 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
       if(consultation){legacyScopes.delete(String(fileId));return consultation;}
       record=await rememberRead(result);if(!record){
         const scope=result.legacyScope;if(scope)legacyScopes.set(String(fileId),scope);
-        const local=await readLocal(String(fileId))||legacyRecord;checkCurrent();const own=local?.reportEngineV2754;
+        const local=await localRead||legacyRecord;checkCurrent();const own=local?.reportEngineV2754;
         if(local?.pendingSaveId&&local.reportSnapshotOwnerV2757===email&&local.reportSnapshotV2754&&own?.baseRevision===0&&own.fileId===String(fileId)&&scope?.fileId===own.fileId&&scope.clientId===own.clientId&&scope.destinationId===own.destinationId){
           if(scope.expectedDriveRevision!==own.expectedDriveRevision)throw Object.assign(Error('Le PDF a changé. Les nouvelles réponses restent conservées sur cet appareil.'),{code:'REPORT_LOCAL_REVISION_CONFLICT'});
           record={context:own,fields:local.reportSnapshotV2754,name:local.nom};
@@ -88,7 +104,7 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     if(record.deleted)deleted();
     // The Android editor's durable copy owns newly saved fields; its PDF blob
     // can still be the preceding support PDF while publication is in flight.
-    const local=await readLocal(String(fileId))||legacyRecord;checkCurrent();
+    const local=await localRead||legacyRecord;checkCurrent();
     if(local?.reportSnapshotV2754&&local.reportSnapshotOwnerV2757===email){
       const own=local.reportEngineV2754,remote=record.context;
       if(own?.reportId===remote.reportId&&own.clientId===remote.clientId&&own.destinationId===remote.destinationId&&own.fileId===String(fileId)&&own.template?.sha256===remote.template?.sha256){
@@ -98,8 +114,9 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
       }
     }
     const context=record.context;if(expectedClient&&context.clientId!==expectedClient)throw Object.assign(Error('Le rapport appartient à un autre client.'),{code:'SCOPE_MISMATCH'});
-    const checkTemplateCurrent=()=>{checkCurrent();if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');};
-    phase('template-start');const template=await loadTemplate(context.template,{family:context.family,checkCurrent:checkTemplateCurrent});checkTemplateCurrent();phase('template-ready');
+    phase('template-start');
+    if(!templateFlight||templateKey!==keyForTemplate(context))startTemplate(context);
+    const template=await templateFlight;checkTemplateCurrent();phase('template-ready');
     return {...legacyRecord,id:String(fileId),clientId:context.clientId,folderId:context.destinationId,nom:record.name,blob:template.blob,revision:context.expectedDriveRevision,reportEngineV2754:context,reportSnapshotV2754:record.fields,readerPreparedVersion:2730};
   }
   async function save(context,fields,requestId,name,preparedPdf){return (await client()).save(context,fields,requestId,name,preparedPdf);}
@@ -123,7 +140,21 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
       try{
         if(data.statusOnlyV2757&&(!Number.isSafeInteger(expected)||expected<1))throw Object.assign(Error('Reçu de données local invalide.'),{code:'INVALID_REPORT_RECEIPT'});
         if(!data.statusOnlyV2757)publish('cdq:report-data-saved-v2754',{owner:email,clientId:payload.clientId,reportId:payload.reportId,sourceId:payload.fileId||payload.reportId,saveId:payload.requestId,name:payload.name,fields:payload.fields,dataSaved:false,pending:true});
-        let result=receipt(await call(data.statusOnlyV2757?'status':'save',data.statusOnlyV2757?{reportId:payload.reportId,clientId:payload.clientId}:payload),true);
+        let resultValue;
+        if(data.statusOnlyV2757)resultValue=await call('status',{reportId:payload.reportId,clientId:payload.clientId});
+        else{
+          try{resultValue=await call('save',payload);}
+          catch(error){
+            // The server explicitly rejected the optional PDF bytes BEFORE
+            // saving any revision. Retry ONCE with the SAME request ID and
+            // exact captured fields, using the server's approved renderer.
+            // Never weaken the prepared-PDF validator or erase local bytes.
+            if(error?.code!=='INVALID_PREPARED_PDF'||!payload.preparedPdfV2759)throw error;
+            const {preparedPdfV2759,...serverRenderedSnapshot}=payload;
+            resultValue=await call('save',serverRenderedSnapshot);
+          }
+        }
+        let result=receipt(resultValue,true);
         for(let n=0;n<50&&result.pdf?.status!=='confirmed';n++){
           if(['conflict','error'].includes(result.pdf?.status))throw Object.assign(Error(result.pdf.message||result.pdf.error||'La publication du PDF doit être reprise.'),{code:result.pdf.status==='conflict'?'revision_conflict':''});
           await new Promise(resolve=>setTimeout(resolve,1200));if(!valid(email,stamp))return true;

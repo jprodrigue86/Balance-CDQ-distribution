@@ -11,7 +11,7 @@ html.cdq-mobile-layout:not(.cdq-desktop-v2676) body :is(#cdqTopActionsV2204>.cdq
 html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body :is(.container,.desktop-main,.top-bar,.folder-content,.cdq-workspace-body){background:transparent!important}
 html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #appHeader{
  position:relative!important;box-sizing:border-box!important;overflow:hidden!important;height:auto!important;min-height:0!important;aspect-ratio:4.8!important;
- border:0!important;border-radius:0!important;clip-path:url(#cdqMaterialHeaderClipV2799);background:var(--cdq-material-panel)!important;background-size:100vw auto!important;background-position:center 10%!important;box-shadow:inset 0 1px 0 #ffffff28!important;
+ border:0!important;border-radius:0!important;clip-path:url(#cdqMaterialHeaderClipV2799);background:var(--cdq-material-panel)!important;background-size:100vw auto!important;background-position:center 10%!important;background-color:var(--cdq-bg-base-v2793,#000)!important;box-shadow:inset 0 1px 0 #ffffff28!important;
 }
 html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #appHeader .header-metal-banner{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #appHeader::before{
@@ -22,7 +22,7 @@ html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #
 }
 html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body .company-wrapper{gap:7px!important;margin:7px 0!important;align-items:stretch!important}
 html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #companyButton{
- min-height:40px!important;padding:7px 12px!important;font-size:clamp(17px,4.9vw,24px)!important;text-align:left!important;color:#fff!important;
+ min-height:40px!important;padding:7px 34px 7px 12px!important;font-size:clamp(17px,4.9vw,24px)!important;text-align:left!important;color:#fff!important;
  background:var(--cdq-material-panel)!important;background-size:100vw auto!important;background-position:center 30%!important;border:1px solid #a2a7aa!important;border-radius:10px!important;
 }
 html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #cdqCreateClientV2640{
@@ -71,11 +71,12 @@ html[data-cdq-background-v2793] body :is(.cdq-workspace-head,.cdq-workspace-card
 html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body #filesContainer .folder{
  border:0!important;margin:0!important;padding:0!important;background:transparent!important;box-shadow:none!important;
 }
-/* Native gesture controls may overlay WebView even when the reported inset is 0.
-   Keep an open frame and place its content at least 10px above that edge. */
+/* Keep the opaque frame at the viewport edge. The density writer reserves
+   the native gesture inset INSIDE the navigation and measures its full height. */
 html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793] body .bottom-nav{
  border-bottom:0!important;border-radius:13px 13px 0 0!important;
- bottom:max(10px,var(--cdq-content-safe-bottom,0px),env(safe-area-inset-bottom,0px))!important;
+ bottom:0!important;
+ background-color:var(--cdq-bg-base-v2793,#000)!important;
 }
 /* Remove only pointer feedback on the chooser; keyboard focus remains visible. */
 html.cdq-mobile-layout:not(.cdq-desktop-v2676) body #companyButton{
@@ -93,7 +94,7 @@ html.cdq-mobile-layout:not(.cdq-desktop-v2676) body #companyButton:focus-visible
 html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793="leather"] body :is(#filesContainer,#companyButton,#cdqCreateClientV2640,#cdqTopActionsV2204>.cdq-top-action,#cdqClientActionsV2640>button,.cdq-workspace-card,.cdq-workspace-row,.cdq-invoice-panel,.cdq-catalog-choice,.cdq-product-card){
  border-color:#686761!important;outline:1px dashed #9d988a!important;outline-offset:-4px!important;box-shadow:inset 0 0 0 2px #050505,inset 0 0 5px 5px #0008!important;
 }
-html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793="leather"] body .bottom-nav{outline:1px dashed #9d988a!important;outline-offset:-4px!important;clip-path:inset(0 0 4px 0)}
+html.cdq-mobile-layout:not(.cdq-desktop-v2676)[data-cdq-background-v2793="leather"] body .bottom-nav{outline:1px dashed #9d988a!important;outline-offset:-4px!important;clip-path:none}
 html[data-cdq-background-v2793="leather"] #appHeader>.cdq-material-header-frame>path{stroke:#a09a8d;stroke-width:2;stroke-dasharray:5 4}
 /* Aucun is an explicit pure-black background in every route and preview. */
 html[data-cdq-background-v2793="current"]{

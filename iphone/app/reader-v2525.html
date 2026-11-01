@@ -352,12 +352,22 @@ body #status::after{content:'';display:block;height:4px;margin-top:5px;backgroun
 body #status[data-busy="true"]::after{width:38%;animation:cdq-blue-operation-v2767 1.4s ease-in-out infinite}
 @keyframes cdq-blue-operation-v2767{0%,100%{transform:translateX(0)}50%{transform:translateX(155%)}}
 @media(prefers-reduced-motion:reduce){body #status[data-busy="true"]::after{width:100%;animation:none}}
+/* V28.12: saving occupies its own opaque document area, below the actual toolbar. */
+body.cdq-saving-v2812 #status{display:none!important}
+body #savingMask{bottom:0!important;background:var(--reader-panel,#101820)!important;z-index:80;display:grid;place-items:center;padding:24px;box-sizing:border-box;overflow:auto}
+body #savingMask[hidden]{display:none!important}
+.cdq-save-card-v2812{width:min(100%,360px);box-sizing:border-box;text-align:center;line-height:1.45;color:var(--reader-text,#edf5fc)}
+.cdq-save-card-v2812 strong{font-size:20px}
+.cdq-save-card-v2812 p{font-size:15px;margin:14px 0 22px;overflow-wrap:anywhere}
+.cdq-save-track-v2812{height:4px;width:100%;overflow:hidden;border-radius:4px;background:var(--reader-line,#355064)}
+.cdq-save-track-v2812 span{display:block;width:38%;height:100%;border-radius:4px;background:#269dff;animation:cdq-blue-operation-v2767 1.4s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.cdq-save-track-v2812 span{animation:none;width:100%}}
 </style></head><body>
 <header id="readerTop"><button id="back" aria-label="Retour dans CDQ"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5m7-7-7 7 7 7"/></svg><span>Retour</span></button><div id="zoomControls" aria-label="Zoom du PDF"><button id="minus" class="zoom-button" aria-label="Réduire"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button><span id="zoom">100 %</span><button id="plus" class="zoom-button" aria-label="Agrandir"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M12 5v14"/></svg></button></div><button id="menu" aria-label="Options du PDF" aria-expanded="false"><svg class="reader-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button></header>
 <div id="more" role="menu" hidden><button id="fit" role="menuitem">Ajuster à la largeur</button><button id="download" role="menuitem">Télécharger</button><button id="save" role="menuitem" class="primary" disabled>Enregistrer</button><button id="cancelMenu" role="menuitem" title="Fermer le menu et continuer la saisie">Annuler</button><button id="quitMenu" role="menuitem">Quitter</button></div><footer id="readerNameBar" aria-label="Nom du rapport"><span id="name">PDF</span></footer>
 <div id="container"><div id="viewer" class="pdfViewer"></div><div id="empty"><label class="action" for="file">Ouvrir un PDF</label></div></div><input id="file" type="file" accept="application/pdf,.pdf"><div id="status" role="status">Chargement du lecteur…</div>
 <nav id="formNav" aria-label="Saisie du formulaire" hidden><button id="previousField">↑ Précédent</button><button id="nextField">Suivant ↓</button><button id="dismissKeyboard" aria-label="Fermer le clavier et regarder le PDF">OK</button><button id="doneFields">Terminer</button></nav>
-<div id="savingMask" hidden></div><dialog id="closeDialog" aria-labelledby="closeTitle"><h2 id="closeTitle">Terminer ce PDF ?</h2><p>Que voulez-vous faire avec les modifications ?</p><p id="closeError" role="status"></p><button id="saveClose" class="primary">✓ Enregistrer les modifications</button><button id="discard">Fermer sans enregistrer</button><button id="keepEditing">Annuler</button></dialog>
+<div id="savingMask" hidden><div class="cdq-save-card-v2812" role="status" aria-live="polite"><strong>Enregistrement du PDF</strong><p id="savingStatus">Préparation de l’enregistrement…</p><div class="cdq-save-track-v2812" aria-hidden="true"><span></span></div></div></div><dialog id="closeDialog" aria-labelledby="closeTitle"><h2 id="closeTitle">Terminer ce PDF ?</h2><p>Que voulez-vous faire avec les modifications ?</p><p id="closeError" role="status"></p><button id="saveClose" class="primary">✓ Enregistrer les modifications</button><button id="discard">Fermer sans enregistrer</button><button id="keepEditing">Annuler</button></dialog>
 <script type="module" src="reader-v2525.mjs"></script><script type="module" src="./cursor-v2721.mjs"></script>
 <script id="cdqInterfaceV2710">(() => {
  'use strict';

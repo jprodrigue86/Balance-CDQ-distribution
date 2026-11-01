@@ -2,6 +2,8 @@
 // The PDF fields and /AP streams remain untouched. Old DOM badges are excluded.
 const HEADER=/^(?:(?:bloc3|excentricite)_statut_(?:non_)?conforme|Bouton_(?:Conforme|NonConforme))$/;
 const measured=new WeakMap();
+let artworkFramesV2812=new WeakMap();
+export function invalidateHeaderArtworkV2812(){artworkFramesV2812=new WeakMap();}
 function headerInkBounds(canvas){
  if(measured.has(canvas))return measured.get(canvas);
  let bounds=null;
@@ -14,6 +16,8 @@ function headerInkBounds(canvas){
 }
 function headerArtworkFrame(section,definition){
  const page=section.closest('.page'),canvas=page?.querySelector('.canvasWrapper canvas');if(!canvas?.width||!canvas.height)return null;
+ let entries=artworkFramesV2812.get(canvas);if(!entries){entries=new WeakMap();artworkFramesV2812.set(canvas,entries);}
+ const cached=entries.get(section);if(cached&&cached.width===canvas.width&&cached.height===canvas.height)return cached.frame;
  const s=section.getBoundingClientRect(),c=canvas.getBoundingClientRect();if(!(s.width>0&&s.height>0&&c.width>0&&c.height>0))return null;
  const w=definition.rect[2]-definition.rect[0],h=definition.rect[3]-definition.rect[1];
  if(!(w>60&&h>10&&h<30))return null;
@@ -26,7 +30,8 @@ function headerArtworkFrame(section,definition){
   // Include only bounded header runs near the authored native rectangle.
   const top=c.top+(lo+t)/sy,bottom=c.top+(lo+b+1)/sy;
   if(Math.abs(top-s.top)>s.height*.12||Math.abs(bottom-s.bottom)>s.height*.12)return null;
-  return {top:(top-s.top)/s.height,height:(bottom-top)/s.height};
+  const frame={top:(top-s.top)/s.height,height:(bottom-top)/s.height};
+  entries.set(section,{width:canvas.width,height:canvas.height,frame});return frame;
  }catch{return null;}
 }
 export function alignHeaderCanvasesV2788R4(surface,fields){

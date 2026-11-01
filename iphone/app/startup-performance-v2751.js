@@ -4,7 +4,7 @@
 function createRpcBudgetV2751({limit=3,backgroundLimit=1,context=()=>'',defer=queueMicrotask,trace=()=>{}}={}){
   const queue=[];let running=0,normalRunning=0,backgroundRunning=0,sequence=0,priority='foreground',scheduled=false;
   function pump(){scheduled=false;queue.sort((a,b)=>a.rank-b.rank||a.sequence-b.sequence);
-    while(running<limit){const index=queue.findIndex(job=>(job.interactive||normalRunning<Math.max(1,limit-1))&&(job.priority!=='background'||backgroundRunning<backgroundLimit));if(index<0)break;
+    while(running<limit){const index=queue.findIndex(job=>(job.interactive||job.write||normalRunning<Math.max(1,limit-1))&&(job.priority!=='background'||backgroundRunning<backgroundLimit));if(index<0)break;
       const job=queue.splice(index,1)[0];job.detachAbort?.();if(job.owner!==context()||!job.valid()||job.signal?.aborted){trace(job.sequence,'settled',job.label);job.reject(Error('Le compte ou l’accès a changé.'));continue;}
       running++;if(!job.interactive)normalRunning++;if(job.priority==='background')backgroundRunning++;trace(job.sequence,'dispatch',job.label);
       Promise.resolve().then(()=>{if(job.owner!==context())throw Error('Le compte ou l’accès a changé.');return job.send();}).then(job.resolve,job.reject).finally(()=>{running--;if(!job.interactive)normalRunning--;if(job.priority==='background')backgroundRunning--;trace(job.sequence,'settled',job.label);schedule();});
@@ -13,7 +13,7 @@ function createRpcBudgetV2751({limit=3,backgroundLimit=1,context=()=>'',defer=qu
   function schedule(){if(!scheduled){scheduled=true;defer(pump);}}
   function run(send,{kind=priority,write=false,interactive=false,label='rpc',traceId,readKey='',valid=()=>true,signal=null}={}){if(write)kind='foreground';interactive=interactive&&kind!=='background'&&!write;return new Promise((resolve,reject)=>{
     if(signal?.aborted){reject(Object.assign(Error('Lecture annulée.'),{name:'AbortError',code:'READ_CANCELLED'}));return;}
-    const id=traceId??sequence++,job={send,resolve,reject,owner:context(),priority:kind,interactive,label,valid,signal,readKey:write?'':readKey,rank:interactive?-1:write?0:kind==='background'?2:1,sequence:id};
+    const id=traceId??sequence++,job={send,resolve,reject,owner:context(),priority:kind,write,interactive,label,valid,signal,readKey:write?'':readKey,rank:interactive?-1:write?0:kind==='background'?2:1,sequence:id};
     if(signal){const abort=()=>{const index=queue.indexOf(job);if(index<0)return;queue.splice(index,1);job.detachAbort();trace(id,'settled',label);reject(Object.assign(Error('Lecture annulée.'),{name:'AbortError',code:'READ_CANCELLED'}));schedule();};job.detachAbort=()=>signal.removeEventListener('abort',abort);signal.addEventListener('abort',abort,{once:true});}
     trace(id,'queued',label);queue.push(job);schedule();});}
   // Promote the already coalesced read in this queue, without a second RPC.

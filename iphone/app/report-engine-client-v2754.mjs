@@ -139,7 +139,19 @@ export function createReportEngineClientV2754({rpc,storage=reportEngineStorageV2
     const attempt=record.payload.requestId;sends.set(record.key,attempt);
     try{
       const deleting=record.deleted===true;
-      let result=await rpc(deleting?(record.deleteAck?'status':'delete'):(record.dataSaved?'status':'save'),deleting?{reportId:record.context.reportId,clientId:record.context.clientId,baseRevision:record.context.baseRevision,fileId:record.context.fileId||''}:record.dataSaved?{reportId:record.context.reportId,clientId:record.context.clientId}:record.payload);if(!valid())return;
+      const action=deleting?(record.deleteAck?'status':'delete'):(record.dataSaved?'status':'save');
+      const request=deleting?{reportId:record.context.reportId,clientId:record.context.clientId,baseRevision:record.context.baseRevision,fileId:record.context.fileId||''}:record.dataSaved?{reportId:record.context.reportId,clientId:record.context.clientId}:record.payload;
+      // A rejected optional prepared-PDF attachment has not created any server
+      // revision. Resend the SAME request/fields exactly once, leaving bytes
+      // in the durable local recovery record, and let the approved server
+      // renderer construct the PDF. Never bypass template/field validation.
+      const eligible=action==='save'&&!!record.payload?.preparedPdfV2759;
+      const fallback=()=>{const {preparedPdfV2759,...snapshot}=record.payload;return rpc('save',snapshot);};
+      let result;
+      try{result=await rpc(action,request);}
+      catch(error){if(!eligible||error?.code!=='INVALID_PREPARED_PDF')throw error;result=await fallback();}
+      if(eligible&&result?.ok===false&&result.code==='INVALID_PREPARED_PDF')result=await fallback();
+      if(!valid())return;
       if(result?.reportId&&result.reportId!==record.context.reportId||result?.row?.clientId&&result.row.clientId!==record.context.clientId||result?.clientId&&result.clientId!==record.context.clientId)throw Object.assign(Error('La réponse du serveur ne correspond pas à ce rapport.'),{code:'INVALID_REPORT_RECEIPT'});
       if(!deleting&&result?.deleted===true){if(result.reportId!==record.context.reportId)throw Object.assign(Error('Confirmation de suppression invalide.'),{code:'INVALID_REPORT_RECEIPT'});throw Object.assign(Error(DELETED_REPORT_MESSAGE_V2784),{code:'REPORT_DELETED'});}
       if(!result?.ok||deleting&&(result.deleted!==true||result.reportId!==record.context.reportId)||!deleting&&!result.deleted&&!(result.dataSaved||record.dataSaved&&Number.isSafeInteger(result.revision)))throw Object.assign(Error(result?.message||result?.error||'Sauvegarde serveur non confirmée.'),{code:result?.code||result?.error});
@@ -232,5 +244,5 @@ async remove(context){
     if(record.deleted&&record.blocked)record=await reconcileDeletedV2760(record);
     if(stamp!==generation||account!==getAccount()||!canWrite()||!record?.pending||record.blocked)return;
     await syncRecord(record);
-  },async resume({reportIds}={}){const account=getAccount(),selected=Array.isArray(reportIds)?new Set(reportIds):null;if(!account)return;const records=storage.pending?await storage.pending(account,reportIds):await storage.all(account);for(const record of records)if(record.account===account&&record.pending&&(!selected||selected.has(record.context.reportId))){if(record.deleted)reconcileDeletedV2760(record).then(recovered=>{if(recovered?.pending&&!recovered.blocked)syncRecord(recovered);}).catch(()=>{});else if(!record.blocked)syncRecord(record);}},lock(){generation++;for(const timer of timers.values())clearTimeout(timer);timers.clear();},stats:()=>({inflight:sends.size,queuedTimers:timers.size})};
+  },async resume({reportIds}={}){const account=getAccount(),selected=Array.isArray(reportIds)?new Set(reportIds):null;if(!account)return;const records=storage.pending?await storage.pending(account,reportIds):await storage.all(account);for(const record of records)if(record.account===account&&record.pending&&(!selected||selected.has(record.context.reportId))){notify(record);if(record.deleted)reconcileDeletedV2760(record).then(recovered=>{if(recovered?.pending&&!recovered.blocked)syncRecord(recovered);}).catch(()=>{});else if(!record.blocked)syncRecord(record);}},lock(){generation++;for(const timer of timers.values())clearTimeout(timer);timers.clear();},stats:()=>({inflight:sends.size,queuedTimers:timers.size})};
 }

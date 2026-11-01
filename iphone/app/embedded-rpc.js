@@ -55,6 +55,20 @@
     }
     return false;
   }
+  // A bulk send can legitimately spend several minutes exporting Sheets.
+  // Keep the original 90 s deadline for other RPC calls, including writes.
+  // The backend's own execution limit still applies; never replay a timed-out send.
+  function cdqRpcDeadlineBulkSendV20261030(job){
+    const direct=String(job?.name||'');
+    const nested=direct==='cdqRpc';
+    const name=nested?String(job?.args?.[0]||''):direct;
+    const args=nested?job?.args?.[1]:job?.args;
+    const selected=Array.isArray(args?.[0])?args[0].length:0;
+    const bulkSend=name==='envoyerSelectionSuiviV2553'||
+      name==='envoyerSelectionSuivi'||
+      name==='convertirEtEnvoyerSuivi';
+    return bulkSend&&selected>=20?390000:90000;
+  }
   function send(job){
     if(consumeBootstrapV2687(job))return;
     if(!peer||job.sent||!wire(job))return;
@@ -65,7 +79,7 @@
     job.sent=true;trace(job,'bridge-post');
     if(!job.timer)job.timer=setTimeout(
       ()=>settle(job.id,false,job.name==='obtenirEtatAcces'?'La vérification de connexion a expiré. Appuyez sur Réessayer la connexion.':'La demande a expiré. Vérifiez son résultat avant de relancer une écriture.'),
-      90000
+      cdqRpcDeadlineBulkSendV20261030(job)
     );
     peer.postMessage({
       type:'CDQ_EMBEDDED_CALL',protocol:1,channel,id:job.id,

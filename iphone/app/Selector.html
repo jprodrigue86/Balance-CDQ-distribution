@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="28.01" data-cdq-iphone-release="69b9932b320358a54285dbbbb3bd8008e15c69a74c450cc8bc5ff389a08ab60d">
+<html data-cdq-iphone-version="28.15" data-cdq-iphone-release="67c93b63023dac3f71bda49fcc9c2a71994c5fe00f740c05464dba2450918bc0">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdq-durable-resume-v2751">
@@ -928,7 +928,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.10.30-v28.01-material-navigation-invoices">
+<meta name="cdq-package-build" content="2026.11.01-v28.15-menus-global-speed">
 
 
 <script id="cdqBridgeV23">
@@ -982,7 +982,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.10.30-v28.01-material-navigation-invoices'
+    build:'2026.11.01-v28.15-menus-global-speed'
   });
 }
 
@@ -995,7 +995,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.10.30-v28.01-material-navigation-invoices'
+        build:'2026.11.01-v28.15-menus-global-speed'
       });
     }
   } catch(e) {}
@@ -1670,6 +1670,11 @@ body.light .create-folder-button{
 }
 
 .company-button{
+  position:relative;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
   flex:1;
   width:auto;
   min-height:58px;
@@ -1694,9 +1699,12 @@ body.light .create-folder-button{
 
 .company-button::after{
   content:"▼";
-  float:right;
+  position:absolute;
+  right:12px;
+  top:50%;
+  transform:translateY(-50%);
   font-size:14px;
-  margin-top:5px;
+  pointer-events:none;
 }
 
 
@@ -11823,7 +11831,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.10.30-v28.01-material-navigation-invoices";
+  const CDQ_BUILD = "2026.11.01-v28.15-menus-global-speed";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14186,7 +14194,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.10.30-v28.01-material-navigation-invoices";
+const CDQ_V19_BUILD = "2026.11.01-v28.15-menus-global-speed";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -14722,7 +14730,8 @@ function cdqWatchDeletedPdfsV2707(){
  };
  Object.assign(wrapped,original);wrapped.cdqSaveRetirementV2707=true;window.cdqApiRun=wrapped;
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',cdqWatchDeletedPdfsV2707,{once:true});else cdqWatchDeletedPdfsV2707();
+// Install the callback-only observer before the final RPC budget. It needs no DOM.
+cdqWatchDeletedPdfsV2707();
 window.addEventListener('cdq:access-state-v2527',e=>{
  if(e.detail==='ready'){void window.cdqSaveRetirementV2707.flushDeleted().then(()=>cdqCleanInvalidPdfsV2714()).then(()=>cdqV19RefreshSyncPill()).catch(afficherErreur)}
  else document.getElementById('cdqPdfCopiesV2707')?.remove();
@@ -16627,7 +16636,7 @@ async function cdqOpenPdf(id,meta){
  return cdqOpenPdfInternal(id,meta?.forceRefresh?meta:null);
 }
 // These records are archives, not upload tasks. Retain the exact PDF bytes.
-const localReportVisibleV2714=c=>!!c&&!c.removed&&c.kind!=='prepared'&&c.kind!=='sheet'&&!!c.readerRequestId&&!c.driveId;
+const localReportVisibleV2714=c=>!!c&&!c.removed&&c.kind!=='prepared'&&c.kind!=='sheet'&&!!c.readerRequestId&&(!c.driveId||!!c.uploadId&&c.uploadId!==c.syncedUploadId);
 const invalidRemotePdfV2714=error=>/^(?:Error:\s*)?PDF introuvable ou invalide\.$/.test(String(error?.message||error||'').trim());
 function retiredLocalReportV2714(c,reason='user',now=Date.now()){
  return {...c,removed:true,status:'retired',retiredAt:now,retirementReason:reason,error:''};
@@ -16668,8 +16677,10 @@ function installLocalReportListV2713({host=window,fromPwa,owner,allowed,confirm,
   if(d.type!=='CDQ_LOCAL_REPORT_UPDATED_V2713'||!/^[\w-]{8,100}$/.test(d.localId)||!d.clientId||!(d.blob instanceof Blob))return;
   const localId='cdq-local-'+d.localId,key=email+'|'+d.localId,old=seen.get(key);if(old&&Number(old.version)>Number(d.editVersion||0))return;
   if(old?.retired)return;
-  if(d.driveId){host.cdqFileDeletionV2746?.noteCreatedReport?.(String(d.driveId),d.localId,String(d.clientId));remove(d.clientId,localId);seen.set(key,{...old,version:Number(d.editVersion||0),driveId:d.driveId});return;}
-  if(old?.driveId||old?.retired)return;
+  // A known Drive file can have a NEW local edit not yet acknowledged.
+  // Only an explicitly non-pending receipt may retire the recoverable local row.
+  if(d.driveId&&d.pending!==true){host.cdqFileDeletionV2746?.noteCreatedReport?.(String(d.driveId),d.localId,String(d.clientId));remove(d.clientId,localId);seen.set(key,{...old,version:Number(d.editVersion||0),driveId:d.driveId});return;}
+  if(old?.retired||old?.driveId&&!(d.pending===true&&Number(d.editVersion||0)>Number(old.version||0)))return;
   const error=String(d.error||'').trim().slice(0,350);
   seen.set(key,{version:Number(d.editVersion||0),driveId:'',error});
   // V27.40: inspect the locally committed PDF as a pending report; this
@@ -17071,7 +17082,7 @@ window.addEventListener('cdq:drive-cleared-v2632',()=>{cdqPdfFetchJobsV2554.clea
 
 // Runs inside cdqV19Features so storage, RPC and the account guard are shared.
 const cdqOffline24 = (() => {
-  let records=[],sheets=[],catalog=null,selected=new Set(),job=null,view=0,owner='',refreshing=null;
+  let records=[],sheets=[],catalog=null,selected=new Set(),job=null,view=0,owner='',refreshing=null,menuClient='',menuAccount='';
   const pending=new Map();
   const account=()=>cdqReaderOwnerV2520();
   const valid=email=>cdqReaderGuardV2520(email);
@@ -17256,7 +17267,7 @@ const cdqOffline24 = (() => {
     return removeScope({clientId:record?.clientId||String(compagnieSelectionnee||''),fileIds:[String(id)]});
   }
   function renderStored(){
-    const host=document.querySelector('#cdqDocumentPrepare [data-stored24]');if(!host)return;
+    const host=document.querySelector('#cdqDocumentPrepare [data-stored24]');if(!host||menuAccount!==account()||menuClient!==(company()?.id||''))return;
     host.replaceChildren();
     if(sheets.length){
       host.append(el('h3','Google Sheets sélectionnés'));
@@ -17333,27 +17344,46 @@ const cdqOffline24 = (() => {
   }
   async function open(comp=company()){
     const email=account(),ticket=++view,o=cdqV19CreateModal('cdqDocumentPrepare','Documents hors ligne','cdq-v19-offline-modal');
+    valid(email);menuClient=comp?.id||'';menuAccount=email;
     const body=o.querySelector('.cdq-v19-body');body.replaceChildren();o.style.display='flex';
+    const returnFocus=document.activeElement,modal=o.querySelector('.modal'),closeButton=o.querySelector('.cdq-v19-close');
+    modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','cdqOfflineTitleV2815');
+    o.querySelector('.cdq-v19-title').id='cdqOfflineTitleV2815';
+    const closeMenu=()=>{view++;o.style.display='none';body.replaceChildren();if(returnFocus?.isConnected)returnFocus.focus();};
+    closeButton.onclick=closeMenu;o.onclick=event=>{if(event.target===o)closeMenu();};
+    o.onkeydown=event=>{if(event.key==='Escape'){event.preventDefault();closeMenu();}else if(event.key==='Tab'){
+      const nodes=[...o.querySelectorAll('button,input,select,summary,[tabindex="0"]')].filter(n=>!n.disabled&&n.getClientRects().length);
+      const first=nodes[0],last=nodes.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+    }};closeButton.focus();
+    const currentView=()=>ticket===view&&email===account()&&menuClient===(company()?.id||'')&&o.style.display!=='none';
+    const context=el('p',comp?.nom||'Tous les documents','cdq-menu-context-v2815');body.append(context);
+    const localStatus=el('p','Lecture des documents de cet appareil…','cdq-menu-status-v2815');localStatus.setAttribute('role','status');body.append(localStatus);
     const prog=el('section');prog.dataset.progress24='';body.append(prog);progress();
-    const choose=el('section');choose.className='cdq26-offline-select';body.append(choose);choose.append(el('p','Chargement de la liste des fichiers…'));
+    const choose=el('section');choose.className='cdq26-offline-select';body.append(choose);choose.setAttribute('aria-busy','true');choose.append(el('h3','Préparer des fichiers'),el('p','Lecture du dossier client…'));
     const drawer=el('details');drawer.className='cdq26-offline-stored';drawer.append(el('summary','Documents déjà préparés'));const stored=el('section');stored.dataset.stored24='';drawer.append(stored);body.append(drawer);
     if(cdqPwaAvailable())button(drawer,'Ouvrir les documents et copies de l’application',()=>cdqPostToPwa({type:'CDQ_OFFLINE_SHOW_LOCAL'}));
     drawer.append(el('p','Fermer ce menu laisse la préparation en cours. Si CDQ est fermé complètement, les fichiers terminés restent disponibles; relancez la préparation des autres.','cdq24-help'));
-    await refresh();valid(email);
-    if(ticket!==view)return;
-    // Reconcile removals performed in the offline-startup screen.
-    try{const mirror=await bridge('CDQ_OFFLINE_DOCUMENT_LIST');valid(email);for(const id of mirror?.removed||[])await removeLocal(id);if(mirror?.removed?.length)await refresh();}catch(e){if(ticket===view)choose.append(el('p',e.message));}
+    // Paint the shell before reads; local documents and the client catalog load independently.
+    await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));if(!currentView())return;
+    const readLocal=async()=>{if(!currentView())return;localStatus.textContent='Lecture des documents de cet appareil…';
+      try{await refresh();valid(email);if(!currentView())return;localStatus.textContent='Documents locaux lus. La liste ne confirme pas une synchronisation Drive.';
+        const mirror=await bridge('CDQ_OFFLINE_DOCUMENT_LIST');valid(email);if(!currentView())return;
+        for(const id of mirror?.removed||[]){if(!currentView())return;await removeLocal(id);}
+        if(mirror?.removed?.length)await refresh();
+      }catch(error){if(currentView()){localStatus.textContent=error?.message||'Lecture locale indisponible.';if(!body.querySelector('[data-local-retry-v2815]')){const retry=button(body,'Réessayer la lecture locale',()=>{retry.remove();return readLocal();});retry.dataset.localRetryV2815='';}}}
+    };readLocal();
     let manifest=null,error='';
     if(comp){try{const cached=await cdqV19GetRecord('offline-folder-v2658',comp.id);valid(email);
       manifest=cached?.content;
       if(navigator.onLine&&(!manifest||Date.now()-Number(cached.savedAt)>300000)){manifest=await cdqV19Gs('obtenirContenuClientOptimise',[comp.id,false]);valid(email);await cdqV19PutRecord('offline-folder-v2658',comp.id,{content:manifest,savedAt:Date.now()});}
       if(manifest)await cdqV19PutRecord('documents-manifest',comp.id,{manifest});
     }catch(e){error=e.message;}}
-    if(ticket!==view)return;valid(email);choose.replaceChildren();
+    if(!currentView())return;valid(email);choose.replaceChildren();choose.setAttribute('aria-busy','false');
     if(!comp){choose.append(el('p','Choisissez une compagnie pour ajouter des fichiers hors ligne.'));return;}
     catalog={company:comp,files:manifest?.fichiers||[]};
     choose.append(el('h3','Ajouter des fichiers — '+comp.nom));
-    if(error)choose.append(el('p',error));
+    if(error){choose.append(el('p',error));button(choose,'Réessayer la liste du client',()=>{if(currentView())return open(comp);});}
+    choose.append(el('p',navigator.onLine?'Liste du dossier consultée. Choisis les fichiers à conserver.':'Liste conservée sur cet appareil; le serveur n’a pas été vérifié.','cdq24-help'));
     const inputs=[],ids=new Set(Array.from(document.querySelectorAll('.file-checkbox:checked')).map(n=>n.dataset.fileId));
     const tools=el('div','', 'cdq24-actions');choose.append(tools);
     const count=el('span','0 sélectionné','cdq26-offline-count');tools.append(count);
@@ -17373,15 +17403,15 @@ const cdqOffline24 = (() => {
         details.addEventListener('toggle',async()=>{if(!details.open||details.dataset.loaded||details.dataset.loading)return;
           details.dataset.loading='true';children.textContent='Chargement…';try{const cached=await cdqV19GetRecord('offline-folder-v2658',folder.id);valid(email);let content=cached?.content;
             if(navigator.onLine&&(!content||Date.now()-Number(cached.savedAt)>300000)){content=await cdqV19Gs('obtenirContenuDossierParesseux',[String(folder.id),comp.id]);valid(email);await cdqV19PutRecord('offline-folder-v2658',folder.id,{content,savedAt:Date.now()});}
-            if(ticket!==view)return;children.replaceChildren();if(!content){children.textContent='Ouvrez ce dossier avec Internet pour charger sa liste.';return;}
+            if(!currentView())return;children.replaceChildren();if(!content){children.textContent='Ouvrez ce dossier avec Internet pour charger sa liste.';return;}
             details.dataset.loaded='true';renderFolder(content?.contenu||content,children,new Set([...ancestors,String(folder.id)]));start.disabled=!inputs.length||navigator.onLine===false;
-          }catch(e){if(ticket===view)children.textContent=e.message||String(e);}finally{delete details.dataset.loading;}
+          }catch(e){if(currentView()){children.textContent=e.message||String(e);button(children,'Réessayer',()=>{if(currentView()){details.open=false;requestAnimationFrame(()=>{if(currentView())details.open=true;});}});}}finally{delete details.dataset.loading;}
         });
       }
     }
     renderFolder(manifest?.contenu||manifest,list,new Set([comp.id]));
-    if(!inputs.length)choose.append(el('p','Aucun PDF ou Google Sheets dans cette compagnie.'));
-    const start=button(choose,'Préparer les fichiers cochés',()=>run(catalog.files.filter(f=>inputs.some(i=>i.checked&&i.value===String(f.id))),comp));start.disabled=!inputs.length||navigator.onLine===false;
+    if(!inputs.length)choose.append(el('p',manifest?'Aucun PDF ou Google Sheets dans cette liste.':'Liste non disponible. Réessaie avec Internet.'));
+    const start=button(choose,'Préparer les fichiers cochés',()=>{if(!currentView())return;valid(email);return run(catalog.files.filter(f=>inputs.some(i=>i.checked&&i.value===String(f.id))),comp);});start.disabled=!inputs.length||navigator.onLine===false;
     if(catalog.files.some(f=>f.type==='GOOGLE_SHEETS'))drawer.append(el('p','Les PDF sont téléchargés dans CDQ. Les Google Sheets cochés sont ajoutés à cette liste; ouvrez-les ensuite pour activer ⋮ → Disponible hors connexion dans Google Sheets.','cdq24-help'));
   }
   let scheduled=false;
@@ -17393,6 +17423,7 @@ const cdqOffline24 = (() => {
     for(const p of pending.values()){clearTimeout(p.timer);p.reject(Error('Déverrouillez de nouveau votre compte.'));}pending.clear();
     paintDots();
   }
+  window.addEventListener('cdq:client-content-ready-v2745',()=>{if(menuClient!==(company()?.id||'')){view++;menuClient='';const modal=document.getElementById('cdqDocumentPrepare');if(modal){modal.style.display='none';modal.querySelector('.cdq-v19-body')?.replaceChildren();}}});
   const access=document.getElementById('accessOverlay');if(access)new MutationObserver(()=>{if(cdqAccessState!=='ready')lock();}).observe(access,{attributes:true,attributeFilter:['data-state']});
   window.addEventListener('cdq:access-ready',()=>{if(owner&&owner!==String(utilisateurCourantEmail||''))lock();reconcile().catch(()=>refresh().catch(()=>{}));});
   window.addEventListener('cdq:pdf-saved',()=>refresh().catch(()=>{}));
@@ -17899,7 +17930,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.10.30-v28.01-material-navigation-invoices";
+const CDQ_V20_BUILD = "2026.11.01-v28.15-menus-global-speed";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -18746,7 +18777,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.10.30-v28.01-material-navigation-invoices";
+const CDQ_V21_BUILD = "2026.11.01-v28.15-menus-global-speed";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -22381,7 +22412,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
       const count = nav.querySelectorAll(':scope > .bottom-nav-item').length || 1;
       set(nav, {'position':'fixed','left':'0','right':'0','bottom':'0','width':'100%','max-width':'100%','transform':'none','zoom':'1','margin':'0','display':'grid',
         'height':'auto', 'min-height':navMinimum, 'max-height':'none',
-        'padding':px(4 * unit)+' max(2px,var(--cdq-content-safe-right,env(safe-area-inset-right,0px))) calc('+px(4 * unit)+' + var(--cdq-safe-bottom)) max(2px,var(--cdq-content-safe-left,env(safe-area-inset-left,0px)))',
+        'padding':px(4 * unit)+' max(2px,var(--cdq-content-safe-right,env(safe-area-inset-right,0px))) calc('+px(4 * unit)+' + max(10px,var(--cdq-safe-bottom))) max(2px,var(--cdq-content-safe-left,env(safe-area-inset-left,0px)))',
         'gap':'0', 'z-index':'1000', 'grid-template-columns':document.body.classList.contains('selection-active')?'minmax(0,1fr)':'none', 'grid-auto-flow':'column',
         'grid-template-rows':'auto', 'align-items':'stretch', 'border':'0', 'box-shadow':'none', 'border-radius':'0'});
       set(document.body, {'padding-top':'var(--cdq-safe-top)', ...(root.dataset.cdqSafeFrame === '1' ? {'padding-left':'0','padding-right':'0'} : {})});
@@ -23185,7 +23216,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.10.30-v28.01-material-navigation-invoices',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.01-v28.15-menus-global-speed',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23218,7 +23249,7 @@ function instrumentRpc(){
    };
   }});return proxy;
  }
- wrapped.cdqFeedback=true;window.cdqApiRun=wrapped;
+ Object.assign(wrapped,original);wrapped.cdqFeedback=true;window.cdqApiRun=wrapped;
 }
 function version(value){const text=String(value||'');const m=text.match(/v(\d+)\.(\d+)(?:\.(\d+))?/i)||text.match(/^(\d+)\.(\d+)(?:\.(\d+))?$/);return m?[+m[1],+m[2],+(m[3]||0)]:[0,0,0]}
 function newer(a,b=BUILD){const x=version(a),y=version(b);for(let i=0;i<3;i++){if(x[i]!==y[i])return x[i]>y[i]}return false}
@@ -24334,6 +24365,8 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
     } });
     return proxy;
   }
+  // Preserve installed observer markers so access-ready cannot wrap the final budget again.
+  Object.assign(guardedRun,originalRun);
   window.cdqApiRun = guardedRun;
 
   // Prevent manual refresh, favorites, and offline caches from bypassing the check.
