@@ -1,12 +1,12 @@
 {
   "androidSelectorSha256": "d93a47771c6625ad8771e912d3c3ed3e848f59137b3de458a2d903463ad6b6d1",
   "androidSourceBuild": "2026.11.01-v28.12-reader-save",
-  "build": "2026.11.01-v28.19-v34-offline",
+  "build": "2026.11.02-v28.20-home-reader",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "files": 946,
-  "generatedFrom": "patches/v2819/release/stage.py",
+  "files": 947,
+  "generatedFrom": "patches/v2820/release/stage.py",
   "platform": "iphone-pwa",
-  "release": "67e22ba4ba986bd867fdbe280dfa3005bf4a15ea17f28adf8d049e5a2b6d6e66",
-  "version": "28.19",
+  "release": "714499482f8e7cbb5dd3aabbf247d50d7225e17b53f42be907caf44478f6ab50",
+  "version": "28.20",
   "webBaseCommit": "2164dbd6aa65479cefa57569823ea8253bd55de9"
 }

@@ -39,7 +39,7 @@ import {centerFieldsGlyphs} from './reader-layout-v2653.mjs';
 import {downloadPdf} from './pdf-download-v2657.mjs';
 import {readReaderMetadataV2724} from './pdf-metadata-v2724.mjs';
 import {precisionToleranceDisplayV2726} from './reader-precision-excentricity-v2726.mjs';
-import {createReaderVisualRefreshV2730} from './reader-visual-refresh-v2730.mjs';
+import {createReaderMotionRefreshV2820} from './reader-motion-refresh-v2820.mjs';
 import {dispatchReaderSandboxEventV2731,awaitReaderPageActionsV2731} from './reader-scripting-fence-v2731.mjs';
 import {isCacheableReaderDraftV2730,isCacheableReaderDocumentV2730,hasPristineIdentityV2730,readerSourceKeyV2730,protectReaderSnapshotsV2730,readerViewportV2730,sameReaderViewportV2730,readerOpeningLeaseIsCurrentV2730,readerCanvasGeometryMatchesV2730,serializeReaderScriptingV2730,cancellableReaderPaintV2730,
   captureReaderCanvasesV2730,canRetainReaderCanvasV2730,canReuseReaderCanvasV2730,clearReaderAnnotationStorageV2730,rebuildReaderAnnotationsV2730} from './reader-canvas-cache-v2730.mjs';
@@ -63,7 +63,7 @@ function fitTrialTextFieldV4(field){
   const pageIndex=Math.max(0,Number(field.closest('.page')?.dataset.pageNumber||1)-1);
   const scale=viewer?.getPageView?.(pageIndex)?.viewport?.scale||field.getBoundingClientRect().height/height||1;
   const fit=cdqFitTrialDomTextV4(field.value,field,spec,scale);
-  const set=(name,value)=>field.style.setProperty(name,value,'important');
+  const set=(name,value)=>{if(field.style.getPropertyValue(name)!==value||field.style.getPropertyPriority(name)!=='important')field.style.setProperty(name,value,'important');};
   set('font-family','CDQSummary, Arial, sans-serif');set('font-weight','400');set('font-size',fit.size+'px');
   set('box-sizing','border-box');set('text-align','left');set('text-overflow','clip');set('overflow','hidden');
   set('white-space',spec.multiline?'pre-wrap':'pre');set('word-break','normal');set('overflow-wrap','normal');set('hyphens','none');
@@ -109,11 +109,10 @@ const destroyedReaderTasksV2730=new WeakMap();
 const readerSaveProgressV2758=createReaderSaveProgressV2758();
 let staticDocumentV2788=false,staticSourceBlobV2788=null;
 let lastAttempt=null,fieldDefinitions=null,nativeInput,readerCalibration=null,choices=null,decimalGuard=null,tableColumnV2737=null;
-const visualRefreshV2730=createReaderVisualRefreshV2730(()=>{
+const visualRefreshV2730=createReaderMotionRefreshV2820(()=>{
   if(!doc||closed)return;
-  if(touch?.active)return; // onIdle schedules the final display scan.
   cdqRefreshProblemLocksV2819();choices?.refresh();tableColumnV2737?.refresh();cdqRestorePrecisionToleranceV2726();refreshResults();applyFieldTypography();
-},{defer:()=>opening,setTimer:callback=>requestAnimationFrame(callback),clearTimer:handle=>cancelAnimationFrame(handle)});
+},{container:$('container'),defer:()=>opening,isBusy:()=>!!touch?.active});
 const touchedIdentity=new Set();let lateIdentity=null;
 let reportEngineV2754=null,reportSnapshotV2754=null,snapshotUpdatesV2754=[],engineDefaultsAppliedV2754=false;
 const resumeJournalV2767=createReaderResumeV2767();
@@ -283,7 +282,9 @@ function cdqRefreshProblemLocksV2819(){
   // a saved problem made the DOM disabled. A new selection still needs a DOM
   // refresh even when PDF.js suppresses that redundant readonly notification.
   for(const field of $('viewer').querySelectorAll('input,textarea'))if(isCorrectionReadingV2736(field.name)){
-    field.disabled=cdqTrialReadingLockedV2819(field.name,locks);field.readOnly=false;
+    const disabled=cdqTrialReadingLockedV2819(field.name,locks);
+    if(field.disabled!==disabled)field.disabled=disabled;
+    if(field.readOnly)field.readOnly=false;
   }
 }
 // PDF.js 6.3.289 exposes only the first choice in getFieldObjects().
@@ -949,7 +950,7 @@ try{
       onHit:()=>{$('viewer').dataset.cdqTemplatePaintV2753='ready';}}):()=>{};
     qaFirstPageLeaseCleanupV2731=()=>{paintCleanup();leaseCleanup();};
   });
-  eventBus.on('pagerendered',event=>{invalidateHeaderArtworkV2812();if(event.pageNumber===1&&event.source===viewer.getPageView(0)){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};}if(opening||touch?.active)visualRefreshV2730.schedule();else refreshResults();});
+  eventBus.on('pagerendered',event=>{invalidateHeaderArtworkV2812();if(event.pageNumber===1&&event.source===viewer.getPageView(0)){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};}visualRefreshV2730.schedule();});
   eventBus.on('scalechanging',e=>{$('zoom').textContent=Math.round(e.scale*100)+' %';});
   eventBus.on('pagerendered',e=>{if(!e.error&&e.source?.div)e.source.div.dataset.cdqPaintedV2556='true';if(e.error)fail(e.error);});
   eventBus.on('annotationlayerrendered',e=>{if(!e.error&&e.pageNumber===1)captureReaderCanvasesV2730(canvasCandidateV2730,e.source);cdqWrapStableAnnotationLayerV2556(e.source);if(opening)return;cdqRestoreInteractiveFieldsV2581();if(readOnly)for(const field of $('viewer').querySelectorAll('input,textarea,select,button'))field.disabled=true;choices.refresh();form.refresh();nativeInput.configure(fieldDefinitions);readerCalibration?.refresh();visualRefreshV2730.schedule();});

@@ -29,8 +29,6 @@ html body .cdq-portal-revoke-v2793 button{border-color:#d67a82!important;}
 html body .cdq24-offline-dot,html body .cdq24-ready-mark{background:#f4ce48!important;box-shadow:0 0 0 1px #0007!important;}
 html body .cdq24-offline-dot.cdq26-sheet-pending{background:transparent!important;border:2px solid #f4ce48!important;box-sizing:border-box;}
 html body #filesContainer .file-pending-v2708:is([data-icon-v2781=local-pending],[data-icon-v2781=local-conflict]) svg{animation:none!important;transform:none!important;}
-#cdqNetworkStateV2819{margin:3px 6px 7px;padding:4px 0;color:var(--cdq-muted,#b6c0c9);font:12px/1.4 system-ui;}
-#cdqNetworkStateV2819[data-offline=true]{color:#f4ce48;}
 @media(max-width:699px){
  html body #cdqDocumentPrepare{padding:0!important;align-items:stretch!important;}
  html body :is(#cdqDocumentPrepare .modal,dialog.cdq-portal-dialog-v2793){

@@ -39,12 +39,8 @@ export function installOfflineStatusV2819(){
   if(typeof document==='undefined')return;
   const paint=()=>{
     const host=document.getElementById('cdqTopActionsV2204');if(!host)return;
-    let status=document.getElementById('cdqNetworkStateV2819');
-    if(!status){status=document.createElement('p');status.id='cdqNetworkStateV2819';status.setAttribute('role','status');status.setAttribute('aria-live','polite');host.after(status);}
-    const label=networkLabelV2819(navigator.onLine);
-    if(status.textContent!==label)status.textContent=label;
-    status.dataset.offline=String(navigator.onLine===false);
-    const offline=document.getElementById('cdqV19OfflineStatus');
+    document.getElementById('cdqNetworkStateV2819')?.remove();
+  const offline=document.getElementById('cdqV19OfflineStatus');
     if(offline){offline.removeAttribute('aria-pressed');offline.setAttribute('aria-haspopup','dialog');}
     window.cdqInterfaceV2708?.rows?.();
   };
