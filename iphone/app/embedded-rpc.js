@@ -67,7 +67,7 @@
     const bulkSend=name==='envoyerSelectionSuiviV2553'||
       name==='envoyerSelectionSuivi'||
       name==='convertirEtEnvoyerSuivi';
-    return bulkSend&&selected>=20?390000:90000;
+    return bulkSend?390000:90000; // V28.23: PDF verification can exceed 90 s even for a small selection.
   }
   function send(job){
     if(consumeBootstrapV2687(job))return;

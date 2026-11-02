@@ -1,11 +1,11 @@
-import {createReaderZoomV2821} from './reader-zoom-v2821.mjs';
+import {createReaderZoomV2823} from './reader-zoom-v2823.mjs';
 // Interactions du lecteur, indépendantes du moteur et des calculs du PDF.
 const clampScale = scale => Math.max(.35, Math.min(4, scale));
 const distance = (a, b) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
 const middle = (a, b) => ({x:(a.clientX + b.clientX) / 2, y:(a.clientY + b.clientY) / 2});
 
 // Native one-finger scroll; compositor preview for a pinch, including hand-off.
-export function installTouchNavigation({container,surface,getViewer,zoom=createReaderZoomV2821({container,surface,getViewer}),onIdle=()=>{},now=Date.now,requestFrame=requestAnimationFrame,cancelFrame=cancelAnimationFrame}){
+export function installTouchNavigation({container,surface,getViewer,zoom=createReaderZoomV2823({container,surface,getViewer}),onIdle=()=>{},now=Date.now,requestFrame=requestAnimationFrame,cancelFrame=cancelAnimationFrame}){
  let gesture=null,inertia=0,suppressClickUntil=0;
  function stopInertia(){if(inertia)cancelFrame(inertia);inertia=0;}
  function coast(previous){
@@ -44,7 +44,7 @@ export function installTouchNavigation({container,surface,getViewer,zoom=createR
  const options={passive:false,capture:true};container.addEventListener('touchstart',start,options);container.addEventListener('touchmove',move,options);container.addEventListener('touchend',end,options);container.addEventListener('touchcancel',end,options);container.addEventListener('click',click,{capture:true});
  return {get active(){return !!gesture||!!inertia||zoom.active;},reset(){stopInertia();gesture=null;zoom.reset();onIdle();}};
 }
-export function createZoomSchedulerV2809(options){return createReaderZoomV2821(options);}
+export function createZoomSchedulerV2809(options){return createReaderZoomV2823(options);}
 
 function normalizedName(value){
   return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
