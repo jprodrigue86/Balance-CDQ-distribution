@@ -1,180 +1,50 @@
+import {createReaderZoomV2821} from './reader-zoom-v2821.mjs';
 // Interactions du lecteur, indépendantes du moteur et des calculs du PDF.
 const clampScale = scale => Math.max(.35, Math.min(4, scale));
 const distance = (a, b) => Math.hypot(b.clientX - a.clientX, b.clientY - a.clientY);
 const middle = (a, b) => ({x:(a.clientX + b.clientX) / 2, y:(a.clientY + b.clientY) / 2});
 
-export function installTouchNavigation({container, surface, getViewer, onIdle = () => {}, now = Date.now, requestFrame = requestAnimationFrame, cancelFrame = cancelAnimationFrame}) {
-  let gesture = null, suppressClickUntil = 0, inertia = 0, pinchFrame = 0;
-  function stopInertia(){if(inertia)cancelFrame(inertia);inertia=0;}
-  function cancelPinchFrame(){if(pinchFrame)cancelFrame(pinchFrame);pinchFrame=0;}
-  function paintPinchPreview(state=gesture){
-    if(!state||state.mode!=='pinch')return;
-    const ratio=state.targetScale/state.scale,{start,mid,rect}=state;
-    const x=mid.x-rect.left-(start.x-rect.left)*ratio;
-    const y=mid.y-rect.top-(start.y-rect.top)*ratio;
-    surface.style.willChange='transform';
-    surface.style.transform=`translate3d(${x}px, ${y}px, 0) scale(${ratio})`;
+// Native one-finger scroll; compositor preview for a pinch, including hand-off.
+export function installTouchNavigation({container,surface,getViewer,zoom=createReaderZoomV2821({container,surface,getViewer}),onIdle=()=>{},now=Date.now,requestFrame=requestAnimationFrame,cancelFrame=cancelAnimationFrame}){
+ let gesture=null,inertia=0,suppressClickUntil=0;
+ function stopInertia(){if(inertia)cancelFrame(inertia);inertia=0;}
+ function coast(previous){
+  if(!previous.moved||now()-previous.sampleTime>90){onIdle();return;}
+  let vx=Math.max(-7,Math.min(7,previous.vx||0)),vy=Math.max(-7,Math.min(7,previous.vy||0)),last=now();
+  function frame(){const time=now(),dt=Math.min(32,Math.max(1,time-last));last=time;const x=container.scrollLeft,y=container.scrollTop;
+   container.scrollLeft=x+vx*dt;container.scrollTop=y+vy*dt;if(Math.abs(container.scrollLeft-x)<.1)vx=0;if(Math.abs(container.scrollTop-y)<.1)vy=0;
+   const friction=Math.exp(-dt/325);vx*=friction;vy*=friction;
+   if(Math.hypot(vx,vy)>.035){suppressClickUntil=time+100;inertia=requestFrame(frame);}else{inertia=0;onIdle();}
   }
-  function schedulePinchPreview(){
-    if(pinchFrame)return;
-    pinchFrame=requestFrame(()=>{pinchFrame=0;paintPinchPreview();});
+  if(Math.hypot(vx,vy)>.08)inertia=requestFrame(frame);else onIdle();
+ }
+ function finish(commit=true){const previous=gesture;gesture=null;if(!previous){onIdle();return;}
+  if(previous.moved||previous.mode==='pinch')suppressClickUntil=now()+450;
+  if(previous.mode==='pinch'){if(commit)zoom.end();else zoom.cancel();}
+  else if(commit)coast(previous);onIdle();
+ }
+ function startPan(t){gesture={mode:'pan',x:t.clientX,y:t.clientY,lastX:t.clientX,lastY:t.clientY,moved:false,sampleX:t.clientX,sampleY:t.clientY,sampleTime:now(),vx:0,vy:0};}
+ function start(e){stopInertia();
+  if(e.touches.length===1){gesture=null;return;}
+  if(e.touches.length===2&&getViewer()){
+   if(gesture?.mode==='pinch')finish();
+   const [a,b]=e.touches,mid=middle(a,b);if(!zoom.begin(mid))return;
+   gesture={mode:'pinch',distance:Math.max(1,distance(a,b)),scale:zoom.scale};e.preventDefault();
+  }else finish(false);
+ }
+ function move(e){if(!gesture)return;
+  if(gesture.mode==='pinch'&&e.touches.length===2){e.preventDefault();const [a,b]=e.touches;zoom.preview(clampScale(gesture.scale*distance(a,b)/gesture.distance),middle(a,b));}
+  else if(gesture.mode==='pan'&&e.touches.length===1){const t=e.touches[0],dx=t.clientX-gesture.x,dy=t.clientY-gesture.y;if(!gesture.moved&&Math.hypot(dx,dy)<5)return;
+   const time=now(),dt=time-gesture.sampleTime;if(dt>0){const weight=dt>80?1:.7;gesture.vx=(1-weight)*gesture.vx+weight*(gesture.sampleX-t.clientX)/dt;gesture.vy=(1-weight)*gesture.vy+weight*(gesture.sampleY-t.clientY)/dt;gesture.sampleX=t.clientX;gesture.sampleY=t.clientY;gesture.sampleTime=time;}
+   gesture.moved=true;suppressClickUntil=now()+450;e.preventDefault();container.scrollLeft+=gesture.lastX-t.clientX;container.scrollTop+=gesture.lastY-t.clientY;gesture.lastX=t.clientX;gesture.lastY=t.clientY;
   }
-  function capturePinchAnchor(point){
-    const pages=surface.querySelectorAll?.('.page');
-    if(!pages?.length)return null;
-    for(const page of pages){
-      const rect=page.getBoundingClientRect?.();
-      if(!rect||!rect.width||!rect.height)continue;
-      if(point.x<rect.left||point.x>rect.right||point.y<rect.top||point.y>rect.bottom)continue;
-      return {
-        page,
-        x:(point.x-rect.left)/rect.width,
-        y:(point.y-rect.top)/rect.height
-      };
-    }
-    return null;
-  }
-  function restorePinchAnchor(anchor,target){
-    if(!anchor?.page?.getBoundingClientRect)return false;
-    const rect=anchor.page.getBoundingClientRect();
-    if(!rect?.width||!rect?.height)return false;
-    const x=rect.left+anchor.x*rect.width;
-    const y=rect.top+anchor.y*rect.height;
-    const dx=x-target.x,dy=y-target.y;
-    if(Math.abs(dx)>.25)container.scrollLeft+=dx;
-    if(Math.abs(dy)>.25)container.scrollTop+=dy;
-    return true;
-  }
-  function coast(previous){
-    if(!previous.moved||now()-previous.sampleTime>90)return;
-    let vx=Math.max(-7,Math.min(7,previous.vx||0)),vy=Math.max(-7,Math.min(7,previous.vy||0)),last=now();
-    function frame(){
-      const time=now(),dt=Math.min(32,Math.max(1,time-last));last=time;
-      const x=container.scrollLeft,y=container.scrollTop;
-      container.scrollLeft=x+vx*dt;container.scrollTop=y+vy*dt;
-      if(Math.abs(container.scrollLeft-x)<.1)vx=0;if(Math.abs(container.scrollTop-y)<.1)vy=0;
-      const friction=Math.exp(-dt/325);vx*=friction;vy*=friction;
-      if(Math.hypot(vx,vy)>.035){suppressClickUntil=time+100;inertia=requestFrame(frame);}else {inertia=0;onIdle();}
-    }
-    if(Math.hypot(vx,vy)>.08)inertia=requestFrame(frame);else onIdle();
-  }
-  const resetPreview = () => {
-    cancelPinchFrame();
-    surface.style.transform = '';
-    surface.style.transformOrigin = '';
-    surface.style.willChange = '';
-    onIdle();
-  };
-  function finish(commit = true) {
-    const previous = gesture;
-    gesture = null;
-    cancelPinchFrame();
-    if (!previous) {resetPreview();return;}
-    if (previous.moved || previous.mode === 'pinch') suppressClickUntil = now() + 450;
-    if(previous.mode==='pan'&&commit){resetPreview();coast(previous);return;}
-    if (previous.mode !== 'pinch' || !commit){resetPreview();return;}
-    const viewer = getViewer();
-    if (!viewer){resetPreview();return;}
-    // V25.59: lock the actual PDF point under the fingers. The preview is
-    // positioned relative to the page, whereas PDF.js normally anchors relative
-    // to the viewer container; after repeated zooms those coordinate systems
-    // drift as the page is re-centered. When we have a page anchor, let PDF.js
-    // adopt the scale first, then force-layout and restore that exact page point
-    // beneath the final midpoint before the browser can paint.
-    paintPinchPreview(previous);
-    if(previous.anchor){
-      viewer.updateScale({
-        scaleFactor:previous.targetScale / previous.scale,
-        drawingDelay:250,
-      });
-      resetPreview();
-      restorePinchAnchor(previous.anchor,previous.mid);
-    }else{
-      viewer.updateScale({
-        scaleFactor:previous.targetScale / previous.scale,
-        origin:[previous.start.x, previous.start.y],
-        pan:[previous.mid.x - previous.start.x, previous.mid.y - previous.start.y],
-        drawingDelay:250,
-      });
-      resetPreview();
-    }
-  }
-  function startPan(t) {
-    gesture = {mode:'pan', x:t.clientX, y:t.clientY,
-      left:container.scrollLeft, top:container.scrollTop, moved:false, sampleX:t.clientX,sampleY:t.clientY,sampleTime:now(),vx:0,vy:0};
-  }
-  function start(e) {
-    stopInertia();
-    if (e.touches.length === 1) {gesture=null;return;}
-    else if (e.touches.length === 2 && getViewer()) {
-      if (gesture?.mode === 'pinch') finish();
-      const [a, b] = e.touches, mid = middle(a, b);
-      const scale = Number(getViewer().currentScale) || 1;
-      gesture = {mode:'pinch', distance:Math.max(1, distance(a, b)), scale,
-        targetScale:scale, start:mid, mid, rect:surface.getBoundingClientRect(),
-        anchor:capturePinchAnchor(mid)};
-      surface.style.transformOrigin = '0 0';
-      surface.style.willChange = 'transform';
-      e.preventDefault();
-    } else finish(false);
-  }
-  function move(e) {
-    if (!gesture) return;
-    if (gesture.mode === 'pan' && e.touches.length === 1) {
-      const t = e.touches[0], dx = t.clientX - gesture.x, dy = t.clientY - gesture.y;
-      if (!gesture.moved && Math.hypot(dx, dy) < 5) return;
-      const time=now(),dt=time-gesture.sampleTime;
-      if(dt>0){const weight=dt>80?1:.7;gesture.vx=(1-weight)*gesture.vx+weight*(gesture.sampleX-t.clientX)/dt;gesture.vy=(1-weight)*gesture.vy+weight*(gesture.sampleY-t.clientY)/dt;gesture.sampleX=t.clientX;gesture.sampleY=t.clientY;gesture.sampleTime=time;}
-      gesture.moved = true;
-      suppressClickUntil = now() + 450;
-      e.preventDefault();
-      container.scrollLeft = gesture.left - dx;
-      container.scrollTop = gesture.top - dy;
-    } else if (gesture.mode === 'pinch' && e.touches.length === 2) {
-      e.preventDefault();
-      const [a, b] = e.touches;
-      gesture.mid = middle(a, b);
-      gesture.targetScale = clampScale(gesture.scale * distance(a, b) / gesture.distance);
-      // Touch hardware can deliver events faster than the screen refreshes.
-      // Coalesce them to one compositor update per animation frame.
-      schedulePinchPreview();
-    }
-  }
-  function end(e) {
-    const previousMode=gesture?.mode,cancelled=e.type==='touchcancel';
-    finish(!cancelled && (previousMode==='pinch'||e.touches.length===0));
-    if(cancelled)stopInertia();
-    // A cancelled native scroll cannot resume inside the same touch sequence.
-    // Continue the already-owned pinch with its remaining finger; untouched
-    // one-finger gestures still use the browser's native scrolling.
-    else if(previousMode==='pinch'&&e.touches.length===1)startPan(e.touches[0]);
-  }
-  function click(e) {
-    if (now() < suppressClickUntil) { e.preventDefault(); e.stopPropagation(); }
-  }
-  const options = {passive:false, capture:true};
-  container.addEventListener('touchstart', start, options);
-  container.addEventListener('touchmove', move, options);
-  container.addEventListener('touchend', end, options);
-  container.addEventListener('touchcancel', end, options);
-  container.addEventListener('click', click, {capture:true});
-  return {get active(){return !!gesture||!!inertia;},reset:() => {stopInertia();finish(false)}};
+ }
+ function end(e){const previous=gesture?.mode,cancelled=e.type==='touchcancel';finish(!cancelled&&(previous==='pinch'||e.touches.length===0));if(cancelled)stopInertia();else if(previous==='pinch'&&e.touches.length===1)startPan(e.touches[0]);}
+ function click(e){if(now()<suppressClickUntil){e.preventDefault();e.stopPropagation();}}
+ const options={passive:false,capture:true};container.addEventListener('touchstart',start,options);container.addEventListener('touchmove',move,options);container.addEventListener('touchend',end,options);container.addEventListener('touchcancel',end,options);container.addEventListener('click',click,{capture:true});
+ return {get active(){return !!gesture||!!inertia||zoom.active;},reset(){stopInertia();gesture=null;zoom.reset();onIdle();}};
 }
-
-export function createZoomSchedulerV2809({getViewer,requestFrame=requestAnimationFrame,cancelFrame=cancelAnimationFrame}){
-  let frame=0,target=null,origin;
-  function reset(){if(frame)cancelFrame(frame);frame=0;target=null;origin=undefined;}
-  function flush(){
-    const scale=target,point=origin;reset();const viewer=getViewer();
-    if(viewer&&scale!==null)viewer.updateScale({scaleFactor:scale/viewer.currentScale,origin:point,drawingDelay:250});
-  }
-  function zoom(factor,point){
-    const viewer=getViewer();if(!viewer||!Number.isFinite(factor)||factor<=0)return;
-    target=clampScale((target??viewer.currentScale)*factor);origin=point;
-    if(!frame)frame=requestFrame(flush);
-  }
-  return {zoom,flush,reset};
-}
+export function createZoomSchedulerV2809(options){return createReaderZoomV2821(options);}
 
 function normalizedName(value){
   return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()
