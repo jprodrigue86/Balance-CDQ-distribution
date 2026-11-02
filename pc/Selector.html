@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.22" data-cdq-pc-release="d76158e315eba1e92e391f93c82eb62147779ba1e8c66f70dc41c2e5109767bc">
+<html data-cdq-pc-version="28.23" data-cdq-pc-release="1212fe75163d9e27f4aefbf7ce98bdd3fb6d0d5497b305f7ca0f207536f6a114">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -932,7 +932,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.11.02-v28.22-pdf-shields-viewer">
+<meta name="cdq-package-build" content="2026.11.02-v28.23-conformity-zoom-save">
 
 
 <script id="cdqBridgeV23">
@@ -986,7 +986,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.02-v28.22-pdf-shields-viewer'
+    build:'2026.11.02-v28.23-conformity-zoom-save'
   });
 }
 
@@ -999,7 +999,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.02-v28.22-pdf-shields-viewer'
+        build:'2026.11.02-v28.23-conformity-zoom-save'
       });
     }
   } catch(e) {}
@@ -6408,13 +6408,10 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
     <div class="modal-section send-mode-section">
       <label>Mode d’envoi</label>
       <label class="send-mode-option">
-        <input type="radio" name="sendMode" value="convertir" checked>
-        <span><strong>Convertir en PDF</strong><small>Option par défaut. Les rapports sont convertis en PDF avant l’envoi.</small></span>
+        <input type="radio" name="sendMode" value="convertir" checked disabled>
+        <span><strong>PDF non modifiables dans un ZIP</strong><small>Les PDF individuels sont aussi archivés et publiés sur la page client.</small></span>
       </label>
-      <label class="send-mode-option">
-        <input type="radio" name="sendMode" value="original">
-        <span><strong>Envoyer sans conversion</strong><small>Les fichiers gardent leur format. Un dossier est envoyé en ZIP en conservant sa structure.</small></span>
-      </label>
+      <!-- V28.23: editable report delivery removed. -->
       <div id="sendModeHelp" class="send-mode-help"></div>
     </div>
 
@@ -11124,7 +11121,7 @@ function cdqPrepareSendOptionsV2553(files,clientId,folders,recipientReady){
   let host=document.getElementById('cdqSendOptionsV2553');
   if(!host){
     host=document.createElement('div');host.id='cdqSendOptionsV2553';host.className='modal-section';
-    host.innerHTML='<label id="cdqSendPdfLabelV2750" for="cdqSendPdfModeV2750">PDF sélectionnés</label><select id="cdqSendPdfModeV2750" disabled aria-label="Préparation automatique des PDF"><option value="flatten">PDF non modifiable pour le client</option></select><small id="cdqSendPdfHelpV2750" class="send-mode-help">Les champs sont aplatis seulement dans la copie envoyée. Le PDF du dossier client reste modifiable.</small><input id="cdqSendFlattenV2553" type="checkbox" hidden><button type="button" id="cdqSendSaveRecipientV2553" class="modal-button">Définir cette adresse par défaut</button><small id="cdqSendRecipientStatusV2553" class="send-mode-help">Le compte Google utilisé pour ouvrir les documents ne change pas.</small>';
+    host.innerHTML='<label id="cdqSendPdfLabelV2750" for="cdqSendPdfModeV2750">PDF sélectionnés</label><select id="cdqSendPdfModeV2750" disabled aria-label="Préparation automatique des PDF"><option value="flatten">PDF non modifiable pour le client</option></select><small id="cdqSendPdfHelpV2750" class="send-mode-help">Copies PDF non modifiables dans le ZIP, les archives et la page client. Les fichiers sources restent modifiables.</small><input id="cdqSendFlattenV2553" type="checkbox" hidden><button type="button" id="cdqSendSaveRecipientV2553" class="modal-button">Définir cette adresse par défaut</button><small id="cdqSendRecipientStatusV2553" class="send-mode-help">Le compte Google utilisé pour ouvrir les documents ne change pas.</small>';
     const message=document.getElementById('messageEmail')?.closest('.modal-section');
     if(message)modal.insertBefore(host,message);else modal.querySelector('.modal-buttons')?.before(host);
   }
@@ -11134,11 +11131,11 @@ function cdqPrepareSendOptionsV2553(files,clientId,folders,recipientReady){
   if(pdfMode){pdfMode.value='flatten';pdfMode.disabled=true;}
   const convert=document.querySelector('input[name="sendMode"][value="convertir"]'),original=document.querySelector('input[name="sendMode"][value="original"]'),section=convert?.closest('.send-mode-section'),convertible=!!(profile.sheets||profile.folders);
   if(section){section.hidden=false;section.style.display='';const label=section.querySelector(':scope > label');if(label)label.textContent=profile.folders?'Google Sheets et dossiers':'Google Sheets sélectionnés';}
-  if(convert){convert.checked=true;const label=convert.closest('label');if(label?.querySelector('strong'))label.querySelector('strong').textContent='Convertir et envoyer en PDF';if(label?.querySelector('small'))label.querySelector('small').textContent='Les Sheets sont convertis en PDF; les PDF sont envoyés sans champs modifiables.';}
-  if(original){original.checked=false;original.disabled=false;const label=original.closest('label');if(label)label.hidden=false;}
-  if(convert)convert.disabled=false;
+  if(convert){convert.checked=true;const label=convert.closest('label');if(label?.querySelector('strong'))label.querySelector('strong').textContent='Convertir et envoyer en ZIP';if(label?.querySelector('small'))label.querySelector('small').textContent='Un ZIP regroupe tous les PDF non modifiables. Les PDF individuels sont archivés et publiés sur la page client.';}
+  if(original){original.checked=false;original.disabled=true;const label=original.closest('label');if(label)label.hidden=true;}
+  if(convert)convert.disabled=true;
   const syncMode=()=>{const convertSelected=!!convert?.checked;if(flatten)flatten.checked=convertSelected&&!!profile.pdf;for(const id of ['cdqSendPdfLabelV2750','cdqSendPdfModeV2750','cdqSendPdfHelpV2750']){const el=document.getElementById(id);if(el)el.hidden=!profile.pdf||!convertSelected;}};if(convert)convert.onchange=syncMode;if(original)original.onchange=syncMode;syncMode();
-  const help=document.getElementById('sendModeHelp');if(help)help.textContent=profile.folders?'La structure des dossiers est conservée dans un fichier ZIP.':'';
+  const help=document.getElementById('sendModeHelp');if(help)help.textContent='Un seul ZIP, limite de 24 Mio (16 Mio par PDF pour la page client). Si un document échoue, aucun courriel n’est envoyé.';
   const initial=email.value;
   if(!recipientReady)cdqRpcV2553('obtenirDestinataireClientV2553',[String(clientId||'')]).then(value=>{try{cdqSendGuardV2750(context);if(view===cdqSendViewV2750&&email.value===initial&&String(value||'').trim())email.value=String(value).trim()}catch(_){}}).catch(()=>{});
   if(saveRecipient)saveRecipient.disabled=false;
@@ -11870,7 +11867,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.02-v28.22-pdf-shields-viewer";
+  const CDQ_BUILD = "2026.11.02-v28.23-conformity-zoom-save";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -12830,6 +12827,7 @@ function cdqInstallSwipeGesture(row){
   }
 
   async function cdqRunSendSelection(files,folders,mode,email,message,company,force,flatten){
+    mode='convertir'; // V28.23: no editable original delivery path.
     const profileV2751=cdqSendProfileV2750(files,null,folders.length);
     flatten=mode==='convertir'&&!!profileV2751.pdf;
     const total=files.length+folders.length;
@@ -14235,7 +14233,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.02-v28.22-pdf-shields-viewer";
+const CDQ_V19_BUILD = "2026.11.02-v28.23-conformity-zoom-save";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -18021,7 +18019,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.02-v28.22-pdf-shields-viewer";
+const CDQ_V20_BUILD = "2026.11.02-v28.23-conformity-zoom-save";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -18868,7 +18866,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.02-v28.22-pdf-shields-viewer";
+const CDQ_V21_BUILD = "2026.11.02-v28.23-conformity-zoom-save";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -23306,7 +23304,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.02-v28.22-pdf-shields-viewer',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.02-v28.23-conformity-zoom-save',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;

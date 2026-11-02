@@ -38,9 +38,35 @@ export async function openPortalManagementV2804({body,clientId,valid,rpc}){
  const selectAll=button('Sélectionner jusqu’à 20',()=>{for(const d of docs){if(selected.size>=20)break;selected.add(d.documentId);}render()});
  const deselect=button('Annuler la sélection',()=>{selected.clear();render()});
  const remove=button('Retirer la sélection (0)',()=>askConfirm());
+ const recover=button('Récupérer les PDF archivés',async()=>{
+  if(busy||removing||!valid())return;
+  busy=true;recover.disabled=true;confirm.hidden=true;controls();
+  let summary=null;
+  const describe=s=>s.examined+'/'+s.total+' archives vérifiées · '+s.copied+' ajoutées · '+s.reused+' déjà présentes · '+s.failed+' non copiées.';
+  try{
+   status.textContent='Lecture des archives du client… Aucun courriel ne sera envoyé.';
+   const {recoverPortalArchivesV2823}=await import('./portal-archive-recovery-v2823.mjs');
+   if(valid())summary=await recoverPortalArchivesV2823({rpc,clientId,valid,progress:s=>{if(valid())status.textContent=describe(s);}});
+  }catch(error){if(valid())status.textContent=error?.message||'Récupération interrompue. Les copies confirmées sont conservées.';}
+  finally{
+   busy=false;recover.disabled=false;if(valid())controls();
+  }
+  if(summary&&valid()){
+   await load(true);
+   if(valid()){
+    status.textContent=describe(summary)+(summary.failed?' Certains fichiers n’ont pas été copiés; relancez pour réessayer.':' Aucun courriel envoyé.');
+    // Downloadable receipt contains IDs and hashes only, never a private client link.
+    const receipt=button('Télécharger le bilan',()=>{
+     if(!valid())return;const url=URL.createObjectURL(new Blob([JSON.stringify(summary,null,2)],{type:'application/json'}));
+     const a=document.createElement('a');a.href=url;a.download='CDQ-reprise-archives.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
+    });
+    panel.querySelector('[data-cdq-recovery-receipt]')?.remove();receipt.dataset.cdqRecoveryReceipt='1';panel.append(receipt);
+   }
+  }
+ });
  const refresh=button('Actualiser la liste',()=>load(true));
  const more=button('Afficher la suite',()=>load(false));more.hidden=true;
- toolbar.append(selectAll,deselect,remove,refresh);
+ toolbar.append(selectAll,deselect,remove,refresh,recover);
  panel.append(title,note,status,toolbar,list,more,confirm);
  body.append(panel);panel.setAttribute('aria-label','Gestion des rapports publiés');
  function controls(){
@@ -49,6 +75,7 @@ export async function openPortalManagementV2804({body,clientId,valid,rpc}){
   selectAll.disabled=removing||busy||selected.size>=20;
   deselect.disabled=!selected.size||removing;
   refresh.disabled=removing||busy;
+  recover.disabled=removing||busy;
   more.disabled=removing||busy;
  }
  function render(){
