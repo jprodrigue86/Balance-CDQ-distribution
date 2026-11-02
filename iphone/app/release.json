@@ -1,12 +1,12 @@
 {
   "androidSelectorSha256": "d93a47771c6625ad8771e912d3c3ed3e848f59137b3de458a2d903463ad6b6d1",
   "androidSourceBuild": "2026.11.01-v28.12-reader-save",
-  "build": "2026.11.02-v28.27-select-all",
+  "build": "2026.11.02-v28.28-send-tracking",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
   "files": 975,
-  "generatedFrom": "patches/v2827/release/stage.py",
+  "generatedFrom": "patches/v2828/release/stage-web.py",
   "platform": "iphone-pwa",
-  "release": "0663ddf449a47188a1816cacc4951425ea1f25ad25f4c69acc061e378c691473",
-  "version": "28.27",
-  "webBaseCommit": "b2b3a73d0c0876245de35640a1b5394b89298f2e"
+  "release": "d4838c5e26eee4f7bc8b614b5349fb97e13032de9848734d9988c726fb733656",
+  "version": "28.28",
+  "webBaseCommit": "43a6d1d6778dea62652aa25c3b345da7d92fd583"
 }

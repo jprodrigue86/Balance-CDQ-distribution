@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.27" data-cdq-pc-release="fc0e1ac9166b0f449b528eb8dcdde3c4f1dd8bf0778beaba613d650f9b706ffe">
+<html data-cdq-pc-version="28.28" data-cdq-pc-release="cb1d05350d4d71433b3e66f8cb3c2265f4a89755ef592960aec31aa9969dd89c">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -932,7 +932,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.11.02-v28.27-select-all">
+<meta name="cdq-package-build" content="2026.11.02-v28.28-send-tracking">
 
 
 <script id="cdqBridgeV23">
@@ -986,7 +986,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.02-v28.27-select-all'
+    build:'2026.11.02-v28.28-send-tracking'
   });
 }
 
@@ -999,7 +999,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.02-v28.27-select-all'
+        build:'2026.11.02-v28.28-send-tracking'
       });
     }
   } catch(e) {}
@@ -11867,7 +11867,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.02-v28.27-select-all";
+  const CDQ_BUILD = "2026.11.02-v28.28-send-tracking";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -12761,6 +12761,150 @@ function cdqInstallSwipeGesture(row){
     track.setAttribute('aria-valuemax','100');track.setAttribute('aria-valuenow',String(state.percent));
     track.setAttribute('aria-valuetext',label.textContent+' — '+state.current+' sur '+state.total+' — '+state.percent+' %');
   }
+  // V28.28: a queue receipt accepts work; only durable server state completes it.
+  let cdqQueuedSendV2828=null,cdqRecoveryBusyV2828=false,cdqRecoveryKeyV2828='';
+  function cdqTrackingKeyV2828(context){return 'cdqSendTrackingV2828|'+context.owner+'|'+context.clientId;}
+  function cdqTrackingSavedV2828(context){
+    try{return JSON.parse(localStorage.getItem(cdqTrackingKeyV2828(context))||'{}')||{};}catch(_){return {};}
+  }
+  function cdqTrackingSaveV2828(context,job,ack){
+    const saved=cdqTrackingSavedV2828(context),acknowledged=Array.isArray(saved.acknowledged)?saved.acknowledged:[];
+    if(ack&&!acknowledged.includes(ack))acknowledged.push(ack);
+    try{localStorage.setItem(cdqTrackingKeyV2828(context),JSON.stringify({job:job||null,acknowledged:acknowledged.slice(-30)}));}catch(_){}
+  }
+  function cdqReadTrackingV2828(session,query){
+    let timeout;
+    return Promise.race([
+      cdqRpcV2553('obtenirProgressionEnvoi',[session,{trackingV2828:1,...query}]),
+      new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Le suivi ne répond pas encore.')),15000);})
+    ]).then(result=>{
+      if(result?.trackingVersion!==2828)throw Error('Le serveur de suivi doit être mis à jour. Aucun nouvel envoi lancé.');
+      return result;
+    }).finally(()=>clearTimeout(timeout));
+  }
+  function cdqTrackingControlsV2828(job){
+    const modal=cdqEnsureSendProgressV2759();
+    let actions=document.getElementById('cdqSendTrackingActionsV2828');
+    if(!actions){actions=document.createElement('div');actions.id='cdqSendTrackingActionsV2828';actions.className='modal-buttons';modal.querySelector('.modal').appendChild(actions);}
+    actions.replaceChildren();
+    const close=document.createElement('button');close.type='button';
+    close.textContent=job.blocked?'Fermer':'Continuer en arrière-plan';
+    close.onclick=()=>{modal.style.display='none';job.background=true;};actions.appendChild(close);
+    if(job.blocked){const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Vérifier l’état';refresh.onclick=()=>{void cdqTrackingPollV2828(job);};actions.appendChild(refresh);}
+    if(job.blocked&&job.canDismiss){
+      const acknowledge=document.createElement('button');acknowledge.type='button';acknowledge.textContent='Fermer le suivi';
+      acknowledge.onclick=()=>{cdqTrackingSaveV2828(job.context,null,job.id);cdqTrackingDisposeV2828(job);cdqStopProgress(false);const send=document.getElementById('sendButton');if(send)send.disabled=String(utilisateurCourantRole||'')==='lecture';};actions.appendChild(acknowledge);
+    }
+    let banner=document.getElementById('cdqSendTrackingBannerV2828');
+    if(!banner){banner=document.createElement('button');banner.id='cdqSendTrackingBannerV2828';banner.type='button';banner.style.cssText='position:fixed;left:5%;right:5%;bottom:calc(105px + env(safe-area-inset-bottom));z-index:1800;padding:12px;border-radius:12px;background:#12314a;color:white;border:1px solid #32b7ec;';document.body.appendChild(banner);}
+    banner.textContent=job.blocked?'Envoi à vérifier — voir le détail':'Envoi en cours — voir la progression';
+    banner.onclick=()=>{job.background=false;modal.style.display='flex';modal.querySelector('.modal')?.focus();};
+  }
+  function cdqTrackingDisposeV2828(job){
+    if(job.timer)clearTimeout(job.timer);
+    if(cdqQueuedSendV2828===job){cdqQueuedSendV2828=null;document.getElementById('cdqSendTrackingBannerV2828')?.remove();document.getElementById('cdqSendTrackingActionsV2828')?.remove();}
+  }
+  function cdqTrackingClearSelectionV2828(job){
+    // Clear only this send's selection; a recovered job must not clear a new one.
+    const ids=new Set(job.files||[]);
+    document.querySelectorAll('.file-checkbox').forEach(box=>{if(ids.has(String(box.dataset.fileId)))box.checked=false;});
+    (job.folders||[]).forEach(id=>dossiersSelectionnes.delete(id));
+    if(!obtenirFichiersSelectionnes().length&&!dossiersSelectionnes.size)modeSelectionFichiers=false;
+    mettreAJourInterface();
+  }
+  function cdqTrackingApplyV2828(job,result){
+    if(cdqQueuedSendV2828!==job)return;
+    cdqSendGuardV2750(job.context);
+    if(result.jobId!==job.id||result.status==='none')throw Error('Le résultat de cet envoi ne peut pas encore être vérifié.');
+    const completed=result.status==='complete'&&result.mailSent===true&&result.portalDone===true;
+    const wasBlocked=job.blocked;job.blocked=result.status==='blocked';
+    job.canDismiss=result.mailSent===true||result.error==='PREPARATION_PENDING';
+    if(wasBlocked&&!job.blocked)cdqTrackingControlsV2828(job);
+    const p={...result,phase:completed?'termine':(result.phase==='termine'?'publication':result.phase)};
+    cdqSetProgress(p);
+    if(job.background)document.getElementById('cdqProgressModal').style.display='none';
+    if(completed){
+      cdqTrackingSaveV2828(job.context,null,job.id);cdqTrackingClearSelectionV2828(job);
+      cdqTrackingDisposeV2828(job);cdqStopProgress(true);
+      const send=document.getElementById('sendButton');if(send)send.disabled=String(utilisateurCourantRole||'')==='lecture';
+      afficherMessage(result.message||'Courriel envoyé et page client mise à jour.',true);
+      return;
+    }
+    if(result.status==='blocked'){
+      job.blocked=true;cdqTrackingControlsV2828(job);
+      const modal=document.getElementById('cdqProgressModal');modal.setAttribute('aria-busy','false');modal.dataset.busy='false';
+      afficherMessage(result.message||'Envoi à vérifier. Aucun renvoi automatique.',false);
+    }
+  }
+  async function cdqTrackingPollV2828(job){
+    if(cdqQueuedSendV2828!==job||job.reading)return;
+    try{cdqSendGuardV2750(job.context);}catch(_){cdqTrackingDisposeV2828(job);cdqStopProgress(false);return;}
+    job.reading=true;
+    try{
+      const result=await cdqReadTrackingV2828(job.session,{jobId:job.id,clientId:job.context.clientId});
+      if(cdqQueuedSendV2828!==job)return;
+      cdqTrackingApplyV2828(job,result);
+    }catch(error){
+      if(cdqQueuedSendV2828!==job)return;
+      try{cdqSendGuardV2750(job.context);}catch(_){cdqTrackingDisposeV2828(job);cdqStopProgress(false);return;}
+      cdqSetProgress({message:'Suivi temporairement indisponible. Le traitement peut continuer; aucun renvoi automatique. '+String(error.message||error)});
+      if(job.background)document.getElementById('cdqProgressModal').style.display='none';
+    }finally{
+      job.reading=false;
+      if(cdqQueuedSendV2828===job&&!job.blocked)job.timer=setTimeout(()=>cdqTrackingPollV2828(job),5000);
+    }
+  }
+  function cdqTrackSendV2828(receipt,context,selection){
+    cdqSendGuardV2750(context);
+    if(!receipt?.jobId)throw Error('Identifiant de suivi manquant. Ne renvoyez pas cette sélection avant vérification.');
+    if(cdqQueuedSendV2828)cdqTrackingDisposeV2828(cdqQueuedSendV2828);
+    if(!cdqSendProgressV2759.active)cdqStartProgress('track-'+receipt.jobId,receipt.total||1);
+    if(cdqProgressTimer){clearInterval(cdqProgressTimer);cdqProgressTimer=null;}
+    const job=cdqQueuedSendV2828={id:receipt.jobId,session:receipt.sessionId||cdqSendProgressV2759.session,context,total:receipt.total||cdqSendProgressV2759.total,files:selection?.files||[],folders:selection?.folders||[],reading:false,blocked:false,background:false};
+    cdqTrackingSaveV2828(context,{id:job.id,session:job.session,total:job.total});
+    cdqSetProgress({total:job.total,message:receipt.message||'Envoi enregistré. Préparation en cours…'});
+    cdqTrackingControlsV2828(job);
+    void cdqTrackingPollV2828(job);
+  }
+  async function cdqFindSendV2828(context,session){
+    const saved=cdqTrackingSavedV2828(context);
+    const result=await cdqReadTrackingV2828(session||'',{clientId:context.clientId,...(session?{sessionId:session}:saved.job?.id?{jobId:saved.job.id}:{})});
+    cdqSendGuardV2750(context);
+    if(result.status==='none')return null;
+    if(result.error==='NOT_FOUND'){
+      cdqTrackingSaveV2828(context,null);throw Error('Ancien envoi introuvable. Vérifiez son résultat avant de le renvoyer.');
+    }
+    if(!result.jobId)throw Error(result.message||'État de l’envoi non vérifié.');
+    const acknowledged=(saved.acknowledged||[]).includes(result.jobId);
+    if(!session&&acknowledged&&(result.status==='complete'||(result.status==='blocked'&&(result.mailSent===true||result.error==='PREPARATION_PENDING'))))return null;
+    return result;
+  }
+  async function cdqRecoverSendV2828(){
+    if(cdqRecoveryBusyV2828||cdqSendProgressV2759.active||cdqSendCheckingV2708)return;
+    let context;try{context=cdqSendContextV2750(String(compagnieSelectionnee||''));}catch(_){return;}
+    const key=cdqTrackingKeyV2828(context)+'|'+context.token;
+    if(cdqRecoveryKeyV2828===key)return;
+    cdqRecoveryBusyV2828=true;
+    try{const result=await cdqFindSendV2828(context);cdqRecoveryKeyV2828=key;if(result&&!cdqSendProgressV2759.active)cdqTrackSendV2828(result,context);}
+    catch(_){/* Confirmation performs a mandatory read before any new send. */}
+    finally{cdqRecoveryBusyV2828=false;}
+  }
+  async function cdqUncertainSendV2828(context,session,error){
+    try{
+      const result=await cdqFindSendV2828(context,session);
+      if(result){cdqTrackSendV2828(result,context);return;}
+    }catch(_){}
+    try{cdqSendGuardV2750(context);}catch(_){cdqStopProgress(false);return;}
+    cdqStopProgress(false);
+    const send=document.getElementById('sendButton');if(send)send.disabled=String(utilisateurCourantRole||'')==='lecture';
+    const detail=Error('Résultat de l’envoi non confirmé. Vérifiez les messages envoyés avant de réessayer. Aucun renvoi automatique. '+String(error?.message||error));
+    cdqRestoreSendOptionsV2759(context,detail);afficherErreur(detail);
+  }
+  window.addEventListener('cdq:client-content-ready-v2745',()=>{void cdqRecoverSendV2828();});
+  window.addEventListener('cdq:access-ready',()=>{void cdqRecoverSendV2828();});
+  window.addEventListener('online',()=>{cdqRecoveryKeyV2828='';if(cdqQueuedSendV2828&&!cdqQueuedSendV2828.reading){clearTimeout(cdqQueuedSendV2828.timer);void cdqTrackingPollV2828(cdqQueuedSendV2828);}else void cdqRecoverSendV2828();});
+  window.addEventListener('cdq:access-state-v2527',event=>{if(event.detail!=='ready'){cdqRecoveryKeyV2828='';if(cdqQueuedSendV2828){cdqTrackingDisposeV2828(cdqQueuedSendV2828);cdqStopProgress(false);}}});
+
   function cdqStartProgress(sessionId,total){
     const previous=cdqSendProgressV2759;
     if(previous.hideTimer)clearTimeout(previous.hideTimer);
@@ -12829,7 +12973,8 @@ function cdqInstallSwipeGesture(row){
   async function cdqRunSendSelection(files,folders,mode,email,message,company,force,flatten){
     mode='convertir'; // V28.23: no editable original delivery path.
     const profileV2751=cdqSendProfileV2750(files,null,folders.length);
-    flatten=mode==='convertir'&&!!profileV2751.pdf;
+    // Large selections are converted by the durable server queue, once.
+    flatten=mode==='convertir'&&!!profileV2751.pdf&&!(files.length>10&&!folders.length);
     const total=files.length+folders.length;
     if(!total) return;
     const send=document.getElementById("sendButton");
@@ -12860,29 +13005,29 @@ function cdqInstallSwipeGesture(row){
           if(cdqSendProgressV2759.session!==session||!cdqSendProgressV2759.active)return;
           try{cdqSendGuardV2750(context)}catch(_){cdqStopProgress(false);return}
           if(send)send.disabled=String(utilisateurCourantRole||"")==="lecture";
+          if(r?.queued===true){
+            try{cdqTrackSendV2828(r,context,{files:files.map(String),folders:folders.map(String)});}catch(error){void cdqUncertainSendV2828(context,session,error);}return;
+          }
+          if(Number(r?.envoyes||0)>0&&r?.archive?.publicationJobId&&!r?.echecs?.length){
+            cdqTrackSendV2828({jobId:r.archive.publicationJobId,total:files.length+folders.length,message:r.message},context,{files:files.map(String),folders:folders.map(String)});return;
+          }
           const hasFailures=!!(r&&Array.isArray(r.echecs)&&r.echecs.length);
           cdqStopProgress(!hasFailures && Number(r&&r.envoyes||0)>0 && !r?.archiveErreur);
 
-          document.querySelectorAll(".file-checkbox").forEach(function(c){c.checked=false;});
-          dossiersSelectionnes.clear();
-          modeSelectionFichiers=false;
-          mettreAJourInterface();
-
-          afficherMessage((r&&r.message)||"Traitement terminé.",!hasFailures);
+          const confirmed=!hasFailures&&Number(r?.envoyes||0)>0&&!r?.archiveErreur;
+          if(confirmed){
+            document.querySelectorAll(".file-checkbox").forEach(function(c){c.checked=false;});
+            dossiersSelectionnes.clear();modeSelectionFichiers=false;mettreAJourInterface();
+          }
+          afficherMessage((r&&r.message)||"Résultat de l’envoi non confirmé.",confirmed);
           if(hasFailures){
             setTimeout(function(){cdqOpenRetryFailures(r,contexte);},700);
           }
         })
         .withFailureHandler(function(e){
           if(cdqSendProgressV2759.session!==session||!cdqSendProgressV2759.active)return;
-          try{cdqSendGuardV2750(context)}catch(_){cdqStopProgress(false);return}
-          if(send)send.disabled=String(utilisateurCourantRole||"")==="lecture";
-          cdqStopProgress(false);
-          cdqRestoreSendOptionsV2759(context,e);
-          if(tempIds.length)cdqRpcV2553('nettoyerCopiesAplatiesV2553',[tempIds]).catch(()=>{});
-          const msg=e&&e.message?e.message:String(e);
-          if(msg.indexOf("CDQ_DOUBLE_ENVOI|")!==-1) alert("Envoi bloqué : cette sélection vient déjà d’être envoyée.");
-          else afficherErreur(e);
+          // A lost response is not proof of failure. Discover; never resend.
+          void cdqUncertainSendV2828(context,session,e);
         })
         .envoyerSelectionSuiviV2553(files,sendFiles,folders,mode,email,message,nomCompagnieSelectionnee,company,session,!!force,tempIds);
     }catch(e){
@@ -12908,6 +13053,7 @@ function cdqSendPreflightV2780(args,timeoutMs=CDQ_SEND_PREFLIGHT_TIMEOUT_MS_V278
 }
   let cdqSendCheckingV2708=false;
   window.confirmerEnvoi=async function(){
+   if(cdqQueuedSendV2828){document.getElementById('cdqProgressModal').style.display='flex';cdqQueuedSendV2828.background=false;return;}
    if(cdqSendCheckingV2708||cdqSendProgressV2759.active)return;
    const email=String(document.getElementById('emailDestinataire').value||'').trim(),message=document.getElementById('messageEmail').value,files=obtenirFichiersSelectionnes(),folders=obtenirDossiersSelectionnes(),profileV2751=cdqSendProfileV2750(files,null,folders.length),mode=obtenirModeEnvoiSelectionne(),flatten=mode==='convertir'&&!!profileV2751.pdf;
    if(String(utilisateurCourantRole||'')==='lecture'){alert('Le rôle Lecture seule ne peut pas envoyer de fichiers.');return;}
@@ -12917,6 +13063,8 @@ function cdqSendPreflightV2780(args,timeoutMs=CDQ_SEND_PREFLIGHT_TIMEOUT_MS_V278
    fermerConfirmation();
    cdqStartProgress('check-'+crypto.randomUUID(),total);cdqSetProgress({total,message:'Vérification de l’envoi…'});
    try{
+    const active=await cdqFindSendV2828(context);cdqSendGuardV2750(context);
+    if(active){cdqStopProgress(false);cdqTrackSendV2828(active,context);return;}
     const check=await cdqSendPreflightV2780([files,folders,mode,email,context.clientId,24]);cdqSendGuardV2750(context);
     let force=false;if(check?.doublon){force=confirm('Cette sélection a déjà été envoyée récemment. Voulez-vous l’envoyer de nouveau ?');if(!force){cdqStopProgress(false);cdqRestoreSendOptionsV2759(context);return}}
     await cdqRunSendSelection(files,folders,mode,email,message,context.clientId,force,flatten);
@@ -14233,7 +14381,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.02-v28.27-select-all";
+const CDQ_V19_BUILD = "2026.11.02-v28.28-send-tracking";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -18019,7 +18167,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.02-v28.27-select-all";
+const CDQ_V20_BUILD = "2026.11.02-v28.28-send-tracking";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -18866,7 +19014,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.02-v28.27-select-all";
+const CDQ_V21_BUILD = "2026.11.02-v28.28-send-tracking";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -23304,7 +23452,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.02-v28.27-select-all',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.02-v28.28-send-tracking',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
