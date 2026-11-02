@@ -42,25 +42,37 @@ export async function openPortalManagementV2804({body,clientId,valid,rpc}){
   if(busy||removing||!valid())return;
   busy=true;recover.disabled=true;confirm.hidden=true;controls();
   let summary=null;
-  const describe=s=>s.examined+'/'+s.total+' archives vérifiées · '+s.copied+' ajoutées · '+s.reused+' déjà présentes · '+s.failed+' non copiées.';
+  const describe=s=>s.examined+'/'+s.total+' archives vérifiées · '+s.copied+' ajoutées · '+s.reused+' déjà présentes · '+s.failed+' non copiées.'+(s.unconfirmed?' '+s.unconfirmed+' copie non confirmée; le serveur peut encore la terminer.':'');
   try{
    status.textContent='Lecture des archives du client… Aucun courriel ne sera envoyé.';
    const {recoverPortalArchivesV2823}=await import('./portal-archive-recovery-v2823.mjs');
-   if(valid())summary=await recoverPortalArchivesV2823({rpc,clientId,valid,progress:s=>{if(valid())status.textContent=describe(s);}});
-  }catch(error){if(valid())status.textContent=error?.message||'Récupération interrompue. Les copies confirmées sont conservées.';}
+   if(valid())summary=await recoverPortalArchivesV2823({rpc,clientId,valid,progress:s=>{summary=s;if(valid())status.textContent=describe(s);}});
+  }catch(error){if(summary){summary.interrupted=true;summary.error=error?.message||'Récupération interrompue.';}if(valid())status.textContent=error?.message||'Récupération interrompue. Les copies confirmées sont conservées.';}
   finally{
    busy=false;recover.disabled=false;if(valid())controls();
   }
   if(summary&&valid()){
-   await load(true);
+   if(!summary.interrupted)await load(true);
    if(valid()){
-    status.textContent=describe(summary)+(summary.failed?' Certains fichiers n’ont pas été copiés; relancez pour réessayer.':' Aucun courriel envoyé.');
+    status.textContent=describe(summary)+(summary.interrupted?' Reprise arrêtée : '+summary.error+' Le bilan conserve les confirmations reçues. Aucune nouvelle copie lancée.':summary.failed?' Certains fichiers n’ont pas été copiés; consultez le bilan.':' Aucun courriel envoyé.');
     // Downloadable receipt contains IDs and hashes only, never a private client link.
     const receipt=button('Télécharger le bilan',()=>{
      if(!valid())return;const url=URL.createObjectURL(new Blob([JSON.stringify(summary,null,2)],{type:'application/json'}));
      const a=document.createElement('a');a.href=url;a.download='CDQ-reprise-archives.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
     });
-    panel.querySelector('[data-cdq-recovery-receipt]')?.remove();receipt.dataset.cdqRecoveryReceipt='1';panel.append(receipt);
+    const copyReceipt=button('Copier le bilan',async()=>{
+     if(!valid())return;
+     const text=JSON.stringify(summary,null,2);
+     try{await navigator.clipboard.writeText(text);if(valid())status.textContent='Bilan copié.';}
+     catch{
+      if(!valid())return;
+      let field=receiptActions.querySelector('textarea');
+      if(!field){field=document.createElement('textarea');field.readOnly=true;field.setAttribute('aria-label','Bilan de récupération à copier');field.style.cssText='width:100%;min-height:160px';receiptActions.append(field);}
+      field.value=text;field.focus();field.select();status.textContent='Sélectionnez puis copiez le bilan affiché.';
+     }
+    });
+    const receiptActions=document.createElement('div');receiptActions.dataset.cdqRecoveryReceipt='1';receiptActions.append(receipt,copyReceipt);
+    panel.querySelector('[data-cdq-recovery-receipt]')?.remove();panel.append(receiptActions);
    }
   }
  });
