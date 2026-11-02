@@ -1224,7 +1224,7 @@ function findProjectFileForBundleV25(displayName){
   const spec=importedFileSpec(displayName);
   if(!spec)return null;
   return existingProjectFileByName(spec.name,spec.type) ||
-    (spec.type==='SERVER_JS' ? S.files.find(f=>f.type==='SERVER_JS'&&/^code$/i.test(f.name)) : null) ||
+    (spec.type==='SERVER_JS' && /^code$/i.test(spec.name) ? S.files.find(f=>f.type==='SERVER_JS'&&/^code$/i.test(f.name)) : null) ||
     (spec.type==='HTML' ? S.files.find(f=>f.type==='HTML'&&/^(selector|selecteur)$/i.test(f.name)) : null);
 }
 
@@ -1343,7 +1343,7 @@ function buildEntriesFromPatchesV25(manifest){
   const byFile=new Map();
   for(const p of manifest.patches){
     const file=String(p.file||'').trim();
-    if(!/^(Code\.gs|Selector\.html|appsscript\.json)$/i.test(file)){
+    if(!/^(Code\.gs|CDQSendV2553\.gs|Selector\.html|appsscript\.json)$/i.test(file)){
       throw new Error('Fichier patch non autorisé : '+file);
     }
     if(!byFile.has(file))byFile.set(file,[]);

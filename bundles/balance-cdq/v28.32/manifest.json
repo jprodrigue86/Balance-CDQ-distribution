@@ -1,0 +1,76 @@
+{
+  "schema": "cdq-script-bundle-v2",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V28.32",
+  "build": "2026.11.02-v28.32-send-preflight-timebound",
+  "title": "CDQ 28.32 — correction des envois ZIP 93 PDF sans modifier les archives ou la page client",
+  "requiresBuild": [
+    "2026.11.02-v28.31-durable-send-executor"
+  ],
+  "patches": [
+    {
+      "id": "cdq-v2832-build-identity",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "const CDQ_BACKEND_BUILD_ = '2026.11.02-v28.31-durable-send-executor';",
+      "replacement": "const CDQ_BACKEND_BUILD_ = '2026.11.02-v28.32-send-preflight-timebound';",
+      "expected": 1
+    },
+    {
+      "id": "cdq-v2832-durable-history-helper",
+      "file": "CDQSendV2553.gs",
+      "op": "insert_before_literal",
+      "before": "function verifierEnvoiSelectionRecentV2553(files,folders,mode,email,company,hours) {",
+      "text": "\n// V28.32: confirm durable prior sends before costly PDF preparation.\n// Never match on a filename alone. No publication or mail occurs here.\nfunction cdqSendRecentQueueV2832_(files,email,clientId,actor,hours){\n  if(!Array.isArray(files)||!files.length||files.length>1000)return {doublon:false,timestamp:0};\n  var owner=String(actor&&actor.email||'').trim().toLowerCase(),recipient=String(email||'').trim().toLowerCase(),\n    client=String(clientId||'').trim();\n  if(!owner||!recipient||!client)return {doublon:false,timestamp:0};\n  var now=Date.now(),age=Math.max(1,Number(hours)||24)*3600000,\n    wanted=JSON.stringify(files.map(String).sort()),\n    all=PropertiesService.getScriptProperties().getProperties(),jobs=[];\n  Object.keys(all).forEach(function(key){\n    if(key.indexOf(CDQ_SEND_QUEUE_V2826_)!==0)return;\n    try{\n      var job=JSON.parse(all[key]),at=Number(job&&job.at)||0;\n      if(job&&String(job.actor||'').trim().toLowerCase()===owner&&job.clientId===client&&job.requestId&&at>0&&now-at>=0&&now-at<age)jobs.push(job);\n    }catch(_){}\n  });\n  jobs.sort(function(a,b){return Number(b.at)-Number(a.at);});\n  for(var i=0;i<jobs.length&&i<64;i++){\n    var job=jobs[i],request;\n    try{\n      var txt=DriveApp.getFileById(job.requestId).getBlob().getDataAsString();\n      if(txt.length>250000)continue;\n      request=JSON.parse(txt);\n    }catch(_){continue;}\n    if(!request||String(request.clientId||'')!==client||\n       String(request.email||'').trim().toLowerCase()!==recipient||\n       !Array.isArray(request.files)||JSON.stringify(request.files.map(String).sort())!==wanted)continue;\n    var delivery=null,receipt=null;\n    try{delivery=JSON.parse(all[CDQ_DELIVERY_PREFIX_V2825_+job.id]||'null');}catch(_){}\n    try{receipt=delivery&&delivery.sendKey?JSON.parse(all[delivery.sendKey]||'null'):null;}catch(_){}\n    if(receipt&&receipt.phase==='sent'&&receipt.jobId===job.id)\n      return {doublon:true,timestamp:Number(receipt.at)||Number(job.at),source:'durable-confirmed'};\n    if(job.mailAttempted||(receipt&&receipt.phase==='sending'&&receipt.jobId===job.id)||\n       (delivery&&(delivery.phase==='ready'||delivery.phase==='complete')))\n      return {doublon:false,incertain:true,timestamp:Number(job.at)};\n  }\n  return {doublon:false,timestamp:0};\n}\n\n"
+    },
+    {
+      "id": "cdq-v2832-early-client-confirmation",
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "function verifierEnvoiSelectionRecentV2553(files,folders,mode,email,company,hours) {\n  verifierDroit_('lecture');\n  mode='convertir';\n  if(typeof verifierEnvoiSelectionRecent==='function'){\n    try{\n      const legacy=verifierEnvoiSelectionRecent(files,folders,mode,email,company,hours);\n      if(legacy&&legacy.doublon)return legacy;\n    }catch(_){}\n  }\n  const key=cdqRecentKeyV2553_(files,folders,mode,email,company);\n  const timestamp=Number(PropertiesService.getUserProperties().getProperty(key)||0);\n  const age=Math.max(1,Number(hours)||24)*3600000;\n  return timestamp&&Date.now()-timestamp<age ? {doublon:true,timestamp:timestamp} : {doublon:false,timestamp:0};\n}\n\n",
+      "replacement": "function verifierEnvoiSelectionRecentV2553(files,folders,mode,email,company,hours) {\n  var actor=verifierDroit_('lecture');\n  mode='convertir';\n  if(!Array.isArray(folders)||!folders.length){\n    cdqClientPortalScopeV20261028_(String(company||''));\n    var recent=cdqSendRecentQueueV2832_(files,email,company,actor,hours);\n    if(recent.incertain)throw Error('CDQ_ENVOI_A_VERIFIER : envoi identique incertain. Vérifiez les courriels envoyés; aucun renvoi automatique.');\n    if(recent.doublon)return recent;\n  }\n  if(typeof verifierEnvoiSelectionRecent==='function'){\n    try{\n      const legacy=verifierEnvoiSelectionRecent(files,folders,mode,email,company,hours);\n      if(legacy&&legacy.doublon)return legacy;\n    }catch(_){}\n  }\n  const key=cdqRecentKeyV2553_(files,folders,mode,email,company);\n  const timestamp=Number(PropertiesService.getUserProperties().getProperty(key)||0);\n  const age=Math.max(1,Number(hours)||24)*3600000;\n  return timestamp&&Date.now()-timestamp<age ? {doublon:true,timestamp:timestamp} : {doublon:false,timestamp:0};\n}\n\n",
+      "expected": 1
+    },
+    {
+      "id": "cdq-v2832-preflight-before-new-archive",
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "  cdqClientPortalScopeV20261028_(clientId);cdqSendRequirePortalV2823_();\n  var request={version:2826,files:files",
+      "replacement": "  cdqClientPortalScopeV20261028_(clientId);cdqSendRequirePortalV2823_();\n  var prior=cdqSendRecentQueueV2832_(files,email,clientId,actor,24);\n  if(prior.incertain)throw Error('CDQ_ENVOI_A_VERIFIER : résultat incertain pour cette sélection. Aucun nouveau lot créé.');\n  if(prior.doublon&&!force)throw Error('CDQ_DOUBLE_ENVOI|'+String(prior.timestamp||''));\n  var request={version:2826,files:files",
+      "expected": 1
+    },
+    {
+      "id": "cdq-v2832-bounded-preparation",
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "while(job.cursor<job.count&&Date.now()<deadline&&processed<20)",
+      "replacement": "while(job.cursor<job.count&&Date.now()+14000<deadline&&processed<12)",
+      "expected": 1
+    },
+    {
+      "id": "cdq-v2832-78s-cron-budget",
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "var props=PropertiesService.getScriptProperties(),all=props.getProperties(),deadline=Date.now()+120000;",
+      "replacement": "var props=PropertiesService.getScriptProperties(),all=props.getProperties(),deadline=Date.now()+78000;",
+      "expected": 1
+    },
+    {
+      "id": "cdq-v2832-zip-budget",
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "else if(job.phase==='package')cdqSendQueuePackageV2826_(job,request);",
+      "replacement": "else if(job.phase==='package'){if(deadline-Date.now()>25000)cdqSendQueuePackageV2826_(job,request);}",
+      "expected": 1
+    },
+    {
+      "id": "cdq-v2832-mail-budget",
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "else if(job.phase==='send')cdqSendQueueMailV2826_(job,request);",
+      "replacement": "else if(job.phase==='send'){if(deadline-Date.now()>25000)cdqSendQueueMailV2826_(job,request);}",
+      "expected": 1
+    }
+  ],
+  "extraFiles": []
+}
