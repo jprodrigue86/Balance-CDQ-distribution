@@ -208,7 +208,7 @@ function cdqHoldRenderedLayersV2556(duration=1800){
   const count=Number(viewer?.pagesCount||0);
   for(let i=0;i<count;i++)cdqWrapStableAnnotationLayerV2556(viewer.getPageView?.(i));
 }
-function commitActive(){if($('viewer').contains(document.activeElement)){const sink=$('status');sink.tabIndex=-1;sink.focus({preventScroll:true});}}
+function commitActive(){zoomSchedulerV2809.flush();if($('viewer').contains(document.activeElement)){const sink=$('status');sink.tabIndex=-1;sink.focus({preventScroll:true});}}
 function cdqTextEntryFieldV2550(el){return !!el&&el.matches?.('.textWidgetAnnotation input,.textWidgetAnnotation textarea')&&!el.disabled&&!el.readOnly&&el.dataset.cdqAutoField!=='true';}
 function cdqFieldDefinitionsV2581(name){
   if(!(fieldDefinitions instanceof Map?fieldDefinitions.has(name):Object.hasOwn(fieldDefinitions||{},name)))name=reportFieldNameV2819(fieldDefinitions,name);
@@ -791,9 +791,9 @@ async function open(data){
   }
 }
 function menu(hide=false){$('more').hidden=hide?true:!$('more').hidden;$('menu').setAttribute('aria-expanded',String(!$('more').hidden));}
-const zoomSchedulerV2809=createZoomSchedulerV2809({getViewer:()=>doc?viewer:null});
+const zoomSchedulerV2809=createZoomSchedulerV2809({getViewer:()=>doc?viewer:null,container:$('container'),surface:$('viewer'),onScale:scale=>{$('zoom').textContent=Math.round(scale*100)+' %';},onIdle:()=>visualRefreshV2730.schedule()});
 function zoom(factor,origin){zoomSchedulerV2809.zoom(factor,origin)}
-$('container').addEventListener('touchstart',()=>zoomSchedulerV2809.flush(),{capture:true,passive:true});
+// Consecutive pinches share the pending preview; no PDF reflow on touchstart.
 $('menu').onclick=()=>menu();$('fit').onclick=()=>{zoomSchedulerV2809.reset();if(viewer){cdqHoldRenderedLayersV2556(2200);viewer.currentScaleValue='page-width';}menu(true);};
 document.addEventListener('pointerdown',e=>{if(!$('more').hidden&&!e.target.closest('#more,#menu'))menu(true);},true);
 $('cancelMenu').onclick=()=>{menu(true);$('menu').focus({preventScroll:true});};
@@ -926,7 +926,7 @@ try{
   viewer.updateScale=options=>{cdqHoldRenderedLayersV2556(2200);return cdqRawUpdateScaleV2556(options);};
   $('container').addEventListener('touchstart',()=>cdqHoldRenderedLayersV2556(1800),{passive:true,capture:true});
   $('container').addEventListener('scroll',()=>cdqHoldRenderedLayersV2556(900),{passive:true});
-  touch=installTouchNavigation({container:$('container'),surface:$('viewer'),getViewer:()=>viewer,onIdle:()=>visualRefreshV2730.schedule()});
+  touch=installTouchNavigation({container:$('container'),surface:$('viewer'),getViewer:()=>viewer,zoom:zoomSchedulerV2809,onIdle:()=>visualRefreshV2730.schedule()});
   nativeInput=installNativeTextInput($('viewer'));
   choices=installReaderChoices({surface:$('viewer'),isReadOnly:()=>readOnly,
     onConfirm:field=>form.advance(field),

@@ -73,9 +73,9 @@
 
 /* The coloured corner is a decorative checkbox layered above the reading.
    Leave its appearance and PDF state intact, but let taps reach the text input.
-   Scope to this trial's eccentricity corners; real NV/read-only locks stay intact. */
-#viewer .annotationLayer section.buttonWidgetAnnotation:has(input[name^="essai_cdq_coin_excentricite_"]),
-#viewer .annotationLayer section.buttonWidgetAnnotation:has(input[name^="essai_cdq_coin_excentricite_"]) *{pointer-events:none!important}
+   All V34 coloured reading corners are decorative; real NV/read-only locks stay intact. */
+#viewer .annotationLayer section.buttonWidgetAnnotation:has(input[name^="essai_cdq_coin_"]),
+#viewer .annotationLayer section.buttonWidgetAnnotation:has(input[name^="essai_cdq_coin_"]) *{pointer-events:none!important}
 
 
 #viewer .annotationLayer section:is(.textWidgetAnnotation,.choiceWidgetAnnotation):has(:is(input,textarea,select)[name^="essai_cdq_"]){border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;}

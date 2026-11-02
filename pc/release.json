@@ -1,12 +1,12 @@
 {
   "androidSelectorSha256": "d93a47771c6625ad8771e912d3c3ed3e848f59137b3de458a2d903463ad6b6d1",
   "androidSourceBuild": "2026.11.01-v28.12-reader-save",
-  "build": "2026.11.02-v28.20-home-reader",
+  "build": "2026.11.02-v28.21-reader-touch-zoom",
   "desktopModel": 3,
-  "files": 957,
-  "generatedFrom": "patches/v2820/release/stage.py",
+  "files": 958,
+  "generatedFrom": "patches/v2821/release/stage.py",
   "platform": "pc-pwa",
-  "release": "ce6bab93e33345860b22e247020979c04dc8e07b61d39fa832d11b587f18c210",
-  "version": "28.20",
+  "release": "8e375f3785f82a393c8941581f20246ac970ddce094af974d746168ecad4bf8b",
+  "version": "28.21",
   "webBaseCommit": "2164dbd6aa65479cefa57569823ea8253bd55de9"
 }
