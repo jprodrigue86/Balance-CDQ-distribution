@@ -1,12 +1,12 @@
 {
   "androidSelectorSha256": "d93a47771c6625ad8771e912d3c3ed3e848f59137b3de458a2d903463ad6b6d1",
   "androidSourceBuild": "2026.11.01-v28.12-reader-save",
-  "build": "2026.11.02-v28.23-conformity-zoom-save",
+  "build": "2026.11.02-v28.24-archive-recovery",
   "desktopModel": 3,
   "files": 985,
-  "generatedFrom": "patches/v2823/release/stage.py",
+  "generatedFrom": "patches/v2824/release/stage.py",
   "platform": "pc-pwa",
-  "release": "1212fe75163d9e27f4aefbf7ce98bdd3fb6d0d5497b305f7ca0f207536f6a114",
-  "version": "28.23",
+  "release": "be74e5db35bf975799a83803701ab70fb974057743aef792b1a73433be073eea",
+  "version": "28.24",
   "webBaseCommit": "2164dbd6aa65479cefa57569823ea8253bd55de9"
 }

@@ -10,7 +10,8 @@ export function calibrationRpc(name,...args){
     let settled=false,timer,dispatched=false;const arm=ms=>{clearTimeout(timer);timer=setTimeout(()=>{if(!settled){settled=true;controller?.abort();const error=queuedRead?Object.assign(Error(dispatched?'La lecture Drive a dépassé son délai.':'La lecture attendait encore son tour; elle n’a pas été envoyée au serveur.'),{name:'TimeoutError',code:dispatched?'RPC_READ_TIMEOUT':'RPC_QUEUE_TIMEOUT',phase:dispatched?'transport':'queue',method:name}):Error('Le serveur ne répond pas. Le retour reste en attente.');reject(error);}},ms);};
     // Complete legacy Sheets scans can outlive an ordinary metadata request.
     // Keep the queue bound and all write deadlines unchanged.
-    const timeout=queuedRead?Number(cdqApiRun.cdqReadTransportTimeoutV2792)+1000:name==='cdqActualiserListeBalanceV2665'?180000:['cdqScannerCalibrationV2668','cdqLireConformiteRapportV2775','obtenirSnapshotGoogleSheetHorsLigne'].includes(name)?60000:25000;
+    const portalRecovery=name==='cdqClientPortalManagementV2804'&&['listArchives','recoverArchives'].includes(args[0]);
+    const timeout=queuedRead?Number(cdqApiRun.cdqReadTransportTimeoutV2792)+1000:name==='cdqActualiserListeBalanceV2665'?180000:portalRecovery||['cdqScannerCalibrationV2668','cdqLireConformiteRapportV2775','obtenirSnapshotGoogleSheetHorsLigne'].includes(name)?60000:25000;
     // The bridge owns the actual 90s deadline. The caller's fallback comes later,
     // so a visible failure normally coincides with release of the real slot.
     const started=()=>{if(settled)return;dispatched=true;arm(timeout);};arm(90000);
