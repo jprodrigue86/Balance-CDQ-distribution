@@ -1,3 +1,4 @@
+import {reportFieldNameV2819,reportFieldV2819,reportFieldValueV2819,isV34ReportFieldsV2819} from './report-field-aliases-v2819.mjs';
 import {pdfWorkV2729} from './pdf-work-v2729.mjs';
 // Read the saved CDQ conclusion only. Opening a folder must not run the
 // report's JavaScript, recalculate readings or modify the source PDF.
@@ -6,13 +7,14 @@ const checked=field=>typeof field?.isChecked==='function'&&field.isChecked()===t
 
 export function pdfReportConformityV2727(form){
  if(typeof form?.getFields!=='function')return 'unknown';
- const fields=new Map(form.getFields().map(field=>[field.getName(),field]));
+ const actual=new Map(form.getFields().map(field=>[field.getName(),field]));
+ const fields={has:name=>reportFieldV2819(actual,reportFieldNameV2819(actual,name))!==undefined,get:name=>reportFieldV2819(actual,reportFieldNameV2819(actual,name))};
  if(!['identification_balance','capacite_maximale','echelon'].every(name=>fields.has(name)))return 'unknown';
  const status=normalize(fields.get('Statut_conformite')?.getText?.());
  // The final red icon is authoritative, including legacy reports whose
 // hidden status text or green icon was left inconsistent by another viewer.
  if(checked(fields.get('Bouton_NonConforme'))||status==='non conforme')return 'nonconforming';
- if(checked(fields.get('Bouton_ACompleter'))||status==='a completer')return 'unknown';
+ if(checked(fields.get('Bouton_ACompleter'))||['a completer','incomplet','essais a completer'].includes(status))return 'unknown';
  if(checked(fields.get('Bouton_Conforme'))||status==='conforme')return 'conforming';
  return 'unknown';
 }

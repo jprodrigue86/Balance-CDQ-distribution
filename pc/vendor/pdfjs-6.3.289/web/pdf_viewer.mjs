@@ -1809,6 +1809,7 @@ class SimpleLinkService extends PDFLinkService {
 
 
 class AnnotationLayerBuilder {
+  _renderEpochV29 = 0;
   #annotations = null;
   #commentManager = null;
   #onAppend = null;
@@ -1857,8 +1858,10 @@ class AnnotationLayerBuilder {
     structTreeLayer = null,
     optionalContentConfigPromise = null
   }) {
+    const epochV29 = ++this._renderEpochV29;
     if (this.div) {
       const optionalContentConfig = await optionalContentConfigPromise;
+      if(epochV29 !== this._renderEpochV29) return;
       if (this._cancelled || !this.annotationLayer) {
         return;
       }
@@ -4905,6 +4908,7 @@ class BasePDFPageView extends RenderableView {
   #showCanvas = null;
   #startTime = 0;
   #tempCanvas = null;
+  #completedCanvasV29 = null;
   canvas = null;
   div = null;
   enableOptimizedPartialRendering = false;
@@ -4965,10 +4969,11 @@ class BasePDFPageView extends RenderableView {
       pageColors
     } = this;
     const hasHCM = !!(pageColors?.background && pageColors?.foreground);
-    const prevCanvas = this.canvas;
-    const updateOnFirstShow = !prevCanvas && !hasHCM && !hideUntilComplete;
+    const prevCanvas = this.#completedCanvasV29;
+    const updateOnFirstShow = false; // V29: never expose a partially painted footer.
     let canvas = this.canvas = document.createElement("canvas");
     this.#showCanvas = isLastShow => {
+      if (this.canvas !== canvas) return;
       if (updateOnFirstShow) {
         let tempCanvas = this.#tempCanvas;
         if (!isLastShow && this.minDurationToUpdateCanvas > 0) {
@@ -5000,7 +5005,8 @@ class BasePDFPageView extends RenderableView {
       if (!isLastShow) {
         return;
       }
-      if (prevCanvas) {
+      this.#completedCanvasV29 = canvas;
+      if (prevCanvas?.isConnected) {
         prevCanvas.replaceWith(canvas);
         prevCanvas.width = prevCanvas.height = 0;
       } else {
@@ -5025,6 +5031,11 @@ class BasePDFPageView extends RenderableView {
     cont();
   };
   _resetCanvas() {
+    if(this.#completedCanvasV29 && this.#completedCanvasV29 !== this.canvas){
+      this.#completedCanvasV29.remove();
+      this.#completedCanvasV29.width = this.#completedCanvasV29.height = 0;
+    }
+    this.#completedCanvasV29 = null;
     const {
       canvas
     } = this;
@@ -5054,11 +5065,13 @@ class BasePDFPageView extends RenderableView {
     let error = null;
     try {
       await renderTask.promise;
+      if(renderTask !== this.renderTask) return;
       this.#showCanvas?.(true);
     } catch (e) {
       if (e instanceof RenderingCancelledException) {
         return;
       }
+      if(renderTask !== this.renderTask) return;
       error = e;
       this.#showCanvas?.(true);
     } finally {
@@ -7235,8 +7248,9 @@ class PDFPageView extends BasePDFPageView {
     const sfy = approximateFraction(outputScale.sy);
     const canvasWidth = canvas.width = floorToDivide(calcRound(width * outputScale.sx), sfx[0]);
     const canvasHeight = canvas.height = floorToDivide(calcRound(height * outputScale.sy), sfy[0]);
-    const pageWidth = floorToDivide(calcRound(width), sfx[1]);
-    const pageHeight = floorToDivide(calcRound(height), sfy[1]);
+    // V29: CSS page, annotation layer and bitmap share the exact PDF viewport.
+    const pageWidth = width;
+    const pageHeight = height;
     outputScale.sx = canvasWidth / pageWidth;
     outputScale.sy = canvasHeight / pageHeight;
     if (this.#scaleRoundX !== sfx[1]) {
@@ -7251,8 +7265,10 @@ class PDFPageView extends BasePDFPageView {
     const recordImages = this.imagesRightClickMinSize !== -1 && !this.imageCoordinates;
     const transform = outputScale.scaled ? [outputScale.sx, 0, 0, outputScale.sy, 0, 0] : null;
     const resultPromise = this._drawCanvas(this._getRenderingContext(canvas, transform, recordBBoxes, recordImages), () => {
-      prevCanvas?.remove();
-      this._resetCanvas();
+      // V29: discard only this cancelled bitmap, retain the completed page.
+      canvas.remove();
+      canvas.width = canvas.height = 0;
+      if(this.canvas === canvas) this.canvas = prevCanvas?.isConnected ? prevCanvas : null;
     }, renderTask => {
       this.#useThumbnailCanvas.regularAnnotations = !renderTask.separateAnnots;
       this.dispatchPageRendered(false, false);

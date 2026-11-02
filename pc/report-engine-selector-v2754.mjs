@@ -173,7 +173,14 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     receiptFlightsV2757.set(flightKey,flight);
     try{return await flight;}finally{if(receiptFlightsV2757.get(flightKey)===flight)receiptFlightsV2757.delete(flightKey);}
   }
-  async function resume(){if(canRead()){await capabilities();await (await client()).resume();}}
+  async function resume(){if(canRead()){
+    // Pending records already contain their immutable template and original
+    // request. A fresh capability RPC must not consume a short network return.
+    // Keep the returned handshake gated by capability readiness: its caller
+    // announces whether newly created reports may use the report engine.
+    // The durable queue still starts concurrently with that read.
+    await Promise.all([capabilities(),client().then(engine=>engine.resume())]);
+  }}
   function reset(){lease++;receiptFlightsV2757.clear();capability=null;capabilityFlight=null;pendingReports.clear();legacyScopes.clear();clientFlight?.then(value=>value.lock()).catch(()=>{});background?.setPending?.('report-engine',0,owner());}
   function importContext(fileId){const scope=legacyScopes.get(String(fileId));return scope&&canRead()?{...scope,reportId:crypto.randomUUID(),baseRevision:0}:null;}
   return {call,client,capabilities,recordForOpen,importContext,save,handle,resume,reset,endEditV2816:context=>clientFlight?.then(engine=>engine.endEditV2816(context)).catch(()=>{}),get enabled(){return capability?.ready===true;}};

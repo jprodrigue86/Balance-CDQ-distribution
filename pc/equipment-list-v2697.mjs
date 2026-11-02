@@ -1,3 +1,4 @@
+import {reportFieldNameV2819,reportFieldV2819,reportFieldValueV2819,isV34ReportFieldsV2819} from './report-field-aliases-v2819.mjs';
 import {balanceSheetSignatureV2788} from './balance-sheet-summary-v2788.mjs';
 import {sheetBalanceValuesV2703} from './balance-data-v2703.mjs';
 import {pdfReportConformityV2727} from './report-conformity-v2727.mjs';
@@ -6,7 +7,8 @@ import {pdfWorkV2729} from './pdf-work-v2729.mjs';
 import {validateReportReadV2729} from './report-conformity-cache-v2727.mjs';
 const clean=v=>{const t=String(v??'').normalize('NFC').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,160);return /^(?:[-–—]+|n\/?a|non renseign[eé]|true|false|vrai|faux)$/i.test(t)?'':t;};
 export function equipmentValuesV2697(form){
- const fields=new Map(form.getFields().map(f=>[f.getName(),f]));
+ const actual=new Map(form.getFields().map(f=>[f.getName(),f]));
+ const fields={has:name=>reportFieldV2819(actual,reportFieldNameV2819(actual,name))!==undefined,get:name=>reportFieldV2819(actual,reportFieldNameV2819(actual,name))};
  if(!fields.has('identification_balance')&&!(fields.has('capacite_maximale')&&(fields.has('base_balance_fabricant')||fields.has('indicateur_fabricant'))))return 'null';
  const value=n=>{const f=fields.get(n);return clean(f?.getText?.()??f?.getSelected?.().join(', ')??'');},unit=value('unite_mesure'),cap=value('capacite_maximale'),inc=value('echelon');
  // Match the populated columns, including the saved final conclusion. Reading

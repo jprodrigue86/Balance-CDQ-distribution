@@ -1,5 +1,5 @@
 // One rule is used by the reader and embedded Acrobat/PDF.js actions.
-export const isCorrectionReadingV2736=name=>/^(?:charge_point_\d+_(?:avant|apres)_correction(?:_2)?|excentricite_(?:avant|apres)_.+|B4_.+_(?:Avant|Apres)Correction)$/.test(name||'');
+export const isCorrectionReadingV2736=name=>/^(?:charge_point_\d+_(?:avant|apres)_correction(?:_2)?|excentricite_(?:avant|apres)_.+|B4_.+_(?:Avant|Apres)Correction)$/.test(String(name||'').replace(/^essai_cdq_/,''));
 export function measurementErrorV2736(value,echelon){
  function clean(v){return String(v===null||v===undefined?'':v).replace(/[\s\u00a0\u202f]/g,'').replace(',','.');}
  var e=clean(echelon),v=clean(value),number=/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/;
