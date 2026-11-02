@@ -1,12 +1,12 @@
 {
   "androidSelectorSha256": "d93a47771c6625ad8771e912d3c3ed3e848f59137b3de458a2d903463ad6b6d1",
   "androidSourceBuild": "2026.11.01-v28.12-reader-save",
-  "build": "2026.11.02-v28.29-send-freshness",
+  "build": "2026.11.02-v28.31-durable-send-executor",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
   "files": 975,
-  "generatedFrom": "patches/v2829/release/stage-web.py",
+  "generatedFrom": "update2831/release/stage-web.py",
   "platform": "iphone-pwa",
-  "release": "e95f16780df2c34c85995174e40e19a0f8581847d025c9b3679d479020a09232",
-  "version": "28.29",
-  "webBaseCommit": "f610457b1c8c3bbd5746cf843e7cbbea7abdea29"
+  "release": "0597c7768eee0fbe7443dd734348a38099fc69e456a19ed7e5cbf5abec650308",
+  "version": "28.31",
+  "webBaseCommit": "1d0f4ed9489a3fa5dceeb36642bebbe508dcaf5c"
 }

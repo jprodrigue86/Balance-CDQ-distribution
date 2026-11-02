@@ -1,12 +1,12 @@
 {
   "androidSelectorSha256": "d93a47771c6625ad8771e912d3c3ed3e848f59137b3de458a2d903463ad6b6d1",
   "androidSourceBuild": "2026.11.01-v28.12-reader-save",
-  "build": "2026.11.02-v28.29-send-freshness",
+  "build": "2026.11.02-v28.31-durable-send-executor",
   "desktopModel": 3,
   "files": 985,
-  "generatedFrom": "patches/v2829/release/stage-web.py",
+  "generatedFrom": "update2831/release/stage-web.py",
   "platform": "pc-pwa",
-  "release": "3665b3fc9ad3aa31a95109c39985bd91713e72656692a832dd775ae0ea5131a9",
-  "version": "28.29",
-  "webBaseCommit": "f610457b1c8c3bbd5746cf843e7cbbea7abdea29"
+  "release": "ab7901310e7e5e4cfa46d92b20f2f97f375b4e7ebae5af7a67188cd528709f0f",
+  "version": "28.31",
+  "webBaseCommit": "1d0f4ed9489a3fa5dceeb36642bebbe508dcaf5c"
 }
