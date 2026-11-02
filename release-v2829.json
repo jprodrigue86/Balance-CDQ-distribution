@@ -1,0 +1,18 @@
+{
+  "files": {
+    "android-release-update.json": "0b482a323afcb1f9fcb629408076df0dfa7bed327eeee930b80560191ad747d7",
+    "iphone/app/Selector.html": "22505fb7ce4d62abf39c130bbc4765c1549035880d0f25c628032eee8c85bf0c",
+    "iphone/app/index.html": "e1856adf3a0f5a6f12755daf260496193c2d170fc8f809b3e5b5a852271fb833",
+    "iphone/app/release.json": "d211817124a6e89b28290691aae758db2a5811c8d101c2d4b0b93704b1b0faa3",
+    "iphone/app/sw.js": "97091b158e8796dc578fb900770f3a0c0f2f3ba6ec6ca2ba602d3ccd5e9cea32",
+    "pc/Selector.html": "aa45cac44d12d5986a35aa14de54379ed381c0db766d89ed866324767e6af181",
+    "pc/index.html": "67fbe7fd567207743ca6da60d06400487008f1bedfcfcd040e6d69d88dc0bb77",
+    "pc/release.json": "5bffc2cb4a9231ce965d360ea48b4f85851e5036d6304e8fbd940c857b7c383f",
+    "pc/sw.js": "98f7c41bfe876ee3b99eb88b2acc9f364ded46c4e8e873384fd78a81992b83c7",
+    "pc/version.json": "5bffc2cb4a9231ce965d360ea48b4f85851e5036d6304e8fbd940c857b7c383f"
+  },
+  "privateSourceCommit": "684da6298792d1530f8859d82d39b6081742f0c7",
+  "publicBaseCommit": "f610457b1c8c3bbd5746cf843e7cbbea7abdea29",
+  "signedSha256": "36318bab0d0e6c8458e6c412e47a5927933389830a7358f01a6a35fa8189771b",
+  "version": "28.29"
+}
