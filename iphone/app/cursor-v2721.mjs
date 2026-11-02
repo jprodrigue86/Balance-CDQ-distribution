@@ -28,6 +28,11 @@ function sync(){apply();organize();for(const b of document.querySelectorAll('[da
 if(root){
 const choicesStyle=document.createElement('style');choicesStyle.textContent='.cdq-cursor-choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.cdq-cursor-choices button{display:flex;align-items:center;gap:8px;min-height:58px;text-align:left}.cdq-cursor-choices button[aria-pressed=true]{outline:2px solid var(--cdq-accent,#35c9ff);outline-offset:1px}';document.head.append(choicesStyle);
 let queued=false;const schedule=()=>{if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;sync();});};
-new MutationObserver(schedule).observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:['class','data-cdq-icon-style','data-cdq-workspace-owner']});
+new MutationObserver(records=>{
+ // Cursor ownership/theme live on the root. PDF field changes and zoom labels
+ // cannot change the cursor preference; never rescan for every such mutation.
+ if(records.some(r=>r.type==='attributes'?r.target===root:
+  [...r.addedNodes].some(n=>n.nodeType===1&&(n.id==='cdq-settings-panel-appearance'||n.querySelector?.('#cdq-settings-panel-appearance')))))schedule();
+}).observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:['class','data-cdq-icon-style','data-cdq-workspace-owner']});
 for(const e of ['cdq:icons-changed','cdq:access-ready','cdq:access-state-v2527','storage'])window.addEventListener(e,schedule);document.addEventListener('cdq:icons-changed',schedule);sync();
 }

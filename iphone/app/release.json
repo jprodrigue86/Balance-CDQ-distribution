@@ -1,12 +1,12 @@
 {
   "androidSelectorSha256": "d93a47771c6625ad8771e912d3c3ed3e848f59137b3de458a2d903463ad6b6d1",
   "androidSourceBuild": "2026.11.01-v28.12-reader-save",
-  "build": "2026.11.02-v28.21-reader-touch-zoom",
+  "build": "2026.11.02-v28.22-pdf-shields-viewer",
   "connectionRevision": "2026.09.24-iphone-rpc-r1",
-  "files": 948,
-  "generatedFrom": "patches/v2821/release/stage.py",
+  "files": 960,
+  "generatedFrom": "patches/v2822/release/stage.py",
   "platform": "iphone-pwa",
-  "release": "142fda8dc4226c33bf66c97a1a4c90d58ebe671afd3835e3d16a088e73f18761",
-  "version": "28.21",
+  "release": "06213f7406795d7d12494d64d1debc3f8a808d9661cdb8f6d60702495101f5fb",
+  "version": "28.22",
   "webBaseCommit": "2164dbd6aa65479cefa57569823ea8253bd55de9"
 }

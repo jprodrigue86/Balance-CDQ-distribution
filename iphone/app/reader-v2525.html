@@ -408,6 +408,7 @@ body #savingMask[hidden]{display:none!important}
  function paint(){
   if(!window.cdqActionArtworkV2657)return;
   for(const button of document.querySelectorAll('button,[role="button"]')){
+   if(button.closest('#viewer'))continue; // PDF controls are authored form fields, not application icons.
    if(button.closest('.bottom-nav,.cdq-icon-choice-v2514,[data-cdq-heading-icon-v2675],[data-pc-home-art],.cdq-preview-item-v2651')||button.matches('.cdq-swipe-action,[data-file-action]'))continue;
    const key=action(button);if(!key)continue;
    let icon=button.querySelector(':scope > svg:not([data-file-artwork]),:scope > [data-cdq-home-icon],:scope > .action-icon,:scope > .ico,:scope > .icon,:scope > .cdq-secondary-icon-v2710');
@@ -426,7 +427,13 @@ body #savingMask[hidden]{display:none!important}
  function schedule(){if(queued)return;queued=true;requestAnimationFrame(()=>{queued=false;paint()})}
  function start(){
   paint();
-  new MutationObserver(records=>{if(records.some(r=>r.type==='attributes'||r.type==='characterData'||r.addedNodes.length))schedule()}).observe(document.body,{subtree:true,childList:true,characterData:true});
+  new MutationObserver(records=>{
+   if(records.some(r=>{
+    const target=r.target.nodeType===1?r.target:r.target.parentElement;
+    if(target?.closest('#viewer,#zoom,#name,#status,#savingStatus'))return false;
+    return r.type==='characterData'||r.addedNodes.length;
+   }))schedule();
+  }).observe(document.body,{subtree:true,childList:true,characterData:true});
   new MutationObserver(schedule).observe(root,{attributes:true,attributeFilter:['data-cdq-palette','data-cdq-icon-style','data-reader-theme']});
   document.addEventListener('cdq:icons-changed',schedule);document.addEventListener('input',schedule);window.addEventListener('resize',schedule);window.addEventListener('storage',schedule);
  }
