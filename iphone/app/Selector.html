@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-iphone-version="28.18" data-cdq-iphone-release="0f8db6aa51acfadcff0bb2ed1d7da24d7215bdf992c13f6cd98186cdbe2a7569">
+<html data-cdq-iphone-version="28.19" data-cdq-iphone-release="67e22ba4ba986bd867fdbe280dfa3005bf4a15ea17f28adf8d049e5a2b6d6e66">
 <head>
 <script src="./iphone-update.js"></script>
 <script id="cdq-durable-resume-v2751">
@@ -928,7 +928,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.11.01-v28.18-observation-reader">
+<meta name="cdq-package-build" content="2026.11.01-v28.19-v34-offline">
 
 
 <script id="cdqBridgeV23">
@@ -982,7 +982,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.01-v28.18-observation-reader'
+    build:'2026.11.01-v28.19-v34-offline'
   });
 }
 
@@ -995,7 +995,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.01-v28.18-observation-reader'
+        build:'2026.11.01-v28.19-v34-offline'
       });
     }
   } catch(e) {}
@@ -6123,6 +6123,8 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
 
 <script type="module" src="./company-search-v2797.mjs"></script>
 <link rel="stylesheet" href="./interface-v2797.css">
+<link rel="stylesheet" href="./offline-experience-v2819.css">
+<script type="module">import {installOfflineStatusV2819} from "./offline-experience-v2819.mjs";installOfflineStatusV2819();</script>
 </head>
 
 
@@ -11831,7 +11833,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.01-v28.18-observation-reader";
+  const CDQ_BUILD = "2026.11.01-v28.19-v34-offline";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14194,7 +14196,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.01-v28.18-observation-reader";
+const CDQ_V19_BUILD = "2026.11.01-v28.19-v34-offline";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -14744,26 +14746,28 @@ async function cdqV19RefreshSyncPill(snapshot){
   const q=Array.isArray(snapshot)?snapshot:await cdqV19QueueGet();
   await cdqRefreshSyncDetailsV2679(q);
   const p=cdqV19SyncPill(); if(!p)return;
+  const background=window.cdqDriveBackgroundV2746?.status?.();
+  const pending=Math.max(q.length,Number(background?.pendingCount)||0)+(Number(background?.nativeQueuedCount)||0);
   if(!navigator.onLine){
     p.className="cdq-v19-sync-pill pending";
-    p.textContent="◌ Hors ligne"+(q.length?" • "+q.length+" en attente":"");
+    p.textContent="Sans réseau"+(pending?" • "+pending+" en attente":"");
     return;
   }
   if(cdqV19SyncRunning){
     p.className="cdq-v19-sync-pill pending"; p.textContent="↻ Synchronisation…"; return;
   }
-  if(q.length){
-    p.className="cdq-v19-sync-pill pending"; p.textContent="↻ "+q.length+" à synchroniser"; return;
+  if(pending||background?.running||background?.nativeError){
+    p.className="cdq-v19-sync-pill pending"; p.textContent=(pending?pending+" sauvegarde(s) — ":"")+"Drive non confirmé"; return;
   }
   p.className="cdq-v19-sync-pill ready";
-  p.textContent="✓ Synchronisé";
+  p.textContent="Aucune sauvegarde en attente";
 }
 
 function cdqV19ShowOfflineBanner(){
   const b=document.getElementById("cdqV19OfflineBanner");
   if(!b)return;
   b.classList.toggle("show",!navigator.onLine);
-  if(!navigator.onLine)b.textContent="Hors ligne — Sheets se synchronise dans Google Sheets. Rapportez les PDF remplis dans CDQ. Les envois en attente reprendront au retour d’Internet.";
+  if(!navigator.onLine)b.textContent="Sans réseau — ouvrez les PDF marqués d’un point jaune dans la liste habituelle. Enregistrez normalement; les envois reprendront automatiquement au retour du réseau. Google Sheets gère ses propres copies.";
 }
 
 // The inventory endpoint has no request ID. A sent transfer must never be
@@ -14935,7 +14939,7 @@ function cdqV19OfflineStatus(text,state,clientId){
   el.className="cdq-v19-sync-pill cdq-top-action "+(state||"");
   if(window.cdqMobileLayout)window.cdqMobileLayout.schedule();
   el.disabled=false;
-  el.setAttribute("aria-pressed",state==="ready"?"true":"false");
+  el.removeAttribute("aria-pressed");el.setAttribute("aria-haspopup","dialog");
 }
 
 
@@ -16205,7 +16209,14 @@ function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoch,curre
     receiptFlightsV2757.set(flightKey,flight);
     try{return await flight;}finally{if(receiptFlightsV2757.get(flightKey)===flight)receiptFlightsV2757.delete(flightKey);}
   }
-  async function resume(){if(canRead()){await capabilities();await (await client()).resume();}}
+  async function resume(){if(canRead()){
+    // Pending records already contain their immutable template and original
+    // request. A fresh capability RPC must not consume a short network return.
+    // Keep the returned handshake gated by capability readiness: its caller
+    // announces whether newly created reports may use the report engine.
+    // The durable queue still starts concurrently with that read.
+    await Promise.all([capabilities(),client().then(engine=>engine.resume())]);
+  }}
   function reset(){lease++;receiptFlightsV2757.clear();capability=null;capabilityFlight=null;pendingReports.clear();legacyScopes.clear();clientFlight?.then(value=>value.lock()).catch(()=>{});background?.setPending?.('report-engine',0,owner());}
   function importContext(fileId){const scope=legacyScopes.get(String(fileId));return scope&&canRead()?{...scope,reportId:crypto.randomUUID(),baseRevision:0}:null;}
   return {call,client,capabilities,recordForOpen,importContext,save,handle,resume,reset,endEditV2816:context=>clientFlight?.then(engine=>engine.endEditV2816(context)).catch(()=>{}),get enabled(){return capability?.ready===true;}};
@@ -17226,7 +17237,7 @@ const cdqOffline24 = (() => {
       if(dot){
         const sheet=sheetIds.get(String(id));dot.hidden=!ids.has(String(id))&&!sheet;
         dot.classList.toggle('cdq26-sheet-pending',!!sheet&&!sheet.confirmed);
-        dot.title=sheet?(sheet.confirmed?'Hors connexion dans Google Sheets — confirmé par vous':'À activer dans Google Sheets'): 'Disponible hors ligne';
+        dot.title=sheet?(sheet.confirmed?'Google Sheets : hors connexion déclaré par vous, non vérifié par CDQ':'Raccourci Google Sheets — hors connexion à activer dans Google Sheets'): 'PDF disponible sur cet appareil, même sans réseau';
         dot.setAttribute('aria-label',dot.title);
       }
     });
@@ -17308,7 +17319,7 @@ const cdqOffline24 = (() => {
       const groups=new Map();for(const r of sheets){if(!groups.has(r.clientName))groups.set(r.clientName,[]);groups.get(r.clientName).push(r);}
       for(const [name,list] of groups){host.append(el('h4',name));for(const r of list){
         const row=el('div','', 'cdq24-saved-row');row.style.flexWrap='wrap';host.append(row);
-        button(row,r.name,()=>cdqOpenSheetV2526(r.fileId));
+        row.append(el('strong',r.name));
         row.append(el('span',r.confirmed?'Hors connexion — confirmé par vous':'À activer dans Google Sheets'));
         if(!r.confirmed)button(row,'J’ai activé le hors connexion',()=>sheetAction('CDQ_OFFLINE_SHEET_STORE',{...r,confirmed:true}));
         button(row,'Retirer de cette liste',()=>{if(!window.confirm('Retirer le raccourci de CDQ ? La copie et les modifications restent dans Google Sheets. Pour y désactiver le hors connexion, vérifiez d’abord que la synchronisation Google est terminée.'))return;return sheetAction('CDQ_OFFLINE_SHEET_REMOVE',r);});
@@ -17320,7 +17331,7 @@ const cdqOffline24 = (() => {
     for(const r of records){const cid=String(r.clientId||''),known=(toutesLesCompagnies||[]).find(c=>String(c.id)===cid);const name=r.clientName||known?.nom||'Autres documents';if(!groups.has(name))groups.set(name,[]);groups.get(name).push(r);}
     for(const [name,list] of [...groups].sort((a,b)=>a[0].localeCompare(b[0],'fr'))){
       const heading=el('div','', 'cdq24-saved-row');heading.append(el('h4',name));button(heading,'Retirer le dossier du hors ligne',()=>removeScope({clientId:String(list[0].clientId),folderIds:[String(list[0].clientId)]}));host.append(heading);
-      for(const r of list){const row=el('div','', 'cdq24-saved-row');const b=button(row,r.nom||r.name||r.id,()=>{document.getElementById('cdqDocumentPrepare').style.display='none';return cdqOpenPdf(r.id,r);});b.className='cdq24-file-open';row.append(el('span','●','cdq24-ready-mark'));const del=button(row,'Retirer du hors ligne',()=>remove(r.id));del.setAttribute('aria-label','Retirer '+(r.nom||r.id)+' du mode hors ligne');del.disabled=!!job?.running;host.append(row);}
+      for(const r of list){const row=el('div','', 'cdq24-saved-row');const name=el('strong',r.nom||r.name||r.id);name.className='cdq24-file-open';row.append(name);row.append(el('span','●','cdq24-ready-mark'));const del=button(row,'Retirer du hors ligne',()=>remove(r.id));del.setAttribute('aria-label','Retirer '+(r.nom||r.id)+' du mode hors ligne');del.disabled=!!job?.running;host.append(row);}
     }
   }
   function checkJob(j){valid(j.email);if(j.cancelled){const e=Error('Préparation annulée');e.name='AbortError';throw e;}}
@@ -17371,7 +17382,7 @@ const cdqOffline24 = (() => {
         catch(e){if(e.name==='AbortError')throw e;j.failures.push((f.nom||f.id)+' : '+(e.message||e));}
         j.finished++;j.fraction=0;progress();
       }
-      j.message=j.failures.length?'Certains fichiers n’ont pas été préparés. Décochez les fichiers prêts et réessayez.':(files.some(f=>f.type==='GOOGLE_SHEETS')?'PDF conservés. Pour les Google Sheets sélectionnés, ouvrez chaque feuille ci-dessous et activez Disponible hors connexion.':'Les PDF cochés sont conservés, même après fermeture de CDQ.');
+      j.message=j.failures.length?'Certains fichiers n’ont pas été préparés. Décochez les fichiers prêts et réessayez.':(files.some(f=>f.type==='GOOGLE_SHEETS')?'PDF conservés. Pour les Google Sheets sélectionnés, ouvrez chaque feuille depuis la liste habituelle et activez Disponible hors connexion.':'Les PDF cochés sont conservés, même après fermeture de CDQ.');
     }catch(e){j.error=e.name!=='AbortError';j.message=e.message;}
     finally{j.running=false;progress();renderStored();paintDots();}
   }
@@ -17383,23 +17394,24 @@ const cdqOffline24 = (() => {
     modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','cdqOfflineTitleV2815');
     o.querySelector('.cdq-v19-title').id='cdqOfflineTitleV2815';
     const closeMenu=()=>{view++;o.style.display='none';body.replaceChildren();if(returnFocus?.isConnected)returnFocus.focus();};
-    closeButton.onclick=closeMenu;o.onclick=event=>{if(event.target===o)closeMenu();};
+    closeButton.textContent='Retour à la liste';o.querySelector('[data-cdq-offline-download-v2819]')?.remove();closeButton.onclick=closeMenu;o.onclick=event=>{if(event.target===o)closeMenu();};
     o.onkeydown=event=>{if(event.key==='Escape'){event.preventDefault();closeMenu();}else if(event.key==='Tab'){
       const nodes=[...o.querySelectorAll('button,input,select,summary,[tabindex="0"]')].filter(n=>!n.disabled&&n.getClientRects().length);
       const first=nodes[0],last=nodes.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
     }};closeButton.focus();
     const currentView=()=>ticket===view&&email===account()&&menuClient===(company()?.id||'')&&o.style.display!=='none';
     const context=el('p',comp?.nom||'Tous les documents','cdq-menu-context-v2815');body.append(context);
+    body.append(el('p','Choisissez les fichiers à rendre disponibles hors ligne.','cdq24-help'));
     const localStatus=el('p','Lecture des documents de cet appareil…','cdq-menu-status-v2815');localStatus.setAttribute('role','status');body.append(localStatus);
     const prog=el('section');prog.dataset.progress24='';body.append(prog);progress();
     const choose=el('section');choose.className='cdq26-offline-select';body.append(choose);choose.setAttribute('aria-busy','true');choose.append(el('h3','Préparer des fichiers'),el('p','Lecture du dossier client…'));
-    const drawer=el('details');drawer.className='cdq26-offline-stored';drawer.append(el('summary','Documents déjà préparés'));const stored=el('section');stored.dataset.stored24='';drawer.append(stored);body.append(drawer);
+    const drawer=el('details');drawer.className='cdq26-offline-stored';drawer.append(el('summary','Fichiers conservés et récupération'));drawer.append(el('p','Ouvrez vos PDF dans la liste habituelle. Nouveau rapport utilise les modèles embarqués, même sans réseau.','cdq24-help'));const stored=el('section');stored.dataset.stored24='';drawer.append(stored);body.append(drawer);
     if(cdqPwaAvailable())button(body,'Copies conservées et modifications à vérifier',()=>{closeMenu();cdqPostToPwa({type:'CDQ_OFFLINE_SHOW_LOCAL',email});});
     drawer.append(el('p','Fermer ce menu laisse la préparation en cours. Si CDQ est fermé complètement, les fichiers terminés restent disponibles; relancez la préparation des autres.','cdq24-help'));
     // Paint the shell before reads; local documents and the client catalog load independently.
     await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));if(!currentView())return;
     const readLocal=async()=>{if(!currentView())return;localStatus.textContent='Lecture des documents de cet appareil…';
-      try{await refresh();valid(email);if(!currentView())return;localStatus.textContent='Documents locaux lus. La liste ne confirme pas une synchronisation Drive.';
+      try{await refresh();valid(email);if(!currentView())return;localStatus.textContent=navigator.onLine===false?'Sans réseau · les copies terminées restent disponibles.':'Réseau détecté · envoi automatique des sauvegardes en attente.';
         const mirror=await bridge('CDQ_OFFLINE_DOCUMENT_LIST');valid(email);if(!currentView())return;
         for(const id of mirror?.removed||[]){if(!currentView())return;await removeLocal(id);}
         if(mirror?.removed?.length)await refresh();
@@ -17414,7 +17426,7 @@ const cdqOffline24 = (() => {
     if(!currentView())return;valid(email);choose.replaceChildren();choose.setAttribute('aria-busy','false');
     if(!comp){choose.append(el('p','Choisissez une compagnie pour ajouter des fichiers hors ligne.'));return;}
     catalog={company:comp,files:manifest?.fichiers||[]};
-    choose.append(el('h3','Ajouter des fichiers — '+comp.nom));
+    choose.append(el('h3','Fichiers du client'));
     if(error){choose.append(el('p',error));button(choose,'Réessayer la liste du client',()=>{if(currentView())return open(comp);});}
     choose.append(el('p',navigator.onLine?'Liste du dossier consultée. Choisis les fichiers à conserver.':'Liste conservée sur cet appareil; le serveur n’a pas été vérifié.','cdq24-help'));
     const inputs=[],ids=new Set(Array.from(document.querySelectorAll('.file-checkbox:checked')).map(n=>n.dataset.fileId));
@@ -17443,9 +17455,10 @@ const cdqOffline24 = (() => {
       }
     }
     renderFolder(manifest?.contenu||manifest,list,new Set([comp.id]));
+    if(catalog.files.some(f=>f.type==='GOOGLE_SHEETS'))list.before(el('p','PDF : téléchargés dans CDQ. Sheets : hors connexion à activer dans Google Sheets.','cdq24-help'));
     if(!inputs.length)choose.append(el('p',manifest?'Aucun PDF ou Google Sheets dans cette liste.':'Liste non disponible. Réessaie avec Internet.'));
-    const start=button(choose,'Préparer les fichiers cochés',()=>{if(!currentView())return;valid(email);return run(catalog.files.filter(f=>inputs.some(i=>i.checked&&i.value===String(f.id))),comp);});start.disabled=!inputs.length||navigator.onLine===false;
-    if(catalog.files.some(f=>f.type==='GOOGLE_SHEETS'))drawer.append(el('p','Les PDF sont téléchargés dans CDQ. Les Google Sheets cochés sont ajoutés à cette liste; ouvrez-les ensuite pour activer ⋮ → Disponible hors connexion dans Google Sheets.','cdq24-help'));
+    const start=button(choose,'Préparer la sélection hors ligne',()=>{if(!currentView())return;valid(email);return run(catalog.files.filter(f=>inputs.some(i=>i.checked&&i.value===String(f.id))),comp);});start.disabled=!inputs.length||navigator.onLine===false;start.dataset.cdqOfflineDownloadV2819='';o.querySelector('.modal-buttons').prepend(start);
+    if(catalog.files.some(f=>f.type==='GOOGLE_SHEETS'))drawer.append(el('p','Les PDF sont téléchargés dans CDQ. Les Google Sheets cochés sont ajoutés aux raccourcis; ouvrez-les ensuite depuis la liste habituelle pour activer ⋮ → Disponible hors connexion dans Google Sheets.','cdq24-help'));
   }
   let scheduled=false;
   new MutationObserver(changes=>{if(changes.some(c=>Array.from(c.addedNodes).some(n=>n.nodeType===1&&!n.classList.contains('cdq24-offline-dot')))&&!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;if(cdqAccessState==='ready')paintDots();});}}).observe(document.body,{childList:true,subtree:true});
@@ -17813,7 +17826,7 @@ function cdqV19InstallUi(){
 
   const info=document.getElementById("clientInfoBar");
   if(info){
-    const off=document.createElement("button");off.type="button";off.id="cdqV19OfflineStatus";off.className="cdq-v19-sync-pill";window.cdqHomeIconsV2571.paintTop(off,'offline','Hors ligne');off.title="Activer ou désactiver le mode hors ligne pour cette compagnie";off.onclick=cdqV19ToggleClientOffline;
+    const off=document.createElement("button");off.type="button";off.id="cdqV19OfflineStatus";off.className="cdq-v19-sync-pill";window.cdqHomeIconsV2571.paintTop(off,'offline','Hors ligne');off.title="Choisir les fichiers à conserver sur cet appareil";off.onclick=cdqV19ToggleClientOffline;
     const photo=document.createElement("button");photo.id="clientPhotoButton";photo.type="button";window.cdqHomeIconsV2571.paintTop(photo,'photos','Photos');photo.onclick=function(){
       if(!compagnieSelectionnee){alert("Choisissez d’abord une compagnie.");return;}
       ouvrirPhotosCible("client",compagnieSelectionnee,nomCompagnieSelectionnee||"Client");
@@ -17935,7 +17948,13 @@ window.addEventListener("offline",function(){
 });
 window.addEventListener("online",function(){
   cdqV19ShowOfflineBanner();
-  cdqSynchroniserEnAttente();
+  const owner=String(utilisateurCourantEmail||''),stamp=cdqDriveAccessEpochV2745;
+  Promise.resolve().then(async()=>{
+    if(!owner||cdqAccessState!=='ready')return;
+    const {reconnectOutboxV2819}=await import('./offline-experience-v2819.mjs');
+    await cdqV19MutateQueue(queue=>owner===String(utilisateurCourantEmail||'')&&stamp===cdqDriveAccessEpochV2745&&cdqAccessState==='ready'?reconnectOutboxV2819(queue):queue);
+    if(owner===String(utilisateurCourantEmail||'')&&stamp===cdqDriveAccessEpochV2745)await cdqSynchroniserEnAttente();
+  }).catch(()=>{});
   if(compagnieSelectionnee){
     const comp=(toutesLesCompagnies||[]).find(function(c){return String(c.id)===String(compagnieSelectionnee);});
     if(comp)cdqV19RefreshOfflineClientStatus(comp);
@@ -17963,7 +17982,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.01-v28.18-observation-reader";
+const CDQ_V20_BUILD = "2026.11.01-v28.19-v34-offline";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -18810,7 +18829,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.01-v28.18-observation-reader";
+const CDQ_V21_BUILD = "2026.11.01-v28.19-v34-offline";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -23249,7 +23268,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.01-v28.18-observation-reader',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.01-v28.19-v34-offline',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -24727,9 +24746,13 @@ html.cdq-desktop-v2676 body #filesContainer .file-row :is(.file-actions,.file-me
    let badge=$('.file-pending-v2708',row);
    if(!badge){badge=document.createElement('button');badge.type='button';badge.className='file-pending-v2708';badge.setAttribute('role','status');badge.title='Synchronisation avec Drive en cours';badge.setAttribute('aria-label',badge.title);row.querySelector('.file-name')?.append(badge)}
    badge.classList.remove('cdq23-row-spinner');
-   const icon=error?'error':'upload';if(badge.dataset.iconV2781!==icon){badge.dataset.iconV2781=icon;if(error)badge.innerHTML='<svg viewBox="0 0 34 34" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3 32 30H2Z"/><path d="M17 12v8"/><circle cx="17" cy="25" r="1" fill="currentColor" stroke="none"/></svg>';else badge.innerHTML='<svg viewBox="0 0 24 24" width="23" height="23" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18a4 4 0 0 1-.5-8 6.5 6.5 0 0 1 12.6-1.5A4.8 4.8 0 0 1 19 18h-3M12 21V11m-4 4 4-4 4 4"/></svg>';}
+   const icon=pending?(error?'local-conflict':'local-pending'):error?'error':'upload';
+   if(badge.dataset.iconV2781!==icon){badge.dataset.iconV2781=icon;
+    if(pending)badge.innerHTML='<svg viewBox="0 0 34 34" aria-hidden="true" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 4 4 8-9" stroke="#68df8c"/><path d="M13 27a5 5 0 0 1-.5-10 7 7 0 0 1 13.2-1.8A6 6 0 0 1 27 27H13Z" stroke="#dce4ea"/><path d="m12 31 18-19" stroke="#ff6975" stroke-width="2.7"/>'+(error?'<circle cx="27" cy="6" r="4.5" fill="#ffbd55"/><path d="M27 3.5v2.8m0 1.8v.2" stroke="#171717" stroke-width="1.4"/>':'')+'</svg>';
+    else badge.innerHTML='<svg viewBox="0 0 34 34" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3 32 30H2Z"/><path d="M17 12v8"/><circle cx="17" cy="25" r="1" fill="currentColor" stroke="none"/></svg>';
+   }
    cdqFileStateSlotV2782(row);
-   badge.title=error+' — Cliquer pour réessayer la synchronisation';if(!error)badge.title='Synchronisation avec Drive en cours';badge.setAttribute('aria-label',badge.title);
+   badge.title=(pending?'Enregistré sur cet appareil — Drive non confirmé. ':'')+(error?error+' — Ouvrir les détails de synchronisation':navigator.onLine===false?'Envoi automatique au retour du réseau.':'Envoi automatique en attente de confirmation Drive.');badge.setAttribute('aria-label',badge.title);
    badge.tabIndex=error?0:-1;badge.setAttribute('role',error?'button':'status');
    const retry=()=>{if(!error)return;const detail='Synchronisation de '+localNameV2778(found)+' en attente : '+error;Promise.resolve().then(async()=>{const pending=await window.cdqSyncDetailsV2679?.pending?.();if(Array.isArray(pending)&&pending.length)await window.cdqSyncDetailsV2679.open();else if(error.startsWith('Rapport supprimé côté serveur.')&&typeof cdqPwaAvailable==='function'&&cdqPwaAvailable())cdqPostToPwa({type:'CDQ_OFFLINE_SHOW_LOCAL'});else alert(detail);}).catch(()=>alert(detail));};
    function localNameV2778(file){return String(file?.nom||file?.name||'ce rapport');}

@@ -102,7 +102,7 @@ export function styleT05Fields(surface){
   const corrected=!!surface.querySelector('input[name^="_cdq_visual_"]');
   if(corrected)for(const indicator of surface.querySelectorAll('input[name^="_cdq_visual_"]')){const section=indicator.closest('section');if(section)section.style.setProperty('pointer-events','none','important');}
   for(const field of surface.querySelectorAll('input:not([type=checkbox]),textarea,select,button.cdq-choice-field')){
-    if(!field.name)continue;
+    if(!field.name||field.name.startsWith('essai_cdq_'))continue;
     for(const [key,value]of Object.entries({'font-family':'CDQRoboto850,Arial,sans-serif','font-weight':'850','text-align':'center',color:corrected&&!field.name.endsWith('_numero_tete')&&/^(charge_point_|excentricite_(avant|apres)_|B4_|charge_excentricite$|tolerance_excentricite$)/.test(field.name)?'#000000':field.name.endsWith('_numero_tete')?'#101B7A':'#061B35'}))if(field.style.getPropertyValue(key)!==value||field.style.getPropertyPriority(key)!=='important')field.style.setProperty(key,value,'important');
     // PDF.js leaves the native /BS width in unscaled CSS pixels. Scale its
     // existing border like the .6pt native correction-frame canvases, without

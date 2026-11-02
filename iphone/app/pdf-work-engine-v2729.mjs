@@ -1,3 +1,4 @@
+import {reportFieldNameV2819,reportFieldV2819,reportFieldValueV2819,isV34ReportFieldsV2819} from './report-field-aliases-v2819.mjs';
 import {restoreNativeWidgetPaletteV2755} from './reader-native-widget-palette-v2755.mjs';
 import {staticArtworkFingerprintV2753} from './static-artwork-fingerprint-v2753.mjs';
 import {normalizeEditableFormOnOpen,saveEditableFormAppearance} from './reader-choice-appearance-v2572.mjs';
@@ -28,7 +29,7 @@ export function createPdfWorkEngineV2729({limit=96*1024*1024,worker=false}={}){
  const copy=value=>({...value,...(value.info?{info:cloneInfo(value.info)}:{}),...(value.bytes?{bytes:value.bytes.slice()}: {})});
  function put(key,value){const prior=cache.get(key);if(prior)total-=prior.size;cache.delete(key);const size=(value.bytes?.byteLength||0)+512+(key.length+JSON.stringify(value.info||{}).length)*2;if(size>limit)return;cache.set(key,{...value,info:value.info?cloneInfo(value.info):undefined,size});total+=size;while(total>limit&&cache.size){const first=cache.keys().next().value;total-=cache.get(first).size;cache.delete(first);}}
  function get(key){const value=cache.get(key);if(!value)return null;cache.delete(key);cache.set(key,value);hits++;return value;}
- const formSummary=form=>({equipment:equipmentValuesV2697(form),conformity:pdfReportConformityV2727(form),name:identificationReportName(form.getFieldMaybe('identification_balance')?.getText?.())});
+ const formSummary=form=>({equipment:equipmentValuesV2697(form),conformity:pdfReportConformityV2727(form),name:identificationReportName(reportFieldValueV2819(form,'identification_balance'))});
  const loadedSummary=(pdf,L)=>{
   // PDFDocument.getForm() can remove XFA or create an AcroForm. A summary
   // observed before serialization must never change those output bytes.

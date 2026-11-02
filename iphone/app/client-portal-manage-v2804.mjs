@@ -29,7 +29,7 @@ export async function openPortalManagementV2804({body,clientId,valid,rpc}){
  panel=document.createElement('section');panel.dataset.cdqPortalManageV2804='1';panel.className='cdq-portal-group-v2815';
  const title=document.createElement('h3');title.textContent='Rapports publiés';title.style.cssText='font-size:17px;margin:0 0 8px';
  const note=document.createElement('p');note.textContent='Sélectionne les rapports à retirer de la page client. Les archives Drive et les pièces jointes déjà envoyées restent conservées.';
- note.style.cssText='font-size:13px;color:#b6d1df;line-height:1.4';
+ note.style.cssText='font-size:13px;color:var(--cdq-muted,#b6c0c9);line-height:1.4';
  const status=document.createElement('p');status.setAttribute('role','status');status.style.cssText='font-size:13px';status.textContent='Chargement des rapports…';
  const toolbar=document.createElement('div');toolbar.style.cssText='display:flex;gap:5px;flex-wrap:wrap;align-items:center';
  const list=document.createElement('div');list.setAttribute('role','group');list.setAttribute('aria-label','Rapports publiés pour ce client');list.style.cssText='max-height:330px;overflow:auto;margin:9px 0';
@@ -55,15 +55,15 @@ export async function openPortalManagementV2804({body,clientId,valid,rpc}){
   if(!valid())return;
   list.replaceChildren();
   for(const d of docs){
-   const row=document.createElement('div');row.style.cssText='display:flex;gap:8px;align-items:center;padding:9px 4px;border-bottom:1px solid #335469';
+   const row=document.createElement('div');row.style.cssText='display:flex;gap:8px;align-items:center;padding:9px 4px;border-bottom:1px solid var(--cdq-line,#647079)';
    const label=document.createElement('label');label.style.cssText='display:flex;gap:10px;align-items:center;flex:1;min-width:0;cursor:pointer';
    const box=document.createElement('input');box.type='checkbox';box.checked=selected.has(d.documentId);box.disabled=removing;
-   box.style.cssText='width:22px;padding:0;min-width:22px;min-height:22px;accent-color:#48a7d1';
+   box.style.cssText='width:22px;padding:0;min-width:22px;min-height:22px;accent-color:var(--cdq-accent,#c2cbd1)';
    box.setAttribute('aria-label','Sélectionner '+d.name);
    box.onchange=()=>{if(box.checked){if(selected.size>=20){box.checked=false;status.textContent='20 rapports maximum par suppression.';return;}selected.add(d.documentId)}else selected.delete(d.documentId);confirm.hidden=true;controls()};
    const details=document.createElement('span');details.style.cssText='display:flex;flex-direction:column;min-width:0;overflow-wrap:anywhere';
    const name=document.createElement('strong');name.textContent=d.name;
-   const meta=document.createElement('small');meta.style.cssText='color:#b1c9d5';meta.textContent=new Date(d.createdAt).toLocaleDateString('fr-CA')+' · '+Math.ceil(d.size/1024)+' Ko';
+   const meta=document.createElement('small');meta.style.cssText='color:var(--cdq-muted,#b6c0c9)';meta.textContent=new Date(d.createdAt).toLocaleDateString('fr-CA')+' · '+Math.ceil(d.size/1024)+' Ko';
    details.append(name,meta);label.append(box,details);
    const trash=button('Retirer',()=>{selected.clear();selected.add(d.documentId);render();askConfirm()});
    trash.title='Retirer '+d.name+' de la page client';trash.setAttribute('aria-label','Retirer '+d.name);

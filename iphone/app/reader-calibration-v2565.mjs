@@ -1,3 +1,4 @@
+import {reportFieldNameV2819} from './report-field-aliases-v2819.mjs';
 import {findCalibration} from './calibration-db-v2565.mjs';
 import {devicesFromPdfFields} from './calibration-scan-v2668.mjs';
 
@@ -13,6 +14,7 @@ function storedValue(doc,definition){
   }catch(_){return String(definition.value??definition.defaultValue??'').trim();}
 }
 function fieldValue(surface,doc,fields,name){
+  name=reportFieldNameV2819(fields,name);
   const live=surface?.querySelector?.('[name="'+CSS.escape(name)+'"]');
   if(live)return String(live.value||'').trim();
   for(const d of defs(fields,name)){const value=storedValue(doc,d);if(value)return value;}

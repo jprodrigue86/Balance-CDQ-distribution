@@ -1,3 +1,6 @@
+// Normalize the V34 prefixed schema only at this input boundary. Existing
+// rational arithmetic and manual point ownership remain unchanged.
+const rangeFieldNameV2819=name=>name==='essai_cdq_unite'?'unite_mesure':String(name||'').replace(/^essai_cdq_/,'');
 // Exact rational arithmetic: the increment is a constraint, never a rounding hint.
 const gcd=(a,b)=>b?gcd(b,a%b):a;
 const ratio=(n,d=1n)=>{const g=gcd(n,d);return {n:n/g,d:d/g};};
@@ -28,7 +31,7 @@ function massUnit(value){
   return null;
 }
 export function verifiedRangePointsV2756(value,names,{family='',unit='',echelon=''}={}){
-  const fields=new Set(names),loads=[...fields].filter(n=>/^charge_point_\d+_charge_utilisee(?:_2)?$/.test(n));
+  const fields=new Set(names.map(rangeFieldNameV2819)),loads=[...fields].filter(n=>/^charge_point_\d+_charge_utilisee(?:_2)?$/.test(n));
   const precision=family==='precision'||fields.has('type_plateau')||fields.has('_cdq_precision12_last_focus');
   const count=precision?7:6;
   if(loads.length!==count||!Array.from({length:count},(_,i)=>`charge_point_${i+1}_charge_utilisee`).every(n=>fields.has(n)))return null;
@@ -67,6 +70,7 @@ export function verifiedRangePointsV2756(value,names,{family='',unit='',echelon=
 }
 
 export function installVerifiedRangeV2756({surface,names,enabled,read,write,changed,family=()=>'',commitDependency}){
+  const sourceNames=names;names=()=>{const all=sourceNames();return Object.assign(all.map(rangeFieldNameV2819),{identity:all.identity||all});};
   let identity=null,eligible=false,writing=false;const owned=new Map(),manual=new Set();
   let dependencyEpoch=0;
   const loadName=/^charge_point_\d+_charge_utilisee(?:_2)?$/;
@@ -84,12 +88,12 @@ export function installVerifiedRangeV2756({surface,names,enabled,read,write,chan
   const focus=()=>{if(enabled())initialize();};
   const edit=event=>{
     if(writing||!enabled())return;
-    initialize();const name=event.target?.name||'';
+    initialize();const name=rangeFieldNameV2819(event.target?.name);
     if(loadName.test(name)){manual.add(name);owned.delete(name);}
   };
   const apply=event=>{
     if(writing||!enabled())return;
-    const all=initialize(),name=event.target?.name||'';
+    const all=initialize(),name=rangeFieldNameV2819(event.target?.name);
     if(loadName.test(name)){edit(event);return;}
     if(!eligible||!['etendue_verifiee','echelon','unite_mesure','capacite_maximale'].includes(name))return;
     const current=n=>n===name?event.target.value:read(n);
@@ -121,7 +125,7 @@ export function installVerifiedRangeV2756({surface,names,enabled,read,write,chan
   // intact and wait for its actual dispatch before proposing dependent values.
   const dispatch=event=>{
     if(writing||!enabled())return;
-    initialize();const name=event.target?.name||'',ticket=++dependencyEpoch;
+    initialize();const name=rangeFieldNameV2819(event.target?.name),ticket=++dependencyEpoch;
     if(name!=='capacite_maximale'||typeof commitDependency!=='function'){apply(event);return;}
     const documentIdentity=identity,value=String(event.target.value??'');
     Promise.resolve(commitDependency(name,value)).then(accepted=>{
@@ -133,7 +137,7 @@ export function installVerifiedRangeV2756({surface,names,enabled,read,write,chan
   };
   // PDF.js can acknowledge a live numeric commit before blur, suppressing the
   // browser's change event. Focusout also covers that committed-field path.
-  const blur=event=>{if(['INPUT','TEXTAREA','SELECT'].includes(event.target?.tagName)&&!loadName.test(event.target?.name||''))dispatch(event);};
+  const blur=event=>{if(['INPUT','TEXTAREA','SELECT'].includes(event.target?.tagName)&&!loadName.test(rangeFieldNameV2819(event.target?.name)))dispatch(event);};
   surface.addEventListener('focusin',focus);surface.addEventListener('input',edit);surface.addEventListener('change',dispatch);surface.addEventListener('focusout',blur);
   return ()=>{dependencyEpoch++;surface.removeEventListener('focusin',focus);surface.removeEventListener('input',edit);surface.removeEventListener('change',dispatch);surface.removeEventListener('focusout',blur);};
 }

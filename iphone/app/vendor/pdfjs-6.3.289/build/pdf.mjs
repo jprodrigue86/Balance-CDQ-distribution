@@ -1,3 +1,5 @@
+import {rectangleBounds,paintCrispFrame} from '../../../reader-crisp-rectangles-v2819.mjs';
+const cdqRectanglePathsV28=new WeakMap();
 import {createFirstPaintSchedulerV2731} from "../../../reader-first-paint-scheduler-v2731.mjs";
 /**
  * @licstart The following is the entire license notice for the
@@ -1531,8 +1533,8 @@ function setLayerDimensions(div, viewport, mustFlip = false, mustRotate = true) 
     const {
       style
     } = div;
-    const widthStr = `round(down, var(--total-scale-factor) * ${pageWidth}px, var(--scale-round-x))`,
-      heightStr = `round(down, var(--total-scale-factor) * ${pageHeight}px, var(--scale-round-y))`;
+    const widthStr = `calc(var(--total-scale-factor) * ${pageWidth}px)`,
+      heightStr = `calc(var(--total-scale-factor) * ${pageHeight}px)`;
     if (!mustFlip || viewport.rotation % 180 === 0) {
       style.width = widthStr;
       style.height = heightStr;
@@ -11852,7 +11854,9 @@ class CanvasGraphics {
       this.dependencyTracker.resetBBox(opIdx).recordBBox(opIdx, this.ctx, minMax[0] - outerExtraSize, minMax[2] + outerExtraSize, minMax[1] - outerExtraSize, minMax[3] + outerExtraSize).recordDependencies(opIdx, ["transform"]);
     }
     if (!(path instanceof Path2D)) {
+      const cdqRect=rectangleBounds(path);
       path = data[0] = makePathFromDrawOPS(path);
+      if(cdqRect)cdqRectanglePathsV28.set(path,cdqRect);
     }
     Util.axialAlignedBoundingBox(minMax, getCurrentTransform(this.ctx), this.current.minMax);
     const tilingDims = this.current.tilingPatternDims;
@@ -12863,7 +12867,8 @@ class CanvasGraphics {
         this.annotationCanvas.savedCtx = this.ctx;
         this.ctx = context;
         this.ctx.save();
-        this.ctx.setTransform(XY[0], 0, 0, -XY[1], 0, height * XY[1]);
+        // V29: map the full PDF widget to the full integer bitmap, without ceil padding.
+        this.ctx.setTransform(canvasWidth / width, 0, 0, -canvasHeight / height, 0, canvasHeight);
         resetCtxToDefault(this.ctx);
       } else {
         resetCtxToDefault(this.ctx);
@@ -13243,6 +13248,7 @@ class CanvasGraphics {
     return this._cachedScaleForStroking;
   }
   rescaleAndStroke(path, saveRestore) {
+    if(paintCrispFrame(this.ctx,cdqRectanglePathsV28.get(path),this.current.lineWidth,this.current.strokeColor))return;
     const {
       ctx,
       current: {

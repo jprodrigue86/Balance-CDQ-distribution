@@ -1,3 +1,4 @@
+import {v34FamilyBridgeV2819,v34FamilyMetadataV2819} from './reader-v34-family-provenance-v2819.mjs';
 import {visualBaseNames20261026,visualBaseMetadataNames20261026} from './reader-visual-schema-20261026.mjs';
 import {trialReportFamilyV2743,trialReportMetadataFamilyV2743} from './reader-trial-reports-v2743.mjs';
 // Independent current masters. This protects artwork and authored forms only;
@@ -26,6 +27,7 @@ function revisedReportFamilyV2737(pdf,L){
  return fields&&names.length===fields.length&&names.every((n,i)=>n===fields[i])?family:null;
 }
 export function approvedReportFamilyV2735(pdf,L){
+ const bridge=v34FamilyBridgeV2819(pdf,L);if(bridge)return bridge;
  const trial=trialReportFamilyV2743(pdf,L);if(trial)return trial;
  try{
   const current=revisedReportFamilyV2737(pdf,L);if(current)return current;
@@ -41,6 +43,7 @@ export function approvedReportFamilyV2735(pdf,L){
 
 // Reader presentation only: this field schema grants no access/cache provenance.
 export function approvedReportMetadataFamilyV2735(fields){
+ const bridge=v34FamilyMetadataV2819(fields);if(bridge)return bridge;
  const trial=trialReportMetadataFamilyV2743(fields);if(trial)return trial;
  const revised=fieldsV2737('multitete');
  const current=visualBaseMetadataNames20261026(fields);

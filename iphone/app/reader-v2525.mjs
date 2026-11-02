@@ -1,3 +1,6 @@
+import {reportFieldNameV2819,legacyReportFieldNameV2819} from './report-field-aliases-v2819.mjs';
+import {ECHELON_FIELD_V22,isEchelonDraftV22,echelonErrorV22} from './reader-echelon-v2819.mjs';
+import {installV34Commits} from './reader-v34-commits-v2819.mjs';
 import {alignHeaderCanvasesV2788R4,invalidateHeaderArtworkV2812} from './reader-header-alignment-v2788r4.mjs';
 import {installT05Font,styleT05Fields} from './reader-t05.mjs';
 installT05Font();
@@ -27,7 +30,7 @@ import {paintReaderResults} from './reader-results-v2648.mjs';
 import {identificationReportName} from './report-name-v2648.mjs';
 import {createZoomSchedulerV2809,installTouchNavigation,installFormNavigation,installNativeTextInput} from './reader-interactions-v2525.mjs';
 import {installReaderCalibration} from './reader-calibration-v2565.mjs';
-import {installReaderChoices} from './reader-choices-v2572.mjs';
+import {installReaderChoices,cdqFitTrialDomTextV4,cdqTrialTextSpecV4} from './reader-choices-v2572.mjs';
 import {installReaderTheme,applyReaderTheme} from './reader-theme-v2572.mjs';
 import {pdfWorkV2729,validatedPdfSaveInfoV2753} from './pdf-work-v2729.mjs';
 import {readReaderOpeningBytesV2753} from './reader-opening-source-v2753.mjs';
@@ -52,11 +55,33 @@ function loadReaderModulesV2730(load,base){
 const $=id=>document.getElementById(id),hosted=parent!==window;
 let parentOrigin='',autoReportName=false;
 const formattedFields=new Map(),fieldTypography=new Map();
+function fitTrialTextFieldV4(field){
+  const spec=cdqTrialTextSpecV4(field.name);
+  if(!spec||!field.matches('input,textarea'))return false;
+  const definition=cdqFieldDefinitionsV2581(field.name)[0],rect=definition?.rect;
+  const height=rect?.length===4?Math.abs(rect[3]-rect[1]):spec.height;
+  const pageIndex=Math.max(0,Number(field.closest('.page')?.dataset.pageNumber||1)-1);
+  const scale=viewer?.getPageView?.(pageIndex)?.viewport?.scale||field.getBoundingClientRect().height/height||1;
+  const fit=cdqFitTrialDomTextV4(field.value,field,spec,scale);
+  const set=(name,value)=>field.style.setProperty(name,value,'important');
+  set('font-family','CDQSummary, Arial, sans-serif');set('font-weight','400');set('font-size',fit.size+'px');
+  set('box-sizing','border-box');set('text-align','left');set('text-overflow','clip');set('overflow','hidden');
+  set('white-space',spec.multiline?'pre-wrap':'pre');set('word-break','normal');set('overflow-wrap','normal');set('hyphens','none');
+  set('padding',spec.multiline?(3*scale)+'px':'0 '+(3*scale)+'px');
+  set('line-height',spec.multiline?(fit.size*1.19)+'px':fit.height+'px');
+  if(field.tagName==='TEXTAREA')field.wrap=spec.multiline?'soft':'off';
+  field.scrollLeft=0;field.scrollTop=0;
+  field.dataset.cdqAutoFitBase=String(spec.base);field.dataset.cdqAutoFitSize=String(fit.size/scale);
+  return true;
+}
 function applyFieldTypography(){
   const t05=styleT05Fields($('viewer'));
   const fields=[];
   for(const field of $('viewer').querySelectorAll('input,textarea,select,button.cdq-choice-field')){
     if(isCorrectionReadingV2736(field.name))field.inputMode='text';
+    if(field.name===ECHELON_FIELD_V22)field.inputMode='decimal';
+    if(fitTrialTextFieldV4(field))continue;
+    if(field.matches('button.cdq-choice-field[name="essai_cdq_probleme_constate"]')&&$('viewer').querySelector('select[name="essai_cdq_probleme_constate"]')?.multiple)continue;
     if(!fieldTypography.has(field.name)||field.name.startsWith('_')||/statut/i.test(field.name)||tableColumnV2737?.isSans()&&field.name.startsWith('indicateur_'))continue;
     const size=fieldTypography.get(field.name);
     const desired='calc('+size+'px * var(--total-scale-factor))';
@@ -72,6 +97,9 @@ function refreshResults(){if(!doc)return;if(trialReportMetadataFamilyV2743(field
 // Input, change and sandbox updates share the same cancellable frame.
 $('viewer').addEventListener('input',()=>visualRefreshV2730.schedule());
 $('viewer').addEventListener('change',()=>visualRefreshV2730.schedule());
+$('viewer').addEventListener('focusout',()=>visualRefreshV2730.schedule());
+document.fonts?.ready.then(()=>visualRefreshV2730.schedule());
+document.fonts?.addEventListener('loadingdone',()=>visualRefreshV2730.schedule());
 
 try{const o=new URL(document.referrer).origin;if(o===location.origin||/^https:\/\/[a-z0-9-]+-script\.googleusercontent\.com$/.test(o))parentOrigin=o;}catch(_){}
 const tell=data=>{if(hosted&&parentOrigin)parent.postMessage(data,parentOrigin)};
@@ -84,7 +112,7 @@ let lastAttempt=null,fieldDefinitions=null,nativeInput,readerCalibration=null,ch
 const visualRefreshV2730=createReaderVisualRefreshV2730(()=>{
   if(!doc||closed)return;
   if(touch?.active)return; // onIdle schedules the final display scan.
-  tableColumnV2737?.refresh();cdqRestorePrecisionToleranceV2726();refreshResults();applyFieldTypography();
+  cdqRefreshProblemLocksV2819();choices?.refresh();tableColumnV2737?.refresh();cdqRestorePrecisionToleranceV2726();refreshResults();applyFieldTypography();
 },{defer:()=>opening,setTimer:callback=>requestAnimationFrame(callback),clearTimer:handle=>cancelAnimationFrame(handle)});
 const touchedIdentity=new Set();let lateIdentity=null;
 let reportEngineV2754=null,reportSnapshotV2754=null,snapshotUpdatesV2754=[],engineDefaultsAppliedV2754=false;
@@ -116,7 +144,7 @@ function initializeSandboxIdentityV2730(data,values,document,locked,preparedDraf
   const updates=[];if(locked)return updates;
   for(const [name,value] of Object.entries(values||{})){
     if(!/^client_(nom|telephone|technicien|adresse|ville|province|code_postal)$/.test(name)||typeof value!=='string'||value.length>1000||!value.trim())continue;
-    const raw=data.objects?.get?.(name)||data.objects?.[name],defs=raw?(Array.isArray(raw)?raw:[raw]):[];
+    const actualName=reportFieldNameV2819(data.objects,name),raw=data.objects?.get?.(actualName)||data.objects?.[actualName],defs=raw?(Array.isArray(raw)?raw:[raw]):[];
     // CREATE historically replaced the approved template's static Qc default.
     // Keep onlyEmpty protection for every private value and untrusted report.
     const blankProvince=preparedDraft&&name==='client_province'&&defs.length>0&&defs.every(def=>def.value==='Qc'&&def.defaultValue==='Qc');
@@ -124,7 +152,7 @@ function initializeSandboxIdentityV2730(data,values,document,locked,preparedDraf
     for(const def of defs){
       if(def.editable===false||def.readOnly)continue;
       const state={value};if(Array.isArray(def.items)){const items=def.items.map(item=>({...item}));if(!items.some(item=>item.exportValue===value))items.push({displayValue:value,exportValue:value});def.items=items;state.items=items;}
-      def.value=value;document.annotationStorage.setValue(def.id,state);updates.push({id:def.id,name,...state});
+      def.value=value;document.annotationStorage.setValue(def.id,state);updates.push({id:def.id,name:actualName,...state});
     }
   }
   return updates;
@@ -160,7 +188,7 @@ function applyLateIdentity(){
     const state=cdqStoredFieldStateV2581(name);if(state.readOnly||String(state.value||'').trim())continue;
     const defs=cdqFieldDefinitionsV2581(name);if(!defs.length)continue;
     for(const def of defs)doc.annotationStorage.setValue(def.id,{value});
-    for(const input of $('viewer').querySelectorAll('input,textarea'))if(input.name===name&&!input.disabled&&!input.readOnly){input.value=value;input.dispatchEvent(new Event('change',{bubbles:true}));}
+    for(const input of $('viewer').querySelectorAll('input,textarea'))if(input.name===reportFieldNameV2819(fieldDefinitions,name)&&!input.disabled&&!input.readOnly){input.value=value;input.dispatchEvent(new Event('change',{bubbles:true}));}
     dirty=true;version++;
   }
 }
@@ -183,6 +211,7 @@ function cdqHoldRenderedLayersV2556(duration=1800){
 function commitActive(){if($('viewer').contains(document.activeElement)){const sink=$('status');sink.tabIndex=-1;sink.focus({preventScroll:true});}}
 function cdqTextEntryFieldV2550(el){return !!el&&el.matches?.('.textWidgetAnnotation input,.textWidgetAnnotation textarea')&&!el.disabled&&!el.readOnly&&el.dataset.cdqAutoField!=='true';}
 function cdqFieldDefinitionsV2581(name){
+  if(!(fieldDefinitions instanceof Map?fieldDefinitions.has(name):Object.hasOwn(fieldDefinitions||{},name)))name=reportFieldNameV2819(fieldDefinitions,name);
   const raw=fieldDefinitions instanceof Map?fieldDefinitions.get(name):fieldDefinitions?.[name];
   return raw?Array.isArray(raw)?raw:[raw]:[];
 }
@@ -237,13 +266,55 @@ function cdqApplyConstraintDefaultsV2583(){
     }
   }
 }
+function cdqTrialProblemLocksV2(){
+  const menu=$('viewer').querySelector('select[name="essai_cdq_probleme_constate"]');
+  if(!menu?.multiple)return null;
+  const selected=Array.from(menu.selectedOptions,option=>String(option.value)).filter(value=>value&&value!=='aucun');
+  return {avant:selected.length>0,apres:selected.some(value=>!value.endsWith('_corrige'))};
+}
+function cdqTrialReadingLockedV2819(name,locks){
+  const state=cdqStoredFieldStateV2581(name);
+  const nativeHiddenLock=!name.startsWith('essai_cdq_')&&state.noView===true&&state.readOnly===true;
+  return readOnly||nativeHiddenLock||locks[/_avant_correction(?:_2)?$|(?:^|_)excentricite_avant_|_AvantCorrection$/.test(name)?'avant':'apres'];
+}
+function cdqRefreshProblemLocksV2819(){
+  const locks=cdqTrialProblemLocksV2();if(!locks)return;
+  // Native shape actions may already hold readonly=false in the sandbox while
+  // a saved problem made the DOM disabled. A new selection still needs a DOM
+  // refresh even when PDF.js suppresses that redundant readonly notification.
+  for(const field of $('viewer').querySelectorAll('input,textarea'))if(isCorrectionReadingV2736(field.name)){
+    field.disabled=cdqTrialReadingLockedV2819(field.name,locks);field.readOnly=false;
+  }
+}
+// PDF.js 6.3.289 exposes only the first choice in getFieldObjects().
+// Recover the native V34 kit array before sandbox creation and snapshot restore.
+const nativeKitHydrationV2819=new WeakMap();
+function hydrateNativeKitV2819(document,objects){
+  const definitions=objects?.get?.('essai_cdq_etalon_utilise')||objects?.essai_cdq_etalon_utilise;
+  const marker=objects?.get?.('essai_cdq__recalcul')||objects?.essai_cdq__recalcul;
+  if(!marker||!Array.isArray(definitions)||!definitions.some(d=>d.multipleSelection))return Promise.resolve();
+  if(nativeKitHydrationV2819.has(document))return nativeKitHydrationV2819.get(document);
+  const pending=(async()=>{
+    for(const definition of definitions){
+      if(!definition.multipleSelection||!Number.isInteger(definition.page)||definition.page<0)continue;
+      const page=await document.getPage(definition.page+1);
+      const annotations=await page.getAnnotations({intent:'display'});
+      const native=annotations.find(a=>a.id===definition.id&&a.fieldName==='essai_cdq_etalon_utilise'&&a.multiSelect);
+      if(!native||!Array.isArray(native.fieldValue))throw Error('Les kits du rapport ne peuvent pas être restaurés.');
+      definition.value=[...native.fieldValue];
+    }
+  })();
+  nativeKitHydrationV2819.set(document,pending);
+  return pending;
+}
 function cdqRestoreInteractiveFieldsV2581(){
   if(!doc||!fieldDefinitions)return;
+  const trialLocks=cdqTrialProblemLocksV2();
   const controls=$('viewer').querySelectorAll('.textWidgetAnnotation input,.textWidgetAnnotation textarea,.choiceWidgetAnnotation select');
   for(const field of controls){
     const name=String(field.name||'');if(!name)continue;
     const state=cdqStoredFieldStateV2581(name);
-    if(name==='client_technicien'&&techniciansV2767&&field.tagName==='SELECT'&&cdqNewReportIdentityV2779()){
+    if(legacyReportFieldNameV2819(name)==='client_technicien'&&techniciansV2767&&field.tagName==='SELECT'&&cdqNewReportIdentityV2779()){
       const next=technicianFieldV2767({},techniciansV2767,{currentValue:state.value});
       state.items=next.items;
       for(const definition of cdqFieldDefinitionsV2581(name)){definition.items=next.items;doc.annotationStorage.setValue(definition.id,{items:next.items});}
@@ -253,7 +324,7 @@ function cdqRestoreInteractiveFieldsV2581(){
     // Existing reports retain their authored PDF choices and selection.
     // Extra directory names are displayed only in the HTML control, not
     // written to PDF /Opt or the persistent report fields until user choice.
-    if(name==='client_technicien'&&techniciansV2767&&field.tagName==='SELECT'&&!cdqNewReportIdentityV2779()){
+    if(legacyReportFieldNameV2819(name)==='client_technicien'&&techniciansV2767&&field.tagName==='SELECT'&&!cdqNewReportIdentityV2779()){
       const choices=technicianFieldV2767({},techniciansV2767,{currentValue:state.value})?.items||[];
       for(const item of choices)if(![...field.options].some(option=>option.value===item.exportValue))field.add(new Option(item.displayValue,item.exportValue));
     }
@@ -269,6 +340,19 @@ function cdqRestoreInteractiveFieldsV2581(){
         const wanted=state.formattedValue??raw;
         if(field.value!==wanted)field.value=wanted;
       }
+    }
+    // The full V34 and hybrid family measurements have dynamic NV locks. The saved /Ff
+    // describes the previous save; current problems determine their state
+    // after a correction, an opening or an annotation-layer rebuild/zoom.
+    const trialMeasure=trialLocks&&isCorrectionReadingV2736(name);
+    if(trialMeasure){
+      const locked=cdqTrialReadingLockedV2819(name,trialLocks);
+      field.disabled=locked;
+      // PDF.js synchronizes runtime readonly changes through disabled only.
+      // A second HTML readOnly lock would survive the next corrected/none
+      // selection even after the PDF script has made this field editable.
+      field.readOnly=false;
+      continue;
     }
     // Only the PDF's own read-only flag (or the user's Lecture role) may lock
     // a master field. Re-rendering/zooming must never turn editable client
@@ -368,6 +452,7 @@ function cdqScheduleWidthFitV2753(){
 const readerEquipmentV2746=createReaderEquipmentEmitterV2746({surface:$('viewer'),
   canEmit:()=>!!doc&&!readOnly&&!opening&&!closed,
   getValue:fieldName=>{
+    fieldName=reportFieldNameV2819(fieldDefinitions,fieldName);
     const input=[...$('viewer').querySelectorAll('input,textarea,select')].find(field=>field.name===fieldName);
     if(input?.type==='checkbox'){
       // Blank-report recovery selects a green artwork canvas in the DOM only.
@@ -428,12 +513,22 @@ async function resetClosedDocumentV2730(){
   }catch{tell({type:'CDQ_READER_RESET_FAILED_V2730'});}
 }
 function close(){if(resumeContextV2767&&!opening&&!closed&&doc&&!resumeSavedV2767?.conflict)resumeJournalV2767.close(resumeContextV2767);clearTimeout(resumeTimerV2767);if(closed)return;readerSaveProgressV2758.close();clearReaderTemplatePaintV2753();qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};closedViewportV2730=readerViewportV2730(viewer);closed=true;documentGenerationV2730++;dirty=false;$('viewer').inert=true;$('viewer').style.opacity='0';try{$('closeDialog').close()}catch(_){};tell({type:'CDQ_READER_CLOSE',reusable:hosted});if(hosted)resetPromiseV2730=resetClosedDocumentV2730();else history.back();}
+function validateEchelonV22(field){
+  if(!field||field.name!==ECHELON_FIELD_V22)return true;
+  const message=echelonErrorV22(field.name,field.value);
+  field.setCustomValidity(message);
+  if(!message){field.removeAttribute('aria-invalid');return true;}
+  field.setAttribute('aria-invalid','true');status(message);
+  field.focus({preventScroll:true});field.reportValidity();return false;
+}
+
 async function requestClose(){
   if(saving){status('Enregistrement en cours…');return;}
   const closeDocV2782=doc,closeGenerationV2782=documentGenerationV2730;
   commitActive();await new Promise(r=>setTimeout(r,120));
   if(doc!==closeDocV2782||documentGenerationV2730!==closeGenerationV2782||closed||opening||saving)return;
   if(readOnly||!hasChangesV2782()){close();return;}
+  if(!validateEchelonV22($('viewer').querySelector('input[name="essai_cdq_echelon"]')))return;
   if(decimalGuard&&!decimalGuard.validate())return;
   $('closeError').textContent='';if(!$('closeDialog').open)$('closeDialog').showModal();
   $('keepEditing').focus();
@@ -521,6 +616,7 @@ async function save(external=false){
     if(doc!==preflightDocV2782||documentGenerationV2730!==preflightGenerationV2782||closed||opening||saving||readOnly)return;
     if(!hasChangesV2782()){dirty=false;status('Aucune modification à enregistrer.');if(closeAfterSave){closeAfterSave=false;close();}return;}
   }
+  if(!readOnly&&!validateEchelonV22($('viewer').querySelector('input[name="essai_cdq_echelon"]')))return;
   if(!readOnly&&decimalGuard&&!decimalGuard.validateAll())return;
   commitActive();busy(true);$('closeError').textContent='';status(external?'Préparation du téléchargement…':'Préparation de l’enregistrement…');
   const feedbackDocV2766=doc,feedbackGenerationV2766=documentGenerationV2730;
@@ -623,6 +719,8 @@ async function open(data){
         // becomes available only after the canvas, widgets and calculations.
         const [metadata]=await Promise.all([readReaderMetadataV2724(doc),viewer.firstPagePromise]);checkLease();
         const {fields,actions,typography,firstPageHasAnnotations}=metadata;fieldDefinitions=fields;
+        await hydrateNativeKitV2819(doc,fields);checkLease();
+        $('viewer').dataset.cdqV34=String(cdqFieldDefinitionsV2581('essai_cdq__recalcul').length>0);
         staticDocumentV2788=(fields instanceof Map?fields.size:Object.keys(fields||{}).length)===0;
         if(staticDocumentV2788){
           if(reportEngineV2754||reportSnapshotV2754)throw Error('Le modèle du rapport ne contient aucun champ. Ses réponses restent conservées.');
@@ -638,7 +736,7 @@ async function open(data){
          $('viewer').dataset.cdqFamily=approvedReportMetadataFamilyV2735(fields)||'';
         tableColumnV2737?.dispose();tableColumnV2737=installReaderTableColumnV2737({surface:$('viewer'),getDocument:()=>doc,getFields:()=>fieldDefinitions,getPageView:index=>viewer.getPageView(index),afterChange:()=>{}});
         if(canvasCandidateV2730)canvasCandidateV2730.pristineIdentity=hasPristineIdentityV2730(fields);
-        if(fields?.get?.('identification_balance')||fields?.identification_balance)autoReportName=true;
+        if(cdqFieldDefinitionsV2581('identification_balance').length)autoReportName=true;
         for(const [field,size] of typography)fieldTypography.set(field,size);
         applyFieldTypography();cdqApplyConstraintDefaultsV2583();
         readerCalibration=installReaderCalibration({surface:$('viewer'),doc,fields,tell});
@@ -707,6 +805,7 @@ $('back').onclick=requestClose;$('saveClose').onclick=()=>{$('closeDialog').clos
 $('dismissKeyboard').addEventListener('pointerdown',e=>e.preventDefault());
 $('dismissKeyboard').onclick=()=>{
   if(saving||!doc)return;
+  if(!validateEchelonV22($('viewer').querySelector('input[name="essai_cdq_echelon"]')))return;
   if(decimalGuard&&!decimalGuard.validate())return;
   commitActive();
   cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;
@@ -724,15 +823,15 @@ $('discard').onclick=()=>{
   tell({type:'CDQ_READER_DISCARD',requestId});
 };
 $('closeDialog').addEventListener('cancel',e=>{if(saving)e.preventDefault();else tell({type:'CDQ_READER_CLOSE_CANCELLED_V2640'});closeAfterSave=false;});
-for(const type of ['input','change'])$('viewer').addEventListener(type,e=>{if(autoReportName&&e.target.name==='identification_balance'){const next=identificationReportName(e.target.value);if(next){name=next;$('name').textContent=name;}}});
-$('viewer').addEventListener('click',e=>{if(e.isTrusted&&e.target.closest?.('button,input[type=button]'))modified();},{capture:true});
+for(const type of ['input','change'])$('viewer').addEventListener(type,e=>{if(autoReportName&&legacyReportFieldNameV2819(e.target.name)==='identification_balance'){const next=identificationReportName(e.target.value);if(next){name=next;$('name').textContent=name;}}});
+$('viewer').addEventListener('click',e=>{if(e.isTrusted&&e.target.closest?.('button,input[type=button],.buttonWidgetAnnotation.pushButton a'))modified();},{capture:true});
 $('viewer').addEventListener('input',modified);$('viewer').addEventListener('change',modified);
 // Scripted PDF fields cancel native insertion and return accepted text through
 // the sandbox, without emitting input/change. Capture the editing intent before
 // that interception so close/save also protects those answers and their version.
 $('viewer').addEventListener('beforeinput',e=>{if(cdqTextEntryFieldV2550(e.target))modified();},{capture:true});
-for(const type of ['input','change'])$('viewer').addEventListener(type,e=>{if(e.isTrusted&&e.target.name)touchedIdentity.add(e.target.name);});
-$('viewer').addEventListener('input',()=>readerCalibration?.refresh());$('viewer').addEventListener('change',()=>readerCalibration?.refresh());
+for(const type of ['input','change'])$('viewer').addEventListener(type,e=>{if(e.isTrusted&&e.target.name)touchedIdentity.add(legacyReportFieldNameV2819(e.target.name));});
+$('viewer').addEventListener('input',()=>{readerCalibration?.refresh();readerEquipmentV2746.changed();});$('viewer').addEventListener('change',()=>{readerCalibration?.refresh();readerEquipmentV2746.changed();});
 $('viewer').addEventListener('pointerdown',e=>{
   if(cdqTextEntryFieldV2550(e.target)){
     cdqNavigationTextFieldV2562=null;
@@ -798,16 +897,17 @@ try{
       // second PDF or overwriting any existing identity/measurement.
       const sandboxDocument=doc,generation=documentGenerationV2730,epoch=pdfWorkV2729().stats().epoch,values=initialValuesV2730,locked=readOnly,preparedDraft=initialPreparedDraftV2730;
       const sandbox=await sandboxReady;
+      await hydrateNativeKitV2819(sandboxDocument,data.objects);
       if(doc!==sandboxDocument||!readerOpeningLeaseIsCurrentV2730({generation,currentGeneration:documentGenerationV2730,epoch,currentEpoch:pdfWorkV2729().stats().epoch,closed}))throw Error('Le compte ou le rapport a changé pendant son ouverture.');
       const defaults=!reportSnapshotV2754&&['cuve3','tremie3'].includes(reportEngineV2754?.family)?{points_test:{value:'3 points'}}:null;
       snapshotUpdatesV2754=reportSnapshotV2754||defaults?restoreReportFieldsV2754(coherentReportFormatsV2758(reportSnapshotV2754||defaults,data.objects),{objects:data.objects,storage:sandboxDocument.annotationStorage}):[];engineDefaultsAppliedV2754=!!defaults&&snapshotUpdatesV2754.length>0;
       if(resumeSavedV2767?.fields&&!readOnly){snapshotUpdatesV2754=restoreReportFieldsV2754(resumeSavedV2767.fields,{objects:data.objects,storage:sandboxDocument.annotationStorage});engineDefaultsAppliedV2754=true;}
       const updates=initializeSandboxIdentityV2730(data,values,sandboxDocument,locked,preparedDraft);initialAppliedV2730||=updates.length>0;initialUpdatesV2730=updates;
-      const technicianDefinitionsV2767=data.objects?.get?.('client_technicien')||data.objects?.client_technicien||[];
+      const technicianNameV2819=reportFieldNameV2819(data.objects,'client_technicien'),technicianDefinitionsV2767=data.objects?.get?.(technicianNameV2819)||data.objects?.[technicianNameV2819]||[];
       if(cdqNewReportIdentityV2779())for(const definition of Array.isArray(technicianDefinitionsV2767)?technicianDefinitionsV2767:[technicianDefinitionsV2767]){
         const newTechnicianV2767=!!techniciansV2767?.current;
         const state=technicianFieldV2767(definition,techniciansV2767,{newReport:!!newTechnicianV2767,...(newTechnicianV2767?{currentValue:techniciansV2767.current}:{})});
-        if(state){Object.assign(definition,state);sandboxDocument.annotationStorage.setValue(definition.id,state);updates.push({id:definition.id,name:'client_technicien',...state});}
+        if(state){Object.assign(definition,state);sandboxDocument.annotationStorage.setValue(definition.id,state);updates.push({id:definition.id,name:technicianNameV2819,...state});}
       }
       sandbox.create(data);
       restoreInitialIdentityV2730();restoreSnapshotV2754();
@@ -828,8 +928,9 @@ try{
     onConfirm:field=>form.advance(field),
     onOpen:()=>{cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;cdqKeyboardFieldV2550(false);},
     onClose:()=>form.refresh()});
-  decimalGuard=installMeasurementValidationV2736({surface:$('viewer'),getEchelon:()=>$('viewer').querySelector('[name="echelon"]')?.value||cdqStoredFieldStateV2581('echelon').value,status});
-  form=installFormNavigation({validate:field=>decimalGuard.validate(field),surface:$('viewer'),toolbar:$('formNav'),previous:$('previousField'),next:$('nextField'),done:$('doneFields'),openChoice:field=>choices.open(field),choiceIsOpen:()=>choices.isOpen(),reveal:field=>{
+  decimalGuard=installMeasurementValidationV2736({surface:$('viewer'),getEchelon:()=>cdqStoredFieldStateV2581('echelon').value,status});
+  $('viewer').addEventListener('input',e=>{if(e.target?.name===ECHELON_FIELD_V22){e.target.setCustomValidity('');e.target.removeAttribute('aria-invalid');}},true);
+  form=installFormNavigation({validate:field=>validateEchelonV22(field)&&decimalGuard.validate(field),surface:$('viewer'),toolbar:$('formNav'),previous:$('previousField'),next:$('nextField'),done:$('doneFields'),openChoice:field=>choices.open(field),choiceIsOpen:()=>choices.isOpen(),reveal:field=>{
     if(cdqTextEntryFieldV2550(field)){
       cdqNavigationTextFieldV2562=field;
       cdqDirectTextFieldV2557=null;
@@ -882,6 +983,8 @@ try{
   let liveCalculationTimer=0;
   $('viewer').addEventListener('input',e=>{
     const field=e.target,value=String(field.value??'');
+    if(isCorrectionReadingV2736(field.name))return; // V34: only blur commits a measurement.
+    if(cdqFieldDefinitionsV2581('essai_cdq__recalcul').length&&(['capacite_maximale','etendue_verifiee'].includes(field.name)||isEchelonDraftV22('essai_cdq_'+field.name,value))){clearTimeout(liveCalculationTimer);return;}
     if(readOnly||opening||saving||!field.name||!(isCorrectionReadingV2736(field.name)||/^(echelon|capacite_maximale|charge_excentricite|charge_point_\d+_(charge_utilisee|charge_contrainte))$/.test(field.name)))return;
     clearTimeout(liveCalculationTimer);
     if(isCorrectionReadingV2736(field.name)&&measurementErrorV2736(value,$('viewer').querySelector('[name="echelon"]')?.value||cdqStoredFieldStateV2581('echelon').value))return;
@@ -893,6 +996,7 @@ try{
     },100);
   });
   $('viewer').addEventListener('focusout',()=>clearTimeout(liveCalculationTimer));
+  installV34Commits({surface:$('viewer'),getDocument:()=>doc,getDefinitions:cdqFieldDefinitionsV2581,getEchelon:()=>cdqStoredFieldStateV2581('echelon').value,isBlocked:()=>opening||saving||closed||readOnly,dispatch:detail=>eventBus.dispatch('dispatcheventinsandbox',{source:viewer,detail})});
   eventBus.on('textlayerrendered',()=>form.refresh());
   document.addEventListener('visibilitychange',()=>{if(document.hidden)touch.reset();});
   if(hosted){$('empty').style.display='none';status('Ouverture…');}else status('Choisissez un PDF.');

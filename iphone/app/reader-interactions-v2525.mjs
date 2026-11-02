@@ -81,7 +81,7 @@ export function installTouchNavigation({container, surface, getViewer, onIdle = 
     // drift as the page is re-centered. When we have a page anchor, let PDF.js
     // adopt the scale first, then force-layout and restore that exact page point
     // beneath the final midpoint before the browser can paint.
-    resetPreview();
+    paintPinchPreview(previous);
     if(previous.anchor){
       viewer.updateScale({
         scaleFactor:previous.targetScale / previous.scale,
@@ -190,6 +190,7 @@ export function isAutomaticFieldName(name){
 }
 
 export function fieldRank(name) {
+  name=String(name||"").replace(/^essai_cdq_/,"");
   const match = /^charge_point_(\d+)_(charge_utilisee|charge_contrainte|avant_correction|apres_correction)$/.exec(name || '');
   if (match) return ['charge_utilisee','charge_contrainte','avant_correction','apres_correction'].indexOf(match[2]) * 100 + Number(match[1]);
   if (name === 'charge_excentricite') return 1000;

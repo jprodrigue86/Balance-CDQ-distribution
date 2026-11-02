@@ -1,3 +1,4 @@
+import {reportFieldNameV2819,reportFieldV2819,reportFieldValueV2819,isV34ReportFieldsV2819} from './report-field-aliases-v2819.mjs';
 import {t05Family} from './reader-t05.mjs';
 import {normalizeMeasurementRulesV2736} from './reader-measurements-v2736.mjs';
 import {normalizeReportVisualV2736} from './reader-report-visual-v2736.mjs';
@@ -26,8 +27,9 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
     lib.catalog.lookupMaybe(L.PDFName.of('CDQNativeMultiHeadV2763'),L.PDFNumber)?.asNumber()===2763&&
     lib.catalog.has(L.PDFName.of('CDQApprovedReportV2737'))&&
     lib.catalog.lookupMaybe(L.PDFName.of('CDQMultiHeadSkipOverloadV2737'),L.PDFNumber)?.asNumber()===2737;
-  const t05=t05Family(lib,L);
-  if(t05)changed=false;
+  const t05=t05Family(lib,L),v34=isV34ReportFieldsV2819(form);
+  for(const entry of entries)entry[0]=reportFieldNameV2819(form,entry[0]);
+  if(t05||v34)changed=false;
   else if(approved)changed=(nativeMulti?false:normalizeMeasurementRulesV2736(lib,L,approved))|
     normalizeReportVisualV2736(lib,L,approved)|applyEquipmentHeaderGapV2736(lib,L,approved);
   else changed=compactToleranceActions(lib,L)|normalizeFloorStatusV2691(lib,L);
@@ -40,21 +42,22 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
       const raw=field.acroField.getOptions().find(o=>norm(o.value.decodeText())===norm(value));
       if(raw)entry[1]=raw.value.decodeText();
       else if(found){const opt=field.acroField.getOptions().find(o=>o.display?.decodeText()===found);entry[1]=opt?.value.decodeText()||found;}
-      else if(name==='client_technicien'||name==='etalon_utilise'){field.addOptions([String(value).trim()]);changed=true;}
+      else if(['client_technicien','etalon_utilise','essai_cdq_client_technicien','essai_cdq_etalon_utilise'].includes(name)){field.addOptions([String(value).trim()]);changed=true;}
       else throw Error('Choix inconnu pour '+name+' : '+value);
     }
   }
   // Identity-only prefill has no measurement calculations. Keep the approved
   // JavaScript and editable fields, without booting PDF.js + QuickJS a first time.
-  if(entries.every(([name])=>/^client_/.test(name))){
+  if(entries.every(([name])=>/^(?:essai_cdq_)?client_/.test(name))){
     for(const [name,value] of entries){
       const field=form.getFieldMaybe(name);if(!field)continue;
       if(field instanceof L.PDFTextField){if(!onlyEmpty||!String(field.getText()||'').trim())field.setText(String(value));}
       else if(field instanceof L.PDFDropdown&&(!onlyEmpty||!field.getSelected().some(v=>String(v).trim())))field.select(String(value));
     }
-    const font=approved?null:await lib.embedFont(L.StandardFonts.HelveticaBold);
+    const font=approved||v34?null:await lib.embedFont(L.StandardFonts.HelveticaBold);
     for(const [name] of entries){
       const field=form.getFieldMaybe(name);if(!field)continue;
+      if(v34)continue;
       if(approved){updateApprovedIdentityAppearanceV2735(lib,L,field);continue;}
       // Some approved PDFs contain a non-widget kid without a rectangle.
       // Update only identity widgets with actual geometry; keep every field,
@@ -62,6 +65,11 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
       const original=field.acroField.getWidgets;
       const widgets=original.call(field.acroField).filter(w=>{try{const r=w.getRectangle();return [r.x,r.y,r.width,r.height].every(Number.isFinite);}catch{return false;}});
       if(widgets.length){try{field.acroField.getWidgets=()=>widgets;field.defaultUpdateAppearances(font);}finally{field.acroField.getWidgets=original;}}
+    }
+    if(v34){
+      // The V34 saver owns the exact embedded condensed font and multiline fit.
+      const {saveEditableFormAppearance}=await import('./reader-choice-appearance-v2572.mjs');
+      return new Blob([await saveEditableFormAppearance(await lib.save({updateFieldAppearances:false}),L)],{type:'application/pdf'});
     }
     if(t05){ /* Preserve native T05 identity appearance. */ }
     else if(approved)normalizeReportVisualV2736(lib,L,approved);

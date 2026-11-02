@@ -1,4 +1,6 @@
+import {reportFieldValueV2819} from './report-field-aliases-v2819.mjs';
 import {COPY_BASE_V2816,tagCopyV2816,copyEditBasisV2816,writeCopyV2816} from './offline-copy-guard-v2816.mjs';
+import {inheritOfflineThemeV2819,resumeOfflineWorkV2819} from './offline-experience-v2819.mjs';
 import {createEditJournalV2816,recordTokenV2816,conflictV2816,sameIntentV2816} from './report-edit-guard-v2816.mjs';
 import {DELETED_REPORT_MESSAGE_V2784,isDeletedReportV2784,recoveryContextV2784,recoveryNameV2784} from './deleted-report-v2784.mjs';
 import {createLocalReaderSessionsV2761} from './file-edit-session-v2756.mjs';
@@ -180,6 +182,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
   // V27.40: retry a lost Drive acknowledgment with the same idempotent
   // requestId. Do not spin forever, silently delete a PDF, or create a new id.
   const retryTimersV2740=new Map(),retryCountsV2740=new Map(),reportedFailuresV2740=new Set(),pausedSyncV2740=new Set(),sentJobsV2740=new Map();
+  const blockedSyncV2819=new Set();
   const reportIdentityV2749=c=>({email:c.email,localId:c.id,uploadId:c.uploadId||'',clientId:c.destination?.clientId,sourceId:c.filledDriveId||c.driveId||('cdq-local-'+c.id)});
   function reportProgressV2749(c,stage,message){if(c&&!c.removed&&session?.email===c.email)send({type:'CDQ_LOCAL_REPORT_PROGRESS_V2749',...reportIdentityV2749(c),stage,message});}
   const announcedDeletionV2749=c=>[c.filledDriveId,c.driveId].some(id=>{const tombstone=confirmedDeletedV2749.get('deleted:'+c.email+':'+id);return tombstone&&Number(c.createdAt||0)<=Number(tombstone.deletedAt);});
@@ -207,11 +210,13 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
   function clearRetryV2740(id){
     clearTimeout(retryTimersV2740.get(id));retryTimersV2740.delete(id);retryCountsV2740.delete(id);
     pausedSyncV2740.delete(id);
+    blockedSyncV2819.delete(id);
     for(const key of reportedFailuresV2740)if(key.startsWith(String(id)+':'))reportedFailuresV2740.delete(key);
   }
-  function resetRetriesV2740(){
+  function resetRetriesV2740({transientOnly=false}={}){
     for(const timer of retryTimersV2740.values())clearTimeout(timer);
     retryTimersV2740.clear();retryCountsV2740.clear();reportedFailuresV2740.clear();pausedSyncV2740.clear();
+    if(transientOnly){for(const id of blockedSyncV2819)pausedSyncV2740.add(id);}else blockedSyncV2819.clear();
   }
   function retrySyncV2740(id,stamp,owner,message,uploadId=''){
     if(retryTimersV2740.has(id))return;
@@ -277,7 +282,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
   .cdq-offline-panel-v2815 button:focus-visible,.cdq-offline-panel-v2815 summary:focus-visible{outline:3px solid #8dd4ec;outline-offset:3px}.cdq-offline-panel-v2815 button:disabled{opacity:.55}.cdq-offline-panel-v2815 p{overflow-wrap:anywhere}
   .cdq-offline-content-v2815>div,.cdq-offline-content-v2815>details,.cdq-offline-content-v2815>section{padding:14px!important;border:1px solid #3a4955!important;border-radius:12px;background:#172129;margin:12px 0!important}.cdq-offline-panel-v2815 summary{cursor:pointer;font-weight:700;padding:8px 0}.cdq-offline-panel-v2815 select{background:#111b23;color:#edf2f6;border:1px solid #657a89;border-radius:8px}.cdq-offline-panel-v2815 [role=status]{color:#b7cad7}
   `;document.head.append(panelStyle);
-  function showPanelV2815(){panelReturnFocus=document.activeElement;visibleContentV2790.replaceChildren();panelFingerprintV2790='';panelOwnerV2790='';status.textContent='Lecture des documents de cet appareil…';panel.hidden=false;close.hidden=false;close.focus();}
+  function showPanelV2815(){inheritOfflineThemeV2819(panel);panelReturnFocus=document.activeElement;visibleContentV2790.replaceChildren();panelFingerprintV2790='';panelOwnerV2790='';status.textContent='Lecture des documents de cet appareil…';panel.hidden=false;close.hidden=false;close.focus();}
 
   const serial=fn=>{const p=chain.then(fn);chain=p.catch(()=>{});return p;};
   const serialCopy=(id,fn,foreground=false)=>{const key=String(id),previous=copyJobs.get(key)||Promise.resolve();const p=(foreground?Promise.resolve():chain).then(()=>previous.catch(()=>{})).then(fn);copyJobs.set(key,p);p.finally(()=>{if(copyJobs.get(key)===p)copyJobs.delete(key);}).catch(()=>{});return p;};
@@ -305,7 +310,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
     // Only the receipt for this editor's own preceding request may advance it.
     if(editor.lastRequestId&&copy.reportPayloadV2754?.requestId===editor.lastRequestId&&(copy.engineAcceptedV2757?.requestId===editor.lastRequestId||copy.lineageReceiptV2816&&copy.sendStartedRequestIdV2816!==editor.lastRequestId)&&recordTokenV2816(copy.reportSnapshotV2754)===editor.expectedFields&&copy.name===editor.expectedName){editor.context=structuredClone(copy.reportEngineV2754);editor.basis=copyEditBasisV2816(copy);}
     const snapshot=reportFieldsV2754(fields),form={getFields:()=>Object.entries(snapshot).map(([field,state])=>({getName:()=>field,getText:()=>String(state.value??''),getSelected:()=>Array.isArray(state.value)?state.value:[String(state.value??'')],isChecked:()=>state.value===true||state.value==='Yes'}))};
-    const reportName=identificationReportName(snapshot.identification_balance?.value)||name||copy.name;
+    const reportName=identificationReportName(reportFieldValueV2819(snapshot,'identification_balance'))||name||copy.name;
     const requestKey=String(readerRequestId).replace(/^save-/,'');
     const payload=reportPayloadV2754(editor.payloads.get(requestKey)?.context||editor.context,snapshot,readerRequestId,reportName);
     if(preparedPdf)payload.preparedPdfV2759=await prepareReportPdfV2759(payload,preparedPdf);
@@ -394,7 +399,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
     const copiesHere=!session&&navigator.onLine===false&&p?(await all('copies')).some(c=>c.email===p.email&&(c.removed?c.retiredAt&&c.blob:c.kind==='prepared'||c.kind==='sheet'||!confirmedLocalCopyV2755(c))):false;
     if(stale())return;
     launch.hidden=true;
-    if(!session&&copiesHere&&navigator.onLine===false)panel.hidden=false;
+    if(!session&&copiesHere&&navigator.onLine===false){inheritOfflineThemeV2819(panel);panel.hidden=false;}
     close.hidden=!session&&navigator.onLine===false;
     launch.style.display=launch.hidden?'none':'block';launch.textContent='Documents hors ligne';
     if(panel.hidden)return;
@@ -407,20 +412,18 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
       });return;
     }
     const email=p.email;
-    const [templates,destinationRows,allCopies,draftsV2816]=await Promise.all([Promise.all(Object.keys(MODELS).map(k=>loadTemplate(email,k))),all('destinations'),all('copies'),journalV2816.list(email)]);
-    const destinations=destinationRows.filter(d=>d.email===email).sort((a,b)=>b.savedAt-a.savedAt);
+    const [allCopies,draftsV2816]=await Promise.all([all('copies'),journalV2816.list(email)]);
     const copies=allCopies.filter(c=>c.email===email&&!c.removed).sort((a,b)=>b.createdAt-a.createdAt);
     const archived=allCopies.filter(c=>c.email===email&&c.retiredAt&&c.blob);
     if(stale()||!allowed(email))return;
     // Compare display/handler inputs without serializing PDF blobs or base64.
     const describe=c=>[c.id,c.name,c.kind,c.status,c.createdAt,c.editVersion,c.uploadId,c.syncedUploadId,c.confirmed,c.driveId,c.revision,c.error,c.remoteDeletedV2784,c.readerPreparedVersion,c.destination,c.retiredAt,c.engineDeleteConfirmedV2754,c.cancelledDeleteConfirmed];
-    const fingerprint=JSON.stringify([stamp,email,p.canWrite,session?.canWrite,session?.protocol,navigator.onLine,templates.map(t=>[t?.modeleId,validTemplate(t)]),destinations,copies.map(describe),archived.map(describe),draftsV2816.map(d=>[d.key,d.state,d.message])]);
+    const fingerprint=JSON.stringify([stamp,email,p.canWrite,session?.canWrite,session?.protocol,navigator.onLine,copies.map(describe),archived.map(describe),draftsV2816.map(d=>[d.key,d.state,d.message])]);
     if(fingerprint===panelFingerprintV2790)return;
-    const selectedDestination=visibleContentV2790.querySelector('#cdq-local-destination')?.value||'';
     const openSections=new Set([...visibleContentV2790.querySelectorAll('section[aria-label]')].filter(el=>!el.hidden).map(el=>el.getAttribute('aria-label')));
     const content=document.createDocumentFragment();
-    const count=templates.filter(validTemplate).length;
-    status.textContent=count+' / '+Object.keys(MODELS).length+' modèles prêts sur cet appareil.';
+    status.textContent='Copies conservées sur cet appareil · la confirmation Drive est indiquée dans la liste des fichiers.';
+    text(content,'Ouvrez vos PDF et créez vos rapports depuis la liste habituelle et Nouveau rapport, même sans réseau. Cette page conserve les copies à récupérer et les erreurs à vérifier.');
     if(draftsV2816.length){
      const group=document.createElement('section');group.setAttribute('aria-label','Modifications à vérifier');content.append(group);const title=document.createElement('h3');title.textContent='Modifications à vérifier';group.append(title);
      text(group,'Ces copies sont conservées sur cet appareil. Leur présence ne confirme pas un enregistrement dans Drive.');
@@ -458,7 +461,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
         if(company!==c.destination.name){company=c.destination.name;const h=document.createElement('h3');h.textContent=company;content.append(h);}
         const row=document.createElement('div');content.append(row);text(row,'● '+c.name+(c.uploadId!==c.syncedUploadId?' — modifications en attente':''));
         if(c.error)text(row,c.error);if(p.canWrite)recoveryActionV2784(row,c,email);
-        button(row,'Ouvrir',()=>{if(stamp!==epoch||!allowed(email))throw Error('Déverrouillez CDQ.');return openPdf({...engineReaderV2754(c,c.email),blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,name:c.name,fileId:c.driveId,readOnly:!p.canWrite,onSave:p.canWrite?(blob,id,name,provenance)=>saveCopy(c.id,email,blob,id,provenance):null});});
+        if(!session)button(row,'Ouvrir la copie',()=>{if(stamp!==epoch||!allowed(email))throw Error('Déverrouillez CDQ.');return openPdf({...engineReaderV2754(c,c.email),blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,name:c.name,fileId:c.driveId,readOnly:!p.canWrite,onSave:p.canWrite?(blob,id,name,provenance)=>saveCopy(c.id,email,blob,id,provenance):null});});
         button(row,'Retirer du mode hors ligne',()=>serialCopy(c.id,async()=>{
           if(stamp!==epoch||!allowed(email))throw Error('Déverrouillez CDQ.');
           const latest=await get('copies',c.id);if(inflight.has(c.id)||readers.has(c.id))throw Error('Fermez ce document et terminez sa synchronisation avant de le retirer.');
@@ -468,31 +471,6 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
       }
     }
     if(session && session.protocol<38)text(content,'La synchronisation des PDF remplis exige le serveur avec protocole 38. En attendant, vos réponses restent conservées sur cet appareil.');
-    const modelGroup=document.createElement('details');const modelSummary=document.createElement('summary');modelSummary.textContent='Modèles de rapports ('+count+')';modelGroup.append(modelSummary);content.append(modelGroup);
-    let select;
-    if(p.canWrite&&destinations.length){
-      const label=document.createElement('label');label.textContent='Dossier du client';label.htmlFor='cdq-local-destination';modelGroup.append(label);
-      select=document.createElement('select');select.id='cdq-local-destination';select.style.cssText='display:block;width:100%;max-width:650px;padding:12px;margin:10px 0;font:inherit';
-      const first=document.createElement('option');first.value='';first.textContent='Choisir le dossier du client';select.append(first);
-      for(const d of destinations){const o=document.createElement('option');o.value=d.folderId;o.textContent=d.name;select.append(o);}modelGroup.append(select);
-    }else if(p.canWrite)text(modelGroup,'Avec Internet, ouvrez le dossier du client et le menu de copie pour préparer cette destination.');
-    for(const [key,name] of Object.entries(MODELS)){
-      const row=document.createElement('div');row.style.cssText='border-top:1px solid #385360;padding-top:10px;margin-top:16px';modelGroup.append(row);
-      const t=templates.find(t=>t?.modeleId===key);text(row,name+(validTemplate(t)?' — prêt':' — non préparé'));
-      if(!validTemplate(t)){
-        if(session&&navigator.onLine!==false)button(row,'Préparer maintenant',()=>{requested.delete(session.email+':'+key);requestModel(key);status.textContent='Préparation de '+name+' demandée…';});
-        continue;
-      }
-      button(row,'Consulter le modèle',()=>openPdf({blob:t.blob,readerPreparedVersion:t.readerPreparedVersion,name:name+'.pdf',modeleId:key,readOnly:true}));
-      if(p.canWrite&&select)button(row,'Créer une copie',()=>serial(async()=>{
-        if(stamp!==epoch||!allowed(email))throw new Error('Déverrouillez CDQ de nouveau.');
-        const d=destinations.find(d=>d.folderId===select.value);if(!d)throw new Error('Choisissez d’abord le dossier du client.');
-        if(!window.confirm('Copier « '+name+' » dans « '+d.name+' » ?'))return;
-        const copy=makeCopy(t,d,email,'local_'+crypto.randomUUID(),copies.filter(c=>c.destination?.folderId===d.folderId).flatMap(c=>[c.name,c.creationName].filter(Boolean)));
-        await put('copies',copy);rememberNames(copy);await refresh();await sync();
-      }));
-    }
-    text(modelGroup,'Les originaux restent inchangés. Une copie créée ici est conservée sur cet appareil, puis ajoutée au dossier client après reconnexion et déverrouillage.');
     if(session?.canWrite)button(content,'Réessayer la synchronisation',()=>serial(()=>{resetRetriesV2740();return sync();}));
     if(archived.length){
       const section=document.createElement('section');section.hidden=true;section.setAttribute('aria-label','Rapports retirés récupérables');
@@ -525,7 +503,6 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
         }
       });pendingButton.setAttribute('aria-expanded','false');content.append(section);if(openSections.has(section.getAttribute('aria-label')))pendingButton.click();
     }
-    if(select&&destinations.some(d=>d.folderId===selectedDestination))select.value=selectedDestination;
     // All asynchronous reads finished before replacing the visible tree.
     visibleContentV2790.replaceChildren(content);panelFingerprintV2790=fingerprint;panelOwnerV2790=email;
   }
@@ -640,6 +617,10 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
        if(c.draftKeyV2816&&!await journalV2816.bindWire({key:c.email+'|'+c.reportEngineV2754.reportId,payload:c.reportPayloadV2754}))throw Object.assign(Error('La sauvegarde a changé après son premier envoi. Ses réponses restent conservées.'),{code:'IDEMPOTENCY_LOCAL_CONFLICT'});
        if(!currentSync())return;
       }
+      // Journal/storage awaits above can overlap another reconnect. Reserve
+      // this flight only if no other resume won while our durable write ran.
+      if(!currentSync()||inflight.has(c.id)||retryTimersV2740.has(c.id)||pausedSyncV2740.has(c.id))continue;
+      try{if(window.BalanceCDQBackgroundV2746?.isQueueOwner?.(current.email)===false)return;}catch{return;}
       const job={type:message.type,uploadId:message.uploadId||'',driveId:message.driveId||'',clientId:c.destination?.clientId,epoch:stamp};inflight.set(c.id,job);sentJobsV2740.set(c.id,job);
       job.timer=setTimeout(()=>{
         if(inflight.get(c.id)!==job)return;
@@ -927,7 +908,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
         if(!current.canWrite||!/^[\w-]{8,100}$/.test(id)||!known(data.modeleId))throw new Error('Copie locale non autorisée ou demande invalide.');
         const d={clientId:String(data.clientId||''),folderId:String(data.folderId||''),name:String(data.destinationName||data.name||'Dossier client')};
         if(!validDestination(d))throw new Error('Dossier client invalide.');
-        const t=await loadTemplate(current.email,data.modeleId);if(!validTemplate(t))throw new Error('Préparez ce modèle avec Internet avant de le copier hors ligne.');
+        const t=await loadTemplate(current.email,data.modeleId);if(!validTemplate(t))throw new Error('Le modèle embarqué est indisponible. Rouvrez CDQ après sa mise à jour.');
         let c=await get('copies',id);
         if(c?.removed)throw Error('Cette création a été annulée. Créez un nouveau rapport.');
         if(c&&(c.email!==current.email||c.modeleId!==data.modeleId||c.destination.clientId!==d.clientId||c.destination.folderId!==d.folderId))throw new Error('Identifiant déjà utilisé pour une autre copie.');
@@ -1049,15 +1030,17 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
           // client/folder and invalid PDF errors require user attention.
           if(retryableOfflineFailureV2792(data))
             retrySyncV2740(data.requestId,stamp,current.email,reason,job.uploadId);
-          else{pausedSyncV2740.add(data.requestId);reportSyncFailureV2740(data.requestId,reason,job.uploadId).catch(()=>{});}
+          else{pausedSyncV2740.add(data.requestId);blockedSyncV2819.add(data.requestId);reportSyncFailureV2740(data.requestId,reason,job.uploadId).catch(()=>{});}
         }
       }
       refresh().catch(()=>{});
     }
   }
   launch.onclick=()=>{showPanelV2815();refresh().catch(e=>{status.textContent=e.message;});};
-  const resume=()=>serial(async()=>{await refresh();await sync();}).catch(()=>{});
-  window.addEventListener('online',()=>{resetRetriesV2740();return resume();});window.addEventListener('focus',resume);
+  // Start the guarded queue immediately; rendering and other local reads run
+  // independently. Each copy keeps its existing flight and durable request ID.
+  const resume=()=>resumeOfflineWorkV2819(sync,refresh);
+  window.addEventListener('online',()=>{resetRetriesV2740({transientOnly:true});return resume();});window.addEventListener('focus',resume);
   document.addEventListener?.('visibilitychange',()=>{if(!document.hidden)resume();});
   window.addEventListener('offline',()=>serial(refresh).catch(()=>{}));
   refresh().catch(()=>{});
