@@ -1,60 +1,34 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.8.2",
-  "versionCode": 18002,
+  "version": "1.8.3",
+  "versionCode": 18003,
   "shellVersion": 18001,
   "minShellVersion": 11000,
-  "releasedAt": "2026-11-03T04:49:12.948905+00:00",
+  "releasedAt": "2026-11-03T05:04:40.979660+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "61e287bb2610db290e34e98e017795225ef23f151e65e7bf6eeddee8c2c66819",
-  "htmlSha256": "59c450f3732c6633a0ec1645c3ab39c84f2251a93bcb498fe84770d4967031b9",
-  "packageBytes": 16656553,
-  "htmlBytes": 9368517,
+  "packageSha256": "c13495ee9d6bf45550cebed0e5fc63e7ba56a3c11ad295f768273314a70f30c7",
+  "htmlSha256": "7638a9835b31f9322a50c5ef1e9109c4662e5a52c0644435e3d94a57a4da49bd",
+  "packageBytes": 16658785,
+  "htmlBytes": 9369681,
   "notes": [
     "Nuage privé : sauvegardes chiffrées automatiques des données enregistrées pendant l’utilisation.",
-    "Activation avec un code privé, identique sur Android et PC. Aucune clé incluse dans la mise à jour.",
-    "Copies conservées sans écrasement; récupération explicite des seuls éléments manquants.",
-    "Stockage local et identité de l’application conservés; aucune désinstallation nécessaire."
+    "Activation avec un code privé identique sur Android et PC; aucune clé dans le paquet public.",
+    "Récupération de l’historique et des saisies Adding Production et Augmentation sur un nouvel appareil.",
+    "Une installation vide ne crée pas de copie trompeuse; les données déjà renseignées sont conservées.",
+    "Identité Android, stockage local et signature historique conservés; aucune désinstallation nécessaire."
   ],
   "androidApk": "Calculs-Atelier-Android-1.8.1.apk",
   "androidUpdateType": "signed-content-existing-shell",
-  "pcPackage": "Calculs-Atelier-1.8.2-PC.zip",
+  "pcPackage": "Calculs-Atelier-1.8.3-PC.zip",
   "verification": {
     "signature": "Historical RSA-SHA256, verified",
     "physicalDeviceTest": false,
-    "realAuthenticatedCloudRoundtrip": false,
-    "publicHealth": {
-      "checkedAt": "2026-11-03T05:06:00Z",
-      "method": "Cloudflare account Browser Rendering API scrape; public GET only, no injected script and no credentials",
-      "url": "https://calculs-atelier-cloud-v1.balance-cdq.workers.dev/health",
-      "httpStatus": 200,
-      "cfRay": "a548d8df39f1c294-MIA",
-      "body": {
-        "status": "ready",
-        "service": "calculs-atelier-cloud",
-        "apiVersion": 2,
-        "storage": "private",
-        "mode": "encrypted-append-only"
-      },
-      "deployment": "c103f23b-4ae1-476a-83a2-9f25c40c4415",
-      "workerVersion": "ee057803-453d-4607-ab78-ae8147a9b2ed",
-      "workersDevEnabled": true,
-      "bucketPublicAccess": false,
-      "unusedQaCredentialDisabled": true,
-      "githubDirectHealth": {
-        "runId": 41581545357,
-        "httpStatus": 403,
-        "cause": "Not established; do not claim access from GitHub or Android was validated"
-      },
-      "authenticatedBackupTest": false,
-      "physicalAndroidTest": false,
-      "physicalWindowsTest": false,
-      "limitation": "This receipt confirms only the public health endpoint through Cloudflare Browser Rendering. First authenticated backup and exact readback must be confirmed on the user's device."
-    },
-    "firstAuthenticatedDeviceBackup": "Pending activation and exact readback on the user device; not claimed verified",
-    "browserAssertions": 31,
-    "cloudTransport": "Simulated; live endpoint health verified separately, authenticated write/read not confirmed"
+    "realAuthenticatedCloudRoundtrip": true,
+    "browserAssertions": 30,
+    "realCloudAssertions": 15,
+    "cloudTransport": "API write/read/decrypt actually executed with isolated synthetic identity; browser transport simulated"
   },
   "privacy": "No user data or credentials in update. Client-side encrypted cloud backups; activation required.",
-  "sourceCommit": "9b54390227a74f99497b8570168e5312c132878d"
+  "sourceCommit": "6c043ad022c4f13835bc2fa967afdc034847e0c8",
+  "cloudActivationRequired": true
 }

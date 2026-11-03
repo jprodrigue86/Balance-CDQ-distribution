@@ -1,0 +1,337 @@
+{
+  "version": "1.8.3",
+  "sourceCommit": "6c043ad022c4f13835bc2fa967afdc034847e0c8",
+  "runId": "41583147970",
+  "pin": {
+    "packageSha256": "c13495ee9d6bf45550cebed0e5fc63e7ba56a3c11ad295f768273314a70f30c7",
+    "htmlSha256": "7638a9835b31f9322a50c5ef1e9109c4662e5a52c0644435e3d94a57a4da49bd",
+    "clientSha256": "b9ba56275a5f51c98234125c5ed0646069231ea763bd64f0980b61e6985eba98"
+  },
+  "restore": {
+    "version": "1.8.3",
+    "environment": "Playwright Chromium Linux; exact full app; real IndexedDB/WebCrypto; isolated cloud transport stub",
+    "physicalAndroid": false,
+    "physicalWindows": false,
+    "cloudStorageReal": false,
+    "sourceCommit": "6c043ad022c4f13835bc2fa967afdc034847e0c8",
+    "sourceSha256": "b9ba56275a5f51c98234125c5ed0646069231ea763bd64f0980b61e6985eba98",
+    "baseSha256": "550236159c43aaaae2985665a3f291282dc7163299ad3f9e2e3b8084d2093e70",
+    "candidateSha256": "7638a9835b31f9322a50c5ef1e9109c4662e5a52c0644435e3d94a57a4da49bd",
+    "status": "passed",
+    "passed": 15,
+    "failed": 0,
+    "tests": [
+      {
+        "test": "history_fixture_created_by_actual_app_action",
+        "passed": true
+      },
+      {
+        "test": "real_app_snapshot_encrypted_and_retrievable_in_isolated_transport",
+        "passed": true
+      },
+      {
+        "test": "fresh_app_initializes_both_known_empty_input_keys",
+        "passed": true
+      },
+      {
+        "test": "fresh_app_has_no_saved_history",
+        "passed": true
+      },
+      {
+        "test": "fresh_app_default_uuid_is_not_user_data",
+        "passed": true
+      },
+      {
+        "test": "fresh_app_empty_snapshot_not_uploaded",
+        "passed": true
+      },
+      {
+        "test": "known_empty_inputs_filled_from_backup",
+        "passed": true
+      },
+      {
+        "test": "history_record_restored_without_changing_its_values",
+        "passed": true
+      },
+      {
+        "test": "restored_history_and_both_screens_visible",
+        "passed": true
+      },
+      {
+        "test": "restored_values_survive_an_additional_reload",
+        "passed": true
+      },
+      {
+        "test": "existing_nonempty_inputs_not_overwritten_by_restore",
+        "passed": true
+      },
+      {
+        "test": "existing_history_not_duplicated",
+        "passed": true
+      },
+      {
+        "test": "unknown_input_shapes_preserved",
+        "passed": true
+      },
+      {
+        "test": "unrelated_empty_local_value_preserved",
+        "passed": true
+      },
+      {
+        "test": "no_runtime_errors",
+        "passed": true
+      }
+    ],
+    "testedAt": "2026-11-03T05:19:12.262529+00:00",
+    "cloudRequests": 11
+  },
+  "updater": {
+    "schema": "atelier-updater-proof-v1",
+    "version": "1.8.3",
+    "status": "passed",
+    "startedAt": "2026-11-03T05:19:12.400225+00:00",
+    "sourceCommit": "6c043ad022c4f13835bc2fa967afdc034847e0c8",
+    "testScriptSha256": "806185c3a3c36b9838aff03e54a0ceb43bf60538ef4d4e982720d8c395cc0034",
+    "sourceSha256": "b9ba56275a5f51c98234125c5ed0646069231ea763bd64f0980b61e6985eba98",
+    "bootstrapSha256": "35044e61bafb5abe9acae15e5029e522156adf35fd6201e54154f39675a89df6",
+    "candidateSha256": "7638a9835b31f9322a50c5ef1e9109c4662e5a52c0644435e3d94a57a4da49bd",
+    "packageSha256": "c13495ee9d6bf45550cebed0e5fc63e7ba56a3c11ad295f768273314a70f30c7",
+    "payloadSha256": "d170e1ff3e925c579a66661014409c2d07286fcd303ecb792c7dec6bb38d03aa",
+    "environment": {
+      "os": "Linux",
+      "python": "3.12.15",
+      "origin": "https://appassets.androidplatform.net",
+      "transport": "isolated routes; signed update bytes served locally",
+      "cspUnchangedFromV182": true,
+      "playwright": "1.64.1",
+      "browserVersion": "156.0.8078.4"
+    },
+    "physicalAndroid": false,
+    "physicalWindows": false,
+    "realAuthenticatedCloudRoundtrip": false,
+    "userDataAccessed": false,
+    "privateSigningKeyAccessed": false,
+    "tests": [
+      {
+        "test": "candidate_cloud_source_identified",
+        "passed": true
+      },
+      {
+        "test": "signed_payload_matches_exact_candidate",
+        "passed": true
+      },
+      {
+        "test": "historical_updater_present",
+        "passed": true
+      },
+      {
+        "test": "historical_shell_starts_1_8_1",
+        "passed": true
+      },
+      {
+        "test": "historical_updater_accepts_signed_v183",
+        "passed": true
+      },
+      {
+        "test": "historical_updater_rejects_tampered_signature",
+        "passed": true
+      },
+      {
+        "test": "history_record_exists_before_update",
+        "passed": true
+      },
+      {
+        "test": "signed_v183_is_pending_before_reload",
+        "passed": true
+      },
+      {
+        "test": "signed_v183_activates_cloud_module",
+        "passed": true
+      },
+      {
+        "test": "local_storage_preserved_after_activation",
+        "passed": true
+      },
+      {
+        "test": "history_record_preserved_after_activation",
+        "passed": true
+      },
+      {
+        "test": "signed_v183_reopens_after_second_reload",
+        "passed": true
+      },
+      {
+        "test": "local_storage_preserved_after_second_reload",
+        "passed": true
+      },
+      {
+        "test": "history_record_preserved_after_second_reload",
+        "passed": true
+      },
+      {
+        "test": "no_runtime_errors",
+        "passed": true
+      }
+    ],
+    "passed": 15,
+    "failed": 0,
+    "stage": "complete",
+    "updatedAt": "2026-11-03T05:19:55.472464+00:00",
+    "requests": {
+      "updateChannel": 2,
+      "blockedExternal": 0
+    }
+  },
+  "realCloudApi": {
+    "type": "real-cloud-api",
+    "endpoint": "https://calculs-atelier-cloud-v1.balance-cdq.workers.dev",
+    "checkedAt": "2026-11-03T05:01:52.809353+00:00",
+    "snapshotId": "263c6907-f264-4707-9b72-95f297fb237f",
+    "syntheticDataOnly": true,
+    "userDataAccessed": false,
+    "physicalAndroid": false,
+    "physicalWindows": false,
+    "checks": [
+      {
+        "name": "health_api_v2",
+        "passed": true
+      },
+      {
+        "name": "unauthenticated_read_refused",
+        "passed": true
+      },
+      {
+        "name": "cors_android",
+        "passed": true
+      },
+      {
+        "name": "cors_pc_file",
+        "passed": true
+      },
+      {
+        "name": "isolated_qa_namespace_empty",
+        "passed": true
+      },
+      {
+        "name": "encrypted_snapshot_stored",
+        "passed": true
+      },
+      {
+        "name": "server_receipt_hash_matches",
+        "passed": true
+      },
+      {
+        "name": "remote_readback_identical",
+        "passed": true
+      },
+      {
+        "name": "remote_ciphertext_decrypts_to_original",
+        "passed": true
+      },
+      {
+        "name": "snapshot_listed",
+        "passed": true
+      },
+      {
+        "name": "same_snapshot_retry_idempotent",
+        "passed": true
+      },
+      {
+        "name": "overwrite_rejected",
+        "passed": true
+      },
+      {
+        "name": "original_snapshot_preserved",
+        "passed": true
+      },
+      {
+        "name": "deletion_not_exposed",
+        "passed": true
+      },
+      {
+        "name": "wrong_encryption_key_rejected",
+        "passed": true
+      }
+    ],
+    "requests": [
+      {
+        "method": "GET",
+        "path": "/health",
+        "status": 200,
+        "milliseconds": 3184
+      },
+      {
+        "method": "GET",
+        "path": "/v1/backups",
+        "status": 401,
+        "milliseconds": 2260
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/v1/backups",
+        "status": 204,
+        "milliseconds": 3391
+      },
+      {
+        "method": "OPTIONS",
+        "path": "/v1/backups",
+        "status": 204,
+        "milliseconds": 2211
+      },
+      {
+        "method": "GET",
+        "path": "/v1/backups",
+        "status": 200,
+        "milliseconds": 2291
+      },
+      {
+        "method": "POST",
+        "path": "/v1/backups",
+        "status": 201,
+        "milliseconds": 2362
+      },
+      {
+        "method": "GET",
+        "path": "/v1/backups/263c6907-f264-4707-9b72-95f297fb237f",
+        "status": 200,
+        "milliseconds": 2251
+      },
+      {
+        "method": "GET",
+        "path": "/v1/backups",
+        "status": 200,
+        "milliseconds": 2096
+      },
+      {
+        "method": "POST",
+        "path": "/v1/backups",
+        "status": 200,
+        "milliseconds": 2063
+      },
+      {
+        "method": "POST",
+        "path": "/v1/backups",
+        "status": 409,
+        "milliseconds": 2063
+      },
+      {
+        "method": "GET",
+        "path": "/v1/backups/263c6907-f264-4707-9b72-95f297fb237f",
+        "status": 200,
+        "milliseconds": 2172
+      },
+      {
+        "method": "DELETE",
+        "path": "/v1/backups/263c6907-f264-4707-9b72-95f297fb237f",
+        "status": 405,
+        "milliseconds": 2709
+      }
+    ],
+    "passed": 15,
+    "failed": 0,
+    "completed": true
+  },
+  "physicalAndroid": false,
+  "physicalWindows": false,
+  "userDataAccessed": false
+}
