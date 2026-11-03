@@ -1,0 +1,191 @@
+{
+  "version": "1.8.2",
+  "sourceCommit": "9b54390227a74f99497b8570168e5312c132878d",
+  "runId": "41582280368",
+  "pin": {
+    "packageSha256": "61e287bb2610db290e34e98e017795225ef23f151e65e7bf6eeddee8c2c66819",
+    "htmlSha256": "59c450f3732c6633a0ec1645c3ab39c84f2251a93bcb498fe84770d4967031b9",
+    "clientSha256": "1a0a103174870f3aeebd08eae10d46bb35526f3a560a85a834403df1551abaae"
+  },
+  "browser": {
+    "version": "1.8.2",
+    "testedAt": "2026-11-03T05:03:51.745190+00:00",
+    "environment": "Playwright 1.64.1 Chromium Linux Ubuntu 26.04; real IndexedDB/WebCrypto and historical signed updater; simulated cloud and update transport; unchanged Android origin and CSP",
+    "physicalAndroid": false,
+    "physicalWindows": false,
+    "cloudStorageReal": false,
+    "sourceSha256": "1a0a103174870f3aeebd08eae10d46bb35526f3a560a85a834403df1551abaae",
+    "baseSha256": "550236159c43aaaae2985665a3f291282dc7163299ad3f9e2e3b8084d2093e70",
+    "candidateSha256": "59c450f3732c6633a0ec1645c3ab39c84f2251a93bcb498fe84770d4967031b9",
+    "tests": [
+      {
+        "test": "absent_database_not_created_by_backup",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "snapshot_preserves_existing_history",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "snapshot_excludes_access_and_encryption_keys",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "encrypted_backup_post_readback_decrypt",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "plaintext_not_sent",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "unchanged_snapshot_not_duplicated",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "wrong_encryption_key_rejected",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "empty_backup_blocked",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "restore_adds_only_missing_records",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "restore_keeps_existing_record_and_preferences",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "restore_idempotent",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "failed_readback_is_not_success",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "retry_reuses_same_snapshot_id",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "offline_keeps_local_data",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "reload_preserves_existing_database",
+        "passed": true,
+        "reusedFromRun": 41581249899,
+        "artifactId": 13205981598
+      },
+      {
+        "test": "automatic_backup_after_saved_change",
+        "passed": true
+      },
+      {
+        "test": "cloud_dialog_fits_320",
+        "passed": true
+      },
+      {
+        "test": "cloud_dialog_fits_412",
+        "passed": true
+      },
+      {
+        "test": "cloud_dialog_fits_1366",
+        "passed": true
+      },
+      {
+        "test": "no_client_runtime_errors",
+        "passed": true
+      },
+      {
+        "test": "actual_app_loads_412",
+        "passed": true
+      },
+      {
+        "test": "actual_app_cloud_dialog_412",
+        "passed": true
+      },
+      {
+        "test": "original_navigation_retained_412",
+        "passed": true
+      },
+      {
+        "test": "actual_app_loads_1366",
+        "passed": true
+      },
+      {
+        "test": "actual_app_cloud_dialog_1366",
+        "passed": true
+      },
+      {
+        "test": "original_navigation_retained_1366",
+        "passed": true
+      },
+      {
+        "test": "historical_updater_accepts_signed_candidate",
+        "passed": true
+      },
+      {
+        "test": "historical_updater_rejects_tampering",
+        "passed": true
+      },
+      {
+        "test": "signed_update_activates_cloud_module",
+        "passed": true
+      },
+      {
+        "test": "signed_update_keeps_local_storage",
+        "passed": true
+      },
+      {
+        "test": "updated_application_reopens",
+        "passed": true
+      }
+    ],
+    "passed": 31,
+    "failed": 0,
+    "reusedAssertions": 15,
+    "reuseEvidence": {
+      "runId": 41581249899,
+      "artifactId": 13205981598,
+      "artifactSha256": "7532c97467388cc816fabe2bf6435a8d9c61f4dece90da83e1eef7461992310c",
+      "unchangedSourceAndCandidate": true,
+      "sameEnvironment": true
+    }
+  },
+  "physicalAndroid": false,
+  "physicalWindows": false,
+  "realAuthenticatedCloudRoundtrip": false,
+  "userDataAccessed": false
+}

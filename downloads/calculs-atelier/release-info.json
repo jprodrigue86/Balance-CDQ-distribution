@@ -1,25 +1,60 @@
 {
   "app": "Calculs d’atelier",
-  "version": "1.8.1",
-  "versionCode": 18001,
+  "version": "1.8.2",
+  "versionCode": 18002,
+  "shellVersion": 18001,
   "minShellVersion": 11000,
-  "releasedAt": "2026-10-08T22:04:34.451555+00:00",
+  "releasedAt": "2026-11-03T04:49:12.948905+00:00",
   "channel": "latest.atelier-update.json",
-  "packageSha256": "a3750c8a02673de0f31ed27a1a63a44001ab20b6ac8c68d140253dc87329c03a",
-  "htmlSha256": "550236159c43aaaae2985665a3f291282dc7163299ad3f9e2e3b8084d2093e70",
-  "packageBytes": 16616117,
-  "htmlBytes": 9345826,
+  "packageSha256": "61e287bb2610db290e34e98e017795225ef23f151e65e7bf6eeddee8c2c66819",
+  "htmlSha256": "59c450f3732c6633a0ec1645c3ab39c84f2251a93bcb498fe84770d4967031b9",
+  "packageBytes": 16656553,
+  "htmlBytes": 9368517,
   "notes": [
-    "Règle de trois : caméra et choix de photo pour remplir Qty planned, Remain Old Qty MapXr et New Mat Qty demand.",
-    "Lecture locale hors ligne; calcul direct pour une ligne lisible, choix du produit si la photo contient plusieurs lignes.",
-    "Chiffres incertains signalés avant calcul, rectangles modifiables et lecture annulable."
+    "Nuage privé : sauvegardes chiffrées automatiques des données enregistrées pendant l’utilisation.",
+    "Activation avec un code privé, identique sur Android et PC. Aucune clé incluse dans la mise à jour.",
+    "Copies conservées sans écrasement; récupération explicite des seuls éléments manquants.",
+    "Stockage local et identité de l’application conservés; aucune désinstallation nécessaire."
   ],
   "androidApk": "Calculs-Atelier-Android-1.8.1.apk",
+  "androidUpdateType": "signed-content-existing-shell",
+  "pcPackage": "Calculs-Atelier-1.8.2-PC.zip",
   "verification": {
-    "signature": "RSA-SHA256 avec la clé historique",
-    "androidSignature": "APK v2/v3 avec le certificat historique; SDK Android recompilé",
-    "physicalDeviceTest": false
+    "signature": "Historical RSA-SHA256, verified",
+    "physicalDeviceTest": false,
+    "realAuthenticatedCloudRoundtrip": false,
+    "publicHealth": {
+      "checkedAt": "2026-11-03T05:06:00Z",
+      "method": "Cloudflare account Browser Rendering API scrape; public GET only, no injected script and no credentials",
+      "url": "https://calculs-atelier-cloud-v1.balance-cdq.workers.dev/health",
+      "httpStatus": 200,
+      "cfRay": "a548d8df39f1c294-MIA",
+      "body": {
+        "status": "ready",
+        "service": "calculs-atelier-cloud",
+        "apiVersion": 2,
+        "storage": "private",
+        "mode": "encrypted-append-only"
+      },
+      "deployment": "c103f23b-4ae1-476a-83a2-9f25c40c4415",
+      "workerVersion": "ee057803-453d-4607-ab78-ae8147a9b2ed",
+      "workersDevEnabled": true,
+      "bucketPublicAccess": false,
+      "unusedQaCredentialDisabled": true,
+      "githubDirectHealth": {
+        "runId": 41581545357,
+        "httpStatus": 403,
+        "cause": "Not established; do not claim access from GitHub or Android was validated"
+      },
+      "authenticatedBackupTest": false,
+      "physicalAndroidTest": false,
+      "physicalWindowsTest": false,
+      "limitation": "This receipt confirms only the public health endpoint through Cloudflare Browser Rendering. First authenticated backup and exact readback must be confirmed on the user's device."
+    },
+    "firstAuthenticatedDeviceBackup": "Pending activation and exact readback on the user device; not claimed verified",
+    "browserAssertions": 31,
+    "cloudTransport": "Simulated; live endpoint health verified separately, authenticated write/read not confirmed"
   },
-  "privacy": "Contenu compilé seulement. Aucune saisie utilisateur, aucun historique local, aucune clé privée.",
-  "shellVersion": 18001
+  "privacy": "No user data or credentials in update. Client-side encrypted cloud backups; activation required.",
+  "sourceCommit": "9b54390227a74f99497b8570168e5312c132878d"
 }
