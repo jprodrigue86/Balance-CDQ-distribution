@@ -24,8 +24,32 @@ export async function runUiRegressionV2783(name,{sources,document,makeFixture}={
    w.eval("var compagnieSelectionnee='client',cacheContenuCompagnies={client:{fichiers:[{id:'one',nom:'Essai.pdf',dateModification:'2026-10-25'}]}};function trouverFichierDansArbre(t,id){return {fichier:t.fichiers.find(f=>f.id===id)}};function cdqFichierModifieAujourdhui(){return true};");
    w.eval(slice(html,'function cdqFileStateSlotV2782(row){','function creerLigneFichier(fichier){'));
    w.eval("(()=>{const root=document.documentElement,$=(s,r=document)=>r.querySelector(s),all=(s,r=document)=>[...r.querySelectorAll(s)];let applyQueued=false;function applyOrder(){}function motion(){}function finish(){};"+slice(html,' function rows(scope){',' window.cdqInterfaceV2708=')+'window.testRows=rows;})()');
-   w.eval(get('desktop-model2-v2676.js'));w.testRows();await pause(160);
-   let mutations=0;const observer=new w.MutationObserver(rows=>mutations+=rows.length);observer.observe(w.document.body,{subtree:true,childList:true});await pause(120);observer.disconnect();ensure(mutations===0,'Idle desktop still mutates: '+mutations);
+   w.eval(get('desktop-model2-v2676.js'));w.testRows();
+   // This isolated fixture lacks the full home shell: the first decoration is
+   // queued through native animation frames. A fixed delay does not prove that
+   // initialization ran, particularly in a background or offscreen iframe.
+   function frameBarrier(condition,minimumMs,phase){
+    return new Promise((resolve,reject)=>{
+     const started=w.performance.now();let settled=false,readyFrames=0,frameId=0;
+     const deadline=setTimeout(()=>finish(Error('Desktop fixture frames unavailable during '+phase+' (3000ms bound)')),3000);
+     function finish(error){if(settled)return;settled=true;clearTimeout(deadline);if(frameId)w.cancelAnimationFrame(frameId);error?reject(error):resolve();}
+     function tick(){
+      if(settled)return;
+      try{readyFrames=condition()?readyFrames+1:0;}catch(error){finish(error);return;}
+      if(readyFrames>=2&&w.performance.now()-started>=minimumMs){finish();return;}
+      frameId=w.requestAnimationFrame(tick);
+     }
+     frameId=w.requestAnimationFrame(tick);
+    });
+   }
+   const initialRow=w.document.querySelector('.file-row'),expectedDate=new w.Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'short',year:'numeric'}).format(new w.Date(initialRow.dataset.fileDate));
+   await frameBarrier(()=>{
+    const host=initialRow.querySelector(':scope > .cdq-file-state-v2782'),slot=host?.querySelector('.cdq-save-slot-v2782');
+    return initialRow.querySelector('.cdq-pc-file-type')?.textContent==='PDF'&&initialRow.querySelector('.file-date')?.textContent===expectedDate&&host===initialRow.lastElementChild&&!!slot&&initialRow.querySelector('.file-today-done-badge')?.parentElement===slot&&initialRow.querySelector('.file-pending-v2708')?.parentElement===slot;
+   },0,'initial decoration');
+   let mutations=0;const observer=new w.MutationObserver(rows=>mutations+=rows.length);observer.observe(w.document.body,{subtree:true,childList:true});
+   try{await frameBarrier(()=>true,120,'idle observation');}finally{observer.disconnect();}
+   ensure(mutations===0,'Idle desktop still mutates: '+mutations);
    const row=w.document.querySelector('.file-row'),slot=row.querySelector('.cdq-save-slot-v2782'),green=row.querySelector('.file-today-done-badge');ensure(row.querySelectorAll('.file-today-done-badge').length===1&&green.parentElement===slot,'Duplicate or displaced green status');
    const host=slot.parentElement;ensure((w.getComputedStyle(host).gridRowStart||w.getComputedStyle(host).gridRow).split('/')[0].trim()==='1','Status creates a second desktop row');ensure((w.getComputedStyle(host).gridColumnStart||w.getComputedStyle(host).gridColumn).split('/')[0].trim()==='6','Status is not right-aligned');
    w.cacheContenuCompagnies.client.fichiers[0]._cdqPendingSaveV2660='pending';w.testRows();await pause(60);ensure(green.hidden,'Green claims an unconfirmed save');ensure(!row.querySelector('.file-pending-v2708').hidden,'Missing pending status');
