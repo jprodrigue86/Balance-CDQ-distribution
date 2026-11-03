@@ -1,5 +1,5 @@
 // V59: strict asset caching. A missing .mjs MUST NOT receive index.html.
-const CACHE='cdq-apps-script-manager-v59-safe-qa-v2835-receipts';
+const CACHE='cdq-apps-script-manager-v59-safe-qa-v2835-r2-fixtures-layout';
 const ASSETS=[
   './','index.html','style.css?v=59','api.js?v=59','jszip.min.js?v=23',
   'app.js?v=59-v2832','diagnostics.js?v=59','diagnostics.css?v=59',

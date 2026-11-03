@@ -66,14 +66,14 @@ export async function runManagerRegressionV59(name,{sources,document,makeFixture
  const html=get('Selector.html'),mount=makeFixture||((markup,css)=>fixture(document,markup,css));
  if(name===MANAGER_CASES_V59[0]||name===MANAGER_CASES_V59[1]){
   const {createReportEngineClientV2754:create}=await loadModule('report-engine-client-v2754.mjs');
-  const ranks=[],events=[],pendingReports=new Set();
-  const changed=new Function('owner','canRead','pendingReports','background','instant','publish',slice(html,'  function changed(record){','  async function client(){')+'return changed;')(()=> 'qa@example.invalid',()=>true,pendingReports,{setPending(){}},{confirm:(...a)=>ranks.push(a)},(...a)=>events.push(a));
+  const ranks=[],events=[],invalidations=[],pendingReports=new Set();
+  const changed=new Function('owner','canRead','pendingReports','background','instant','publish','openPrewarmV2835',slice(html,'  function changed(record){','  async function client(){')+'return changed;')(()=> 'qa@example.invalid',()=>true,pendingReports,{setPending(){}},{confirm:(...a)=>ranks.push(a)},(...a)=>events.push(a),{invalidate:scope=>invalidations.push(structuredClone(scope))});
   const h=createManagerReportFixtureV20261103({createClient:create,guard:await loadModule('report-edit-guard-v2816.mjs'),options:{onChange:changed,rpc:()=>{throw Error('Unexpected network call');}}}),client=h.client;
   const context={engine:2754,reportId:'c730a371-f0e5-444c-b777-2c654f583993',clientId:'client',destinationId:'folder',fileId:'drive-a',family:'plancher',template:{modeleId:'plancher',sha256:'a'.repeat(64),version:2754},baseRevision:2},fields={measurement:{value:'1000.000'}};
   try{
    for(let i=0;i<2;i++){const r=await client.remember({context,fields,name:'Essai.pdf',serverRevision:2,pdf:{status:'pending',fileId:'drive-a',revision:2}});ensure(r.pending&&r.observationOnlyV2784===true&&r.savedAt===null,'A read became a local edit');}
-   equal(ranks.length,0,'Read moved the report');equal(events.length,0,'Read announced a save');equal(pendingReports.size,1,'Pending publication disappeared');
-   if(name===MANAGER_CASES_V59[1]){await client.save(context,{measurement:{value:'123.000'}},'save-'+crypto.randomUUID(),'Essai.pdf');const r=await client.get(context);equal(r.fields.measurement.value,'123.000');ensure(Number.isFinite(r.savedAt)&&r.observationOnlyV2784!==true,'Real edit lost its save date');equal(ranks.length,1);ensure(events.some(e=>e[0]==='cdq:report-data-saved-v2754'),'Real save not announced');}
+   equal(ranks.length,0,'Read moved the report');equal(events.length,0,'Read announced a save');equal(pendingReports.size,1,'Pending publication disappeared');equal(invalidations.length,0,'Consultation invalidated the prepared report');
+   if(name===MANAGER_CASES_V59[1]){await client.save(context,{measurement:{value:'123.000'}},'save-'+crypto.randomUUID(),'Essai.pdf');const r=await client.get(context);equal(r.fields.measurement.value,'123.000');ensure(Number.isFinite(r.savedAt)&&r.observationOnlyV2784!==true,'Real edit lost its save date');equal(invalidations,[{reportId:context.reportId}],'Real edit did not invalidate the prepared report');equal(ranks.length,1);ensure(events.some(e=>e[0]==='cdq:report-data-saved-v2754'),'Real save not announced');}
   }finally{client.lock();}return;
  }
  if(name===MANAGER_CASES_V59[2]){
@@ -96,8 +96,27 @@ export async function runManagerRegressionV59(name,{sources,document,makeFixture
   try{const host=f.w.document.querySelector('.cdq-file-state-v2782'),style=f.w.getComputedStyle(host);ensure(sameGridTracksV59(style.width,'70px'),'Status width changed');ensure(sameGridTracksV59(style.gridTemplateColumns,'28px 34px'),'Status tracks changed');}finally{f.close();}return;
  }
  if(name===MANAGER_CASES_V59[4]){
-  const f=await mount('<nav class="bottom-nav" style="display:grid;grid-template-columns:none!important;grid-auto-columns:62px!important"><button class="bottom-nav-item">Accueil</button></nav><div id="sendArea"></div>',get('mobile-selection-v2783.css')+'\n'+get('file-state-v2784.css')),w=f.w;
-  try{w.eval("var utilisateurCourantEmail='qa@example.invalid',utilisateurCourantRole='technicien',compagnieSelectionnee='client',cacheContenuCompagnies={client:{fichiers:[]}};");w.cdqDriveEntryV2632={canRead:()=>true};w.obtenirFichiersSelectionnes=()=>[];w.obtenirDossiersSelectionnes=()=>[];w.cdqFileActionsV2655={paint(){}};w.eval(get('mobile-selection-v2783.js'));w.document.body.classList.add('selection-active');w.cdqMobileSelectionV2783.refresh();const nav=w.document.querySelector('nav'),actions=nav.querySelector('[class*=cdq-selection-actions]');const navStyle=w.getComputedStyle(nav),inset=['paddingLeft','paddingRight','borderLeftWidth','borderRightWidth'].reduce((n,key)=>n+(parseFloat(navStyle[key])||0),0),layout={navColumns:nav.style.getPropertyValue('grid-template-columns'),actionColumns:w.getComputedStyle(actions).gridTemplateColumns,navWidth:nav.getBoundingClientRect().width-inset,groupWidth:actions.getBoundingClientRect().width,buttonWidths:[...actions.children].map(n=>n.getBoundingClientRect().width)};ensure(selectionGridMatchesV59(layout),'Selection grid changed: '+JSON.stringify(layout));w.document.body.classList.remove('selection-active');w.cdqMobileSelectionV2783.refresh();ensure(sameGridTracksV59(nav.style.getPropertyValue('grid-template-columns'),'none'),'Navigation tracks not restored');}finally{f.close();}return;
+  const navigation=Array.from({length:6},(_,i)=>'<button class="bottom-nav-item">Navigation '+i+'</button>').join('');
+  const f=await mount('<nav class="bottom-nav" style="display:grid;grid-template-columns:none!important;grid-auto-columns:62px!important;width:360px;max-width:100%;box-sizing:border-box">'+navigation+'</nav><div id="sendArea"></div>',get('mobile-selection-v2783.css')+'\n'+get('file-state-v2784.css')),w=f.w;
+  try{
+   w.eval("var utilisateurCourantEmail='qa@example.invalid',utilisateurCourantRole='technicien',compagnieSelectionnee='client',cacheContenuCompagnies={client:{fichiers:[]}};");w.cdqDriveEntryV2632={canRead:()=>true};w.obtenirFichiersSelectionnes=()=>[];w.obtenirDossiersSelectionnes=()=>[];w.cdqFileActionsV2655={paint(){}};w.eval(get('mobile-selection-v2783.js'));w.document.body.classList.add('selection-active');w.cdqMobileSelectionV2783.refresh();
+   const nav=w.document.querySelector('nav'),actions=nav.querySelector('[class*=cdq-selection-actions]'),buttons=[...actions.children],navButtons=[...nav.querySelectorAll('.bottom-nav-item')];
+   equal(buttons.map(button=>button.dataset.selectionAction),['select-all','copy','duplicate','move','rename','delete','cancel'],'Contextual action identities changed');
+   ensure(sameGridTracksV59(nav.style.getPropertyValue('grid-template-columns'),'minmax(0,1fr)'),'Selection does not occupy the navigation track');
+   ensure(navButtons.length===6&&navButtons.every(button=>w.getComputedStyle(button).display==='none'),'Permanent navigation remains visible during selection');
+   const style=w.getComputedStyle(actions),navRect=nav.getBoundingClientRect(),group=actions.getBoundingClientRect(),rects=buttons.map(button=>button.getBoundingClientRect()),tolerance=1/64+.001;
+   ensure(style.display==='flex'&&style.flexWrap==='nowrap'&&style.overflowX==='auto','Selection lost its single scrollable flex row');
+   ensure(navRect.width>0&&group.width>0&&Math.abs(group.width-navRect.width)<=tolerance,'Selection exceeds the phone navigation width');
+   ensure(rects.every((rect,i)=>rect.height>0&&rect.width>=(i===0?80:64)-tolerance&&Math.abs(rect.top-rects[0].top)<=tolerance),'Contextual actions wrapped or lost readable widths');
+   ensure(actions.scrollWidth>actions.clientWidth,'Narrow selection no longer exposes horizontal overflow');
+   actions.scrollLeft=actions.scrollWidth;
+   const last=buttons.at(-1).getBoundingClientRect(),visible=actions.getBoundingClientRect();
+   ensure(actions.scrollLeft>0&&last.left>=visible.left-tolerance&&last.right<=visible.right+1,'Last contextual action cannot be reached by horizontal scrolling');
+   w.document.body.classList.remove('selection-active');w.cdqMobileSelectionV2783.refresh();
+   ensure(sameGridTracksV59(nav.style.getPropertyValue('grid-template-columns'),'none')&&nav.style.getPropertyPriority('grid-template-columns')==='important','Navigation tracks not restored');
+   ensure(sameGridTracksV59(nav.style.getPropertyValue('grid-auto-columns'),'62px')&&nav.style.getPropertyPriority('grid-auto-columns')==='important','Navigation automatic tracks not restored');
+   ensure(navButtons.length===6&&navButtons.every(button=>w.getComputedStyle(button).display!=='none'),'Permanent navigation not restored');
+  }finally{f.close();}return;
  }
  if(name===MANAGER_CASES_V59[5]){
   const media=await loadModule('calibration-media-v2784.mjs'),catalogue=await loadModule('calibration-catalogue-v2784.mjs');
