@@ -1,0 +1,15 @@
+{
+  "baseApkSha256": "2de42bfa80b47c9b13d0662a0a12957766ece99b27d9d3051d0e11d90dbf258f",
+  "expectedPublicHead": "9509fc8a3252c4150354c8541e771bf06e04b0f4",
+  "files": {
+    "android-release-update.json": "8cfcba6a2262e1660fd7a2fcdd92483ac8acb98fbba6992f2aad84e4085fface"
+  },
+  "nativeContractStatus": "NATIVE_ASSET_CONTRACT_PASSED_JVM",
+  "privateSourceCommit": "4087d030d78f45d333ae739f45acbf49afdc0d7d",
+  "scope": "ANDROID_ONLY",
+  "signedQualificationSha256": "637372e0e240d30588ae463607fdec5cf8db7f12ca855a06686eb27359da63fe",
+  "signedSha256": "75e442b9716fe1caac003436cabcc86391d61da6563a31b4fb1855776c333c7f",
+  "stageProofSha256": "02bb7f24544a1d8ac8301d194cbe352e3dcb80c46c88e89c654ea28c4d75019a",
+  "version": "28.36",
+  "versionCode": 2836
+}
