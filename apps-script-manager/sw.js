@@ -1,10 +1,10 @@
 // V59: strict asset caching. A missing .mjs MUST NOT receive index.html.
-const CACHE='cdq-apps-script-manager-v59-safe-qa-v2832';
+const CACHE='cdq-apps-script-manager-v59-safe-qa-v2835-receipts';
 const ASSETS=[
   './','index.html','style.css?v=59','api.js?v=59','jszip.min.js?v=23',
   'app.js?v=59-v2832','diagnostics.js?v=59','diagnostics.css?v=59',
   'update-check.js?v=59','version.json','local-tests-v59.mjs','regressions-v59.mjs',
-  'qa-automation-v59.mjs','verified-modules-v59.mjs','manifest.webmanifest','icon-industrial.svg',
+  'qa-automation-v59.mjs','verified-modules-v59.mjs','report-test-fixture-v20261103.mjs','manifest.webmanifest','icon-industrial.svg',
   'icon-192.png','icon-512.png'
 ];
 self.addEventListener('install',event=>{

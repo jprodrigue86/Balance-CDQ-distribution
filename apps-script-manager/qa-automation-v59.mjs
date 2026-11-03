@@ -48,7 +48,7 @@ export const CDQ_AUTOMATION_MEDIA_V59=Object.freeze([
 ]);
 export const CDQ_AUTOMATION_ASSETS_V59=Object.freeze([
   ...CDQ_AUTOMATION_MEDIA_V59,
-  ...CDQ_V59_MODULES.map(name=>'pc/'+name),'pc/prepared-report-pdf-v2759.mjs','pc/report-engine-storage-20261028.mjs','pc/release.json','apps-script-manager/verified-modules-v59.mjs','apps-script-manager/local-tests-v59.mjs',
+  ...CDQ_V59_MODULES.map(name=>'pc/'+name),'pc/prepared-report-pdf-v2759.mjs','pc/report-edit-guard-v2816.mjs','pc/report-receipt-continuity-v20261103.mjs','apps-script-manager/report-test-fixture-v20261103.mjs','pc/report-engine-storage-20261028.mjs','pc/release.json','apps-script-manager/verified-modules-v59.mjs','apps-script-manager/local-tests-v59.mjs',
   'apps-script-manager/qa-automation-v59.mjs','apps-script-manager/regressions-v59.mjs','apps-script-manager/version.json',
   ...['Selector.html','desktop-model2-v2676.js','desktop-shell-v2688.css','desktop-workspace-v2688.css','mobile-selection-v2783.js','mobile-selection-v2783.css','invoice-ui-v2590.js','invoice-preview-v2783.mjs','reader-v2525.mjs','reader-host-v2525.mjs','sw.js','file-state-v2784.css','file-observation-v2784.mjs','deleted-report-v2784.mjs','calibration-catalogue-v2784.mjs','calibration-media-v2784.mjs','calibration-discovery-v2784.mjs','calibration-save-v2784.mjs','calibration-ui-v2565.mjs','calibration-db-v2565.mjs','calibration-inventory-v2784.mjs','calibration-methods-v2566.mjs','calibration-methods-v2784.mjs','calibration-models-v2668.mjs','calibration-scan-v2668.mjs','reader-calibration-v2565.mjs'].map(name=>'pc/'+name)
 ]);
@@ -58,7 +58,7 @@ const sha256=async value=>hex(await crypto.subtle.digest('SHA-256',typeof value=
 const shaPattern=/^[a-f0-9]{64}$/;
 
 export function validateReportV59(report){
-  if(!report||report.schema!=='cdq-manager-local-tests-v2'||report.managerVersion!=='V59')
+  if(!report||report.schema!=='cdq-manager-local-tests-v2'||report.managerVersion!=='V59'||report.scope!=='published-shared-js-modules'||report.fullSuite===false)
     return {ok:false,reason:'WRONG_SUITE_VERSION'};
   if(report.scope!=='published-shared-js-modules'||report.privacy!=='synthetic-fixtures-only'||
      report.driveE2E!==false||report.nativeAndroid!==false)

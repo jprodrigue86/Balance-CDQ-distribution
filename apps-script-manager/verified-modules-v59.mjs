@@ -13,7 +13,7 @@ export function verifiedModuleGraphV59(manifest){
   if(urls.has(name))return urls.get(name);
   const task=(async()=>{
    const source=sources.get(name),record=records.get(name);
-   if(!/^(?:pc\/[\w-]+\.mjs|apps-script-manager\/(?:local-tests|regressions)-v59\.mjs)$/.test(name)||typeof source!=='string'||!record)throw Error('UNINSPECTED_TEST_DEPENDENCY: '+name);
+   if(!/^(?:pc\/[\w-]+\.mjs|apps-script-manager\/(?:(?:local-tests|regressions)-v59|report-test-fixture-v20261103)\.mjs)$/.test(name)||typeof source!=='string'||!record)throw Error('UNINSPECTED_TEST_DEPENDENCY: '+name);
    if(await digest(source)!==record.sha256)throw Error('VERIFIED_SOURCE_CHANGED: '+name);
    if(name.startsWith('pc/')&&/\bimport\s*\(/.test(source))throw Error('DYNAMIC_TEST_DEPENDENCY: '+name);
    const imports=[...source.matchAll(/^(?:import|export)\s+[^;\n]*?\bfrom\s*(['"])([^'"]+)\1\s*;/gm)];

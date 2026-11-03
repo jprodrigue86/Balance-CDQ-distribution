@@ -3,6 +3,7 @@
 // This is NOT a substitute for Android native signing or an authenticated Drive E2E test.
 'use strict';
 import {MANAGER_CASES_V59,runManagerRegressionV59} from './regressions-v59.mjs';
+import {createManagerReportFixtureV20261103} from './report-test-fixture-v20261103.mjs';
 
 const equal=(actual,expected)=>{
   if(JSON.stringify(actual)!==JSON.stringify(expected)){
@@ -32,7 +33,7 @@ export const CDQ_V59_MODULES=Object.freeze([
   'drive-transfer-v2751.mjs','list-consultation-v2755.mjs',
   'sheet-report-conformity-v2727.mjs','pdf-metadata-v2724.mjs','file-operation-state-v2782.mjs','report-engine-client-v2754.mjs','balance-list-renderer-v2728.mjs','ui-regressions-v2783.mjs'
 ]);
-export async function runCDQLocalTestsV59({onProgress=()=>{},moduleToken='',sources,document=globalThis.document,makeFixture,loadModule=file=>import('../pc/'+file)}={}){
+export async function runCDQLocalTestsV59({onProgress=()=>{},moduleToken='',sources,document=globalThis.document,makeFixture,groups=null,loadModule=file=>import('../pc/'+file)}={}){
   const started=Date.now();
   // Token comes from independently hashed LIVE module bytes, never from the DOM.
   if(moduleToken&&!/^[a-f0-9]{64}$/.test(moduleToken))throw Error('INVALID_SOURCE_FINGERPRINT');
@@ -264,15 +265,12 @@ export async function runCDQLocalTestsV59({onProgress=()=>{},moduleToken='',sour
   const ctx={reportId:'c730a371-f0e5-444c-b777-2c654f583993',clientId:'synthetic-client',destinationId:'synthetic-folder',family:'plancher',template:{modeleId:'plancher',sha256:'a'.repeat(64),version:2754},baseRevision:0};
   const tick=()=>new Promise(r=>setTimeout(r,0));
   async function until(check){for(let n=0;n<100;n++){if(await check())return;await tick();}throw Error('État local non atteint');}
-  function fixture(options={}){const rows=new Map();let online=false,account='qa@example.invalid';const calls=[];
-    const storage={get:async k=>structuredClone(rows.get(k)||null),all:async()=>[...rows.values()].map(x=>structuredClone(x)),commit:async record=>{rows.set(record.key,structuredClone(record));return record;}};
-    const client=reportEngine.createReportEngineClientV2754({storage,getAccount:()=>account,isOnline:()=>online,rpc:async(a,p)=>{calls.push({a,p});return options.rpc?.(a,p);}});
-    return {client,rows,calls,online:v=>online=v,account:v=>account=v};
-  }
+  const reportGuard=await loadModule('report-edit-guard-v2816.mjs');
+  function fixture(options={}){return createManagerReportFixtureV20261103({createClient:reportEngine.createReportEngineClientV2754,guard:reportGuard,options});}
   const fields=v=>({measurement:{value:v}}),request=()=> 'save-'+crypto.randomUUID();
   add('Moteur de rapports','Réponses exactes conservées hors ligne',async()=>{const h=fixture();try{await h.client.save(ctx,fields('1000.000'),request(),'Essai.pdf');equal((await h.client.get(ctx)).fields.measurement.value,'1000.000');equal(h.calls.length,0);}finally{h.client.lock();}});
   add('Moteur de rapports','Identité de requête réutilisée sans doublon',async()=>{const h=fixture(),id=request();try{await h.client.save(ctx,fields('1'),id,'Essai.pdf');await h.client.save(ctx,fields('1'),id,'Essai.pdf');equal(h.rows.size,1);}finally{h.client.lock();}});
-  add('Moteur de rapports','Identité identique avec réponses différentes refusée',async()=>{const h=fixture(),id=request();try{await h.client.save(ctx,fields('1'),id,'Essai.pdf');await expectRejectedV59(()=>h.client.save(ctx,fields('2'),id,'Essai.pdf'),e=>/déjà utilisé/.test(e.message));}finally{h.client.lock();}});
+  add('Moteur de rapports','Identité identique avec réponses différentes refusée',async()=>{const h=fixture(),id=request();try{await h.client.save(ctx,fields('1'),id,'Essai.pdf');await expectRejectedV59(()=>h.client.save(ctx,fields('2'),id,'Essai.pdf'),e=>e.code==='IDEMPOTENCY_LOCAL_CONFLICT');}finally{h.client.lock();}});
   add('Moteur de rapports','Compte différent sans accès aux réponses locales',async()=>{const h=fixture();try{await h.client.save(ctx,fields('1'),request(),'Essai.pdf');h.account('other@example.invalid');equal(await h.client.get(ctx),null);}finally{h.client.lock();}});
   add('Moteur de rapports','Lecture distante ne remplace pas les réponses en attente',async()=>{const h=fixture();try{await h.client.save(ctx,fields('local'),request(),'Essai.pdf');await h.client.remember({context:{...ctx,baseRevision:3},fields:fields('remote'),name:'Essai.pdf',serverRevision:3,pdf:{status:'confirmed',revision:3,fileId:'drive'}});equal((await h.client.get(ctx)).fields.measurement.value,'local');}finally{h.client.lock();}});
   add('Moteur de rapports','Confirmation des données sans faux crochet Drive',async()=>{const h=fixture({rpc:async()=>({ok:true,engine:2754,reportId:ctx.reportId,revision:1,dataSaved:true,pdf:{status:'pending',revision:1}})});try{h.online(true);await h.client.save(ctx,fields('1'),request(),'Essai.pdf');await until(async()=> (await h.client.get(ctx)).dataSaved);equal((await h.client.get(ctx)).pending,true);}finally{h.client.lock();}});
@@ -297,8 +295,10 @@ export async function runCDQLocalTestsV59({onProgress=()=>{},moduleToken='',sour
   if(tests.length!==CDQ_V59_EXPECTED_TOTAL||Object.keys(counts).length!==Object.keys(CDQ_V59_GROUP_COUNTS).length||
       Object.entries(CDQ_V59_GROUP_COUNTS).some(([key,n])=>counts[key]!==n))
     throw Error('CHECK_CATALOG_INCOMPLETE: '+JSON.stringify(counts));
+  if(groups!==null&&(!Array.isArray(groups)||!groups.length||groups.some(group=>!Object.hasOwn(CDQ_V59_GROUP_COUNTS,group))))throw Error('INVALID_TEST_SELECTION');
+  const selected=groups===null?tests:tests.filter(item=>groups.includes(item.group));
   const results=[];
-  for(const item of tests){
+  for(const item of selected){
     const begin=Date.now();let timeout;
     try{
       await Promise.race([
@@ -312,10 +312,10 @@ export async function runCDQLocalTestsV59({onProgress=()=>{},moduleToken='',sour
         kind:String(error?.message||'').startsWith('CHECK_TIMEOUT:')?'harness-timeout':'assertion'});
     }finally{clearTimeout(timeout);}
     // UI observer errors must not falsify the result.
-    try{onProgress({completed:results.length,total:tests.length,failed:results.filter(r=>r.status==='failed').length});}catch(_){}
+    try{onProgress({completed:results.length,total:selected.length,failed:results.filter(r=>r.status==='failed').length});}catch(_){}
   }
   return {schema:'cdq-manager-local-tests-v2',managerVersion:'V59',
-    scope:'published-shared-js-modules',privacy:'synthetic-fixtures-only',driveE2E:false,
+    scope:groups===null?'published-shared-js-modules':'selected-shared-js-modules',...(groups===null?{}:{selectedGroups:[...groups],fullSuite:false}),privacy:'synthetic-fixtures-only',driveE2E:false,
     nativeAndroid:false,startedAt:new Date(started).toISOString(),
     completedAt:new Date().toISOString(),elapsedMs:Date.now()-started,
     total:results.length,passed:results.filter(r=>r.status==='passed').length,

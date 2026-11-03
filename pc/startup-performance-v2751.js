@@ -63,7 +63,7 @@ function wrapRpcRunnerV2751(original,budget,{report=()=>{}}={}){
       if(typeof name!=='string'||name==='then')return undefined;
       return(...args)=>{const ok=success,fail=failure,value=userObject,hasValue=hasUser,onStart=started,traceId=++transportSequence;
         // Only these idempotent reads can be removed before dispatch; never a write.
-        const cancellable=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirPdfLecteurCDQV2520|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ|obtenirMetaFichier|obtenirDossiersClients|cdqLireConformiteRapportV2775|obtenirSnapshotGoogleSheetHorsLigne|cdqEtatListeBalanceV2638)$/.test(name),signal=cancellable?readSignal:null;
+        const cancellable=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirPdfLecteurCDQV2520|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ|obtenirMetaFichier|obtenirDossiersClients|cdqLireConformiteRapportV2775|obtenirSnapshotGoogleSheetHorsLigne|cdqEtatListeBalanceV2638)$/.test(name)||name==='cdqReportEngineV2754'&&String(args[0])==='readMany',signal=cancellable?readSignal:null;
         const label=name==='cdqReportEngineV2754'?name+':'+String(args[0]||'').replace(/[^a-zA-Z]/g,'').slice(0,20):name;
         const send=()=>new Promise((resolve,reject)=>{
           // A queued read may be cancelled. Once sent, GAS has no cancellation
@@ -79,13 +79,14 @@ function wrapRpcRunnerV2751(original,budget,{report=()=>{}}={}){
           const action=String(args[0]||''),payload=args[1]||{};
           options.write=['save','delete','restore','importIndex','editAcquire','editRenew','editRelease'].includes(action)||action==='list'&&payload.repair===true||action==='status'&&payload.restore===true;
           if(action==='status'&&!options.write)options.kind='background';
+          if(action==='readMany'){options.kind='background';options.readKey=JSON.stringify(['report-read-many',String(payload.clientId||''),String(payload.destinationId||''),(payload.reports||[]).map(item=>[String(item.reportId||''),String(item.fileId||'')])]);}
         }
         if(/^(?:actualiserContenuClient|cdqStartupMaintenanceV2686)$/.test(name))options.kind='background';
         options.traceId=traceId;options.label=label;options.signal=signal;
         if(name==='obtenirContenuDossierParesseux')options.readKey=JSON.stringify(['folder',String(args[0]),String(args[1])]);
         if(/^(?:obtenirPdfLecteurCDQV2520|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ)$/.test(name))options.readKey=JSON.stringify(['pdf',String(args[0])]);
         options.interactive=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirDiagnosticApplication|obtenirPdfLecteurCDQV2520|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&String(args[0])==='read';
-        const clientBound=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirChunkDocumentPdfCDQ|obtenirPdfLecteurCDQV2520|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&String(args[0])==='read';
+        const clientBound=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirChunkDocumentPdfCDQ|obtenirPdfLecteurCDQV2520|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&['read','readMany'].includes(String(args[0]));
         if(clientBound){const selected=typeof compagnieSelectionnee==='undefined'?'':String(compagnieSelectionnee);options.valid=()=>selected===(typeof compagnieSelectionnee==='undefined'?'':String(compagnieSelectionnee));}
         budget.run(send,options).then(values=>{if(typeof ok==='function')ok(...values);},error=>{
           const values=error?.rpcValues||(hasValue?[error,value]:[error]);

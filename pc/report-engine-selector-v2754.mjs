@@ -1,14 +1,23 @@
 // This adapter runs inside the authenticated Selector. Google sessions and
 // server signing keys stay in their existing authority boundaries.
 import {listConsultationDescriptorV2755} from './list-consultation-v2755.mjs';
-export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoch,currentClient=()=>'',post,instant,background,loadClient,loadTemplate,readLocal=async()=>null,publish=()=>{},isOnline=()=>globalThis.navigator?.onLine!==false}){
+import {createReportOpenPrewarmV2835} from './report-open-prewarm-v2835.mjs';
+export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoch,currentClient=()=>'',post,instant,background,loadClient,loadTemplate,readLocal=async()=>null,publish=()=>{},promoteOpenRead=()=>{},isOnline=()=>globalThis.navigator?.onLine!==false}){
   let capability=null,capabilityFlight=null,clientFlight=null,lease=0;const pendingReports=new Set(),legacyScopes=new Map(),receiptFlightsV2757=new Map();
   const valid=(email,stamp)=>email===owner()&&stamp===epoch()&&canRead();
   const fail=result=>{if(!result?.ok)throw Object.assign(Error(result?.error||result?.message||'Le moteur de rapports est indisponible.'),{code:result?.code});return result;};
-  async function call(action,payload={}){const email=owner(),stamp=epoch();if(!email||!canRead())throw Error('Déverrouillez votre compte CDQ.');let result;try{result=fail(await rpc(action,payload));}catch(error){if(!error.code){const match=String(error.message||error).match(/^(?:Error:\s*)?([A-Za-z][A-Za-z0-9_]{2,80})\s*:/);if(match)error.code=match[1];}throw error;}if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');return result;}
+  async function call(action,payload={},options={}){const email=owner(),stamp=epoch();if(!email||!canRead())throw Error('Déverrouillez votre compte CDQ.');let result;try{result=fail(await rpc(action,payload,options));}catch(error){if(!error.code){const match=String(error.message||error).match(/^(?:Error:\s*)?([A-Za-z][A-Za-z0-9_]{2,80})\s*:/);if(match)error.code=match[1];}throw error;}if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');return result;}
+  const openPrewarmV2835=createReportOpenPrewarmV2835({request:call,promote:promoteOpenRead,scope:()=>({account:owner(),epoch:epoch(),clientId:String(currentClient()),enabled:canRead(),online:isOnline()}),loadTemplate});
+  async function prewarmReports(items){
+    if(!canRead()||!isOnline())return {count:0};
+    const available=await capabilities();
+    if(available?.ready!==true||available.googleReadManyProtocol!==1||available.readManyProtocol!==1)return {count:0,unsupported:true};
+    return openPrewarmV2835.warm(items);
+  }
   async function capabilities(){if(capability)return capability;if(capabilityFlight)return capabilityFlight;const email=owner(),stamp=epoch();capabilityFlight=call('capabilities').then(result=>{if(valid(email,stamp))capability=result;return result;}).catch(()=>null).finally(()=>{capabilityFlight=null;});return capabilityFlight;}
   function changed(record){
     if(record.account!==owner()||!canRead())return;
+    if(record.observationOnlyV2784!==true||record.deleted||record.remoteDeletedV2784)openPrewarmV2835.invalidate({reportId:record.context?.reportId});
     if(record.blocked&&record.fields&&record.payload?.fields)post({type:'CDQ_REPORT_DRAFT_PRESERVED_V2816',email:record.account,record,message:record.error});
     if(record.pending)pendingReports.add(record.context.reportId);else pendingReports.delete(record.context.reportId);
     background?.setPending?.('report-engine',pendingReports.size,record.account);
@@ -38,7 +47,13 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     const email=owner(),stamp=epoch(),expectedClient=String(legacyRecord?.clientId||currentClient());
     // A fresh authorized read can overlap local storage; editing still awaits it.
     let freshRead=null;
-    if(requireFresh&&!localOnly){phase('read-start');freshRead=call('read',{fileId:String(fileId),clientId:expectedClient});freshRead.catch(()=>{});}
+    if(requireFresh&&!localOnly){
+      phase('read-start');
+      const readFresh=()=>{checkCurrent();if(!valid(email,stamp))throw Error('Le compte ou l’accès a changé.');return call('read',{fileId:String(fileId),clientId:expectedClient});};
+      const warmed=openPrewarmV2835.take(String(fileId),legacyRecord||{});
+      freshRead=warmed?warmed.then(result=>{if(result){phase('read-prepared');return result;}return readFresh();}):readFresh();
+      freshRead.catch(()=>{});
+    }
     // Independent local I/O overlaps the authorized server read. No local
     // answers become editable until all fresh scope/revision checks finish.
     const localRead=Promise.resolve().then(()=>readLocal(String(fileId)));
@@ -122,9 +137,10 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     if(canWrite())context=await engine.beginEditV2816({context,fields:record.fields,name:record.name});
     return {...legacyRecord,id:String(fileId),clientId:context.clientId,folderId:context.destinationId,nom:record.name,blob:template.blob,revision:context.expectedDriveRevision,reportEngineV2754:context,reportSnapshotV2754:record.fields,readerPreparedVersion:2730};
   }
-  async function save(context,fields,requestId,name,preparedPdf){const engine=await client();if(!context.localOpeningV2816){if(context.baseRevision!==0)throw Error('Rouvrez le rapport avant de sauvegarder.');context=await engine.beginEditV2816({context,imported:true});}try{return await engine.save(context,fields,requestId,name,preparedPdf);}catch(error){if(error.localDraftV2816)post({type:'CDQ_REPORT_DRAFT_PRESERVED_V2816',email:owner(),record:error.localDraftV2816,message:error.message});throw error;}}
+  async function save(context,fields,requestId,name,preparedPdf){openPrewarmV2835.invalidate({reportId:context?.reportId});const engine=await client();if(!context.localOpeningV2816){if(context.baseRevision!==0)throw Error('Rouvrez le rapport avant de sauvegarder.');context=await engine.beginEditV2816({context,imported:true});}try{return await engine.save(context,fields,requestId,name,preparedPdf);}catch(error){if(error.localDraftV2816)post({type:'CDQ_REPORT_DRAFT_PRESERVED_V2816',email:owner(),record:error.localDraftV2816,message:error.message});throw error;}}
   async function handle(data){
     if(data.type!=='CDQ_REPORT_ENGINE_SAVE_V2754'||data.email!==owner()||!canWrite()||!data.payload)return false;
+    openPrewarmV2835.invalidate({reportId:data.payload.reportId});
     const email=owner(),stamp=epoch(),attempt=++lease,payload=data.payload;
     const flightKey=JSON.stringify([email,stamp,payload.clientId,payload.reportId,payload.requestId,data.uploadId]);
     if(receiptFlightsV2757.has(flightKey))return receiptFlightsV2757.get(flightKey);
@@ -181,7 +197,8 @@ export function createReportEngineSelectorV2754({rpc,owner,canRead,canWrite,epoc
     // The durable queue still starts concurrently with that read.
     await Promise.all([capabilities(),client().then(engine=>engine.resume())]);
   }}
-  function reset(){lease++;receiptFlightsV2757.clear();capability=null;capabilityFlight=null;pendingReports.clear();legacyScopes.clear();clientFlight?.then(value=>value.lock()).catch(()=>{});background?.setPending?.('report-engine',0,owner());}
+  function reset(){openPrewarmV2835.reset();lease++;receiptFlightsV2757.clear();capability=null;capabilityFlight=null;pendingReports.clear();legacyScopes.clear();clientFlight?.then(value=>value.lock()).catch(()=>{});background?.setPending?.('report-engine',0,owner());}
   function importContext(fileId){const scope=legacyScopes.get(String(fileId));return scope&&canRead()?{...scope,reportId:crypto.randomUUID(),baseRevision:0}:null;}
-  return {call,client,capabilities,recordForOpen,importContext,save,handle,resume,reset,endEditV2816:context=>clientFlight?.then(engine=>engine.endEditV2816(context)).catch(()=>{}),get enabled(){return capability?.ready===true;}};
+  return {call,client,capabilities,recordForOpen,prewarmReports,invalidateOpen:detail=>openPrewarmV2835.invalidate(detail),prewarmState:()=>openPrewarmV2835.state(),importContext,save,handle,resume,reset,endEditV2816:context=>clientFlight?.then(engine=>engine.endEditV2816(context)).catch(()=>{}),get enabled(){return capability?.ready===true;}};
 }
+
