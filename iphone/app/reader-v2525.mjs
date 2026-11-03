@@ -10,6 +10,7 @@ import {createReaderResumeV2767} from './reader-resume-v2767.mjs';
 import {alignResultCanvasesV2767} from './reader-result-alignment-v2767.mjs';
 import {normalizeTechniciansV2767,technicianFieldV2767} from './reader-technicians-v2767.mjs';
 import {createReaderSaveProgressV2758} from './reader-save-progress-v2758.mjs';
+import {createReaderSavePreparationV20261103,annotationStateKeyV20261103} from './reader-save-preparation-v20261103.mjs';
 import {installVerifiedRangeV2756} from './verified-range-v2756.mjs';
 import {installFirstTapV2756} from './first-tap-v2756.mjs';
 import {prepareCamionCanvasBoundaryV2755,installCamionCanvasBoundaryV2755,prepareTrainCalendarBoundaryV2755,installTrainCalendarBoundaryV2755} from './reader-canvas-boundary-v2755.mjs';
@@ -476,8 +477,9 @@ function busy(value){saving=value;document.body.classList.toggle('cdq-saving-v28
 function fail(error){busy(false);status(error.message||String(error));$('closeError').textContent=error.message||String(error);closeAfterSave=false;}
 let cleanSignatureV2782=null,mustSaveV2782=false,userEditedV2783=false;
 function hasChangesV2782(){if(staticDocumentV2788||readOnly)return false;return mustSaveV2782||(userEditedV2783&&(cleanSignatureV2782===null?dirty:reportValueSignatureV2782(capturePreparedReaderFieldsV2759())!==cleanSignatureV2782));}
-function modified(){if(!readOnly&&!opening){userEditedV2783=true;dirty=true;version++;status('');}}
+function modified(){if(!readOnly&&!opening){userEditedV2783=true;dirty=true;version++;status('');clearSavePreparationV20261103();scheduleSavePreparationV20261103();}}
 function resetDocumentFieldsV2730(){qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};
+  clearSavePreparationV20261103();
   readerEquipmentV2746.reset();readerSaveProgressV2758.reset();readerSaveProgressRequestV2759='';
   tableColumnV2737?.dispose();tableColumnV2737=null;visualRefreshV2730.reset();choices?.cancel();form?.reset();touch?.reset();zoomSchedulerV2809.reset();cdqKeyboardFieldV2550(false);menu(true);
   documentPaintV2730?.dispose();documentPaintV2730=null;
@@ -513,7 +515,7 @@ async function resetClosedDocumentV2730(){
     await Promise.all([pdfWorker.promise,sandboxReady]);tell({type:'CDQ_READER_READY'});
   }catch{tell({type:'CDQ_READER_RESET_FAILED_V2730'});}
 }
-function close(){if(resumeContextV2767&&!opening&&!closed&&doc&&!resumeSavedV2767?.conflict)resumeJournalV2767.close(resumeContextV2767);clearTimeout(resumeTimerV2767);if(closed)return;readerSaveProgressV2758.close();clearReaderTemplatePaintV2753();qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};closedViewportV2730=readerViewportV2730(viewer);closed=true;documentGenerationV2730++;dirty=false;$('viewer').inert=true;$('viewer').style.opacity='0';try{$('closeDialog').close()}catch(_){};tell({type:'CDQ_READER_CLOSE',reusable:hosted});if(hosted)resetPromiseV2730=resetClosedDocumentV2730();else history.back();}
+function close(){if(resumeContextV2767&&!opening&&!closed&&doc&&!resumeSavedV2767?.conflict)resumeJournalV2767.close(resumeContextV2767);clearTimeout(resumeTimerV2767);if(closed)return;clearSavePreparationV20261103();readerSaveProgressV2758.close();clearReaderTemplatePaintV2753();qaFirstPaintOwnerV2731=null;qaFirstPageLeaseCleanupV2731();qaFirstPageLeaseCleanupV2731=()=>{};closedViewportV2730=readerViewportV2730(viewer);closed=true;documentGenerationV2730++;dirty=false;$('viewer').inert=true;$('viewer').style.opacity='0';try{$('closeDialog').close()}catch(_){};tell({type:'CDQ_READER_CLOSE',reusable:hosted});if(hosted)resetPromiseV2730=resetClosedDocumentV2730();else history.back();}
 function validateEchelonV22(field){
   if(!field||field.name!==ECHELON_FIELD_V22)return true;
   const message=echelonErrorV22(field.name,field.value);
@@ -570,23 +572,57 @@ function capturePreparedReaderFieldsV2759(){
   });
   return fields;
 }
+let savePreparationTimerV20261103=null;
+function savePreparationIdentityV20261103(fields=capturePreparedReaderFieldsV2759()){
+  const work=pdfWorkV2729(),epoch=work.stats().epoch,annotations=annotationStateKeyV20261103(doc?.annotationStorage);
+  return {owner:doc,work,epoch,reusable:annotations!==null,key:JSON.stringify([documentGenerationV2730,epoch,version,fileId,name,reportEngineV2754,fields,annotations])};
+}
+const savePreparationV20261103=createReaderSavePreparationV20261103({
+  isCurrent:identity=>{
+    if(!doc||identity.owner!==doc||closed||opening||readOnly||!reportEngineV2754||identity.work.stats().epoch!==identity.epoch)return false;
+    return identity.key===savePreparationIdentityV20261103().key;
+  },
+  prepare:async(identity,check)=>{
+    const bytes=await identity.owner.saveDocument();check();
+    // Use the existing approved normalization, unchanged for every family.
+    const prepared=await identity.work.request('save',{bytes,summary:false,prime:!saving},{epoch:identity.epoch,valid:()=>{try{check();return true;}catch{return false;}}});check();
+    const blob=new Blob([prepared.bytes],{type:'application/pdf'});
+    if(blob.size<8||blob.size>16*1024*1024||(await blob.slice(0,5).text())!=='%PDF-')throw Error('Le PDF préparé est invalide ou dépasse 16 Mo.');
+    check();return {preparedPdfV2759:blob,pdfSaveInfoV2753:validatedPdfSaveInfoV2753(prepared.info)};
+  }
+});
+function clearSavePreparationV20261103(){clearTimeout(savePreparationTimerV20261103);savePreparationTimerV20261103=null;savePreparationV20261103.clear();}
+function canPrepareSaveIdleV20261103(){
+  const active=document.activeElement;
+  return !!doc&&!opening&&!closed&&!saving&&!readOnly&&!staticDocumentV2788&&hosted&&!!fileId&&!!reportEngineV2754&&!resumeSavedV2767?.conflict&&!document.hidden&&!touch?.active&&!choices?.isOpen()&&!(active&&$('viewer').contains(active)&&active.matches?.('input,textarea,select,[contenteditable="true"]'))&&!(pdfWorkV2729().stats().pending>0);
+}
+function scheduleSavePreparationV20261103(){
+  clearTimeout(savePreparationTimerV20261103);
+  savePreparationTimerV20261103=setTimeout(async()=>{
+    savePreparationTimerV20261103=null;
+    // No blur, validation, WillSave or local acknowledgement in speculation.
+    // A new user action during the asynchronous visual flush wins priority.
+    if(!canPrepareSaveIdleV20261103())return;
+    try{
+      if(!hasChangesV2782())return;
+      await visualRefreshV2730.flush();
+      if(!canPrepareSaveIdleV20261103())return;
+      const identity=savePreparationIdentityV20261103();
+      if(identity.reusable)await savePreparationV20261103.get(identity);
+    }catch{/* A failed anticipation leaves normal saving available. */}
+  },1200);
+}
 async function outputPreparedSnapshotV2759(){
   const current=doc,generation=documentGenerationV2730,work=pdfWorkV2729(),epoch=work.stats().epoch;
   const check=()=>{if(!current||current!==doc||generation!==documentGenerationV2730||closed||opening||work.stats().epoch!==epoch)throw Error('Le rapport a changé pendant son enregistrement.');};
-  check();
-  // Commit the active field, validation and WillSave calculations exactly once.
-  // Both the field record and the PDF then come from this same live document.
+  clearTimeout(savePreparationTimerV20261103);savePreparationTimerV20261103=null;check();
+  // Final validation, active-field commit and WillSave are always performed.
+  // Reuse is decided afterwards, against the complete resulting snapshot.
   const snapshot=await outputSnapshotV2754();check();
-  const capturedVersion=version,serialized=JSON.stringify(snapshot.reportSnapshotV2754);
-  const unchanged=()=>{check();if(version!==capturedVersion||JSON.stringify(capturePreparedReaderFieldsV2759())!==serialized)throw Error('Les réponses ont changé pendant la préparation du PDF. Réessayez l’enregistrement.');};
-  const bytes=await current.saveDocument();unchanged();
-  // Retain the approved local save normalization; never render a second PDF
-  // from the field snapshot on the server when these prepared bytes are used.
-  const prepared=await work.request('save',{bytes,summary:false},{epoch});unchanged();
-  const blob=new Blob([prepared.bytes],{type:'application/pdf'});
-  if(blob.size<8||blob.size>16*1024*1024||(await blob.slice(0,5).text())!=='%PDF-')throw Error('Le PDF préparé est invalide ou dépasse 16 Mo.');
-  unchanged();
-  return {...snapshot,preparedPdfV2759:blob,pdfSaveInfoV2753:validatedPdfSaveInfoV2753(prepared.info)};
+  const identity=savePreparationIdentityV20261103(snapshot.reportSnapshotV2754);
+  const prepared=await savePreparationV20261103.get(identity);check();
+  if(identity.key!==savePreparationIdentityV20261103().key)throw Error('Les réponses ont changé pendant la préparation du PDF. Réessayez l’enregistrement.');
+  return {...snapshot,...prepared};
 }
 async function output(){
   // Static lists have no report snapshot and download their original bytes.
@@ -627,13 +663,14 @@ async function save(external=false){
     // A lost local acknowledgement retries the exact durable payload. Reusing
     // its request id must not serialize and repair the whole PDF again.
     const dataOnly=!!reportEngineV2754&&hosted&&!!fileId&&!external;
-    const reusable=lastAttempt?.version===version&&(dataOnly?!!lastAttempt.reportSnapshotV2754&&lastAttempt.preparedPdfV2759 instanceof Blob:!!lastAttempt.blob);
+    const retryIdentityV20261103=dataOnly?savePreparationIdentityV20261103():null;
+    const reusable=lastAttempt?.version===version&&(dataOnly?!!lastAttempt.reportSnapshotV2754&&lastAttempt.preparedPdfV2759 instanceof Blob&&retryIdentityV20261103.reusable&&lastAttempt.retryKeyV20261103===retryIdentityV20261103.key:!!lastAttempt.blob);
     const prepared=reusable?lastAttempt:dataOnly?await outputPreparedSnapshotV2759():await output();
     const {blob,pdfSaveInfoV2753}=prepared,snapshot=version;
     if(external||!hosted||!fileId){const receipt=await downloadPdf(blob,name);busy(false);status(receipt);if(closeAfterSave){closeAfterSave=false;close();}return;}
-    const requestId=lastAttempt?.version===snapshot?lastAttempt.id:'save-'+crypto.randomUUID();
+    const requestId=reusable?lastAttempt.id:'save-'+crypto.randomUUID();
     let calibrationDevicesV2784=null;try{calibrationDevicesV2784=reusable?lastAttempt.calibrationDevicesV2784:readerCalibration?.snapshot()||null;}catch{}
-    lastAttempt={id:requestId,version:snapshot,...prepared,calibrationDevicesV2784,semanticSignatureV2782:reportValueSignatureV2782(prepared.reportSnapshotV2754||capturePreparedReaderFieldsV2759())};
+    lastAttempt={id:requestId,version:snapshot,...prepared,calibrationDevicesV2784,...(dataOnly?{retryKeyV20261103:savePreparationIdentityV20261103(prepared.reportSnapshotV2754).key}:{}),semanticSignatureV2782:reportValueSignatureV2782(prepared.reportSnapshotV2754||capturePreparedReaderFieldsV2759())};
     pending={id:requestId,version:snapshot};
     readerSaveProgressV2758.begin(requestId,snapshot,reportEngineV2754);
     pending.timer=setTimeout(()=>{if(pending?.id!==requestId)return;pending=null;fail(new Error('La sauvegarde n’a pas encore été confirmée. Le PDF reste ouvert; réessayez ou téléchargez vos réponses.'));},90000);
@@ -768,7 +805,7 @@ async function open(data){
         cdqScheduleWidthFitV2753();applyLateIdentity();
         if(resumeSavedV2767?.viewport){const v=resumeSavedV2767.viewport;if(Number.isFinite(v.scale)&&v.scale>=.35&&v.scale<=4)viewer.currentScale=v.scale;viewer.currentPageNumber=Math.max(1,Math.min(viewer.pagesCount,Number(v.page)||1));$('container').scrollLeft=Math.max(0,Number(v.left)||0);$('container').scrollTop=Math.max(0,Number(v.top)||0);}
         if(resumeSavedV2767?.conflict)status('Une version plus récente existe. Votre brouillon local est conservé séparément.');else rememberReaderV2767();
-        tell({type:'CDQ_READER_OPENED',readerRequestId:data.readerRequestId,reportEngineV2754});return;
+        tell({type:'CDQ_READER_OPENED',readerRequestId:data.readerRequestId,reportEngineV2754});scheduleSavePreparationV20261103();return;
       }catch(error){
         if(generation!==documentGenerationV2730)return;
         if(!reuse||attempt!==0||work.stats().epoch!==workEpoch)throw error;
@@ -827,6 +864,7 @@ $('closeDialog').addEventListener('cancel',e=>{if(saving)e.preventDefault();else
 for(const type of ['input','change'])$('viewer').addEventListener(type,e=>{if(autoReportName&&legacyReportFieldNameV2819(e.target.name)==='identification_balance'){const next=identificationReportName(e.target.value);if(next){name=next;$('name').textContent=name;}}});
 $('viewer').addEventListener('click',e=>{if(e.isTrusted&&e.target.closest?.('button,input[type=button],.buttonWidgetAnnotation.pushButton a'))modified();},{capture:true});
 $('viewer').addEventListener('input',modified);$('viewer').addEventListener('change',modified);
+$('viewer').addEventListener('focusout',scheduleSavePreparationV20261103);
 // Scripted PDF fields cancel native insertion and return accepted text through
 // the sandbox, without emitting input/change. Capture the editing intent before
 // that interception so close/save also protects those answers and their version.
@@ -980,7 +1018,7 @@ try{
         eventBus.dispatch('updatefromsandbox',{source:window,detail:{id:definition.id,value}});
         eventBus.dispatch('dispatcheventinsandbox',{source:viewer,detail:{id:definition.id,name:'Keystroke',value,willCommit:true,commitKey:1,selStart:0,selEnd:value.length}});
       }
-    },changed:()=>{userEditedV2783=true;dirty=true;version++;readerEquipmentV2746.changed();visualRefreshV2730.schedule();}});
+    },changed:()=>{userEditedV2783=true;dirty=true;version++;readerEquipmentV2746.changed();visualRefreshV2730.schedule();clearSavePreparationV20261103();scheduleSavePreparationV20261103();}});
   let liveCalculationTimer=0;
   $('viewer').addEventListener('input',e=>{
     const field=e.target,value=String(field.value??'');

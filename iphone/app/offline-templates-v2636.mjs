@@ -1,3 +1,4 @@
+import {ownReceiptAdvanceV20261103,captureUnresolvedAncestorV20261103,validUnresolvedAncestorV20261103,copyReceiptRecordV20261103} from './report-receipt-continuity-v20261103.mjs';
 import {reportFieldValueV2819} from './report-field-aliases-v2819.mjs';
 import {COPY_BASE_V2816,tagCopyV2816,copyEditBasisV2816,writeCopyV2816} from './offline-copy-guard-v2816.mjs';
 import {inheritOfflineThemeV2819,resumeOfflineWorkV2819} from './offline-experience-v2819.mjs';
@@ -76,6 +77,13 @@ export function syncRequest(copy) {
   return {requestId:copy.id,modeleId:copy.modeleId,clientId:copy.destination.clientId,folderId:copy.destination.folderId,
     templateId:copy.templateId,modifieLe:copy.modifieLe,...(copy.bundled?{bundled:true,blob:copy.templateBlob,name:copy.creationName||copy.name}: {})};
 }
+export function offlineDocumentMetadataV2835(copy){
+  if(!copy||copy.removed)return null;
+  return {fileId:copy.driveId,name:copy.name,clientId:copy.destination.clientId,
+    folderId:copy.destination.folderId,revision:copy.revision,editVersion:copy.editVersion||0,
+    uploadId:copy.uploadId||'',syncedUploadId:copy.syncedUploadId||'',
+    pending:copy.uploadId!==copy.syncedUploadId,remoteDeletedV2784:copy.remoteDeletedV2784===true};
+}
 export function nextSync(copy,protocol=0) {
   if(copy.remoteDeletedV2784)return null;
   if(copy.removed&&copy.engineDeletionV2754&&!copy.engineDeleteConfirmedV2754)return {type:'CDQ_REPORT_ENGINE_DELETE_V2754',requestId:copy.id,uploadId:'delete_'+copy.reportEngineV2754.reportId,context:copy.reportEngineV2754};
@@ -83,6 +91,11 @@ export function nextSync(copy,protocol=0) {
   if(copy.removed)return null;
   if(copy.reportEngineV2754){
     if(!copy.reportSnapshotV2754||!copy.reportPayloadV2754||copy.uploadId===copy.syncedUploadId)return null;
+    if(copy.unresolvedAncestorV20261103){
+      const ancestor=copy.unresolvedAncestorV20261103;
+      if(!validUnresolvedAncestorV20261103(copyReceiptRecordV20261103(copy),ancestor))throw Object.assign(Error('La sauvegarde précédente doit être vérifiée. Les réponses restent conservées.'),{code:'IDEMPOTENCY_ANCESTOR_CONFLICT'});
+      return {type:'CDQ_REPORT_ENGINE_SAVE_V2754',requestId:copy.id,uploadId:'fields_'+ancestor.payload.requestId,payload:ancestor.payload,ancestorRecoveryV20261103:true};
+    }
     const accepted=copy.engineAcceptedV2757;
     const statusOnly=accepted?.uploadId===copy.uploadId&&accepted.requestId===copy.reportPayloadV2754.requestId&&Number.isSafeInteger(accepted.revision)&&accepted.revision>0;
     return {type:'CDQ_REPORT_ENGINE_SAVE_V2754',requestId:copy.id,uploadId:copy.uploadId,payload:copy.reportPayloadV2754,...(statusOnly?{statusOnlyV2757:true,acceptedRevisionV2757:accepted.revision}:{})};
@@ -290,7 +303,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
   const allowed=email=>localEmail===email||session?.email===email;
   const engineDataV2754=c=>c?.reportEngineV2754?{reportEngineV2754:c.reportEngineV2754,reportSnapshotV2754:c.reportSnapshotV2754,enginePdfV2754:c.enginePdfV2754,reportRevisionV2754:c.reportRevisionV2754||0,engineAcceptedV2757:c.engineAcceptedV2757}:{};
   function engineReaderV2754(c,email){
-   const editor={id:crypto.randomUUID(),context:structuredClone(c.reportEngineV2754),basis:copyEditBasisV2816(c),expectedFields:recordTokenV2816(c.reportSnapshotV2754),expectedName:c.name,lastRequestId:null,payloads:new Map()};
+   const editor={id:crypto.randomUUID(),context:structuredClone(c.reportEngineV2754),basis:copyEditBasisV2816(c),expectedReceiptV20261103:structuredClone(copyReceiptRecordV20261103(c)),expectedFields:recordTokenV2816(c.reportSnapshotV2754),expectedName:c.name,lastRequestId:null,payloads:new Map()};
    return {saveProgressOwnerV2758:email,editCopyV2756:c,...engineDataV2754(c),onSaveSnapshot:c.reportEngineV2754&&(session?.canWrite||profile?.canWrite)?(fields,requestId,name,context,preparedPdf)=>saveSnapshotCopyV2754(c.id,email,fields,requestId,name,preparedPdf,editor):null};
   }
   async function attachEngineV2754(copy,template,current){
@@ -308,7 +321,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
     const copy=await get('copies',id);
     if(!copy||copy.email!==email||!copy.reportEngineV2754)throw Error('Copie locale introuvable.');
     // Only the receipt for this editor's own preceding request may advance it.
-    if(editor.lastRequestId&&copy.reportPayloadV2754?.requestId===editor.lastRequestId&&(copy.engineAcceptedV2757?.requestId===editor.lastRequestId||copy.lineageReceiptV2816&&copy.sendStartedRequestIdV2816!==editor.lastRequestId)&&recordTokenV2816(copy.reportSnapshotV2754)===editor.expectedFields&&copy.name===editor.expectedName){editor.context=structuredClone(copy.reportEngineV2754);editor.basis=copyEditBasisV2816(copy);}
+    if(ownReceiptAdvanceV20261103(editor.expectedReceiptV20261103,copyReceiptRecordV20261103(copy))){editor.context=structuredClone(copy.reportEngineV2754);editor.basis=copyEditBasisV2816(copy);editor.expectedReceiptV20261103=structuredClone(copyReceiptRecordV20261103(copy));}
     const snapshot=reportFieldsV2754(fields),form={getFields:()=>Object.entries(snapshot).map(([field,state])=>({getName:()=>field,getText:()=>String(state.value??''),getSelected:()=>Array.isArray(state.value)?state.value:[String(state.value??'')],isChecked:()=>state.value===true||state.value==='Yes'}))};
     const reportName=identificationReportName(reportFieldValueV2819(snapshot,'identification_balance'))||name||copy.name;
     const requestKey=String(readerRequestId).replace(/^save-/,'');
@@ -321,9 +334,9 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
      if(kept.reused)throw Object.assign(Error('Identifiant de sauvegarde déjà utilisé. Les deux copies restent conservées.'),{code:'IDEMPOTENCY_LOCAL_CONFLICT'});
      if(copy.reportPayloadV2754?.requestId===payload.requestId){if(!sameIntentV2816(copy.reportPayloadV2754,payload)||!copy.lineageReceiptV2816&&recordTokenV2816(copy.reportPayloadV2754)!==recordTokenV2816(payload))throw conflictV2816();sync(false,id).catch(()=>{});return {queued:true,reportEngineV2754:copy.reportEngineV2754};}
      if(copy.removed||copy.remoteDeletedV2784||copyEditBasisV2816(copy)!==editor.basis)throw conflictV2816();
-     const updated={...copy,reportSnapshotV2754:snapshot,reportPayloadV2754:payload,reportEngineV2754:record.context,initialValues:null,readerRequestId,equipmentSignature:equipmentValuesV2697(form),autoReportName:copy.autoReportName||reportName!==copy.name,name:reportName,editVersion:(copy.editVersion||0)+1,uploadId:'fields_'+payload.requestId,status:'pending',error:'',draftKeyV2816:kept.key,sendStartedRequestIdV2816:null,lineageReceiptV2816:null,parentRequestsV2816:copy.reportPayloadV2754&&copy.uploadId!==copy.syncedUploadId&&copy.engineAcceptedV2757?.requestId!==copy.reportPayloadV2754.requestId?[...(copy.parentRequestsV2816||[]),copy.reportPayloadV2754.requestId]:[]};
+     const updated={...copy,unresolvedAncestorV20261103:captureUnresolvedAncestorV20261103(copyReceiptRecordV20261103(copy)),reportSnapshotV2754:snapshot,reportPayloadV2754:payload,reportEngineV2754:record.context,initialValues:null,readerRequestId,equipmentSignature:equipmentValuesV2697(form),autoReportName:copy.autoReportName||reportName!==copy.name,name:reportName,editVersion:(copy.editVersion||0)+1,uploadId:'fields_'+payload.requestId,status:'pending',error:'',draftKeyV2816:kept.key,sendStartedRequestIdV2816:null,lineageReceiptV2816:null,parentRequestsV2816:copy.reportPayloadV2754&&copy.uploadId!==copy.syncedUploadId&&copy.engineAcceptedV2757?.requestId!==copy.reportPayloadV2754.requestId?[...(copy.parentRequestsV2816||[]),copy.reportPayloadV2754.requestId]:[]};
      await put('copies',updated);
-     editor.context=structuredClone(updated.reportEngineV2754);editor.basis=copyEditBasisV2816(updated);editor.lastRequestId=payload.requestId;editor.expectedFields=recordTokenV2816(snapshot);editor.expectedName=reportName;editor.payloads.set(payload.requestId,record);
+     editor.context=structuredClone(updated.reportEngineV2754);editor.basis=copyEditBasisV2816(updated);editor.expectedReceiptV20261103=structuredClone(copyReceiptRecordV20261103(updated));editor.lastRequestId=payload.requestId;editor.expectedFields=recordTokenV2816(snapshot);editor.expectedName=reportName;editor.payloads.set(payload.requestId,record);
      if(!canSave())throw Error('Le compte a changé.');
      clearRetryV2740(id);rememberNames(updated);reportProgressV2749(updated,'saving-local','Réponses enregistrées sur cet appareil.');notifyDocument(updated);
      sync(false,id).catch(()=>{});return {queued:true,reportEngineV2754:updated.reportEngineV2754};
@@ -613,8 +626,8 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
       if(!currentSync()||inflight.has(c.id)||retryTimersV2740.has(c.id)||pausedSyncV2740.has(c.id))continue;
       const message=nextSync(c,current.protocol);if(!message)continue;
       if(message.type==='CDQ_REPORT_ENGINE_SAVE_V2754'&&!message.statusOnlyV2757){
-       const marked={...c,sendStartedRequestIdV2816:c.reportPayloadV2754.requestId};await put('copies',marked);c=marked;
-       if(c.draftKeyV2816&&!await journalV2816.bindWire({key:c.email+'|'+c.reportEngineV2754.reportId,payload:c.reportPayloadV2754}))throw Object.assign(Error('La sauvegarde a changé après son premier envoi. Ses réponses restent conservées.'),{code:'IDEMPOTENCY_LOCAL_CONFLICT'});
+       const marked=message.ancestorRecoveryV20261103?c:{...c,sendStartedRequestIdV2816:c.reportPayloadV2754.requestId};if(marked!==c)await put('copies',marked);c=marked;
+       if((c.draftKeyV2816||message.ancestorRecoveryV20261103)&&!await journalV2816.bindWire({key:c.email+'|'+c.reportEngineV2754.reportId,payload:message.payload}))throw Object.assign(Error('La sauvegarde a changé après son premier envoi. Ses réponses restent conservées.'),{code:'IDEMPOTENCY_LOCAL_CONFLICT'});
        if(!currentSync())return;
       }
       // Journal/storage awaits above can overlap another reconnect. Reserve
@@ -633,7 +646,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
           if(epoch!==stamp||session!==current||inflight.get(c.id)!==job)return;
           inflight.delete(c.id);
           if(!latest||latest.removed||latest.email!==current.email||job.uploadId&&latest.syncedUploadId===job.uploadId||await confirmedDeletionV2749(latest)||epoch!==stamp||session!==current)return;
-          if(job.uploadId&&job.uploadId!==latest.uploadId){clearRetryV2740(c.id);sync(false,c.id).catch(()=>{});return;}
+          if(job.uploadId&&job.uploadId!==latest.uploadId&&!latest.unresolvedAncestorV20261103){clearRetryV2740(c.id);sync(false,c.id).catch(()=>{});return;}
           status.textContent=reason;
           const updated={...latest,status:'pending',error:reason};await put('copies',updated);
           if(epoch!==stamp||session!==current)return;
@@ -646,7 +659,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
         status.textContent='Envoi Drive interrompu : '+reason;
         serialCopy(c.id,async()=>{
           const latest=await get('copies',c.id);if(!currentSync()||!latest||latest.removed||latest.email!==current.email||job.uploadId&&latest.syncedUploadId===job.uploadId||await confirmedDeletionV2749(latest)||!currentSync())return;
-          if(job.uploadId&&job.uploadId!==latest.uploadId)return;
+          if(job.uploadId&&job.uploadId!==latest.uploadId&&!latest.unresolvedAncestorV20261103)return;
           const updated={...latest,status:'pending',error:reason};await put('copies',updated);
           if(currentSync()){notifyDocument(updated);retrySyncV2740(c.id,stamp,current.email,reason,job.uploadId);}
         },true).catch(()=>{});
@@ -657,7 +670,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
    const requestId=String(data.uploadId||'').replace(/^fields_/,'');
    if(!data.ok||data.reportId!==copy.reportEngineV2754?.reportId||data.clientId&&data.clientId!==copy.destination?.clientId||!copy.parentRequestsV2816?.includes(requestId)||copy.sendStartedRequestIdV2816===copy.reportPayloadV2754?.requestId||data.reportRevision!==copy.reportPayloadV2754?.baseRevision+1)return false;
    const context={...copy.reportEngineV2754,baseRevision:data.reportRevision,fileId:data.pdf?.fileId||data.id||copy.reportEngineV2754.fileId,...(data.pdf?.driveRevision?{expectedDriveRevision:data.pdf.driveRevision}:{})};
-   const updated={...copy,reportEngineV2754:context,reportRevisionV2754:data.reportRevision,driveId:context.fileId||copy.driveId,lineageReceiptV2816:requestId,reportPayloadV2754:{...copy.reportPayloadV2754,baseRevision:context.baseRevision,fileId:context.fileId,...(context.expectedDriveRevision?{expectedDriveRevision:context.expectedDriveRevision}:{})}};
+   const updated={...copy,reportEngineV2754:context,reportRevisionV2754:data.reportRevision,driveId:context.fileId||copy.driveId,lineageReceiptV2816:requestId,unresolvedAncestorV20261103:null,reportPayloadV2754:{...copy.reportPayloadV2754,baseRevision:context.baseRevision,fileId:context.fileId,...(context.expectedDriveRevision?{expectedDriveRevision:context.expectedDriveRevision}:{})}};
    await put('copies',updated);return true;
   }
   async function handleNow(data,stamp,readStamp=null) {
@@ -832,6 +845,11 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
       const reply=payload=>{if(stamp===epoch&&current===session&&validReadStamp(readStamp)){if(readStamp?.collection)readStamp.replied=true;send({type:'CDQ_OFFLINE_DOCUMENT_RESULT',requestId:data.requestId,...payload});}};
       try{
         if(data.type==='CDQ_OFFLINE_DOCUMENT_LIST'){
+          if(data.metadataOnlyV2835===true){
+            if(!identifier(data.clientId))throw Error('Identifiant client invalide.');
+            const documents=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&!c.removed&&c.destination?.clientId===data.clientId).map(offlineDocumentMetadataV2835);
+            reply({ok:true,metadataOnlyV2835:true,clientId:data.clientId,documents});return;
+          }
           const removed=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&c.removed).map(c=>c.driveId);
           const documents=(await all('copies')).filter(c=>c.email===current.email&&c.kind==='prepared'&&!c.removed).map(c=>({fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,...engineDataV2754(c),revision:c.revision,blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,ancestorIds:c.destination.ancestorIds||[],autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId}));
           if(stamp===epoch)reply({ok:true,offlineSelectionVersion:2664,removed,documents});return;
@@ -841,6 +859,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
         if(stamp!==epoch||current!==session||!validReadStamp(readStamp))return;
         if(data.type==='CDQ_OFFLINE_DOCUMENT_GET'){
           if(data.legacyPending&&c&&!c.removed)throw Error('Une ancienne sauvegarde attend sa synchronisation. Reconnectez CDQ avant de modifier ce PDF.');
+          if(data.metadataOnlyV2835===true){reply({ok:true,metadataOnlyV2835:true,document:offlineDocumentMetadataV2835(c)});return;}
           reply({ok:true,document:c&&!c.removed?{fileId:c.driveId,name:c.name,clientId:c.destination.clientId,clientName:c.destination.name,...engineDataV2754(c),revision:c.revision,blob:c.blob,readerPreparedVersion:c.readerPreparedVersion,editVersion:c.editVersion||0,uploadId:c.uploadId,folderId:c.destination.folderId,ancestorIds:c.destination.ancestorIds||[],autoReportName:c.autoReportName===true,offlineSelected:c.kind==='prepared',pending:c.uploadId!==c.syncedUploadId}:null});return;
         }
         if(data.type==='CDQ_OFFLINE_DOCUMENT_EDIT'){
@@ -1007,6 +1026,15 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
       }
       if(!data.ok&&isDeletedReportV2784(data)){const preserved=applyResult(copy,data);await put('copies',preserved);if(stamp===epoch&&session===current){clearRetryV2740(copy.id);pausedSyncV2740.add(copy.id);sentJobsV2740.delete(copy.id);status.textContent=DELETED_REPORT_MESSAGE_V2784;notifyDocument(preserved);await refresh();}return;}
       if(!data.ok&&job.uploadId&&copy.syncedUploadId===job.uploadId){clearRetryV2740(data.requestId);sentJobsV2740.delete(data.requestId);return;}
+      if(!data.ok&&copy.unresolvedAncestorV20261103&&job.uploadId==='fields_'+copy.unresolvedAncestorV20261103.payload.requestId){
+        const reason=String(data.message||'La réception de la sauvegarde précédente reste à vérifier.');
+        const updated={...copy,status:'pending',error:reason};await put('copies',updated);
+        if(stamp!==epoch||session!==current)return;
+        notifyDocument(updated);
+        if(retryableOfflineFailureV2792(data))retrySyncV2740(copy.id,stamp,current.email,reason,job.uploadId);
+        else{pausedSyncV2740.add(copy.id);blockedSyncV2819.add(copy.id);reportSyncFailureV2740(copy.id,reason,job.uploadId).catch(()=>{});}
+        return;
+      }
       if(!data.ok&&job.uploadId&&job.uploadId!==copy.uploadId){clearRetryV2740(data.requestId);sync(false,data.requestId).catch(()=>{});return;}
       if(stamp!==epoch||session!==current||!validReadStamp(readStamp))return;
       if(data.type==='CDQ_REPORT_ENGINE_SAVE_V2754_RESULT'&&copy.uploadId!==data.uploadId){
