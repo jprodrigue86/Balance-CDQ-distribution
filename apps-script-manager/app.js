@@ -1343,7 +1343,7 @@ function buildEntriesFromPatchesV25(manifest){
   const byFile=new Map();
   for(const p of manifest.patches){
     const file=String(p.file||'').trim();
-    if(!/^(Code\.gs|CDQSendV2553\.gs|Selector\.html|appsscript\.json)$/i.test(file)){
+    if(!/^(Code\.gs|CDQSendV2553\.gs|CDQSendPipelineV20261103\.gs|Selector\.html|appsscript\.json)$/i.test(file)){
       throw new Error('Fichier patch non autorisé : '+file);
     }
     if(!byFile.has(file))byFile.set(file,[]);
@@ -1353,6 +1353,7 @@ function buildEntriesFromPatchesV25(manifest){
   const entries=[];
   for(const [displayName,patches] of byFile){
     const base=findProjectFileForBundleV25(displayName);
+    if(/^CDQSendPipelineV20261103\.gs$/i.test(displayName)&&(!base||base.type!=='SERVER_JS'||!/^CDQSendPipelineV20261103$/i.test(base.name)))throw new Error('Le projet ne contient pas le fichier CDQSendPipelineV20261103.gs attendu.');
     if(!base)throw new Error('Fichier projet introuvable : '+displayName);
     let source=String(base.source||'');
     for(const patch of patches)source=applyPatchV25(source,patch,displayName);

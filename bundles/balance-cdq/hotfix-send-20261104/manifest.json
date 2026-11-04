@@ -1,0 +1,39 @@
+{
+  "schema": "cdq-script-bundle-v2",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "Correctif envoi CDQ 2026-11-04",
+  "title": "Correctif de pré-vérification des PDF et Google Sheets (sans toucher aux modèles ni aux essais)",
+  "patches": [
+    {
+      "id": "send-fast-direct-metadata-v20261104",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "direct.forEach(function(id){cdqSpScope_(id,clientId,cache);byId[id]=cdqSpMeta_(id);});",
+      "replacement": "// Reuse the same fresh full metadata for both path authorization and the send plan.\n direct.forEach(function(id){var meta=cdqSpMeta_(id);cache[id]=meta;cdqSpScope_(id,clientId,cache);byId[id]=meta;});",
+      "expected": 1
+    },
+    {
+      "id": "send-fast-folder-metadata-v20261104",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "cdqSpList_(folder).forEach(function(meta){if(meta.mimeType==='application/vnd.google-apps.folder')pending.push(meta.id);else byId[meta.id]=meta;});",
+      "replacement": "cdqSpList_(folder).forEach(function(meta){cache[meta.id]=meta;if(meta.mimeType==='application/vnd.google-apps.folder')pending.push(meta.id);else byId[meta.id]=meta;});",
+      "expected": 1
+    },
+    {
+      "id": "send-fast-legacy-receipts-v20261104",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "insert_before_literal",
+      "before": "function cdqSpPreflight_(files,folders,email,clientId,hours){",
+      "text": "// 2026-11-04: reuse the already verified Drive metadata instead of doing\n// a second DriveApp.getFileById + scope walk for every selected Google Sheet.\n// The same v28.33 receipt key and all ambiguous-mail barriers are retained.\nfunction cdqSpPreviousSheetsVerifiedV20261104_(sources,email,clientId){\n if(!Array.isArray(sources)||!sources.length||sources.length>250)return {doublon:false};\n var identities=[];\n for(var i=0;i<sources.length;i++){\n  var source=sources[i];\n  if(source.kind!=='sheet')return {doublon:false};\n  var updated=Date.parse(String(source.driveRevision||''));\n  cdqSpAssert_(source.fileId&&typeof source.name==='string'&&Number.isSafeInteger(updated)&&updated>0,'INVALID_SEND_SOURCE','Révision Google Sheets non confirmée.');\n  var pdfName=source.name.replace(/\\.xlsx?$/i,'')+'.pdf';\n  identities.push(source.fileId+':modified:'+updated+':'+pdfName);\n }\n var canonical=cdqSpJson_([String(clientId),String(email||'').trim().toLowerCase(),identities.sort()]);\n var key='CDQ_SEND_ZIP_V2823_'+cdqSpHash_(canonical);\n var stored=cdqSpProps_().getProperty(key),previous=null;\n try{previous=JSON.parse(stored||'null');}catch(_){}\n if(!previous)return {doublon:false};\n var age=Date.now()-Number(previous.at||0);\n if(previous.phase==='sending')return {incertain:true};\n if(previous.phase==='sent'&&age>=0&&age<86400000)return {doublon:true,timestamp:Number(previous.at)||0};\n return {doublon:false};\n}\n// Faithful v28.33 legacy duplicate check; source identities come from\n// cdqSpPlan_'s freshly permission-checked Drive.Files metadata.\nfunction cdqSpLegacyVerifiedV20261104_(files,folders,email,clientId,hours,actor,sources){\n if(!Array.isArray(folders)||!folders.length){\n  var recent=cdqSendRecentQueueV2832_(files,email,clientId,actor,hours);\n  if(recent.incertain)throw Error('CDQ_ENVOI_A_VERIFIER : envoi identique incertain. Vérifiez les courriels envoyés; aucun renvoi automatique.');\n  if(recent.doublon)return recent;\n  var oldSheets=cdqSpPreviousSheetsVerifiedV20261104_(sources,email,clientId);\n  if(oldSheets.incertain)throw Error('CDQ_ENVOI_A_VERIFIER : ancien envoi ZIP incertain. Vérifiez les courriels avant toute nouvelle préparation.');\n  if(oldSheets.doublon)return oldSheets;\n }\n if(typeof verifierEnvoiSelectionRecent==='function'){\n  try{var legacy=verifierEnvoiSelectionRecent(files,folders,'convertir',email,clientId,hours);if(legacy&&legacy.doublon)return legacy;}catch(_){}\n }\n var key=cdqRecentKeyV2553_(files,folders,'convertir',email,clientId);\n var timestamp=Number(PropertiesService.getUserProperties().getProperty(key)||0);\n var age=Math.max(1,Number(hours)||24)*3600000;\n return timestamp&&Date.now()-timestamp<age?{doublon:true,timestamp:timestamp}:{doublon:false,timestamp:0};\n}\n"
+    },
+    {
+      "id": "send-fast-preflight-v20261104",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "function cdqSpPreflight_(files,folders,email,clientId,hours){\n var actor=cdqSpActor_();cdqClientPortalScopeV20261028_(clientId);\n cdqSpLegacyUncertain_(clientId,email);\n // Consult legacy evidence exactly once; an old ambiguous send still blocks.\n var previous=verifierEnvoiSelectionRecentLegacyV20261103_(files,folders,'convertir',email,clientId,hours);\n cdqSpAssert_(!previous.incertain,'CDQ_ENVOI_A_VERIFIER','Un résultat d’envoi doit être vérifié.');\n var recent=cdqSpGet_(cdqSpSelectionKey_(files,folders,email,clientId,actor)),recentJob=recent&&cdqSpGet_(CDQ_SP_JOB_+recent.id);\n if(recentJob){cdqSpAssert_(!recentJob.mailAttempted||recentJob.mailSent,'CDQ_ENVOI_A_VERIFIER','Un résultat de courriel doit être vérifié.');cdqSpAssert_(recentJob.phase==='complete'||recentJob.blocked,'CDQ_ENVOI_EN_COURS','Cette sélection possède déjà un lot actif.');if(recentJob.mailSent&&Date.now()-recentJob.mailConfirmedAt<86400000)previous={doublon:true,timestamp:recentJob.mailConfirmedAt};}\n var ticket=cdqSpPlan_(files,folders,email,clientId,actor);\n return {doublon:!!previous.doublon,timestamp:previous.timestamp||0,sendV20261103:ticket};\n}\n",
+      "replacement": "function cdqSpPreflight_(files,folders,email,clientId,hours){\n var actor=cdqSpActor_();cdqClientPortalScopeV20261028_(clientId);\n cdqSpLegacyUncertain_(clientId,email);\n // First collect one fresh, permission-checked source plan; reuse it for\n // legacy Sheets deduplication instead of re-reading each Sheet from Drive.\n var ticket=cdqSpPlan_(files,folders,email,clientId,actor);\n var previous=cdqSpLegacyVerifiedV20261104_(files,folders,email,clientId,hours,actor,ticket.plan.sources);\n cdqSpAssert_(!previous.incertain,'CDQ_ENVOI_A_VERIFIER','Un résultat d’envoi doit être vérifié.');\n var recent=cdqSpGet_(cdqSpSelectionKey_(files,folders,email,clientId,actor)),recentJob=recent&&cdqSpGet_(CDQ_SP_JOB_+recent.id);\n if(recentJob){cdqSpAssert_(!recentJob.mailAttempted||recentJob.mailSent,'CDQ_ENVOI_A_VERIFIER','Un résultat de courriel doit être vérifié.');cdqSpAssert_(recentJob.phase==='complete'||recentJob.blocked,'CDQ_ENVOI_EN_COURS','Cette sélection possède déjà un lot actif.');if(recentJob.mailSent&&Date.now()-recentJob.mailConfirmedAt<86400000)previous={doublon:true,timestamp:recentJob.mailConfirmedAt};}\n return {doublon:!!previous.doublon,timestamp:previous.timestamp||0,sendV20261103:ticket};\n}\n",
+      "expected": 1
+    }
+  ]
+}
