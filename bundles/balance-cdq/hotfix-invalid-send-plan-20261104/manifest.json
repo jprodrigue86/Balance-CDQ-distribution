@@ -1,0 +1,39 @@
+{
+  "schema": "cdq-script-bundle-v2",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "Correctif de signature d’envoi 2026-11-04",
+  "title": "Répare INVALID_SEND_PLAN sans changer les PDF, les envois existants ou l’application Android",
+  "patches": [
+    {
+      "id": "send-plan-requires-fast-preflight",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "var previous=cdqSpLegacyVerifiedV20261104_(files,folders,email,clientId,hours,actor,ticket.plan.sources);",
+      "replacement": "var previous=cdqSpLegacyVerifiedV20261104_(files,folders,email,clientId,hours,actor,ticket.plan.sources);",
+      "expected": 1
+    },
+    {
+      "id": "send-plan-define-stable-signature",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "insert_before_literal",
+      "before": "function cdqSpValidateTicket_(ticket,actor,files,folders,email,clientId){",
+      "text": "// Stable signature of the ephemeral send preflight ticket only. The global\n// signature for archived receipts and immutable artifacts is NOT modified.\n// google.script.run can rehydrate object keys in a different insertion order.\nfunction cdqSpCanonicalPlanV20261104_(value){\n if(Array.isArray(value))return value.map(cdqSpCanonicalPlanV20261104_);\n if(value!==null&&typeof value==='object'){\n  var sorted=Object.create(null);\n  Object.keys(value).sort().forEach(function(key){\n   if(typeof value[key]!=='undefined')sorted[key]=cdqSpCanonicalPlanV20261104_(value[key]);\n  });\n  return sorted;\n }\n return value;\n}\nfunction cdqSpSignPlanV20261104_(plan){\n return cdqSpSign_(cdqSpCanonicalPlanV20261104_(plan));\n}\n"
+    },
+    {
+      "id": "send-plan-preflight-sign-canonical",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "return {capabilities:capabilities,plan:plan,signature:cdqSpSign_(plan)};",
+      "replacement": "return {capabilities:capabilities,plan:plan,signature:cdqSpSignPlanV20261104_(plan)};",
+      "expected": 1
+    },
+    {
+      "id": "send-plan-validate-canonical",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "cdqSpEqual_(ticket.signature,cdqSpSign_(plan))",
+      "replacement": "cdqSpEqual_(ticket.signature,cdqSpSignPlanV20261104_(plan))",
+      "expected": 1
+    }
+  ]
+}
