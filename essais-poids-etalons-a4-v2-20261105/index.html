@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="color-scheme" content="dark">
+<title>CDQ — Poids étalons · Certificat A4 d'essai</title>
+<style>
+:root{color-scheme:dark;--blue:#047cbd;--navy:#071d3d;--line:#b9d4f2;--txt:#e9f3ff;--muted:#a6c0d8}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;font:15px system-ui,Arial,sans-serif;background:#0a1727;color:var(--txt)}
+#reader{display:block;width:100%;height:100dvh;border:0;background:#101820}
+#overlay{position:fixed;inset:0;z-index:15;background:rgba(3,10,23,.92);display:flex;align-items:center;justify-content:center;padding:12px}
+#overlay[hidden]{display:none}
+#panel{width:min(650px,100%);max-height:min(94dvh,850px);overflow-y:auto;background:#edf5ff;color:#132742;border:1px solid #77b9e7;border-radius:12px;box-shadow:0 20px 70px #000b}
+#panel header{background:linear-gradient(100deg,#062a52,#0a5590);color:white;padding:14px 18px;border-radius:10px 10px 0 0}
+#panel h1{margin:0;font-size:20px;line-height:1.2}#panel header p{margin:5px 0 0;color:#c9e5ff;font-size:12px}
+.panelBody{padding:13px 16px 9px}.lede{margin:0 0 12px;font-size:13px;line-height:1.45}
+fieldset{border:1px solid #abc4e2;border-radius:7px;margin:0 0 11px;padding:9px 10px}
+legend{font-weight:750;color:#102d63;padding:0 5px}button,input,select{font:inherit}
+button{cursor:pointer;border:1px solid #4f7dab;border-radius:7px;background:white;color:#183250;padding:8px 12px;font-weight:650;min-height:38px}
+button:disabled{opacity:.5;cursor:not-allowed}button.primary{background:#075c9e;color:white;border-color:#0967ba}button.outline{background:transparent}
+.unitGroup{display:flex;gap:7px;flex-wrap:wrap}.unitGroup button{min-width:83px}
+.unitGroup button[aria-pressed="true"]{background:#054e8e;border-color:#054e8e;color:white}
+.formgrid{display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:end}
+.formgrid label,.dated label{display:flex;flex-direction:column;gap:4px;font-weight:650;font-size:12px;color:#223d60}
+input,select{height:36px;border:1px solid #7faccb;border-radius:6px;background:#fff;color:#173651;padding:6px 8px;min-width:0}
+input[type=number]{max-width:105px}.formgrid button{grid-column:span 2}
+.rows{width:100%;border-collapse:collapse;table-layout:fixed}.rows th{background:#d7e9fb;color:#163d69;font-size:12px;padding:7px 5px;text-align:left}
+.rows td{background:#fff;border-bottom:1px solid #d6e2ec;padding:5px;font-size:13px;overflow-wrap:anywhere}
+.rows td:nth-child(2),.rows th:nth-child(2){width:92px}.rows td:nth-child(3),.rows th:nth-child(3){width:105px}.rows td:nth-child(4),.rows th:nth-child(4){width:43px}
+.rows button{padding:4px;min-height:30px;min-width:28px}.rows input{height:30px;width:75px}
+#count{font-weight:700;font-size:13px;margin:8px 2px}.warn{color:#8a3210}.error{color:#af1429;font-weight:700;font-size:13px;min-height:14px}
+.dated{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.manual{display:flex;align-items:center;gap:6px;font-size:12px;margin:10px 0 8px;color:#28476b}.manual input{height:auto}
+#manualFields[hidden]{display:none}#manualFields{display:grid;grid-template-columns:1fr 1fr 72px;gap:8px;margin-bottom:8px}
+.help{font-size:11px;color:#3c5878;line-height:1.45;margin:8px 0}
+#panel footer{position:sticky;bottom:0;display:flex;gap:8px;justify-content:flex-end;align-items:center;background:#e6f0fc;border-top:1px solid #b0cce8;padding:10px 16px;z-index:2}
+#panel footer .secondary{margin-right:auto}
+#loading{margin-right:auto;font-size:12px;color:#2a5687}
+#stage{display:none;position:fixed;z-index:14;inset:0;background:rgba(5,17,33,.88);align-items:center;justify-content:center;text-align:center;padding:22px}
+#stage[aria-hidden=false]{display:flex}#stage p{font-size:14px;color:#c4d7e7}
+#stage a{color:#9de0ff}
+@media(max-width:600px){#overlay{padding:0}#panel{max-height:100dvh;height:100dvh;border-radius:0}.panelBody{padding:12px}.dated{grid-template-columns:1fr 1fr}.dated label:last-child{grid-column:span 2}#panel footer{padding:10px}#panel footer button{padding:8px}#manualFields{grid-template-columns:1fr 1fr}#manualFields input:last-child{grid-column:span 2}#panel h1{font-size:18px}}
+</style>
+</head>
+<body>
+<iframe id="reader" title="Visionneuse CDQ - essai interactif Poids étalons" allow="fullscreen" referrerpolicy="strict-origin-when-cross-origin"></iframe>
+<div id="stage" aria-hidden="true"><div><h2 id="stageTitle">Ouverture dans la visionneuse CDQ…</h2><p id="stageMessage">Préparation du PDF interactif.</p><a id="stageFallback" href="./Certificat_Poids_Etalons_CDQ_A4_ESSAI_interactif.pdf" hidden>Télécharger le PDF d'essai</a><div><button type="button" id="again" hidden>Recommencer</button></div></div></div>
+<div id="overlay" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+<section id="panel">
+ <header><h1 id="dialogTitle">Nouveau certificat — Poids étalons</h1><p>Essai V2 · 1 page A4 · 14 poids maximum · Navigation à un doigt</p></header>
+ <div class="panelBody">
+ <p class="lede">Choisis les poids à vérifier et leur quantité. La <strong>valeur nominale</strong> et sa <strong>tolérance Classe F</strong> seront ajoutées automatiquement dans le PDF. Les autres champs resteront modifiables.</p>
+ <fieldset><legend>Unité des poids</legend><div class="unitGroup" role="group" aria-label="Unité des poids">
+ <button type="button" data-unit="kg" aria-pressed="true">KG / g / mg</button>
+ <button type="button" data-unit="lb" aria-pressed="false">LBS</button>
+ <button type="button" data-unit="oz" aria-pressed="false">OZ</button>
+ </div></fieldset>
+ <fieldset><legend>Poids à étalonner</legend>
+ <table class="rows"><thead><tr><th>Valeur nominale</th><th>Quantité</th><th>Tolérance ±</th><th></th></tr></thead><tbody id="selectedRows"></tbody></table>
+ <p id="count">Total : 14 / 14 poids</p>
+ <div class="formgrid"><label>Ajouter une valeur nominale<select id="nominal"></select></label><label>Quantité<input id="qty" type="number" min="1" max="14" step="1" value="1"></label><button id="add" type="button">+ Ajouter cette série</button></div>
+ <label class="manual"><input id="manualToggle" type="checkbox">Saisie manuelle d'une valeur et de sa tolérance</label>
+ <div id="manualFields" hidden><input type="text" id="manualValue" placeholder="Ex. 7 kg" aria-label="Valeur nominale manuelle"><input type="text" id="manualTolerance" placeholder="Ex. 750 mg" aria-label="Tolérance manuelle"><input type="number" id="manualQty" min="1" max="14" value="1" aria-label="Quantité manuelle"><button type="button" id="addManual">+ Ajouter manuellement</button></div>
+ </fieldset>
+ <fieldset><legend>Dates du certificat</legend><div class="dated">
+ <label>Étalonnage<input type="date" id="dateCalibration"></label>
+ <label>Fréquence<select id="frequency"><option value="Annuelle">Annuelle</option><option value="Semestrielle">Semestrielle</option><option value="Trimestrielle">Trimestrielle</option><option value="Mensuelle">Mensuelle</option><option value="Autre">Autre</option></select></label>
+ <label>Prochain étalonnage<input type="date" id="dateNext"></label>
+ </div></fieldset>
+ <p class="help">Source des tolérances : tableau NIST 105-1 <strong>Classe F</strong> du document <em>Conversion.pdf</em>, colonne « F g and mg ». Les valeurs dont la tolérance est vide ne sont pas proposées. <strong>La Classe F n’est pas équivalente à la classe OIML M1</strong> affichée dans la maquette.</p>
+ <p id="formError" class="error" role="alert" aria-live="polite"></p>
+ </div>
+ <footer><span id="loading">Préparation…</span><button id="blank" class="outline secondary" type="button">PDF vierge</button><button id="confirm" class="primary" type="button">OK — Ouvrir dans CDQ</button></footer>
+</section>
+</div>
+<script src="../vendor/pdf-lib-1.17.1.min.js"></script>
+<script>
+(()=>{
+'use strict';
+const NAME='Certificat_Poids_Etalons_CDQ_A4_ESSAI_interactif.pdf';
+const REQUEST_ID='cdq-poids-etalons-a4-essai-pan-v2-20261105';
+const fileURL=new URL('./'+NAME,location.href);
+const readerURL=new URL('../reader-v2525.html',location.href);
+const origin=location.origin;
+const $=id=>document.getElementById(id);
+const frame=$('reader');
+let readerReady=false,pending=null,dispatched=false,opened=false,unit='kg',toleranceTable=null;
+let items=[{v:'20 kg',q:2,t:'2.0 g'},{v:'5 kg',q:5,t:'500 mg'},{v:'2 kg',q:3,t:'200 mg'},{v:'1 kg',q:4,t:'100 mg'}];
+const count=()=>items.reduce((s,a)=>s+a.q,0);
+const setError=s=>{$('formError').textContent=String(s||'');};
+const pdfBytes=fetch(fileURL.href,{cache:'no-store',credentials:'same-origin'}).then(async r=>{
+ if(!r.ok)throw Error('PDF d’essai indisponible (HTTP '+r.status+').');
+ const bytes=await r.arrayBuffer();
+ if(bytes.byteLength<20000 || new TextDecoder().decode(bytes.slice(0,5))!=='%PDF-')throw Error('PDF incomplet ou invalide.');
+ return bytes;
+});
+const tolerancePromise=fetch(new URL('./tolerances_NIST_105_1_classe_F.json',location.href).href,{cache:'no-store',credentials:'same-origin'}).then(async r=>{
+ if(!r.ok)throw Error('Barème des tolérances indisponible (HTTP '+r.status+').');
+ const data=await r.json();
+ for(const key of ['kg','lb','oz'])if(!Array.isArray(data.units?.[key]))throw Error('Barème incomplet : '+key);
+ toleranceTable=data;refreshUnits();return data;
+});
+Promise.all([pdfBytes,tolerancePromise]).then(()=>{$('loading').textContent='PDF et barème prêts';}).catch(e=>{$('loading').textContent='Chargement incomplet';setError(e.message);});
+function updateCount(){
+ const n=count(); $('count').textContent='Total : '+n+' / 14 poids';$('count').classList.toggle('warn',n>14);
+ $('confirm').disabled=n===0 || n>14;
+}
+function renderRows(){
+ const tbody=$('selectedRows');tbody.replaceChildren();
+ items.forEach((item,i)=>{
+  const tr=document.createElement('tr');
+  const value=document.createElement('td');value.textContent=item.v;
+  const quant=document.createElement('td');const input=document.createElement('input');input.type='number';input.min='1';input.max='14';input.step='1';input.value=String(item.q);input.setAttribute('aria-label','Quantité pour '+item.v);
+  input.addEventListener('change',()=>{let q=Number(input.value);if(!Number.isInteger(q)||q<1){input.value=String(item.q);return;}item.q=Math.min(q,14);updateCount();});quant.append(input);
+  const tol=document.createElement('td');tol.textContent=item.t;
+  const act=document.createElement('td');const rm=document.createElement('button');rm.type='button';rm.textContent='×';rm.title='Retirer la série';rm.setAttribute('aria-label','Retirer '+item.v);rm.addEventListener('click',()=>{items.splice(i,1);renderRows();});act.append(rm);
+  tr.append(value,quant,tol,act);tbody.append(tr);
+ });updateCount();
+}
+function refreshUnits(){
+ document.querySelectorAll('button[data-unit]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.unit===unit)));
+ const select=$('nominal');select.replaceChildren();
+ const vals=toleranceTable?.units?.[unit]||[];
+ for(const [v,t] of vals){const o=document.createElement('option');o.value=v;o.textContent=v+'  —  ± '+t;select.append(o);}
+ // Default convenient size on metric tab.
+ if(unit==='kg')select.value='5 kg';
+}
+function addItem(v,t,q,manual=false){
+ if(!v || !t || !Number.isInteger(q) || q<1 || q>14){setError('Indique une valeur, une tolérance et une quantité valides.');return;}
+ if(count()+q>14){setError('Ce certificat A4 comporte 14 lignes. Réduis la quantité pour essayer cette page.');return;}
+ const existing=items.find(x=>x.v===v && x.t===t && !!x.manual===manual);
+ if(existing) existing.q+=q; else items.push({v,q,t,manual});
+ setError('');renderRows();
+}
+function plusMonths(dateStr,months){
+ if(!dateStr)return '';
+ const [y,m,d]=dateStr.split('-').map(Number);
+ if(!y||!m||!d)return '';
+ const date=new Date(Date.UTC(y,m-1+months,1));
+ const last=new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth()+1,0)).getUTCDate();
+ date.setUTCDate(Math.min(d,last));return date.toISOString().slice(0,10);
+}
+function suggestDate(){
+ const freq=$('frequency').value,months={Annuelle:12,Semestrielle:6,Trimestrielle:3,Mensuelle:1}[freq];
+ if(months)$('dateNext').value=plusMonths($('dateCalibration').value,months);
+}
+const today=new Date();$('dateCalibration').value=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');suggestDate();
+$('dateCalibration').addEventListener('change',suggestDate);$('frequency').addEventListener('change',suggestDate);
+document.querySelectorAll('button[data-unit]').forEach(b=>b.addEventListener('click',()=>{unit=b.dataset.unit;refreshUnits();}));
+$('add').addEventListener('click',()=>{const val=$('nominal').value;const found=toleranceTable?.units?.[unit]?.find(x=>x[0]===val);if(!found){setError('Choisis une valeur nominale reconnue.');return;}addItem(found[0],found[1],Number($('qty').value));});
+$('manualToggle').addEventListener('change',()=>{$('manualFields').hidden=!$('manualToggle').checked;});
+$('addManual').addEventListener('click',()=>addItem($('manualValue').value.trim(),$('manualTolerance').value.trim().replace(/^±\s*/,''),Number($('manualQty').value),true));
+renderRows();
+function showStage(title,detail,error=false){$('stage').setAttribute('aria-hidden','false');$('stageTitle').textContent=title;$('stageMessage').textContent=detail;
+ $('stageFallback').hidden=!error;$('again').hidden=!error;}
+function fail(e){const msg=String(e?.message||e||'Erreur inconnue').slice(0,320);showStage('Impossible d’ouvrir le PDF d’essai',msg,true);}
+$('again').addEventListener('click',()=>location.reload());
+function pdfText(form,name,s){
+ const f=form.getTextField(name);f.setText(String(s??''));
+}
+async function makePdf(sets){
+ const bytes=await pdfBytes;
+ if(!window.PDFLib?.PDFDocument)throw Error('Bibliothèque de formulaire PDF indisponible.');
+ const document=await PDFLib.PDFDocument.load(bytes);
+ const form=document.getForm();
+ if(sets){
+  let n=0;
+  for(const item of items){for(let i=0;i<item.q;i++){
+   n++;const p=String(n).padStart(2,'0');pdfText(form,'poids_'+p+'_01',item.v);pdfText(form,'poids_'+p+'_06','± '+item.t);
+  }}
+  if($('dateCalibration').value)pdfText(form,'date_etalonnage',$('dateCalibration').value);
+  if($('dateNext').value)pdfText(form,'date_prochain',$('dateNext').value);
+  pdfText(form,'frequence',$('frequency').value);
+ }
+ const result=await document.save({useObjectStreams:false});
+ return new Blob([result],{type:'application/pdf'});
+}
+function sendIfReady(){
+ if(!readerReady||!pending||dispatched)return;
+ dispatched=true;
+ frame.contentWindow.postMessage({type:'CDQ_READER_OPEN',readerRequestId:REQUEST_ID,
+ blob:pending,name:NAME,readOnly:false},origin);
+}
+async function start(blank){
+ if(dispatched)return;
+ try{
+   setError('');if(!blank && (count()<1||count()>14))throw Error('Sélectionne entre 1 et 14 poids.');
+   $('confirm').disabled=true;$('blank').disabled=true;
+   await tolerancePromise;
+   showStage('Préparation du certificat A4…','Création des champs interactifs et insertion des tolérances.');
+   $('overlay').hidden=true;
+   pending=await makePdf(!blank);
+   showStage('Ouverture dans la visionneuse CDQ…','Le PDF interactif est chargé automatiquement, sans modifier les dossiers clients.');
+   sendIfReady();
+ }catch(e){$('overlay').hidden=false;$('stage').setAttribute('aria-hidden','true');setError(e.message);$('blank').disabled=false;updateCount();}
+}
+$('confirm').addEventListener('click',()=>start(false));$('blank').addEventListener('click',()=>start(true));
+window.addEventListener('message',e=>{
+ if(e.origin!==origin||e.source!==frame.contentWindow)return;
+ const d=e.data||{};
+ if(d.type==='CDQ_READER_READY'){readerReady=true;sendIfReady();return;}
+ if(d.type==='CDQ_READER_OPENED'&&d.readerRequestId===REQUEST_ID){opened=true;$('stage').setAttribute('aria-hidden','true');document.title='CDQ — Certificat d’étalonnage Poids étalons';return;}
+ if(d.type==='CDQ_READER_INIT_FAILED_V2731'||d.type==='CDQ_READER_OPEN_FAILED_V2731')fail(d.error||'La visionneuse CDQ a refusé le certificat.');
+ if(d.type==='CDQ_READER_CLOSE'&&opened){opened=false;showStage('Essai terminé','Tu peux rouvrir le menu et créer un autre certificat.',true);$('again').textContent='Nouveau certificat';}
+});
+frame.src=readerURL.href;
+setTimeout(()=>{if(!opened&&dispatched)fail('La visionneuse prend trop de temps à ouvrir le PDF.');},90000);
+})();
+</script>
+<script id="cdq-preview-touch-fix-v2">
+/* Isolation: preview-only touch fix. Does not alter the official CDQ reader. */
+(()=>{
+'use strict';
+const frame=document.getElementById('reader');
+const TOKEN='cdq-poids-pan-preview-v2';
+function install(){
+ let doc;
+ try{doc=frame.contentDocument;}catch(_){return false;}
+ const box=doc?.getElementById('container');
+ if(!box||!doc.body)return false;
+ if(box.dataset.cdqTrialPan===TOKEN)return true;
+ box.dataset.cdqTrialPan=TOKEN;
+ const style=doc.createElement('style');style.id=TOKEN;
+ style.textContent=`
+ /* Touch gestures are routed to the actual scroll container, never to the iframe. */
+ #container,#viewer,.pdfViewer,.pdfViewer .page,.canvasWrapper,.canvasWrapper canvas,
+ .annotationLayer,.annotationLayer section,.annotationLayer :is(input,textarea,select,a){
+    touch-action:none!important;
+ }
+ #container{overflow:auto!important;scroll-behavior:auto!important;overflow-anchor:none!important;
+    overscroll-behavior:contain!important;-webkit-overflow-scrolling:auto!important;}
+ /* Grid cells already have a vector border. Don't stack a second HTML border over it. */
+ #viewer .annotationLayer :is(input,textarea)[name^="poids_"],
+ #viewer .annotationLayer :is(input,textarea)[name^="balance_"],
+ #viewer .annotationLayer :is(input,textarea)[name^="reference_"]{
+   border:0!important;outline:0!important;box-shadow:none!important;
+   background:transparent!important;background-image:none!important;
+ }
+ `;
+ doc.head.append(style);
+ let dragging=null,ignoreClicksUntil=0;
+ function one(e){return e.touches.length===1?e.touches[0]:null;}
+ box.addEventListener('touchstart',e=>{
+   const t=one(e);
+   dragging=t?{id:t.identifier,px:t.clientX,py:t.clientY,x:box.scrollLeft,y:box.scrollTop,moved:false}:null;
+ },{capture:true,passive:true});
+ box.addEventListener('touchmove',e=>{
+   if(!dragging||!one(e))return;
+   const t=one(e);
+   if(t.identifier!==dragging.id)return;
+   const dx=t.clientX-dragging.px,dy=t.clientY-dragging.py;
+   if(!dragging.moved&&Math.hypot(dx,dy)<7)return;
+   dragging.moved=true;
+   if(e.cancelable)e.preventDefault();
+   e.stopImmediatePropagation();
+   box.scrollLeft=dragging.x-dx;
+   box.scrollTop=dragging.y-dy;
+   ignoreClicksUntil=performance.now()+420;
+ },{capture:true,passive:false});
+ function end(e){
+   if(e.touches.length===0||e.type==='touchcancel')dragging=null;
+   else if(e.touches.length!==1)dragging=null;
+ }
+ box.addEventListener('touchend',end,{capture:true,passive:true});
+ box.addEventListener('touchcancel',end,{capture:true,passive:true});
+ box.addEventListener('click',e=>{
+   if(performance.now()<ignoreClicksUntil){e.preventDefault();e.stopImmediatePropagation();}
+ },{capture:true});
+ doc.defaultView.cdqTrialPanDiagnostics=()=>({enabled:box.dataset.cdqTrialPan,
+   top:box.scrollTop,left:box.scrollLeft,maxTop:box.scrollHeight-box.clientHeight,
+   maxLeft:box.scrollWidth-box.clientWidth});
+ return true;
+}
+ frame.addEventListener('load',install);
+ window.addEventListener('message',e=>{
+   if(e.origin===location.origin&&e.source===frame.contentWindow&&
+      ['CDQ_READER_READY','CDQ_READER_OPENED'].includes(e.data?.type))install();
+ });
+ install();
+})();
+
+</script>
+</body></html>
