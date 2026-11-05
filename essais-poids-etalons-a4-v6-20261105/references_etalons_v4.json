@@ -1,0 +1,74 @@
+{
+  "schema": "cdq-trial-kit-references-v4",
+  "provenance": "Copies de rapports CDQ et certificats Mesures Canada dans le Drive de CDQ, consultés le 2026-11-05",
+  "notice": "Données préremplies pour essai seulement. Vérifier l’identification physique des ensembles et l’état de validité avant toute utilisation officielle.",
+  "kits": {
+    "Kit Z": {
+      "nominal": "5 kg à 1 g",
+      "certificate": "C-2026-2",
+      "calibration": "2026-01-07",
+      "due": "2027-01-07",
+      "verification": "rapport_technicien",
+      "source": "Certificat poids étalon technicien Kit Z (2026)",
+      "source_drive_id": "1GDndxwTHL7U4glwsQRLkWDBRHFZ2qKErUEJNxYyCO58"
+    },
+    "Kit Y": {
+      "nominal": "5 kg à 1 g",
+      "certificate": "C-2026-1",
+      "calibration": "2026-01-06",
+      "due": "2027-01-06",
+      "verification": "rapport_technicien",
+      "source": "Certificat poids étalon technicien Y (2026)",
+      "source_drive_id": "1eQ3QXH9Ze11VXBbRDDd4QaY5MD5BqPWcL-xBOq5f698"
+    },
+    "Kit X": {
+      "nominal": "20 kg",
+      "certificate": "C-2026-2",
+      "calibration": "2026-01-07",
+      "due": "2027-01-07",
+      "verification": "a_confirmer_conflit_KIT_Z",
+      "source": "Certificat poids étalon technicien X01-X010 (2026) : porte le même numéro que Kit Z",
+      "source_drive_id": "1jVhYFd03emj8D3woW0w1BNQXV-4xhXmNWH0toFKOEyY"
+    },
+    "BCDQ1882020": {
+      "nominal": "5 kg à 1 g",
+      "certificate": "M26-0144",
+      "calibration": "2026-06-10",
+      "due": "2027-06-10",
+      "verification": "certificat_direct",
+      "source": "CDQ1882020 M26-0144 2027-06-10.pdf",
+      "source_drive_id": "11AbUOSY9bR0rxrwC40OLT_Vssn-hm2Sm",
+      "original_id": "CDQ1882020"
+    },
+    "BCDQ1882022": {
+      "nominal": "5 kg à 1 g",
+      "certificate": "M26-0559",
+      "calibration": "2026-08-19",
+      "due": "2027-08-19",
+      "verification": "certificat_direct",
+      "source": "CDQ1882022 M26-0559 2027-08-19.pdf",
+      "source_drive_id": "11ZNU9sK9npShzkCRmvyD9LcV659C9-JU",
+      "original_id": "CDQ1882022"
+    }
+  },
+  "fixed": {
+    "C1 à C50": {
+      "nominal": "20 kg",
+      "certificate": "1411759",
+      "calibration": "2026-04-08",
+      "due": "2027-04-08",
+      "verification": "certificat_direct",
+      "source": "C1-C50 20kg #1411759 2027-04-08.pdf",
+      "source_drive_id": "1pl4rR7iYrDNYYm_XSce3QuTFk8dQ0pUR"
+    },
+    "B1 à B20": {
+      "nominal": "500 kg",
+      "certificate": "1411767",
+      "calibration": "2026-06-15",
+      "due": "2027-06-15",
+      "verification": "certificat_direct",
+      "source": "B1-B20 500kg #1411767 2027-06-15.pdf",
+      "source_drive_id": "1JpKGxInSnH0FdPo5WrEdBZb7lcsubBJL"
+    }
+  }
+}
