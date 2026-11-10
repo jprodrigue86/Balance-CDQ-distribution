@@ -6,7 +6,7 @@
   "files": 1035,
   "generatedFrom": "patches/pc-2870/compose.py",
   "platform": "pc-pwa",
-  "release": "83965ac9436cabaad10f1aa94bec2e6ddd54e3b548ed394dfdea45e28cccf4a7",
+  "release": "670ece76c1e31824437d9b3712d2e7927a5481bfcdef9a302ea938754909824e",
   "version": "28.70",
   "webBaseCommit": "6ad0df90cd56b7365a74322ba535ff8395d38cf6"
 }
