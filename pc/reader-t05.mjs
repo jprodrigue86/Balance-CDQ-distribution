@@ -11,6 +11,23 @@ export function t05Family(pdf,L){
   return font?.lookupMaybe(N('BaseFont'),L.PDFName)?.decodeText()==='Roboto850'?family:null;
 }
 
+// The authored column action owns the final, transformed geometry. Later
+// templates may tighten its gaps without changing the original body transform.
+// Read only its JSON configuration; never execute PDF JavaScript here.
+function authoredTableGeometry(pdf,L){
+  const N=L.PDFName.of,choice=pdf.getForm().getField('colonne');
+  const aa=choice.acroField.dict.lookupMaybe(N('AA'),L.PDFDict);
+  const action=aa?.lookupMaybe(N('K'),L.PDFDict);
+  const source=action?.lookup(N('JS'))?.decodeText?.();
+  if(typeof source!=='string'||!source.startsWith('/* CDQT05_GEOMETRY */'))return null;
+  try{
+    const groups=JSON.parse(source.match(/var c=(\{.*?\}),type=/)?.[1]).groups;
+    const height=pdf.getPages()[0].getHeight();
+    if(!['indicateur','base_balance','imprimante'].every(prefix=>['Sans','Avec'].every(mode=>Number.isFinite(groups?.[prefix]?.[mode])&&groups[prefix][mode]>0&&groups[prefix][mode]<height)))return null;
+    return groups;
+  }catch{return null;}
+}
+
 export function prepareT05Save(pdf,L){
   const family=t05Family(pdf,L);if(!family)return false;
   const N=L.PDFName.of,form=pdf.getForm();
@@ -37,12 +54,13 @@ export function prepareT05Save(pdf,L){
   }
   if(family==='table'){
     const marker=pdf.catalog.lookup(N('CDQT05'),L.PDFDict),scale=marker.lookup(N('BodyScale'),L.PDFNumber).asNumber(),offset=marker.lookup(N('BodyOffset'),L.PDFNumber).asNumber();
+    const geometry=authoredTableGeometry(pdf,L);
     const choice=form.getField('colonne'),selected=choice.getSelected()[0];
     const type=form.getField('type_balance').getSelected()[0];
     const mode=type==='Balance compteuse'?'Sans':selected==='Avec'?'Avec':'Sans';
     if(selected!==mode)choice.select(mode);
     for(const [prefix,ys]of Object.entries({indicateur:[543,543],base_balance:[543,527],imprimante:[527,511]})){
-      const y=ys[mode==='Avec'?1:0]*scale+offset;
+      const y=geometry?.[prefix]?.[mode]??(ys[mode==='Avec'?1:0]*scale+offset);
       for(const suffix of ['fabricant','modele','numero_serie','numero_am']){
         const f=form.getFieldMaybe(prefix+'_'+suffix);if(!f)continue;
         for(const widget of f.acroField.getWidgets()){

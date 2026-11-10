@@ -1,3 +1,4 @@
+import {validActions} from './delivery-actions-v2866.mjs';
 // Readiness only: drafts are never replaced silently by older Drive bytes.
 const fail = (code, message) => { throw Object.assign(Error(message), {code}); };
 const fileId = r => String(r?.context?.fileId || r?.pdf?.fileId || r?.fileId || r?.id || '');
@@ -16,9 +17,10 @@ function selection(plan) {
 }
 export function validateTicketV20261103(ticket, context, now=Date.now()) {
   const plan=ticket?.plan;
-  if(ticket?.capabilities?.protocol!==20261103 || ticket.capabilities.portalBatchProtocol!==2835 || plan?.protocol!==20261103 || !Array.isArray(plan.sources) || !plan.sources.length || plan.sources.length>1000 || typeof ticket.signature!=='string' || !/^[a-f0-9]{64}$/.test(ticket.signature)) fail('SEND_PROTOCOL_UNAVAILABLE','La préparation fiable de cet envoi n’est pas disponible.');
+  if(ticket?.capabilities?.protocol!==20261103 || (plan?.actionsV2866?.publish!==false&&ticket.capabilities.portalBatchProtocol!==2835) || plan?.protocol!==20261103 || !Array.isArray(plan.sources) || !plan.sources.length || plan.sources.length>1000 || typeof ticket.signature!=='string' || !/^[a-f0-9]{64}$/.test(ticket.signature)) fail('SEND_PROTOCOL_UNAVAILABLE','La préparation fiable de cet envoi n’est pas disponible.');
   if(plan.actor!==String(context.owner||'').trim().toLowerCase() || plan.clientId!==context.clientId) fail('SCOPE_MISMATCH','Le compte ou le client de la sélection a changé.');
   if(!Number.isSafeInteger(plan.createdAt) || now-plan.createdAt<0 || now-plan.createdAt>=300000) fail('SEND_PLAN_EXPIRED','Actualisez la sélection avant de démarrer.');
+  if(Object.prototype.hasOwnProperty.call(plan,'actionsV2866')&&(ticket.capabilities.actionsProtocol!==2866||!validActions(plan.actionsV2866)))fail('DELIVERY_ACTIONS_UNCONFIRMED','Les actions ne sont pas confirmées par le serveur.');
   const ids=new Set();
   for(const s of plan.sources){
     if(!s.fileId || ids.has(s.fileId) || !s.driveRevision || !s.sourceKey || !s.outputName) fail('INVALID_SEND_PLAN','Une édition de la sélection est invalide.');

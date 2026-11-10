@@ -1,3 +1,4 @@
+import {validHistoricalMetadata} from './historical-metadata-v2866.mjs';
 // Keep every report revision, including non-equipment reports and duplicate
 // identifications. Presentation is the only place that selects one winner.
 const norm=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
@@ -32,18 +33,18 @@ export function balanceSignatureValuesV2751(signature){
 }
 export function balanceSourceRowsV2751(index){
  if(!index?.exhaustive||!Array.isArray(index.sources))return null;
- const rows=[];for(const source of index.sources){const parsed=balanceSignatureValuesV2751(source.signature);if(!parsed)return null;if(parsed.values===null)continue;const[fabricant,modele,capacite,echelon,identification,conformity]=parsed.values;rows.push({id:String(source.id),source:source.name||'',revision:source.revision,fabricant,modele,capacite,echelon,identification,conformity});}return rows;
+ const rows=[];for(const source of index.sources){const parsed=balanceSignatureValuesV2751(source.signature);if(!parsed)return null;if(source.metadataVersion!==2866||!validHistoricalMetadata(source.metadata))return null;if(parsed.values===null)continue;const[fabricant,modele,capacite,echelon,identification,conformity]=parsed.values;rows.push({id:String(source.id),source:source.name||'',revision:source.revision,fabricant,modele,capacite,echelon,identification,conformity:source.metadata.conformity,type:source.metadata.type||'',dateEtalonnage:source.metadata.reportDate||'',prochaineDate:source.metadata.nextDate||''});}return rows;
 }
 export function balanceDisplayRowsV2751(records){
  const seen=new Set();return records.slice().sort((a,b)=>Number(!!b.local)-Number(!!a.local)||(Date.parse(b.revision)||0)-(Date.parse(a.revision)||0)||String(a.id).localeCompare(String(b.id))).filter(row=>{const id=norm(row.identification);if(id&&seen.has(id))return false;if(id)seen.add(id);return true;}).sort((a,b)=>String(a.identification||a.source).localeCompare(String(b.identification||b.source),'fr',{numeric:true}));
 }
 export function validBalanceSourceIndexV2751(index,clientId,fileId){
  if(index?.version!==1||!index.exhaustive||index.invalidated||index.authorKnown===false||String(index.clientId)!==String(clientId)||String(index.fileId)!==String(fileId)||!index.listRevision||!index.list?.id||!Array.isArray(index.sources)||index.sources.length>500||!Array.isArray(index.folders))return false;
- const ids=new Set();return index.sources.every(source=>source?.id&&source.revision&&!ids.has(String(source.id))&&(ids.add(String(source.id)),!!balanceSignatureValuesV2751(source.signature)));
+ const ids=new Set();return index.sources.every(source=>source?.id&&source.revision&&!ids.has(String(source.id))&&(ids.add(String(source.id)),!!balanceSignatureValuesV2751(source.signature)&&source.metadataVersion===2866&&validHistoricalMetadata(source.metadata)));
 }
 export function replaceBalanceSourceV2751(index,{id,sourceId=id,revision,signature,name}){
  if(!index?.exhaustive||!revision||!balanceSignatureValuesV2751(signature))return null;
- const prior=index.sources?.find(source=>String(source.id)===String(sourceId)||String(source.id)===String(id));if(!prior)return null;
+ const prior=index.sources?.find(source=>String(source.id)===String(sourceId)||String(source.id)===String(id));if(!prior)return null;if(prior.revision!==String(revision)||prior.signature!==signature)return null; // A changed revision requires a fresh metadata read.
  const next={...prior,id:String(id),revision:String(revision),signature,name:name||prior.name||'',file:{...prior.file,id:String(id),revision:String(revision),modifiedTime:String(revision),dateModification:String(revision)}};
  return {...index,sources:index.sources.filter(source=>source!==prior&&String(source.id)!==String(id)).concat(next).sort((a,b)=>a.id.localeCompare(b.id))};
 }

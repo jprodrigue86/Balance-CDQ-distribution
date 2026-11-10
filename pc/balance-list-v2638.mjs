@@ -117,7 +117,7 @@ async function refreshEngineListV2754(id,{repair=false,hydrate=false}={}){
 async function importEngineIndexV2754(id,state){
  const api=engineV2754(),index=state?.sourceIndexV2751,k=key(id);
  if(!api||!index?.exhaustive||!Array.isArray(index.sources)||!canWrite()||!queueOwner())return null;
- const stamp=epoch,account=calibrationIdentity().email,listIdentity=JSON.stringify([state.fileId,state.folderId,state.updatedAt]),sources=index.sources.map(({id,revision,signature,name})=>({id,revision,signature,name})).sort((a,b)=>String(a.id).localeCompare(String(b.id))),hash=JSON.stringify(sources),prior=engineListsV2754.get(k),fingerprint=clientFingerprint(id);
+ const stamp=epoch,account=calibrationIdentity().email,listIdentity=JSON.stringify([state.fileId,state.folderId,state.updatedAt]),sources=index.sources.map(({id,revision,signature,name,metadataVersion,metadata})=>({id,revision,signature,name,metadataVersion,metadata})).sort((a,b)=>String(a.id).localeCompare(String(b.id))),hash=JSON.stringify(sources),prior=engineListsV2754.get(k),fingerprint=clientFingerprint(id);
  if(prior?.hash===hash&&!prior.invalidated&&prior.fingerprint===fingerprint)return refreshEngineListV2754(id);
  if(engineImportsV2754.has(k))return engineImportsV2754.get(k);
  const rows=balanceSourceRowsV2751(index);if(!rows)return null;
@@ -350,7 +350,7 @@ async function placeList(id,version,create=true){
 export function sourceFingerprint(tree,confirmed=null){
   if(!tree)return '';
   const known=typeof balanceListLocationV2731==='function'?balanceListLocationV2731(tree).file:(tree.fichiers||[]).find(f=>norm(f.nom||f.name)==='liste de balance.pdf');
-  const seen=new Set(),rows=[['schema','v2745-equipment-conformity'],['client',String(tree.id||''),tree.nom||tree.name||''],['list',String(known?.id||rehydratingListId(tree,confirmed))]],take=(node,pdf)=>{for(const f of node.fichiers||[]){if(excluded(f.nom||f.name)||f._cdqPendingSaveV2660)continue;const type=f.mimeType||f.type,id=String(f.id||'');if(id&&!seen.has(id)&&(type==='application/vnd.google-apps.spreadsheet'||type==='GOOGLE_SHEETS'||pdf&&(type==='application/pdf'||type==='PDF'))){seen.add(id);rows.push([id,type==='application/pdf'?'PDF':type==='application/vnd.google-apps.spreadsheet'?'GOOGLE_SHEETS':type,String(f.modifiedTime||f.dateModification||f.revision||''),String(f.version||''),String(f.md5Checksum||f.sha256Checksum||'')]);}}};
+  const seen=new Set(),rows=[['schema','v2866-equipment-metadata'],['client',String(tree.id||''),tree.nom||tree.name||''],['list',String(known?.id||rehydratingListId(tree,confirmed))]],take=(node,pdf)=>{for(const f of node.fichiers||[]){if(excluded(f.nom||f.name)||f._cdqPendingSaveV2660)continue;const type=f.mimeType||f.type,id=String(f.id||'');if(id&&!seen.has(id)&&(type==='application/vnd.google-apps.spreadsheet'||type==='GOOGLE_SHEETS'||pdf&&(type==='application/pdf'||type==='PDF'))){seen.add(id);rows.push([id,type==='application/pdf'?'PDF':type==='application/vnd.google-apps.spreadsheet'?'GOOGLE_SHEETS':type,String(f.modifiedTime||f.dateModification||f.revision||''),String(f.version||''),String(f.md5Checksum||f.sha256Checksum||'')]);}}};
   take(tree,true);
   for(const d of tree.dossiers||[])if(/^rapports? (?:d ?)?etalonnages?$/.test(norm(d.nom||d.name))){rows.push(['folder',String(d.id)]);take(d,true);}
   return JSON.stringify(rows.sort((a,b)=>a[0].localeCompare(b[0])));

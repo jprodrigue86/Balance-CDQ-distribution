@@ -35,7 +35,7 @@ function sectionStatus(rows,start,end){
   const checked=[first.check.checked,second.check.checked];
   assignments.add(first.index+':'+second.index);
   const bad=labels.findIndex(item=>item.status==='nonconforming');
-  results.add(checked[bad]?'nonconforming':checked[1-bad]?'conforming':'unknown');
+  results.add(checked[bad]&&checked[1-bad]?'unknown':checked[bad]?'nonconforming':checked[1-bad]?'conforming':'unknown');
  }
  return assignments.size===1&&results.size===1?[...results][0]:'unknown';
 }
@@ -55,6 +55,5 @@ export function sheetReportConformityV2727(snapshot){
    const status=sectionStatus(rows,row,end);if(status!==null)statuses.push(status);
   }
  }
- if(statuses.includes('nonconforming'))return 'nonconforming';
- return statuses.length&&statuses.every(status=>status==='conforming')?'conforming':'unknown';
+ return statuses.length&&statuses.every(status=>status===statuses[0])?statuses[0]:'unknown';
 }

@@ -4,7 +4,7 @@ const cache=new Map();
 for(const event of ['cdq:access-ready','cdq:drive-cleared-v2632'])window.addEventListener(event,()=>cache.clear());
 const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
 export async function completeClientContext(values,clientId){
- const result={...values};if(result.client_adresse&&result.client_code_postal)return result;
+ const result={...values};if(result.cdqContactLookupV2866||result.cdqContactRevisionV2866||result.client_adresse&&result.client_code_postal)return result;
  const owner=calibrationIdentity().email,guard=()=>{if(!owner||calibrationIdentity().email!==owner||!window.cdqDriveEntryV2632?.canRead())throw Error('Le compte n’a plus l’autorisation.');};guard();
  const key=owner+'|'+clientId,cached=cache.get(key);if(cached&&Date.now()-cached.at<300000){for(const field of keys)if(!result[field]&&cached.values[field])result[field]=cached.values[field];return result;}
  const files=await calibrationRpc('obtenirSourcesCoordonneesCDQV2638',clientId);guard();

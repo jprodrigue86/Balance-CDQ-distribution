@@ -11,6 +11,13 @@ export function pdfReportConformityV2727(form){
  const fields={has:name=>reportFieldV2819(actual,reportFieldNameV2819(actual,name))!==undefined,get:name=>reportFieldV2819(actual,reportFieldNameV2819(actual,name))};
  if(!['identification_balance','capacite_maximale','echelon'].every(name=>fields.has(name)))return 'unknown';
  const status=normalize(fields.get('Statut_conformite')?.getText?.());
+ // V34 colored artwork uses three checked widgets, with visibility selecting
+ // the one to paint. A hidden red/green artwork widget is not a verdict.
+ if(actual.has('essai_cdq_statut_global')){
+   if(status==='non conforme')return 'nonconforming';
+   if(status==='conforme')return 'conforming';
+   return 'unknown';
+ }
  // The final red icon is authoritative, including legacy reports whose
 // hidden status text or green icon was left inconsistent by another viewer.
  if(checked(fields.get('Bouton_NonConforme'))||status==='non conforme')return 'nonconforming';

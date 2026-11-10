@@ -1,4 +1,4 @@
-import {reportFieldNameV2819,reportFieldV2819,reportFieldValueV2819,isV34ReportFieldsV2819} from './report-field-aliases-v2819.mjs';
+import {reportFieldNameV2819,reportFieldV2819,reportFieldValueV2819,isV34ReportFieldsV2819,isWeightsV6FieldsV2866,weightsCreationIdentityV2866} from './report-field-aliases-v2819.mjs';
 import {t05Family} from './reader-t05.mjs';
 import {normalizeMeasurementRulesV2736} from './reader-measurements-v2736.mjs';
 import {normalizeReportVisualV2736} from './reader-report-visual-v2736.mjs';
@@ -19,6 +19,19 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
   let bytes=new Uint8Array(await (blob||(await floorTemplate()).blob).arrayBuffer());
   await import('./vendor/pdf-lib-1.17.1.min.js');
   const L=library||globalThis.PDFLib,lib=await L.PDFDocument.load(bytes),form=lib.getForm(),approved=approvedReportFamilyV2735(lib,L);let changed=false;
+  if(isWeightsV6FieldsV2866(form)){
+    const touched=[];
+    for(const [key,value]of Object.entries(weightsCreationIdentityV2866(Object.fromEntries(entries)))){
+      const name=reportFieldNameV2819(form,key),field=form.getFieldMaybe(name);
+      if(!field){if(strict)throw Error('Champ absent du modèle : '+name);continue;}
+      if(field.isReadOnly())continue;
+      if(field instanceof L.PDFTextField&&(!onlyEmpty||!String(field.getText()||'').trim())){field.setText(String(value));touched.push(field);}
+    }
+    if(!touched.length)return blob;
+    const font=await lib.embedFont(L.StandardFonts.Helvetica);
+    for(const field of touched)field.defaultUpdateAppearances(font);
+    return new Blob([await lib.save({updateFieldAppearances:false})],{type:'application/pdf'});
+  }
   // A V27.37 reviewed Multi-têtes has its own 57 native calculators with
   // independent Poids 1 / Poids 2 states. Do not wrap them again during
   // creation/prefill: the V27.36 wrapper overwrites valid native results.

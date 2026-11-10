@@ -20,7 +20,17 @@ export function reportFieldV2819(fields,name){
 export function isV34ReportFieldsV2819(fields){
  return reportFieldV2819(fields,PREFIX+'client_nom')!==undefined&&reportFieldV2819(fields,PREFIX+'probleme_constate')!==undefined&&reportFieldV2819(fields,PREFIX+'_recalcul')!==undefined;
 }
+export function isWeightsV6FieldsV2866(fields){
+ return ['client_nom','client_adresse','telephone','effectue_par','poids_01_01','poids_14_06','reference_01_02'].every(name=>reportFieldV2819(fields,name)!==undefined);
+}
+export function weightsCreationIdentityV2866(values){
+ const result={...values},parts=[result.client_adresse,result.client_ville,result.client_province,result.client_code_postal].filter(x=>typeof x==='string'&&x.trim()).map(x=>x.trim());
+ if(parts.length)result.client_adresse=[...new Set(parts)].join(', ');
+ for(const key of ['client_ville','client_province','client_code_postal'])delete result[key];
+ return result;
+}
 export function reportFieldNameV2819(fields,name){
+ if(isWeightsV6FieldsV2866(fields)){const actual={client_telephone:'telephone',client_technicien:'effectue_par'}[name];if(actual)return actual;}
  if(['Statut_conformite','Bouton_Conforme','Bouton_NonConforme','Bouton_ACompleter','resume_commentaires'].includes(name)&&reportFieldV2819(fields,PREFIX+'probleme_constate')!==undefined&&reportFieldV2819(fields,PREFIX+'_recalcul')!==undefined){const finalName=PREFIX+aliases[name];if(reportFieldV2819(fields,finalName)!==undefined)return finalName;}
  if(reportFieldV2819(fields,name)!==undefined)return name;
  if(!isV34ReportFieldsV2819(fields)||typeof name!=='string'||name.startsWith(PREFIX))return name;

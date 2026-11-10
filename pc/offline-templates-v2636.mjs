@@ -307,7 +307,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
    return {saveProgressOwnerV2758:email,editCopyV2756:c,...engineDataV2754(c),onSaveSnapshot:c.reportEngineV2754&&(session?.canWrite||profile?.canWrite)?(fields,requestId,name,context,preparedPdf)=>saveSnapshotCopyV2754(c.id,email,fields,requestId,name,preparedPdf,editor):null};
   }
   async function attachEngineV2754(copy,template,current){
-    if(current.reportEngineV2754!==true||!template.bundled)return copy;
+    if(current.reportEngineV2754!==true||!template.bundled||copy.modeleId==='poids'&&template.storageProtocol==='editable-pdf')return copy;
     const {REPORT_ENGINE_TEMPLATES_V2754}=await import('./report-engine-templates-v2754.mjs'),meta=REPORT_ENGINE_TEMPLATES_V2754[engineFamilyAliasV2754[copy.modeleId]||copy.modeleId];
     if(!meta)throw Error('Le modèle de ce rapport n’est pas disponible dans le nouveau moteur.');
     const context=reportContextV2754({reportId:crypto.randomUUID(),clientId:copy.destination.clientId,destinationId:copy.destination.folderId,family:copy.modeleId,template:{modeleId:meta.modeleId,sha256:meta.sha256,version:2754},baseRevision:0});
@@ -834,7 +834,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
           if(old)await put('copies',{...old,removed:true});
         }else{
           if(!identifier(data.clientId))throw Error('Compagnie absente.');
-          await put('copies',{id,email:current.email,kind:'sheet',driveId:data.fileId,name:String(data.name||'Google Sheets').slice(0,500),account:String(data.account||'').slice(0,320),confirmed:data.confirmed===true,
+          await put('copies',{[COPY_BASE_V2816]:old?.[COPY_BASE_V2816],id,email:current.email,kind:'sheet',driveId:data.fileId,name:String(data.name||'Google Sheets').slice(0,500),account:String(data.account||'').slice(0,320),confirmed:data.confirmed===true,
             destination:{clientId:data.clientId,folderId:data.folderId||old?.destination?.folderId||'',ancestorIds:Array.isArray(data.ancestorIds)?data.ancestorIds.filter(identifier).slice(0,100):old?.destination?.ancestorIds||[],name:String(data.clientName||'Compagnie').slice(0,500)},createdAt:old?.createdAt||Date.now(),removed:false});
         }
         reply({ok:true});await refresh();
@@ -887,7 +887,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
         }else{
           await verifyPdf(data.blob);if(stamp!==epoch||current!==session)return;
           if(!identifier(data.clientId)||!data.revision)throw Error('Compagnie ou révision PDF absente.');
-          await put('copies',{id,email:current.email,kind:'prepared',driveId:data.fileId,revision:data.revision,blob:data.blob,name:String(data.name||'Rapport.pdf'),
+          await put('copies',{[COPY_BASE_V2816]:c?.[COPY_BASE_V2816],id,email:current.email,kind:'prepared',driveId:data.fileId,revision:data.revision,blob:data.blob,name:String(data.name||'Rapport.pdf'),
             destination:{clientId:data.clientId,folderId:data.folderId||c?.destination?.folderId||'',ancestorIds:Array.isArray(data.ancestorIds)?data.ancestorIds.filter(identifier).slice(0,100):c?.destination?.ancestorIds||[],name:String(data.clientName||'Compagnie')},createdAt:Date.now(),status:'synced',uploadId:'',syncedUploadId:'',editVersion:c?(c.editVersion||0)+1:0});
           if(warmPdf&&!documentReaderWarmed){documentReaderWarmed=true;warmPdf(data);}
         }

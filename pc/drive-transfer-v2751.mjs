@@ -84,8 +84,14 @@ export function createDriveTransferV2751({rpc,get,put,owner,guard,context=()=>0,
    if(url.protocol!=='https:'||!['www.googleapis.com','content.googleapis.com'].includes(url.hostname)||!/^\/upload\/drive\/v3\/files(?:\/[^/]+)?$/.test(url.pathname)||!url.searchParams.has('upload_id'))throw Error('La destination temporaire Drive est invalide.');
    await persist({...meta,phase:'put-started'});valid();
    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),55000);let response;
-   try{response=await fetcher(url.href,{method:'PUT',headers:{'Content-Type':'application/pdf'},body:blob,credentials:'omit',referrerPolicy:'no-referrer',signal:controller.signal});}finally{clearTimeout(timer);}valid();
-   if(!response?.ok)throw Error('Envoi Drive interrompu. Le PDF reste conservé sur cet appareil.');
+   let transportError;
+   try{response=await fetcher(url.href,{method:'PUT',headers:{'Content-Type':'application/pdf'},body:blob,credentials:'omit',referrerPolicy:'no-referrer',signal:controller.signal});}catch(error){transportError=error;}finally{clearTimeout(timer);}valid();
+   if(transportError||!response?.ok){
+    // Drive may have committed the bytes even when its PUT response is lost.
+    // Reconcile this exact durable upload once; only a validated receipt wins.
+    // Keep put-started on failure so a later retry checks before sending again.
+    try{return await finalize();}catch(error){valid();throw error;}
+   }
    await persist({...meta,phase:'uploaded'});return finalize();
   });
  }

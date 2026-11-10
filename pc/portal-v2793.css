@@ -5,7 +5,7 @@ dialog.cdq-portal-dialog-v2793::backdrop{background:#000b}
 .cdq-portal-head-v2793 h2{font:700 20px/1.25 system-ui;margin:0}
 .cdq-portal-body-v2793{padding:16px}
 .cdq-portal-status-v2793{margin:0 0 12px;font-size:13px;color:#d3dde3;overflow-wrap:anywhere}
-.cdq-portal-body-v2793 input{box-sizing:border-box;width:100%;min-height:44px;padding:10px;color:#f4f7f9;background:#090e12;border:1px solid #607380;border-radius:8px;font:12px/1.45 monospace}
+.cdq-portal-body-v2793 input{box-sizing:border-box;width:100%;min-height:44px;padding:10px;color:#f4f7f9;background:#090e12;border:1px solid #607380;border-radius:8px;font:16px/1.45 monospace}
 .cdq-portal-actions-v2793{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
 .cdq-portal-dialog-v2793 button{box-sizing:border-box;min-height:42px;border-radius:9px;border:1px solid #697984;background:#29343d;color:#f6f9fb;padding:9px 10px;font:600 13px/1.25 system-ui;cursor:pointer}
 .cdq-portal-dialog-v2793 button:disabled{opacity:.55;cursor:default}

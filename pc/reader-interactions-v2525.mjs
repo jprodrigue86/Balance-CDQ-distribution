@@ -149,8 +149,9 @@ export function installFormNavigation({surface, toolbar, previous, next, done, o
   const fields = () => orderFields(Array.from(surface.querySelectorAll(selector)).filter(isNavigableField));
   function update(navigable) {
     const list = active ? navigable || fields() : [], index = list.indexOf(active);
-    toolbar.hidden = index < 0;
-    owner.body.classList.toggle('form-navigation', index >= 0);
+    const visible=index>=0&&!choiceIsOpen();
+    toolbar.hidden = !visible;
+    owner.body.classList.toggle('form-navigation', visible);
     previous.disabled = index <= 0;
     next.disabled = index < 0 || index === list.length - 1;
   }

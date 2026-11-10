@@ -32,7 +32,7 @@ import {paintReaderResults} from './reader-results-v2648.mjs';
 import {identificationReportName} from './report-name-v2648.mjs';
 import {createZoomSchedulerV2809,installTouchNavigation,installFormNavigation,installNativeTextInput} from './reader-interactions-v2525.mjs';
 import {installReaderCalibration} from './reader-calibration-v2565.mjs';
-import {installReaderChoices,cdqFitTrialDomTextV4,cdqTrialTextSpecV4} from './reader-choices-v2572.mjs';
+import {installReaderChoices,cdqFitTrialDomTextV4,cdqFitDetailTextV2864,cdqTrialTextSpecV4} from './reader-choices-v2572.mjs';
 import {installReaderTheme,applyReaderTheme} from './reader-theme-v2572.mjs';
 import {pdfWorkV2729,validatedPdfSaveInfoV2753} from './pdf-work-v2729.mjs';
 import {readReaderOpeningBytesV2753} from './reader-opening-source-v2753.mjs';
@@ -64,13 +64,17 @@ function fitTrialTextFieldV4(field){
   const height=rect?.length===4?Math.abs(rect[3]-rect[1]):spec.height;
   const pageIndex=Math.max(0,Number(field.closest('.page')?.dataset.pageNumber||1)-1);
   const scale=viewer?.getPageView?.(pageIndex)?.viewport?.scale||field.getBoundingClientRect().height/height||1;
-  const fit=cdqFitTrialDomTextV4(field.value,field,spec,scale);
+  let fit=cdqFitTrialDomTextV4(field.value,field,spec,scale);
+  if(field.name==='essai_cdq_problemes_detail'){
+    const detailed=cdqFitDetailTextV2864(field.value,fit.width/scale,fit.height/scale,spec.base);
+    fit={...fit,...detailed,padding:detailed.lines.length===4&&detailed.size===spec.base?0:detailed.padding,size:detailed.size*scale};
+  }
   const set=(name,value)=>{if(field.style.getPropertyValue(name)!==value||field.style.getPropertyPriority(name)!=='important')field.style.setProperty(name,value,'important');};
   set('font-family','CDQSummary, Arial, sans-serif');set('font-weight','400');set('font-size',fit.size+'px');
   set('box-sizing','border-box');set('text-align','left');set('text-overflow','clip');set('overflow','hidden');
   set('white-space',spec.multiline?'pre-wrap':'pre');set('word-break','normal');set('overflow-wrap','normal');set('hyphens','none');
-  set('padding',spec.multiline?(3*scale)+'px':'0 '+(3*scale)+'px');
-  set('line-height',spec.multiline?(fit.size*1.19)+'px':fit.height+'px');
+  set('padding',spec.multiline?((fit.padding??3)*scale)+'px':'0 '+(3*scale)+'px');
+  set('line-height',spec.multiline?(fit.size*(fit.lineHeight??1.19))+'px':fit.height+'px');
   if(field.tagName==='TEXTAREA')field.wrap=spec.multiline?'soft':'off';
   field.scrollLeft=0;field.scrollTop=0;
   field.dataset.cdqAutoFitBase=String(spec.base);field.dataset.cdqAutoFitSize=String(fit.size/scale);
@@ -185,7 +189,7 @@ function applyLateIdentity(){
   if(!initialPreparedDraftV2730){lateIdentity=null;return;} // Consultation never prefills or resaves an existing report.
   const values=lateIdentity;lateIdentity=null;
   for(const [name,value] of Object.entries(values)){
-    if(!/^client_(adresse|ville|province|code_postal|telephone)$/.test(name)||typeof value!=='string'||value.length>1000||!value.trim()||touchedIdentity.has(name))continue;
+    if(!/^client_(adresse|ville|province|code_postal|telephone)$/.test(name)||typeof value!=='string'||value.length>1000||!value.trim()||touchedIdentity.has(name)||touchedIdentity.has(reportFieldNameV2819(fieldDefinitions,name)))continue;
     const state=cdqStoredFieldStateV2581(name);if(state.readOnly||String(state.value||'').trim())continue;
     const defs=cdqFieldDefinitionsV2581(name);if(!defs.length)continue;
     for(const def of defs)doc.annotationStorage.setValue(def.id,{value});
@@ -967,8 +971,14 @@ try{
   touch=installTouchNavigation({container:$('container'),surface:$('viewer'),getViewer:()=>viewer,zoom:zoomSchedulerV2809,onIdle:()=>visualRefreshV2730.schedule()});
   nativeInput=installNativeTextInput($('viewer'));
   choices=installReaderChoices({surface:$('viewer'),isReadOnly:()=>readOnly,
-    onConfirm:field=>form.advance(field),
-    onOpen:()=>{cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;cdqKeyboardFieldV2550(false);},
+    onConfirm:(field,selection)=>{
+      if(!selection?.problem){form.advance(field);return;}
+      if(selection.hasProblems){
+        const comment=$('viewer').querySelector('[name="essai_cdq_precisions"],[name="precisions"]');
+        if(comment&&!comment.readOnly&&!comment.disabled){comment.focus({preventScroll:true});cdqRevealFieldV2552(comment,true);}
+      }
+    },
+    onOpen:()=>{cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;cdqKeyboardFieldV2550(false);form?.refresh();},
     onClose:()=>form.refresh()});
   decimalGuard=installMeasurementValidationV2736({surface:$('viewer'),getEchelon:()=>cdqStoredFieldStateV2581('echelon').value,status});
   $('viewer').addEventListener('input',e=>{if(e.target?.name===ECHELON_FIELD_V22){e.target.setCustomValidity('');e.target.removeAttribute('aria-invalid');}},true);

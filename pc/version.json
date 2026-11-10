@@ -1,12 +1,12 @@
 {
-  "androidSelectorSha256": "d93a47771c6625ad8771e912d3c3ed3e848f59137b3de458a2d903463ad6b6d1",
-  "androidSourceBuild": "2026.11.01-v28.12-reader-save",
-  "build": "2026.11.03-v28.35-r3-pdf-performance-reliability",
+  "androidSelectorSha256": "d5aa67fbce2ed12bbd61fb3adb427c2160b4ffb5319bf0e7cf6a1696715869c4",
+  "androidSourceBuild": "2026.11.09-v28.70-unused-master-cleanup",
+  "build": "2026.11.09-v28.70-pc-sync",
   "desktopModel": 3,
-  "files": 989,
-  "generatedFrom": "patches/performance-20261103/packaging/assemble.py",
+  "files": 1035,
+  "generatedFrom": "patches/pc-2870/compose.py",
   "platform": "pc-pwa",
-  "release": "246aecca2978c53c327699710bc74d7a02f926898d30fff244a93d37456e3be3",
-  "version": "28.35",
-  "webBaseCommit": "f59fd5bdfbd8bcf06114d3e41cf331859bc6d842"
+  "release": "83965ac9436cabaad10f1aa94bec2e6ddd54e3b548ed394dfdea45e28cccf4a7",
+  "version": "28.70",
+  "webBaseCommit": "6ad0df90cd56b7365a74322ba535ff8395d38cf6"
 }

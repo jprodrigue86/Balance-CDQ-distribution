@@ -1,10 +1,11 @@
 import {REPORT_TEMPLATES} from './report-templates-v2636.mjs';
-import {REPORT_ENGINE_TEMPLATES_V2754,LEGACY_REPORT_ENGINE_TEMPLATES_V2754,CYAN30_REPORT_ENGINE_TEMPLATES_V2754,T05_R1_REPORT_ENGINE_TEMPLATES_V2754,VISUAL2787_REPORT_ENGINE_TEMPLATES_V2754} from './report-engine-templates-v2754.mjs';
+import {REPORT_ENGINE_TEMPLATES_V2754,V2868_REPORT_ENGINE_TEMPLATES_V2754,PRE_BACKLOG_REPORT_ENGINE_TEMPLATES_V2754,V2864_LOCAL_REPORT_ENGINE_TEMPLATES_V2754,LEGACY_REPORT_ENGINE_TEMPLATES_V2754,CYAN30_REPORT_ENGINE_TEMPLATES_V2754,T05_R1_REPORT_ENGINE_TEMPLATES_V2754,VISUAL2787_REPORT_ENGINE_TEMPLATES_V2754} from './report-engine-templates-v2754.mjs';
 
 // Historical blank masters are public, immutable assets, never customer PDFs.
 // Their authority is the packaged server registry, not a path supplied by a caller.
 const archiveRoot='https://raw.githubusercontent.com/jprodrigue86/Balance-CDQ-distribution/';
 const archives=[
+  [PRE_BACKLOG_REPORT_ENGINE_TEMPLATES_V2754,'290bb5f7c320b2bcfa224a16b545cedc40a2aabd',meta=>meta.sourcePath],
   [VISUAL2787_REPORT_ENGINE_TEMPLATES_V2754,'ade33c154d13d1f1813248d16ce5e1120057a378',meta=>meta.sourcePath],
   [T05_R1_REPORT_ENGINE_TEMPLATES_V2754,'c6155a4287991e270dd2f4811dcb481ae8179fe2',meta=>meta.sourcePath],
   [CYAN30_REPORT_ENGINE_TEMPLATES_V2754,'cf9799f06b1f3761558f8dbce6cc6e3d2b181ed4',meta=>'templates/v2760-cyan30/'+meta.path.split('/').at(-1).replace(/\.pdf$/,'-cyan30.pdf')],
@@ -20,6 +21,10 @@ export function pinnedReportTemplateV2788(expected,{family=expected?.modeleId}={
   const matches=meta=>meta&&meta.modeleId===key&&meta.sha256===expected.sha256&&meta.version===expected.version;
   const current=REPORT_ENGINE_TEMPLATES_V2754[key],local=REPORT_TEMPLATES[key];
   if(matches(current)&&local.sha256===current.sha256&&local.taille===current.taille)return Object.freeze({...current,url:new URL('./'+local.path,import.meta.url).href});
+  const delivered2868=V2868_REPORT_ENGINE_TEMPLATES_V2754[key];
+  if(matches(delivered2868))return Object.freeze({...delivered2868,url:new URL('./'+delivered2868.path,import.meta.url).href});
+  const prior=V2864_LOCAL_REPORT_ENGINE_TEMPLATES_V2754[key];
+  if(matches(prior))return Object.freeze({...prior,url:new URL('./'+prior.path,import.meta.url).href});
   for(const [catalog,commit,source]of archives){
     const meta=catalog[key];
     if(matches(meta))return Object.freeze({...meta,url:archiveRoot+commit+'/'+source(meta)});

@@ -1,4 +1,3 @@
-import {installProblemGestures} from './reader-problem-gestures-v2819.mjs';
 // One reader-owned choice interface. PDF fields only store values and calculate.
 // No PDF field is moved, hidden or made read-only while this dialog is open.
 const TITLES={points_test:'Points de test',client_technicien:'Technicien',frequence_etalonnage:"Fréquence d’étalonnage",legal_pour_commerce:'Légal pour le commerce',unite_mesure:'Unité de mesure',etalon_utilise:'Étalon utilisé'};
@@ -50,8 +49,15 @@ export function cdqFitTrialTextV4(value,width,height,base,multiline=false,measur
 export function cdqProblemCaptionV3(labels,available,size,measure=cdqTrialTextWidthV4){
   const names=labels.map(cdqPlainProblemLabelV3).filter(Boolean);
   if(!names.length)names.push('Aucun problème constaté');
-  const full=names.join(' ; '),fit=cdqFitTrialTextV4(full,available+6,Infinity,size,false,measure);
-  return {text:full,size:fit.size,shown:names.length,total:names.length};
+  const text=names.length>1?'Plusieurs problèmes constatés':names[0].replace(/ \(corrigé\)$/,'');
+  return {text,size,shown:names.length,total:names.length};
+}
+export function cdqFitDetailTextV2864(value,width,height,base,measure=cdqTrialTextWidthV4){
+  const full=cdqFitTrialTextV4(value,width,Infinity,base,true,measure);
+  // The twelve approved causes fit at most four lines. Preserve their font;
+  // only remove excess leading/margins. Legacy longer content keeps its fit.
+  if(full.size===base&&full.lines.length<=4&&(full.lines.length-1)*1.03*base+.958*base+1<=height+.02)return {...full,lineHeight:1.03,padding:.5,ascent:.75};
+  return {...cdqFitTrialTextV4(value,width,height,base,true,measure),lineHeight:1.19,padding:3,ascent:.83};
 }
 let cdqDomFitCanvasV4=null;
 export function cdqFitTrialDomTextV4(value,element,spec,scale){
@@ -82,9 +88,37 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
   const list=document.createElement('div');list.id='choiceOptions';
   const footer=document.createElement('div');footer.className='choice-footer';
   const cancel=document.createElement('button');cancel.type='button';cancel.id='choiceCancel';cancel.textContent='Annuler';
-  const done=document.createElement('button');done.type='button';done.id='choiceDone';done.className='primary';done.textContent='Terminé';
+  const done=document.createElement('button');done.type='button';done.id='choiceDone';done.className='primary';done.textContent='Terminer';
   footer.append(cancel,done);dialog.append(title,help,list,footer);document.body.append(dialog);
-  const problemGestures=installProblemGestures({viewport:list,target:dialog});
+  // Explicit pages on short viewports; no scroll/pinch interception of taps.
+  const pages=document.createElement('nav');pages.className='choice-pages';pages.hidden=true;
+  pages.setAttribute('aria-label','Pages des problèmes');
+  const prev=document.createElement('button'),pageLabel=document.createElement('span'),nextPage=document.createElement('button');
+  prev.type=nextPage.type='button';prev.textContent='Précédent';nextPage.textContent='Suivant';
+  pages.append(prev,pageLabel,nextPage);footer.before(pages);
+  let page=0,pageRows=[],pageCount=1;
+  function showPage(){
+    page=Math.min(Math.max(0,page),pageCount-1);
+    for(const [index,rows]of pageRows.entries())for(const row of rows)row.hidden=index!==page;
+    prev.disabled=page===0;nextPage.disabled=page===pageCount-1;
+    pageLabel.textContent=(page+1)+' / '+pageCount;
+  }
+  function paginate(){
+    if(!current||!problemMode)return;
+    const rows=Array.from(list.querySelectorAll('.choice-problem-pair'));
+    for(const row of rows)row.hidden=false;
+    pages.hidden=false;
+    const fixed=Array.from(list.children).filter(row=>!rows.includes(row)).reduce((sum,row)=>sum+row.getBoundingClientRect().height,0);
+    const heights=rows.map(row=>Math.max(44,row.getBoundingClientRect().height));
+    const available=Math.max(44,list.clientHeight-fixed-4);
+    pageRows=[[]];let used=0;
+    rows.forEach((row,index)=>{const height=heights[index];if(used&&used+height>available){pageRows.push([]);used=0;}pageRows[pageRows.length-1].push(row);used+=height;});
+    pageCount=pageRows.length;showPage();
+  }
+  prev.addEventListener('click',()=>{page--;showPage();});
+  nextPage.addEventListener('click',()=>{page++;showPage();});
+  const observer=typeof ResizeObserver==='function'?new ResizeObserver(paginate):null;
+  observer?.observe(list);
 
   const nameOf=entry=>entry.select?.name||entry.input?.name||entry.button?.name||'';
   const multipleOf=entry=>(entry.kind==='kit-text'||entry.kind==='kit-native')||!!entry.select?.multiple;
@@ -143,7 +177,7 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
       currentLabels=all.filter(option=>chosen.has(option.value)).map(option=>plainLabel(option.label));
       const spec=cdqTrialTextSpecV4(nameOf(entry)),scale=(parseFloat(css.fontSize)||spec.base)/spec.base;
       const caption=cdqProblemCaptionV3(currentLabels,spec.width-6,spec.base);
-      const fitted=cdqFitTrialDomTextV4(caption.text,entry.button,spec,scale);
+      const fitted={size:spec.base*scale};
       display=caption.text;
       entry.button.style.setProperty('font-size',fitted.size+'px','important');
       entry.button.style.fontFamily='CDQSummary, Arial, sans-serif';
@@ -151,7 +185,7 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
       if(entry.label){entry.label.style.textAlign='left';entry.label.style.padding='0 '+(3*scale)+'px';entry.label.style.textOverflow='clip';}
     }else if(pairs){
       const count=Array.from(problemDraft(selected(entry),pairs)).filter(value=>value!==pairs.none.value).length;
-      display=count?count+' problème'+(count>1?'s sélectionnés':' sélectionné'):'Aucun problème constaté';
+      display=count>1?'Plusieurs problèmes constatés':count?plainLabel(currentLabels[0]).replace(/ \(corrigé\)$/,''):'Aucun problème constaté';
     }
     if(entry.label)entry.label.textContent=display;
     entry.button.title=currentLabels.join(' ; ');
@@ -178,6 +212,12 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
       paint(entry);
       return;
     }
+    // This is the free text to the right of the problem menu, not the lower
+    // general comment. Cancel never reaches this path.
+    if(problemMode&&!Array.from(draft).some(value=>value!=='aucun')){
+      const comment=surface.querySelector('[name="essai_cdq_precisions"],[name="precisions"]');
+      if(comment){comment.value='';comment.dispatchEvent(new Event('input',{bubbles:true}));comment.dispatchEvent(new Event('change',{bubbles:true}));}
+    }
     for(const option of entry.select.options)option.selected=draft.has(option.value);
     if(!entry.select.multiple&&!draft.size)entry.select.value='';
     entry.select.dispatchEvent(new Event('input',{bubbles:true}));
@@ -186,7 +226,7 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
   }
   function entryFor(button){return entries.get(button?.dataset?.cdqChoiceKey||button?.name);}
   function renderOptions(){
-    const choices=Array.from(list.querySelectorAll('button[data-value]'));
+    const choices=Array.from(list.querySelectorAll('button[data-value]')).filter(button=>!button.closest('[hidden]'));
     const focused=problemMultiple&&choices.includes(document.activeElement)?document.activeElement:null;
     const tabStop=focused||choices.find(row=>draft.has(row.dataset.value))||choices[0];
     for(const row of choices){
@@ -249,23 +289,27 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     }
     list.scrollTop=0;
     renderOptions();entry.button.setAttribute('aria-expanded','true');
+    document.body.classList.add('cdq-choice-open');
     onOpen(entry.button);
     dialog.showModal();
-    if(problemMode)problemGestures.open();
+    page=0;pages.hidden=!problemMode;if(problemMode)paginate();
     // Focus a button, never a text field: opening choices does not request IME.
-    const focus=list.querySelector('[aria-checked="true"]')||list.querySelector('button')||done;
+    const visibleChoices=Array.from(list.querySelectorAll('button')).filter(button=>!button.closest('[hidden]'));
+    const focus=visibleChoices.find(button=>button.getAttribute('aria-checked')==='true')||visibleChoices[0]||done;
     focus.focus({preventScroll:true});
-    if(problemMode)focus.scrollIntoView({block:'nearest'});
+    // Keep the PDF's scroll/zoom position; the menu has explicit page controls.
     return true;
   }
   function close(commitChanges){
     if(!current)return;
-    const entry=current;current=null;
+    const entry=current,wasProblem=problemMode,hasProblems=Array.from(draft).some(value=>value!=='aucun');
     if(commitChanges)commit(entry);
+    current=null;
     draft.clear();entry.button.setAttribute('aria-expanded','false');
-    problemGestures.close();dialog.close();onClose(entry.button);
+    dialog.close();dialog.classList.remove('choice-problems','choice-problems-multiple');pages.hidden=true;
+    document.body.classList.remove('cdq-choice-open');onClose(entry.button);
     entry.button.focus({preventScroll:true});
-    if(commitChanges)onConfirm(entry.button);
+    if(commitChanges)onConfirm(entry.button,{problem:wasProblem,hasProblems});
   }
   cancel.addEventListener('click',()=>close(false));done.addEventListener('click',()=>close(true));
   dialog.addEventListener('cancel',e=>{e.preventDefault();close(false);});
@@ -274,7 +318,7 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     else if(e.key==='Tab')e.stopPropagation();
     else if(problemMode&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key)){
       const button=e.target.closest?.('#choiceOptions button[data-value]');if(!button)return;
-      const choices=Array.from(list.querySelectorAll('button[data-value]')),index=choices.indexOf(button);if(index<0)return;
+      const choices=Array.from(list.querySelectorAll('button[data-value]')).filter(button=>!button.closest('[hidden]')),index=choices.indexOf(button);if(index<0)return;
       e.preventDefault();e.stopPropagation();
       const next=e.key==='Home'?0:e.key==='End'?choices.length-1:(index+(['ArrowLeft','ArrowUp'].includes(e.key)?-1:1)+choices.length)%choices.length;
       choices[next].focus();

@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.35" data-cdq-pc-release="246aecca2978c53c327699710bc74d7a02f926898d30fff244a93d37456e3be3">
+<html data-cdq-pc-version="28.70" data-cdq-pc-release="83965ac9436cabaad10f1aa94bec2e6ddd54e3b548ed394dfdea45e28cccf4a7">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -932,7 +932,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.11.03-v28.35-r3-pdf-performance-reliability">
+<meta name="cdq-package-build" content="2026.11.09-v28.70-pc-sync">
 
 
 <script id="cdqBridgeV23">
@@ -986,7 +986,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.03-v28.35-r3-pdf-performance-reliability'
+    build:'2026.11.09-v28.70-pc-sync'
   });
 }
 
@@ -999,7 +999,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.03-v28.35-r3-pdf-performance-reliability'
+        build:'2026.11.09-v28.70-pc-sync'
       });
     }
   } catch(e) {}
@@ -6128,8 +6128,419 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
 <script type="module" src="./company-search-v2797.mjs"></script>
 <link rel="stylesheet" href="./interface-v2797.css">
 <script type="module" src="./desktop-actions-v2797.mjs"></script>
+<style id="cdq-v2860-offline-minimal">
+#cdqDocumentPrepare .cdq26-offline-path{display:flex;align-items:center;gap:12px;min-height:28px;color:#b6d1e4;font-size:14px}
+#cdqDocumentPrepare .cdq26-offline-path button{flex:0 0 auto;min-height:32px;padding:4px 10px!important}
+#cdqDocumentPrepare .cdq24-checklist .cdq26-folder-link-v2860{display:block;width:100%;padding:12px!important;text-align:left;background:#112c3a;border:0;border-bottom:1px solid #385467;color:#d5eefa;font-size:15px}
+#cdqDocumentPrepare .cdq24-checklist .cdq26-folder-link-v2860[hidden]{display:none!important}
+</style>
+<style id="cdq-v2861-offline-list-viewport">
+/* Compact headers and controls; give the remaining phone screen to the scroll list.
+   These overrides apply only to Documents hors ligne, not other CDQ dialogs. */
+#cdqDocumentPrepare .modal{
+  gap:3px!important;padding:calc(env(safe-area-inset-top) + 7px) 10px calc(env(safe-area-inset-bottom) + 7px)!important;
+}
+#cdqDocumentPrepare .modal > h2.cdq-v19-title{
+  margin:0!important;font:700 23px/1.18 Arial,Helvetica,sans-serif!important;
+  flex:0 0 auto!important;
+}
+#cdqDocumentPrepare .cdq-v19-body{
+  flex:1 1 0!important;min-height:0!important;gap:4px!important;overflow:hidden!important;
+}
+#cdqDocumentPrepare .cdq-menu-context-v2815{
+  margin:0!important;font:700 clamp(18px,4.5vw,22px)/1.2 Arial,Helvetica,sans-serif!important;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:0 0 auto;
+}
+#cdqDocumentPrepare .cdq-menu-status-v2815{
+  margin:0!important;line-height:1.2!important;font-size:12px!important;
+}
+#cdqDocumentPrepare .cdq-menu-status-v2815[hidden],
+#cdqDocumentPrepare .cdq26-offline-path[hidden],
+#cdqDocumentPrepare .cdq26-offline-stored[hidden]{display:none!important}
+#cdqDocumentPrepare .cdq26-offline-select{
+  display:flex!important;flex:1 1 0!important;min-height:0!important;gap:4px!important;
+  overflow:hidden!important;
+}
+#cdqDocumentPrepare .cdq-v2861-offline-heading{
+  display:flex!important;flex:0 0 auto!important;align-items:center!important;
+  justify-content:space-between!important;gap:8px!important;min-height:23px!important;
+}
+#cdqDocumentPrepare .cdq-v2861-offline-heading h3{
+  margin:0!important;font:700 16px/1.2 Arial,Helvetica,sans-serif!important;
+}
+#cdqDocumentPrepare .cdq26-offline-count{
+  margin:0!important;font:500 12px/1.2 Arial,Helvetica,sans-serif!important;
+  white-space:nowrap!important;flex:0 0 auto!important;
+}
+#cdqDocumentPrepare .cdq26-offline-select > .cdq24-help{
+  margin:0!important;padding:0!important;line-height:1.24!important;
+  font-size:12px!important;flex:0 0 auto!important;
+}
+#cdqDocumentPrepare .cdq24-actions{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  flex:0 0 auto!important;gap:6px!important;align-items:stretch!important;
+  margin:0!important;
+}
+#cdqDocumentPrepare .cdq24-actions button{
+  display:block!important;min-width:0!important;width:100%!important;
+  min-height:38px!important;max-height:44px!important;
+  padding:7px 5px!important;font:600 13px/1.1 Arial,Helvetica,sans-serif!important;
+  white-space:nowrap!important;
+}
+#cdqDocumentPrepare .cdq26-offline-search{
+  box-sizing:border-box!important;min-height:38px!important;height:38px!important;
+  padding:6px 10px!important;font-size:15px!important;flex:0 0 auto!important;
+}
+#cdqDocumentPrepare .cdq26-offline-path{
+  min-height:27px!important;height:auto!important;flex:0 0 auto!important;gap:7px!important;
+  font-size:13px!important;
+}
+#cdqDocumentPrepare .cdq26-offline-path button{min-height:30px!important;padding:4px 8px!important}
+#cdqDocumentPrepare .cdq24-checklist{
+  flex:1 1 0!important;min-height:0!important;max-height:none!important;height:auto!important;
+  overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;scrollbar-gutter:auto!important;
+}
+#cdqDocumentPrepare .cdq24-checklist label{
+  box-sizing:border-box!important;display:flex!important;align-items:center!important;
+  min-height:46px!important;padding:7px 10px!important;gap:10px!important;
+  font:500 15px/1.25 Arial,Helvetica,sans-serif!important;
+}
+#cdqDocumentPrepare .cdq24-checklist label input[type=checkbox]{width:24px!important;height:24px!important;flex:0 0 24px!important}
+#cdqDocumentPrepare .cdq24-checklist .cdq26-folder-link-v2860{
+  min-height:44px!important;padding:8px 10px!important;font-size:14px!important;
+}
+#cdqDocumentPrepare .cdq26-offline-stored{flex:0 0 auto!important;padding:2px 0 0!important;margin:0!important}
+#cdqDocumentPrepare .cdq26-offline-stored > summary{min-height:28px!important;font-size:13px!important}
+#cdqDocumentPrepare .modal-buttons{
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:7px!important;flex:0 0 auto!important;margin:3px 0 0!important;
+}
+#cdqDocumentPrepare .modal-buttons > button{
+  box-sizing:border-box!important;display:block!important;width:100%!important;
+  min-width:0!important;min-height:44px!important;max-height:52px!important;
+  padding:7px 5px!important;margin:0!important;
+  font:600 14px/1.2 Arial,Helvetica,sans-serif!important;
+}
+@media (max-height:640px){
+  #cdqDocumentPrepare .modal{padding-top:4px!important;padding-bottom:4px!important}
+  #cdqDocumentPrepare .cdq24-checklist label{min-height:42px!important;padding:5px 8px!important}
+}
+</style>
 <link rel="stylesheet" href="./offline-experience-v2819.css">
 <script type="module">import {installOfflineStatusV2819} from "./offline-experience-v2819.mjs";installOfflineStatusV2819();</script>
+<style id="cdq-v2847-mobile-ui-correction">/* CDQ 28.47 — MAJ-055 / MAJ-062. Android phone ONLY.
+ * The 28.44 patch accidentally forced navigation items to display:flex!important
+ * even when mobile selection mode tried to hide them. JS then made one nav grid
+ * column, stacking every navigation item vertically. Fix the real mobile dock,
+ * not the hidden #selectionBar. Preserve gestures on file rows and PDF viewer.
+ */
+@media (max-width:700px) {
+  /* MAJ-062: retain the approved horizontal artwork + label arrangement.
+   * Restore the existing 49px material action height; remove 28.44's 66px
+   * vertical cards and 27px font-scaling overrides. */
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > .cdq-top-action {
+    box-sizing:border-box!important;
+    display:flex!important;flex-direction:row!important;
+    align-items:center!important;justify-content:center!important;
+    gap:4px!important;
+    height:auto!important;
+    min-height:var(--cdq-compact-height-v2853,36px)!important;max-height:none!important;
+    padding:4px 3px!important;
+    font:600 clamp(9px,2.5vw,11px)/1.18 Arial,Helvetica,sans-serif!important;
+    text-align:left!important;white-space:normal!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > .cdq-top-action > :is(svg,span:first-child:not(:last-child)) {
+    box-sizing:border-box!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    width:25px!important;height:25px!important;min-width:25px!important;min-height:25px!important;
+    max-width:25px!important;max-height:25px!important;flex:0 0 25px!important;
+    margin:0!important;padding:0!important;
+    object-fit:contain!important;line-height:1!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > .cdq-top-action > span:first-child > svg {
+    box-sizing:border-box!important;width:100%!important;height:100%!important;
+    min-width:0!important;min-height:0!important;max-width:100%!important;max-height:100%!important;
+    flex:none!important;object-fit:contain!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > .cdq-top-action > span:last-child:not(:first-child) {
+    display:block!important;flex:0 1 auto!important;width:auto!important;min-width:0!important;
+    margin:0!important;line-height:1.18!important;text-align:left!important;
+    white-space:normal!important;overflow-wrap:normal!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > button {
+    box-sizing:border-box!important;
+    flex-direction:row!important;align-items:center!important;justify-content:center!important;
+    height:auto!important;
+    min-height:var(--cdq-compact-height-v2853,36px)!important;max-height:none!important;
+    gap:4px!important;padding:4px 3px!important;
+    font:600 clamp(9px,2.5vw,11px)/1.18 Arial,Helvetica,sans-serif!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > button > .cdq-material-client-icon {
+    box-sizing:border-box!important;width:25px!important;height:25px!important;
+    min-width:25px!important;min-height:25px!important;
+    max-width:25px!important;max-height:25px!important;flex:0 0 25px!important;
+    object-fit:contain!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > button > .cdq-material-client-icon > svg {
+    display:block!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
+  }
+
+  /* Normal bottom navigation stays a single horizontal navigation row.
+   * Its icons may have artwork wrappers from the theme; never stretch them. */
+  /* V28.59: normal nav frame follows its icon + caption + safe-area inset.
+     The selection strip retains its own independent layout and gestures. */
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body:not(.selection-active) .bottom-nav {
+    box-sizing:border-box!important;height:auto!important;max-height:none!important;
+    min-height:var(--cdq-nav-adaptive-min-v2859,60px)!important;
+    align-items:center!important;overflow-y:hidden!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body:not(.selection-active) .bottom-nav > .bottom-nav-item {
+    display:flex!important;flex-direction:column!important;
+    align-items:center!important;justify-content:center!important;
+    gap:2px!important;min-width:0!important;
+    padding:3px 1px!important;text-align:center!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body:not(.selection-active) .bottom-nav > .bottom-nav-item > :is(span,svg) {
+    box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;
+    flex:0 0 var(--cdq-icon-bottom-v2213,26px)!important;width:var(--cdq-icon-bottom-v2213,26px)!important;height:var(--cdq-icon-bottom-v2213,26px)!important;
+    min-width:var(--cdq-icon-bottom-v2213,26px)!important;min-height:var(--cdq-icon-bottom-v2213,26px)!important;max-width:var(--cdq-icon-bottom-v2213,26px)!important;max-height:var(--cdq-icon-bottom-v2213,26px)!important;
+    font-size:var(--cdq-icon-bottom-v2213,26px)!important;line-height:1!important;margin:0 auto!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body:not(.selection-active) .bottom-nav > .bottom-nav-item > :is(span,svg) > svg {
+    width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body:not(.selection-active) .bottom-nav > .bottom-nav-item > small {
+    display:block!important;flex:0 0 auto!important;min-width:0!important;width:100%!important;
+    font:600 clamp(9px,2.35vw,11px)/1.13 Arial,Helvetica,sans-serif!important;
+    text-align:center!important;white-space:normal!important;
+  }
+
+  /* MAJ-055: the REAL selection bar is inside .bottom-nav (V2783).
+   * Crucial: override the old 28.44 display:flex!important on each ordinary
+   * navigation child, otherwise JS's single-column selection grid stacks them. */
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .bottom-nav > .bottom-nav-item {
+    display:none!important;visibility:hidden!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .bottom-nav {
+    box-sizing:border-box!important;
+    display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+    grid-auto-columns:auto!important;align-items:stretch!important;
+    overflow:hidden!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .bottom-nav > .cdq-selection-actions-v2783 {
+    box-sizing:border-box!important;
+    display:flex!important;grid-column:1/-1!important;grid-row:1!important;
+    flex:0 0 auto!important;flex-direction:row!important;flex-wrap:nowrap!important;
+    align-items:center!important;justify-content:flex-start!important;
+    width:100%!important;min-width:0!important;max-width:100%!important;height:100%!important;
+    overflow-x:auto!important;overflow-y:hidden!important;
+    touch-action:pan-x!important;overscroll-behavior-x:contain!important;
+    -webkit-overflow-scrolling:touch;scrollbar-width:thin;
+    gap:4px!important;padding:2px 6px!important;scroll-padding-inline:8px;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-actions-v2783 > .cdq-selection-action-v2783 {
+    box-sizing:border-box!important;display:flex!important;flex:0 0 68px!important;
+    width:68px!important;min-width:68px!important;max-width:68px!important;
+    flex-direction:column!important;align-items:center!important;justify-content:center!important;
+    min-height:56px!important;max-height:65px!important;
+    gap:2px!important;padding:2px 2px!important;
+    touch-action:manipulation!important;white-space:nowrap!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-actions-v2783 > [data-selection-action="select-all"] {
+    flex-basis:82px!important;width:82px!important;min-width:82px!important;max-width:82px!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-action-v2783 .cdq-action-art-v2655 {
+    box-sizing:border-box!important;width:29px!important;height:29px!important;max-width:29px!important;max-height:29px!important;
+    flex:0 0 29px!important;object-fit:contain!important;
+  }
+  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-action-v2783 small {
+    font:600 10px/1.14 Arial,Helvetica,sans-serif!important;
+    white-space:nowrap!important;text-align:center!important;
+  }
+}
+</style>
+<style id="cdq-v2853-compact-hd-icons">/* CDQ 28.53 — compact home, hi-res existing Material PNG, larger selection.
+ * Replaces the 28.50 home fix instead of stacking more conflicting styles.
+ * Palette Metal all backgrounds; retains the original 4+3 rectangles.
+ */
+@media (max-width:700px) {
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) {
+  --cdq-compact-art-v2853:var(--cdq-unified-art-v2856,30px);
+  --cdq-compact-height-v2853:max(calc(var(--cdq-compact-art-v2853) + 8px),calc(var(--cdq-adaptive-home-label-v2856,10px) * 2.28 + 8px));
+  --cdq-selection-art-v2853:clamp(34px,calc(var(--cdq-home-icon-v2850,41px) * .96),46px);
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqTopActionsV2204,
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 {
+  box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;
+ }
+ /* Identical compact height and icon/text gap for all seven actions. */
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028),
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report]) {
+  display:flex!important;flex-direction:row!important;
+  align-items:center!important;justify-content:flex-start!important;
+  box-sizing:border-box!important;min-width:0!important;
+  height:auto!important;
+  min-height:var(--cdq-compact-height-v2853)!important;
+  max-height:none!important;
+  gap:var(--cdq-adaptive-home-gap-v2856,5px)!important;padding:3px 1px!important;
+  white-space:normal!important;overflow:hidden!important;text-align:center!important;
+  font:600 var(--cdq-adaptive-home-label-v2856,10px)/1.14 Arial,Helvetica,sans-serif!important;
+ }
+ /* Hide only the old double-drawn markup. One approved high-res PNG icon is visible. */
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028) > :is(svg,.cdq-action-art-v2655,span:first-child:not(:last-child)),
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report]) > .cdq-material-client-icon {
+  display:none!important;visibility:hidden!important;flex:none!important;
+  width:0!important;height:0!important;min-width:0!important;min-height:0!important;
+  margin:0!important;padding:0!important;
+ }
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028)::before,
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report])::before {
+  content:""!important;display:block!important;box-sizing:border-box!important;
+  flex:0 0 var(--cdq-compact-art-v2853)!important;
+  width:var(--cdq-compact-art-v2853)!important;
+  min-width:var(--cdq-compact-art-v2853)!important;
+  max-width:var(--cdq-compact-art-v2853)!important;
+  height:var(--cdq-compact-art-v2853)!important;
+  min-height:var(--cdq-compact-art-v2853)!important;
+  max-height:var(--cdq-compact-art-v2853)!important;
+  background-image:url("./assets/material-v2799/icons.png")!important;
+  background-size:calc(var(--cdq-compact-art-v2853) * 4) calc(var(--cdq-compact-art-v2853) * 4)!important;
+  background-repeat:no-repeat!important;background-origin:border-box!important;
+  align-self:center!important;pointer-events:none!important;padding:0!important;margin:0!important;
+ }
+ /* The original lossless 1254x1254 atlas has four columns, 313.5px/cell. */
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqV19OfflineStatus::before{background-position:0 0!important}
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #clientNoteButton::before{background-position:calc(var(--cdq-compact-art-v2853) * -1) 0!important}
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #clientPhotoButton::before{background-position:calc(var(--cdq-compact-art-v2853) * -2) 0!important}
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientPortalButton20261028::before{background-position:calc(var(--cdq-compact-art-v2853) * -3) 0!important}
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body [data-client-folder]::before{background-position:0 calc(var(--cdq-compact-art-v2853) * -1)!important}
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body [data-client-list]::before{background-position:calc(var(--cdq-compact-art-v2853) * -1) calc(var(--cdq-compact-art-v2853) * -1)!important}
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body [data-client-report]::before{background-position:calc(var(--cdq-compact-art-v2853) * -2) calc(var(--cdq-compact-art-v2853) * -1)!important}
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028) > span:last-child:not(:first-child),
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report]) > span:last-child:not(:first-child){
+  box-sizing:border-box!important;display:block!important;flex:1 1 auto!important;
+  width:auto!important;min-width:0!important;max-width:100%!important;
+  margin:0!important;padding:0!important;font:inherit!important;line-height:1.14!important;
+  white-space:normal!important;word-break:normal!important;
+  overflow-wrap:normal!important;hyphens:none!important;text-align:left!important;
+ }
+ /* Keep the entire SELECTED dock visible after enlarging its artwork.
+    V28.47's height:100% child used a 49px minimum for ~78px buttons and
+    clipped the captions below the viewport. Grow the dock upward, not down. */
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .bottom-nav {
+  box-sizing:border-box!important;
+  height:auto!important;max-height:none!important;
+  min-height:calc(90px + var(--cdq-safe-bottom,0px))!important;
+  padding-top:2px!important;
+  padding-bottom:calc(8px + var(--cdq-safe-bottom,0px))!important;
+  overflow:hidden!important;
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .bottom-nav > .cdq-selection-actions-v2783 {
+  height:auto!important;min-height:80px!important;max-height:none!important;
+  align-items:center!important;align-self:stretch!important;
+ }
+ /* MAJ-055: preserve the horizontal touch scroller; increase actual artwork. */
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-actions-v2783 > .cdq-selection-action-v2783{
+  min-height:74px!important;max-height:84px!important;height:78px!important;
+  flex:0 0 71px!important;min-width:71px!important;max-width:71px!important;gap:3px!important;
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-actions-v2783 > [data-selection-action="select-all"]{
+  flex-basis:86px!important;min-width:86px!important;max-width:86px!important;
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-action-v2783 .cdq-action-art-v2655{
+  box-sizing:border-box!important;display:flex!important;
+  width:var(--cdq-selection-art-v2853)!important;
+  height:var(--cdq-selection-art-v2853)!important;
+  min-width:var(--cdq-selection-art-v2853)!important;
+  min-height:var(--cdq-selection-art-v2853)!important;
+  max-width:var(--cdq-selection-art-v2853)!important;
+  max-height:var(--cdq-selection-art-v2853)!important;
+  flex:0 0 var(--cdq-selection-art-v2853)!important;
+  align-items:center!important;justify-content:center!important;object-fit:contain!important;
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-action-v2783 .cdq-action-art-v2655 :is(svg,img){
+  display:block!important;width:100%!important;height:100%!important;
+  max-width:100%!important;max-height:100%!important;object-fit:contain!important;
+ }
+}
+@media (max-width:379px) {
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) {
+ }
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028),
+ html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report]){
+  gap:var(--cdq-adaptive-home-gap-v2856,3px)!important;padding:3px 1px!important;font-size:var(--cdq-adaptive-home-label-v2856,9px)!important;
+ }
+}
+</style>
+<style id="cdq-v2854-selection-compact-scroll">/* CDQ 28.57: scoped gesture ownership; CDQ 28.54 — mode sélection uniquement. L'accueil V28.53 est intact.
+   Une seule source de taille: le rendu exact des sept icônes principales. */
+@media (max-width:700px) {
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) {
+  --cdq-selection-art-v2854:var(--cdq-compact-art-v2853,30px);
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .bottom-nav {
+  touch-action:none!important;
+  height:auto!important;max-height:none!important;
+  min-height:calc(var(--cdq-selection-art-v2854) + 32px + var(--cdq-safe-bottom,0px))!important;
+  padding:2px 4px calc(5px + var(--cdq-safe-bottom,0px))!important;
+  overflow:hidden!important;
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .bottom-nav > .cdq-selection-actions-v2783 {
+  box-sizing:border-box!important;
+  display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+  width:100%!important;min-width:0!important;max-width:100%!important;
+  height:auto!important;min-height:0!important;max-height:none!important;
+  align-items:center!important;align-self:center!important;justify-content:flex-start!important;
+  gap:2px!important;padding:1px 3px!important;
+  overflow-x:auto!important;overflow-y:hidden!important;scroll-behavior:auto!important;
+  touch-action:none!important;overscroll-behavior-x:contain!important;
+  -webkit-overflow-scrolling:touch;scrollbar-width:none;
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-actions-v2783::-webkit-scrollbar {
+  display:none;
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-actions-v2783 > .cdq-selection-action-v2783 {
+  box-sizing:border-box!important;
+  flex:0 0 59px!important;width:59px!important;min-width:59px!important;max-width:59px!important;
+  height:calc(var(--cdq-selection-art-v2854) + 24px)!important;
+  min-height:calc(var(--cdq-selection-art-v2854) + 24px)!important;
+  max-height:none!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;
+  justify-content:center!important;gap:2px!important;padding:1px!important;
+  touch-action:none!important;user-select:none!important;
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-actions-v2783 > [data-selection-action="select-all"] {
+  flex-basis:78px!important;width:78px!important;min-width:78px!important;max-width:78px!important;
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-action-v2783 .cdq-action-art-v2655 {
+  box-sizing:border-box!important;display:flex!important;
+  width:var(--cdq-selection-art-v2854)!important;height:var(--cdq-selection-art-v2854)!important;
+  min-width:var(--cdq-selection-art-v2854)!important;min-height:var(--cdq-selection-art-v2854)!important;
+  max-width:var(--cdq-selection-art-v2854)!important;max-height:var(--cdq-selection-art-v2854)!important;
+  flex:0 0 var(--cdq-selection-art-v2854)!important;
+  align-items:center!important;justify-content:center!important;
+  touch-action:none!important;pointer-events:none!important;
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-action-v2783 .cdq-action-art-v2655 :is(svg,img) {
+  box-sizing:border-box!important;display:block!important;width:100%!important;height:100%!important;
+  max-width:100%!important;max-height:100%!important;object-fit:contain!important;
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-action-v2783 small {
+  flex:0 0 auto!important;display:block!important;width:100%!important;
+  margin:0!important;padding:0!important;
+  font:600 9px/1.12 Arial,Helvetica,sans-serif!important;
+  white-space:nowrap!important;text-align:center!important;
+  touch-action:none!important;pointer-events:none!important;
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-dragging-v2857 .cdq-selection-held-v2857 {
+  outline:2px solid #83d6ff!important;border-radius:8px!important;opacity:.9!important;
+ }
+ html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body.selection-active .cdq-selection-action-v2783[data-selection-action="select-all"] small {
+  white-space:normal!important;overflow-wrap:normal!important;
+ }
+}
+</style>
 </head>
 
 
@@ -6362,7 +6773,7 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
     class="send-button"
     onclick="ouvrirConfirmation()">
 
-    ✈ Convertir et envoyer
+    Convertir et publier
 
   </button>
 
@@ -6400,10 +6811,21 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
 
 
     <h2>
-      Confirmer l’envoi
+      Confirmer les actions
     </h2>
 
     <div id="sendSummary" class="send-summary"></div>
+    <fieldset id="cdqDeliveryActionsV2866" class="modal-section">
+      <legend>Actions à effectuer</legend>
+      <label><input id="cdqPublishV2866" type="checkbox" checked> Publier dans « Dernière visite »</label>
+      <label><input id="cdqEmailV2866" type="checkbox"> Envoyer par courriel</label>
+    </fieldset>
+    <fieldset id="cdqVisitChoiceV2866" class="modal-section">
+      <legend>Visite à publier</legend>
+      <label for="cdqVisitModeV2866">Visite</label><select id="cdqVisitModeV2866" disabled></select>
+      <label for="cdqVisitDateV2866">Date de la visite</label><input id="cdqVisitDateV2866" type="date" disabled>
+      <p id="cdqVisitInfoV2866" role="status"></p>
+    </fieldset>
 
     <div class="modal-section send-mode-section">
       <label>Mode d’envoi</label>
@@ -7118,7 +7540,7 @@ function nettoyerAncienCache(){
         
         const dailyTemporary=valeur.cacheOwnerV2746&&valeur.cacheExpiresAtV2746;
         if(dailyTemporary){if(expiredClientCacheRecordV2746(valeur)&&!cdqClientTreePendingV2746(valeur.contenu))curseur.delete();curseur.continue();return;}
-        const durable=/\|v19-(queue|document-pdf|documents-manifest)\|/.test(String(curseur.key));
+        const durable=/\|v19-(queue|document-pdf|documents-manifest|offline-sheet-snapshot-v2863)\|/.test(String(curseur.key));
         if(!durable && (valeur.appVersion !== CACHE_APP_VERSION || (valeur.savedAt || 0) < limite)){
           curseur.delete();
         }
@@ -11156,7 +11578,7 @@ function ouvrirConfirmation(){
  const generation=++cdqSendDialogGenerationV2708,modal=document.getElementById('modalOverlay'),input=document.getElementById('emailDestinataire');
  input.value='';document.getElementById('messageEmail').value='';
  const summary=document.getElementById('sendSummary');if(summary){summary.replaceChildren();const title=document.createElement('strong');title.textContent=nomCompagnieSelectionnee||'Client';const detail=document.createElement('div');detail.textContent=files.length+' fichier(s)'+(folders.length?' + '+folders.length+' dossier(s)':'')+' sélectionné(s)';summary.append(title,detail);}
- modal.style.display='flex';cdqPrepareSendOptionsV2553(files,context.clientId,folders.length,true);
+ modal.style.display='flex';cdqPrepareSendOptionsV2553(files,context.clientId,folders.length,true);window.cdqDeliveryActionsV2866.reset();void window.cdqDeliveryVisitsV2866.open(context.clientId,()=>{try{cdqSendGuardV2750(context);return generation===cdqSendDialogGenerationV2708&&modal.style.display!=='none';}catch(_){return false;}});
  const status=document.getElementById('cdqSendRecipientStatusV2553');if(status)status.textContent='Chargement de l’adresse par défaut… Vous pouvez déjà la saisir.';
  cdqRpcV2553('obtenirDestinataireClientV2553',[context.clientId]).then(value=>{
   cdqSendGuardV2750(context);if(generation!==cdqSendDialogGenerationV2708||modal.style.display==='none')return;
@@ -11384,11 +11806,7 @@ function mettreAJourInterface(){
   const sendButton = document.getElementById("sendButton");
   if(sendButton){
     const idsV2750=obtenirFichiersSelectionnes(),profileV2750=cdqSendProfileV2750(idsV2750,null,dossiersChoisis);
-    sendButton.textContent=totalSelection>0
-      ?(!dossiersChoisis&&profileV2750.pdf===idsV2750.length?'✈ Envoyer '+profileV2750.pdf+' PDF'
-        :!dossiersChoisis&&profileV2750.sheets===idsV2750.length?'✈ Convertir et envoyer '+profileV2750.sheets+(profileV2750.sheets===1?' feuille':' feuilles')
-        :'✈ Envoyer '+totalSelection+(totalSelection===1?' élément':' éléments'))
-      :'✈ Envoyer';
+    sendButton.textContent=totalSelection>0?'Convertir et publier · '+totalSelection+' sélectionné(s)':'Convertir et publier';
   }
 
   const deleteButton = document.getElementById("deleteButton");
@@ -11867,7 +12285,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.03-v28.35-r3-pdf-performance-reliability";
+  const CDQ_BUILD = "2026.11.09-v28.70-pc-sync";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -12723,7 +13141,7 @@ function cdqInstallSwipeGesture(row){
     if(!modal){cdqCreateProgressModal();modal=document.getElementById('cdqProgressModal');}
     if(!modal)throw Error('La progression de l’envoi ne peut pas être affichée.');
     if(!modal.querySelector('#cdqProgressCountV2759')){
-      modal.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-labelledby="cdqProgressTitleV2759" tabindex="-1"><h2 id="cdqProgressTitleV2759">Envoi des rapports</h2><div class="cdq-progress-box"><div id="cdqProgressTrackV2759" class="cdq-progress-track" role="progressbar" aria-label="Préparation des fichiers" aria-valuemin="0"><div id="cdqProgressFill" class="cdq-progress-fill"></div></div><div class="cdq-send-progress-detail-v2759"><div id="cdqProgressLabel" class="cdq-progress-label" role="status" aria-live="polite"></div><span id="cdqProgressCountV2759"></span></div></div></div>';
+      modal.innerHTML='<div class="modal" role="dialog" aria-modal="true" aria-labelledby="cdqProgressTitleV2759" tabindex="-1"><h2 id="cdqProgressTitleV2759">Traitement des rapports</h2><div class="cdq-progress-box"><div id="cdqProgressTrackV2759" class="cdq-progress-track" role="progressbar" aria-label="Préparation des fichiers" aria-valuemin="0"><div id="cdqProgressFill" class="cdq-progress-fill"></div></div><div class="cdq-send-progress-detail-v2759"><div id="cdqProgressLabel" class="cdq-progress-label" role="status" aria-live="polite"></div><span id="cdqProgressCountV2759"></span></div></div></div>';
     }
     return modal;
   }
@@ -12816,7 +13234,7 @@ function cdqInstallSwipeGesture(row){
     if(cdqQueuedSendV2828!==job)return;
     cdqSendGuardV2750(job.context);
     if(result.jobId!==job.id||result.status==='none')throw Error('Le résultat de cet envoi ne peut pas encore être vérifié.');
-    const completed=result.status==='complete'&&result.mailSent===true&&result.portalDone===true;
+    const completed=window.cdqDeliveryActionsV2866.complete(result);
     const wasBlocked=job.blocked;job.blocked=result.status==='blocked';
     job.canDismiss=result.mailSent===true||result.error==='PREPARATION_PENDING';
     if(wasBlocked&&!job.blocked)cdqTrackingControlsV2828(job);
@@ -12827,7 +13245,7 @@ function cdqInstallSwipeGesture(row){
       cdqTrackingSaveV2828(job.context,null,job.id);cdqTrackingClearSelectionV2828(job);
       cdqTrackingDisposeV2828(job);cdqStopProgress(true);
       const send=document.getElementById('sendButton');if(send)send.disabled=String(utilisateurCourantRole||'')==='lecture';
-      afficherMessage(result.message||'Courriel envoyé et page client mise à jour.',true);
+      afficherMessage(result.message||(result.actionsV2866?(result.actionsV2866.publish?(result.actionsV2866.email?'PDF archivés et publiés; courriel envoyé.':'PDF archivés et publiés. Aucun courriel demandé.'):'PDF archivés; courriel envoyé. Aucune publication demandée.'):'Courriel envoyé et page client mise à jour.'),true);
       return;
     }
     if(result.status==='blocked'){
@@ -12861,7 +13279,7 @@ function cdqInstallSwipeGesture(row){
     if(!cdqSendProgressV2759.active)cdqStartProgress('track-'+receipt.jobId,receipt.total||1);
     if(cdqProgressTimer){clearInterval(cdqProgressTimer);cdqProgressTimer=null;}
     const job=cdqQueuedSendV2828={id:receipt.jobId,session:receipt.sessionId||cdqSendProgressV2759.session,context,total:receipt.total||cdqSendProgressV2759.total,files:selection?.files||[],folders:selection?.folders||[],reading:false,blocked:false,background:false};
-    cdqTrackingSaveV2828(context,{id:job.id,session:job.session,total:job.total});
+    cdqTrackingSaveV2828(context,{id:job.id,session:job.session,total:job.total,createdAt:Date.now()});
     cdqSetProgress({total:job.total,message:receipt.message||'Envoi enregistré. Préparation en cours…'});
     cdqTrackingControlsV2828(job);
     void cdqTrackingPollV2828(job);
@@ -12879,14 +13297,79 @@ function cdqInstallSwipeGesture(row){
     if(!session&&acknowledged&&(result.status==='complete'||(result.status==='blocked'&&(result.mailSent===true||result.error==='PREPARATION_PENDING'))))return null;
     return result;
   }
+  // V28.60: OLD SEND TRACKING IS NOT A SEND COMMAND. A folder opening may
+  // verify a retained job ID but never open the send modal or enqueue a retry.
+  // Archive only *UI tracking*, with its last server state and receipt ID.
+  // Unknown/blocked delivery is not asserted successful and remains protected
+  // by the mandatory server preflight before any explicit new email.
+  const cdqSilentReadCountV2860=new Map();
+  function cdqSilentHistoryKeyV2860(context){return 'cdqSendHistoryV2860|'+context.owner+'|'+context.clientId;}
+  function cdqStoreSilentReceiptV2860(context,result){
+    if(!result?.jobId)return;
+    const key=cdqSilentHistoryKeyV2860(context);let saved=[];
+    try{saved=JSON.parse(localStorage.getItem(key)||'[]');}catch(_){saved=[];}
+    if(!Array.isArray(saved))saved=[];
+    const entry={jobId:String(result.jobId),status:String(result.status||'inconnu'),
+      mailSent:result.mailSent===true,portalDone:result.portalDone===true,
+      error:String(result.error||'').slice(0,100),checkedAt:Date.now()};
+    // Preserve observed receipts without promoting an incomplete delivery.
+    if(Object.prototype.hasOwnProperty.call(result,'actionsV2866')){
+      const actions=result.actionsV2866;
+      entry.actionsProtocol=result.actionsProtocol===2866?2866:null;
+      entry.actionsV2866=window.cdqDeliveryActionsV2866.validActions(actions)?{publish:actions.publish,email:actions.email}:null;
+      entry.archiveDone=result.archiveDone===true;
+      entry.visitDone=result.visitDone===true;
+      if(typeof result.visitId==='string'&&result.visitId.length<=200)entry.visitId=result.visitId;
+    }
+    saved=saved.filter(item=>item?.jobId!==entry.jobId);saved.push(entry);
+    try{localStorage.setItem(key,JSON.stringify(saved.slice(-15)));}catch(_){}
+  }
+  function cdqRecentSendBannerV2860(context,saved,result){
+    const started=Number(saved.job?.createdAt||0);
+    if(!started||Date.now()-started>2*60*60*1000)return;
+    let banner=document.getElementById('cdqSendTrackingBannerV2828');
+    if(!banner){banner=document.createElement('button');banner.id='cdqSendTrackingBannerV2828';banner.type='button';
+      banner.style.cssText='position:fixed;left:5%;right:5%;bottom:calc(105px + env(safe-area-inset-bottom));z-index:1800;padding:9px;border-radius:12px;background:#12314a;color:white;border:1px solid #32b7ec;';document.body.append(banner);}
+    banner.textContent='Envoi récent en cours — vérifier le suivi';
+    // This click reads the existing server job. It never calls the send RPC.
+    banner.onclick=()=>{if(!cdqSendProgressV2759.active)cdqTrackSendV2828(result,context);};
+  }
   async function cdqRecoverSendV2828(){
     if(cdqRecoveryBusyV2828||cdqSendProgressV2759.active||cdqSendCheckingV2708)return;
     let context;try{context=cdqSendContextV2750(String(compagnieSelectionnee||''));}catch(_){return;}
+    const saved=cdqTrackingSavedV2828(context);
+    // Never ask for the last arbitrary historic send of this client: only a
+    // receipt that this installation actually saved for a user-initiated send.
+    if(!saved.job?.id)return;
     const key=cdqTrackingKeyV2828(context)+'|'+context.token;
     if(cdqRecoveryKeyV2828===key)return;
-    cdqRecoveryBusyV2828=true;
-    try{const result=await cdqFindSendV2828(context);cdqRecoveryKeyV2828=key;if(result&&!cdqSendProgressV2759.active)cdqTrackSendV2828(result,context);}
-    catch(_){/* Confirmation performs a mandatory read before any new send. */}
+    cdqRecoveryBusyV2828=true;cdqRecoveryKeyV2828=key;
+    try{
+      const result=await cdqReadTrackingV2828(saved.job.session||'',
+        {jobId:saved.job.id,clientId:context.clientId});
+      cdqSendGuardV2750(context);
+      if(!result||String(result.jobId||'')!==String(saved.job.id))return;
+      const complete=window.cdqDeliveryActionsV2866.complete(result);
+      const blocked=result.status==='blocked';
+      if(complete||blocked){
+        cdqStoreSilentReceiptV2860(context,result);
+        // Keep receipt evidence in read-only history. Clear ONLY the old
+        // auto-popup handle; do not modify any remote send or offline queue.
+        cdqTrackingSaveV2828(context,null,complete?result.jobId:null);
+        document.getElementById('cdqSendTrackingBannerV2828')?.remove();
+        return;
+      }
+      if(result.status==='none'||result.error==='NOT_FOUND'){
+        cdqStoreSilentReceiptV2860(context,{jobId:saved.job.id,status:'introuvable',error:result.error});
+        cdqTrackingSaveV2828(context,null);return;
+      }
+      if(['queued','running','processing','pending','en_cours'].includes(String(result.status||''))){
+        const retries=cdqSilentReadCountV2860.get(key)||0;
+        if(retries<3){cdqSilentReadCountV2860.set(key,retries+1);
+          setTimeout(()=>{try{cdqSendGuardV2750(context);cdqRecoveryKeyV2828='';void cdqRecoverSendV2828();}catch(_){}},12000);}
+        cdqRecentSendBannerV2860(context,saved,result);
+      }
+    }catch(_){/* Read-only verification unavailable: preserve receipt, do not resend. */}
     finally{cdqRecoveryBusyV2828=false;}
   }
   async function cdqUncertainSendV2828(context,session,error){
@@ -12999,16 +13482,15 @@ function cdqInstallSwipeGesture(row){
         const module=await import(new URL('./send-intents-v20261103.mjs',location.href).href);cdqSendGuardV2750(context);
         const readState=async(plan)=>{
           const client=await cdqReportEngineSelectorV2754.client();cdqSendGuardV2750(context);
-          const records=await (client.metadata?client.metadata({clientId:context.clientId}):client.all());
-          const queue=await cdqV19QueueGet(),legacy=[],hasList=plan.sources.some(module.isBalanceListSourceV20261103);
-          if(hasList){
-            const prefix=cdqV19Key('document-pdf',''),all=await cdqPdfSessionV2664.all();cdqSendGuardV2750(context);
-            for(const record of all){if(String(record.key||'').startsWith(prefix)&&record.clientId===context.clientId){const {blob,...metadata}=record;legacy.push(metadata);}}
-            legacy.push(...await cdqOffline24.clientStateV2835(context.clientId));cdqSendGuardV2750(context);
-          }else for(const source of plan.sources){if(source.kind!=='pdf')continue;const record=await cdqV19GetRecord('document-pdf',source.fileId);if(record){const {blob,...metadata}=record;legacy.push({...metadata,id:source.fileId});}const offline=await cdqOffline24.stateV2835(source.fileId);if(offline)legacy.push(offline);cdqSendGuardV2750(context);}
-          const native=cdqPwaAvailable()?await cdqArchiveNativeStateV2754(context.clientId):[];cdqSendGuardV2750(context);
-          const list=hasList?window.cdqBalanceListV2638?.sendState(context.clientId):null;
-          return {records,queue,legacy,native,list};
+          const records=await (client.metadata?client.metadata({clientId:context.clientId}):client.all());cdqSendGuardV2750(context);
+          const readLocal=window.cdqSendLocalStateV2842;
+          if(typeof readLocal!=='function')
+            throw Object.assign(Error('La vérification locale n’est pas disponible. Actualisez l’application avant l’envoi.'),{code:'SEND_LOCAL_STATE_UNAVAILABLE'});
+          const hasList=plan.sources.some(module.isBalanceListSourceV20261103);
+          const local=await readLocal(context.clientId,plan.sources,hasList,context.owner);cdqSendGuardV2750(context);
+          if(!local||!Array.isArray(local.queue)||!Array.isArray(local.legacy)||!Array.isArray(local.native))
+            throw Object.assign(Error('La vérification locale est incomplète.'),{code:'SEND_LOCAL_STATE_UNAVAILABLE'});
+          return {records,...local};
         };
         sendIntentV20261103=await module.prepareSendIntentV20261103({ticket:sendTicketV20261103,context,guard:()=>cdqSendGuardV2750(context),readState,intentId:crypto.randomUUID()});
       }
@@ -13069,7 +13551,7 @@ function cdqInstallSwipeGesture(row){
 const CDQ_SEND_PREFLIGHT_TIMEOUT_MS_V2780=20000;
 function cdqSendPreflightV2780(args,timeoutMs=CDQ_SEND_PREFLIGHT_TIMEOUT_MS_V2780){
   let timer;
-  const remote=cdqRpcV2553('verifierEnvoiSelectionRecentV2553',args);
+  const remote=cdqRpcV2553('cdqPreparerLivraisonV2866',args);
   const deadline=new Promise((resolve,reject)=>{
     timer=setTimeout(()=>{
       const error=new Error('Le serveur ne répond pas à la vérification de l’envoi après 20 secondes. Aucun nouvel envoi n’a été lancé. Vérifiez la connexion et réessayez.');
@@ -13086,17 +13568,19 @@ function cdqSendPreflightV2780(args,timeoutMs=CDQ_SEND_PREFLIGHT_TIMEOUT_MS_V278
    // identical requests; a previous client's tracking must not intercept it.
    if(cdqQueuedSendV2828){cdqTrackingDisposeV2828(cdqQueuedSendV2828);cdqStopProgress(false);}
    if(cdqSendProgressV2759.active)return;
+   let actions,visit;try{actions=window.cdqDeliveryActionsV2866.read();if(actions.publish)visit=window.cdqDeliveryVisitsV2866.read();}catch(error){afficherErreur(error);return;}
    const email=String(document.getElementById('emailDestinataire').value||'').trim(),message=document.getElementById('messageEmail').value,files=obtenirFichiersSelectionnes(),folders=obtenirDossiersSelectionnes(),profileV2751=cdqSendProfileV2750(files,null,folders.length),mode=obtenirModeEnvoiSelectionne(),flatten=mode==='convertir'&&!!profileV2751.pdf;
    if(String(utilisateurCourantRole||'')==='lecture'){alert('Le rôle Lecture seule ne peut pas envoyer de fichiers.');return;}
-   if(!email){alert('Veuillez entrer une adresse courriel.');return}if(!files.length&&!folders.length)return;
+   if(actions.email&&!email){alert('Veuillez entrer une adresse courriel.');return}if(!files.length&&!folders.length)return;
    let context;try{context=cdqSendContextV2750(String(compagnieSelectionnee||''))}catch(e){afficherErreur(e);return;}
    cdqSendCheckingV2708=true;const total=files.length+folders.length;
    fermerConfirmation();
    cdqStartProgress('check-'+crypto.randomUUID(),total);cdqSetProgress({total,message:'Vérification de l’envoi…'});
    try{
-    const check=await cdqSendPreflightV2780([files,folders,mode,email,context.clientId,24,{protocol:20261103}]);cdqSendGuardV2750(context);
+    const check=await cdqSendPreflightV2780([files,folders,actions.email?email:'',context.clientId,24,actions,visit]);cdqSendGuardV2750(context);
+    window.cdqDeliveryActionsV2866.assertTicket(check?.sendV20261103,actions,visit);
     let force=false;if(check?.doublon){force=confirm('Cette sélection a déjà été envoyée récemment. Voulez-vous l’envoyer de nouveau ?');if(!force){cdqStopProgress(false);cdqRestoreSendOptionsV2759(context);return}}
-    await cdqRunSendSelection(files,folders,mode,email,message,context.clientId,force,flatten,check?.sendV20261103);
+    await cdqRunSendSelection(files,folders,mode,actions.email?email:'',actions.email?message:'',context.clientId,force,flatten,check?.sendV20261103);
    }catch(error){cdqStopProgress(false);cdqRestoreSendOptionsV2759(context,error);afficherErreur(error)}finally{cdqSendCheckingV2708=false}
   };
 
@@ -14410,7 +14894,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.03-v28.35-r3-pdf-performance-reliability";
+const CDQ_V19_BUILD = "2026.11.09-v28.70-pc-sync";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15163,6 +15647,15 @@ function cdqV19OfflineStatus(text,state,clientId){
    le mode Hors ligne ON est préparé.
 ===================================================== */
 const CDQ_TEMPLATE_REVISION = "plancher-fillable-v22.91-20260921";
+function cdqCreationFieldsV2866(values){
+  const fields={};
+  for(const name of ['client_nom','client_adresse','client_ville','client_province','client_code_postal','client_telephone','client_technicien']){
+    const value=values?.[name];if(value===null||value===undefined)continue;
+    if(typeof value!=='string'||value.length>1000)throw Error('Coordonnée invalide : '+name);
+    fields[name]=value;
+  }
+  return fields;
+}
 function reportRuntimeV2636(){
   // A literal asset URL is relocated into the APK by the packaging script and
   // into the iPhone application by its builder. A constructed root URL would
@@ -15184,15 +15677,18 @@ function reportRuntimeV2636(){
   function peek(clientId){
     const email=cdqReaderOwnerV2520();guard(email);
     let values={};try{values=JSON.parse(localStorage.getItem('cdq-client-context23:'+email+':'+clientId)||'{}');}catch{}
-    return {...values,client_nom:String(clientId)===String(compagnieSelectionnee)?String(nomCompagnieSelectionnee||''):String(values.client_nom||''),client_technicien:String(utilisateurCourantNomRapport||'').trim()};
+    if(navigator.onLine!==false||!values.cdqContactRevisionV2866)values={};
+    return cdqCreationFieldsV2866({...values,client_nom:String(clientId)===String(compagnieSelectionnee)?String(nomCompagnieSelectionnee||''):String(values.client_nom||''),client_technicien:String(utilisateurCourantNomRapport||'').trim()});
   }
   function warm(clientId){
     if(!clientId)return Promise.resolve({});
     const email=cdqReaderOwnerV2520(),epoch=accessEpoch;guard(email,epoch);const key=email+':'+clientId,old=contexts.get(key);
-    if(old&&Date.now()-old.at<300000)return old.promise;
+    if(old)return old.promise;
     const entry={at:Date.now(),promise:Promise.resolve().then(()=>window.cdqCreationV2523.context(clientId)).then(values=>{guard(email,epoch);return values;}).catch(error=>{if(contexts.get(key)===entry)contexts.delete(key);throw error;})};
+    entry.promise.finally(()=>{if(contexts.get(key)===entry)contexts.delete(key);}).catch(()=>{});
     contexts.set(key,entry);while(contexts.size>12)contexts.delete(contexts.keys().next().value);entry.promise.catch(()=>{});return entry.promise;
   }
+  window.addEventListener('cdq:client-contact-saved-v2866',event=>{if(event.detail?.email===cdqReaderOwnerV2520())contexts.delete(event.detail.email+':'+event.detail.clientId);});
   window.cdqFastContextV2642={peek,warm};
   function resetAccess(){accessEpoch++;contexts.clear();}
   window.addEventListener('cdq:drive-cleared-v2632',resetAccess);
@@ -15206,7 +15702,7 @@ function reportRuntimeV2636(){
   window.cdqBundledReportCopyV2636=async function(data,email){
     const epoch=accessEpoch;guard(email,epoch);
     const {REPORT_TEMPLATES,bundledCreationTemplate,bundledTemplate}=await catalog(),model=REPORT_TEMPLATES[data.modeleId];guard(email,epoch);
-    if(!model||!/^cdq-bundled-/.test(String(data.templateId||''))||!/^[\w-]{8,100}$/.test(String(data.requestId||'')))throw Error('Modèle de rapport invalide.');
+    if(!model||!/^cdq-(?:bundled|backlog)-/.test(String(data.templateId||''))||!/^[\w-]{8,100}$/.test(String(data.requestId||'')))throw Error('Modèle de rapport invalide.');
     // CREATE accepts immutable approved bytes. A saved/filled visible master or
     // an older durable copy must never replace its server-compatible sidecar.
     // Answers are uploaded separately to the same confirmed Drive id.
@@ -15269,7 +15765,7 @@ function reportRuntimeV2636(){
       guard(email,epoch);await cdqOpenPdfInternal(result.id);guard(email,epoch);fallbackNames.delete(fallbackId);return final;
     }
     // Cached identity opens immediately; slow address discovery cannot hold the reader.
-    const prefill=peek(clientId);guard(email);
+    const prefill=key==='poids'?(await import('./report-field-aliases-v2819.mjs')).weightsCreationIdentityV2866(peek(clientId)):peek(clientId);guard(email);
     // This is only the creation preamble. A normal session announcement must
     // still replay local rows when the Selector itself reloads.
     cdqPostToPwa({type:'CDQ_OFFLINE_SESSION',email,
@@ -15283,7 +15779,7 @@ function reportRuntimeV2636(){
       }
       window.addEventListener('message',receive);
       cdqPostToPwa({type:'CDQ_OFFLINE_CREATE_LOCAL',email,requestId,modeleId:key,clientId,folderId,destinationName,prefill,existingNames,open:true});
-      warm(clientId).then(values=>{guard(email,epoch);cdqPostToPwa({type:'CDQ_OFFLINE_PREFILL_V2642',email,requestId,values});}).catch(()=>{});
+      warm(clientId).then(async values=>{if(key==='poids')values=(await import('./report-field-aliases-v2819.mjs')).weightsCreationIdentityV2866(values);guard(email,epoch);cdqPostToPwa({type:'CDQ_OFFLINE_PREFILL_V2642',email,requestId,values});}).catch(()=>{});
     });
   };
 }
@@ -15930,6 +16426,13 @@ function cdqLaunchSheetV2756(id){
 }
 function cdqOpenSheetV2526(id){
  id=String(id||'');if(!/^[A-Za-z0-9_-]{10,200}$/.test(id))throw Error('Identifiant Google Sheets invalide.');
+ // Native Google Sheets has a SEPARATE offline cache. For a verified CDQ
+ // snapshot, stay in this app when disconnected: no account picker or browser.
+ if(navigator.onLine===false){
+   const reader=window.cdqOffline24?.openSheetSnapshotV2863;
+   if(!reader)return Promise.reject(Error('La consultation locale de cette feuille n’est pas prête.')).catch(afficherErreur);
+   return Promise.resolve().then(()=>reader(id)).catch(afficherErreur);
+ }
  return cdqLaunchSheetV2756(id);
 }
 
@@ -16191,8 +16694,14 @@ function createDriveTransferV2751({rpc,get,put,owner,guard,context=()=>0,fetch:f
    if(url.protocol!=='https:'||!['www.googleapis.com','content.googleapis.com'].includes(url.hostname)||!/^\/upload\/drive\/v3\/files(?:\/[^/]+)?$/.test(url.pathname)||!url.searchParams.has('upload_id'))throw Error('La destination temporaire Drive est invalide.');
    await persist({...meta,phase:'put-started'});valid();
    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),55000);let response;
-   try{response=await fetcher(url.href,{method:'PUT',headers:{'Content-Type':'application/pdf'},body:blob,credentials:'omit',referrerPolicy:'no-referrer',signal:controller.signal});}finally{clearTimeout(timer);}valid();
-   if(!response?.ok)throw Error('Envoi Drive interrompu. Le PDF reste conservé sur cet appareil.');
+   let transportError;
+   try{response=await fetcher(url.href,{method:'PUT',headers:{'Content-Type':'application/pdf'},body:blob,credentials:'omit',referrerPolicy:'no-referrer',signal:controller.signal});}catch(error){transportError=error;}finally{clearTimeout(timer);}valid();
+   if(transportError||!response?.ok){
+    // Drive may have committed the bytes even when its PUT response is lost.
+    // Reconcile this exact durable upload once; only a validated receipt wins.
+    // Keep put-started on failure so a later retry checks before sending again.
+    try{return await finalize();}catch(error){valid();throw error;}
+   }
    await persist({...meta,phase:'uploaded'});return finalize();
   });
  }
@@ -17625,13 +18134,110 @@ const cdqOffline24 = (() => {
     const r=await bridge('CDQ_OFFLINE_DOCUMENT_EDIT',{fileId:rec.id,editVersion:rec.offlineVersion,blob,saveId,name,readerPreparedVersion:readerPreparedVersion===2730?2730:undefined,autoReportName:rec.autoReportName===true});
     rec.blob=blob;rec.readerPreparedVersion=readerPreparedVersion===2730?2730:undefined;rec.nom=r.name||rec.nom;rec.offlineVersion=r.editVersion;refresh().catch(()=>{});return {queued:r.queued};
   }
+  // V28.63: copies of Sheets in CDQ itself. These are read-only value snapshots,
+  // NOT a claim that Google's separate Sheets app is offline-enabled.
+  const sheetKeyV2863='offline-sheet-snapshot-v2863';
+  const sheetMaxBytesV2863=12*1024*1024;
+  async function localSheetV2863(fileId,expectedEmail){
+    const email=expectedEmail||account(),id=String(fileId||'');
+    if(!/^[A-Za-z0-9_-]{10,200}$/.test(id))return null;
+    valid(email);
+    const rec=await cdqV19GetRecord(sheetKeyV2863,id);valid(email);
+    if(!rec||rec.schema!==2863||rec.owner!==email||rec.fileId!==id||
+       !rec.clientId||rec.clientId!==String(company()?.id||'')||
+       !Array.isArray(rec.tabs)||!rec.tabs.length||rec.tabs.length>20||rec.incomplete===true)return null;
+    if(rec.tabs.some(t=>!t||typeof t.name!=='string'||!Array.isArray(t.rows)))return null;
+    return rec;
+  }
+  async function prepareSheetV2863(file,j){
+    checkJob(j);
+    const id=String(file.id),clientId=String(j.company.id);
+    // The read-only endpoint already checks that this sheet belongs to this client.
+    // It returns displayed values; no Drive copy, change, export or email is created.
+    const result=await cdqV19Gs('obtenirSnapshotGoogleSheetHorsLigne',[id,clientId]);checkJob(j);
+    if(!result||String(result.id||'')!==id||!Array.isArray(result.onglets)||
+       !result.onglets.length||result.onglets.length>20)throw Error('Copie Google Sheets non reçue.');
+    const incomplete=result.onglets.some(t=>t?.tronque===true||
+        !Array.isArray(t?.valeurs)||t.valeurs.some(row=>!Array.isArray(row)));
+    if(incomplete)throw Error('La feuille dépasse la limite de la copie CDQ. Elle n’est pas indiquée prête hors ligne.');
+    const tabs=result.onglets.map(t=>({name:String(t.nom||'Feuille').slice(0,140),
+      frozenRows:Math.max(0,Math.min(100,Number(t.frozenRows)||0)),
+      rows:t.valeurs.map(row=>row.map(cell=>String(cell??'').slice(0,12000)))}));
+    const record={schema:2863,owner:j.email,fileId:id,clientId,
+      name:String(result.nom||file.nom||'Google Sheets').slice(0,300),
+      revision:String(result.dateModification||''),savedAt:Date.now(),
+      snapshotProofV2864:crypto.randomUUID(),
+      incomplete:false,readOnly:true,tabs};
+    const byteCount=new Blob([JSON.stringify(record)]).size;
+    if(byteCount>sheetMaxBytesV2863)throw Error('Google Sheets trop volumineux pour le lecteur local CDQ.');
+    await cdqV19PutRecord(sheetKeyV2863,id,record);checkJob(j);
+    // A successful write must be readable immediately before the yellow
+    // indicator can turn into an offline-ready state.
+    const verified=await localSheetV2863(id,j.email);checkJob(j);
+    if(!verified||verified.snapshotProofV2864!==record.snapshotProofV2864||
+       verified.tabs.length!==record.tabs.length||
+       verified.tabs.some((tab,i)=>tab.rows.length!==record.tabs[i].rows.length))
+      throw Error('La copie Google Sheets n’a pas été confirmée sur ce téléphone.');
+    const old=sheets.find(x=>x.fileId===id);
+    const saved=await bridge('CDQ_OFFLINE_SHEET_STORE',{fileId:id,name:record.name,
+      clientId,clientName:j.company.nom,folderId:file.folderId||clientId,
+      ancestorIds:file.ancestorIds||[clientId],account:cdqDefaultGoogleAccountV2299(),
+      confirmed:old?.confirmed===true});checkJob(j);
+    if(!saved?.ok)throw Error(saved?.message||'La liste locale Google Sheets n’a pas confirmé la préparation.');
+    await refreshSheets();checkJob(j);
+    if(!sheets.some(x=>x.fileId===id&&x.snapshotReady))throw Error('La liste locale n’a pas confirmé cette copie.');
+  }
+  async function openSheetSnapshotV2863(id){
+    const email=account(),snapshot=await localSheetV2863(id,email);valid(email);
+    if(!snapshot)throw Error('Cette feuille n’a pas de copie CDQ complète hors ligne. Reconnectez Internet, puis Préparer hors ligne de nouveau.');
+    document.getElementById('cdqOfflineSheetViewerV2863')?.remove();
+    const panel=el('div','','cdq-offline-sheet-overlay-v2863');panel.id='cdqOfflineSheetViewerV2863';
+    panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');
+    const box=el('section','','cdq-offline-sheet-panel-v2863');panel.append(box);
+    const heading=el('header','','cdq-offline-sheet-header-v2863');box.append(heading);
+    const title=el('div',snapshot.name,'cdq-offline-sheet-title-v2863');heading.append(title);
+    const close=button(heading,'Fermer',()=>panel.remove());close.setAttribute('aria-label','Fermer le document hors ligne');
+    box.append(el('p','Copie conservée sur ce téléphone · lecture seule · '+new Date(snapshot.savedAt).toLocaleString('fr-CA'), 'cdq-offline-sheet-notice-v2863'));
+    const tabs=el('nav','','cdq-offline-sheet-tabs-v2863');box.append(tabs);
+    const area=el('div','','cdq-offline-sheet-content-v2863');box.append(area);
+    const pages=el('div','','cdq-offline-sheet-pages-v2863');box.append(pages);
+    let tabIndex=0,page=0;const rowsPerPage=80;
+    function draw(){
+      if(!panel.isConnected)return;
+      const t=snapshot.tabs[tabIndex],total=t.rows.length;
+      const maxPage=Math.max(0,Math.ceil(total/rowsPerPage)-1);page=Math.max(0,Math.min(maxPage,page));
+      area.replaceChildren();
+      const table=el('table','','cdq-offline-sheet-table-v2863');area.append(table);
+      const tbody=el('tbody');table.append(tbody);
+      for(let i=page*rowsPerPage;i<Math.min(total,(page+1)*rowsPerPage);i++){
+        const tr=el('tr');const rowNo=el('th',String(i+1));rowNo.scope='row';tr.append(rowNo);
+        for(const cell of t.rows[i])tr.append(el('td',cell));
+        tbody.append(tr);
+      }
+      if(!total)area.append(el('p','Cette feuille est vide.'));
+      pages.replaceChildren();
+      const prev=button(pages,'← Précédent',()=>{page--;draw();});prev.disabled=page===0;
+      pages.append(el('span',(page+1)+' / '+(maxPage+1)));
+      const next=button(pages,'Suivant →',()=>{page++;draw();});next.disabled=page>=maxPage;
+    }
+    snapshot.tabs.forEach((tab,index)=>{
+      const b=button(tabs,tab.name,()=>{tabIndex=index;page=0;draw();tabs.querySelectorAll('button').forEach((node,i)=>node.setAttribute('aria-selected',String(i===index)));});
+      b.setAttribute('aria-selected',String(index===0));
+    });
+    panel.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();panel.remove();}});
+    document.body.append(panel);draw();close.focus();return true;
+  }
   async function refreshSheets(){
     const email=account(),result=await bridge('CDQ_OFFLINE_SHEET_LIST');valid(email);
-    sheets=result?.sheets||[];
+    const items=Array.isArray(result?.sheets)?result.sheets:[];
+    sheets=await Promise.all(items.map(async item=>({...item,
+      snapshotReady:!!(await localSheetV2863(item.fileId,email))})));
+    valid(email);
   }
   async function sheetAction(type,r){
     const result=await bridge(type,{fileId:r.fileId,name:r.name,clientId:r.clientId,clientName:r.clientName,folderId:r.folderId,ancestorIds:r.ancestorIds||[],account:r.account||'',confirmed:r.confirmed===true});
-    if(!result)throw Error('Ouvrez CDQ depuis l’application installée pour conserver cette sélection.');
+    if(!result?.ok)throw Error('Le stockage local n’a pas confirmé cette action.');
+    if(type==='CDQ_OFFLINE_SHEET_REMOVE')await cdqV19DeleteRecord(sheetKeyV2863,r.fileId);
     await refresh();
   }
   async function refresh(){
@@ -17649,8 +18255,10 @@ const cdqOffline24 = (() => {
   function status(){
     const count=records.filter(r=>!company()||String(r.clientId)===company().id).length;
     const running=job?.running;
-    const sheetCount=sheets.filter(r=>!company()||String(r.clientId)===company().id).length;
-    const label=running?'Préparation '+percent()+' %':count+' PDF disponibles hors ligne'+(sheetCount?' • '+sheetCount+' Google Sheets sélectionnés':'');
+    const visibleSheets=sheets.filter(r=>!company()||String(r.clientId)===company().id);
+    const readySheets=visibleSheets.filter(r=>r.snapshotReady).length;
+    const pendingSheets=visibleSheets.length-readySheets;
+    const label=running?'Préparation '+percent()+' %':count+' PDF disponibles hors ligne'+(readySheets?' • '+readySheets+' Google Sheets consultables dans CDQ':'')+(pendingSheets?' • '+pendingSheets+' Sheets non préparés':'');
     cdqV19OfflineStatus(label,running?'pending':count?'ready':'',company()?.id);
     const b=document.getElementById('cdqV19OfflineStatus');
     if(b){b.disabled=false;const s=b.querySelector('span:last-child');if(s&&s.textContent!==(running?'Hors ligne '+percent()+' %':'Hors ligne'))s.textContent=running?'Hors ligne '+percent()+' %':'Hors ligne';}
@@ -17666,20 +18274,37 @@ const cdqOffline24 = (() => {
       if((ids.has(String(id))||sheetIds.has(String(id)))&&!dot){dot=el('span','', 'cdq24-offline-dot');dot.title='Disponible hors ligne';dot.setAttribute('aria-label','Disponible hors ligne');host.prepend(dot);}
       if(dot){
         const sheet=sheetIds.get(String(id));dot.hidden=!ids.has(String(id))&&!sheet;
-        dot.classList.toggle('cdq26-sheet-pending',!!sheet&&!sheet.confirmed);
-        dot.title=sheet?(sheet.confirmed?'Google Sheets : hors connexion déclaré par vous, non vérifié par CDQ':'Raccourci Google Sheets — hors connexion à activer dans Google Sheets'): 'PDF disponible sur cet appareil, même sans réseau';
+        dot.classList.toggle('cdq26-sheet-pending',!!sheet&&!sheet.snapshotReady);
+        dot.title=sheet?(sheet.snapshotReady?'Copie Google Sheets consultable hors ligne dans CDQ (lecture seule)':sheet.confirmed?'Google Sheets hors connexion déclaré par vous, non vérifié par CDQ':'Google Sheets non préparé dans CDQ : reconnectez Internet puis Préparer'): 'PDF disponible sur cet appareil, même sans réseau';
         dot.setAttribute('aria-label',dot.title);
       }
     });
   }
   function progress(){
-    const host=document.querySelector('#cdqDocumentPrepare [data-progress24]');if(!host||!job)return;
-    host.replaceChildren();const label=el('p');label.setAttribute('role','status');
-    label.textContent=(job.running?'Préparation':job.cancelled?'Préparation annulée':job.error?'Préparation interrompue':'Préparation terminée')+' — '+percent()+' % • '+job.ready+' / '+job.total+' fichiers traités';
-    host.append(label);const bar=el('progress');bar.max=100;bar.value=percent();host.append(bar);
-    host.append(el('p',job.message||''));
-    if(job.running){const b=button(host,job.cancelled?'Annulation en cours…':'Annuler la préparation',()=>{job.cancelled=true;job.message='Arrêt après la requête en cours. Les fichiers déjà conservés restent disponibles.';progress();});b.disabled=job.cancelled;}
-    else if(job.failures.length)host.append(el('p',job.failures.join('\n')));
+    const host=document.querySelector('#cdqDocumentPrepare [data-progress24]');if(!host)return;
+    // A prior client's completed job must never appear on the next client's menu.
+    if(!job || (menuClient && job.company?.id && String(job.company.id)!==String(menuClient))){host.replaceChildren();host.classList.remove('cdq-offline-complete-v2862');return;}
+    host.replaceChildren();
+    const completed=!job.running&&!job.cancelled&&!job.error&&job.failures.length===0;
+    host.classList.toggle('cdq-offline-complete-v2862',completed);
+    const label=el('p');label.setAttribute('role','status');
+    if(completed){
+      // Google Sheets are selected, not made offline by CDQ. Never claim otherwise.
+      const pdf=Number(job.pdfCount||0),sheetsCount=Number(job.sheetCount||0);
+      const plural=n=>n>1?'s':'';
+      if(pdf&&sheetsCount)label.textContent='✓ '+pdf+' PDF conservé'+plural(pdf)+' · '+sheetsCount+' copie'+plural(sheetsCount)+' Google Sheets en lecture seule dans CDQ';
+      else if(sheetsCount)label.textContent='✓ '+sheetsCount+' copie'+plural(sheetsCount)+' Google Sheets conservée'+plural(sheetsCount)+' dans CDQ (lecture seule)';
+      else if(pdf)label.textContent='✓ '+pdf+' PDF conservé'+plural(pdf)+' hors ligne';
+      else label.textContent='✓ Préparation terminée · '+job.ready+' / '+job.total;
+      host.append(label);
+    }else{
+      label.textContent=!job.running&&(job.error||job.failures.length)?'Préparation incomplète · '+job.ready+' / '+job.total+' fichier(s) prêt(s)':(job.running?'Préparation':job.cancelled?'Préparation annulée':job.error?'Préparation interrompue':'À vérifier')+' · '+percent()+' % · '+job.finished+' / '+job.total;
+      host.append(label);
+      if(job.running){const bar=el('progress');bar.max=100;bar.value=percent();host.append(bar);}
+      if(job.message)host.append(el('p',job.message));
+      if(job.running){const b=button(host,job.cancelled?'Annulation en cours…':'Annuler la préparation',()=>{job.cancelled=true;job.message='Arrêt après la requête en cours. Les fichiers déjà conservés restent disponibles.';progress();});b.disabled=job.cancelled;}
+      else if(job.failures.length)host.append(el('p',job.failures.join('\n')));
+    }
     status();
   }
   async function removeLocal(id){
@@ -17743,22 +18368,29 @@ const cdqOffline24 = (() => {
   function renderStored(){
     const host=document.querySelector('#cdqDocumentPrepare [data-stored24]');if(!host||menuAccount!==account()||menuClient!==(company()?.id||''))return;
     host.replaceChildren();
-    if(sheets.length){
+    const clientId=String(company()?.id||'');
+    const clientSheets=sheets.filter(item=>clientId&&String(item.clientId)===clientId);
+    const clientRecords=records.filter(item=>clientId&&String(item.clientId)===clientId);
+    const caption=host.closest('.cdq26-offline-stored')?.querySelector('summary');
+    if(caption)caption.textContent='Déjà hors ligne ('+(clientRecords.length+clientSheets.length)+')';
+    const drawer=host.closest('.cdq26-offline-stored');if(drawer)drawer.hidden=(clientRecords.length+clientSheets.length)===0;
+    if(clientSheets.length){
       host.append(el('h3','Google Sheets sélectionnés'));
-      host.append(el('p','Dans chaque feuille : ⋮ → Disponible hors connexion. Google Sheets conserve les modifications et les synchronise au retour d’Internet. CDQ ne peut pas vérifier cet état.','cdq24-help'));
-      const groups=new Map();for(const r of sheets){if(!groups.has(r.clientName))groups.set(r.clientName,[]);groups.get(r.clientName).push(r);}
+      host.append(el('p','La copie CDQ se consulte sans Internet en lecture seule. Pour modifier directement dans Google Sheets hors connexion, activez aussi ⋮ → Disponible hors connexion dans Google Sheets.','cdq24-help'));
+      const groups=new Map();for(const r of clientSheets){if(!groups.has(r.clientName))groups.set(r.clientName,[]);groups.get(r.clientName).push(r);}
       for(const [name,list] of groups){host.append(el('h4',name));for(const r of list){
         const row=el('div','', 'cdq24-saved-row');row.style.flexWrap='wrap';host.append(row);
         row.append(el('strong',r.name));
-        row.append(el('span',r.confirmed?'Hors connexion — confirmé par vous':'À activer dans Google Sheets'));
-        if(!r.confirmed)button(row,'J’ai activé le hors connexion',()=>sheetAction('CDQ_OFFLINE_SHEET_STORE',{...r,confirmed:true}));
-        button(row,'Retirer de cette liste',()=>{if(!window.confirm('Retirer le raccourci de CDQ ? La copie et les modifications restent dans Google Sheets. Pour y désactiver le hors connexion, vérifiez d’abord que la synchronisation Google est terminée.'))return;return sheetAction('CDQ_OFFLINE_SHEET_REMOVE',r);});
+        row.append(el('span',r.snapshotReady?'Copie CDQ prête (lecture seule)':r.confirmed?'Hors connexion Google déclaré par vous (non vérifié)':'Non préparé dans CDQ'));
+        if(r.snapshotReady)button(row,'Lire la copie CDQ',()=>openSheetSnapshotV2863(r.fileId));
+        if(!r.confirmed)button(row,'J’ai activé le hors connexion dans Sheets',()=>sheetAction('CDQ_OFFLINE_SHEET_STORE',{...r,confirmed:true}));
+        button(row,'Retirer de cette liste',()=>{if(!window.confirm('Retirer cette sélection et sa copie locale CDQ ? Les modifications et copies de Google Sheets resteront dans Google Sheets.'))return;return sheetAction('CDQ_OFFLINE_SHEET_REMOVE',r);});
       }}
     }
     host.append(el('h3','PDF préparés hors ligne'));
-    if(!records.length){host.append(el('p','Aucun PDF préparé.'));return;}
+    if(!clientRecords.length){host.append(el('p','Aucun PDF de ce client préparé.'));return;}
     const groups=new Map();
-    for(const r of records){const cid=String(r.clientId||''),known=(toutesLesCompagnies||[]).find(c=>String(c.id)===cid);const name=r.clientName||known?.nom||'Autres documents';if(!groups.has(name))groups.set(name,[]);groups.get(name).push(r);}
+    for(const r of clientRecords){const cid=String(r.clientId||''),known=(toutesLesCompagnies||[]).find(c=>String(c.id)===cid);const name=r.clientName||known?.nom||'Autres documents';if(!groups.has(name))groups.set(name,[]);groups.get(name).push(r);}
     for(const [name,list] of [...groups].sort((a,b)=>a[0].localeCompare(b[0],'fr'))){
       const heading=el('div','', 'cdq24-saved-row');heading.append(el('h4',name));button(heading,'Retirer le dossier du hors ligne',()=>removeScope({clientId:String(list[0].clientId),folderIds:[String(list[0].clientId)]}));host.append(heading);
       for(const r of list){const row=el('div','', 'cdq24-saved-row');const name=el('strong',r.nom||r.name||r.id);name.className='cdq24-file-open';row.append(name);row.append(el('span','●','cdq24-ready-mark'));const del=button(row,'Retirer du hors ligne',()=>remove(r.id));del.setAttribute('aria-label','Retirer '+(r.nom||r.id)+' du mode hors ligne');del.disabled=!!job?.running;host.append(row);}
@@ -17796,23 +18428,19 @@ const cdqOffline24 = (() => {
     if(job?.running)return;
     if(!files.length)throw Error('Cochez au moins un fichier à préparer.');
     if(navigator.onLine===false)throw Error('Reconnectez Internet pour préparer des fichiers.');
-    const j=job={email:account(),company:comp,total:files.length,ready:0,finished:0,fraction:0,running:true,cancelled:false,failures:[],message:''};progress();renderStored();
+    const j=job={email:account(),company:comp,total:files.length,pdfCount:files.filter(f=>f.type==='PDF').length,sheetCount:files.filter(f=>f.type==='GOOGLE_SHEETS').length,ready:0,finished:0,fraction:0,running:true,cancelled:false,failures:[],message:''};progress();renderStored();
     try{
       try{await navigator.storage?.persist?.();}catch(_){}
       for(const f of files){checkJob(j);j.fraction=0;j.message=f.nom||f.id;progress();
         try{
-          if(f.type==='GOOGLE_SHEETS'){
-            const old=sheets.find(r=>r.fileId===String(f.id));
-            const result=await bridge('CDQ_OFFLINE_SHEET_STORE',{fileId:String(f.id),name:f.nom||f.id,clientId:comp.id,clientName:comp.nom,folderId:f.folderId||comp.id,ancestorIds:f.ancestorIds||[comp.id],account:cdqDefaultGoogleAccountV2299(),confirmed:old?.confirmed===true});
-            if(!result)throw Error('Ouvrez CDQ depuis l’application installée pour conserver cette sélection.');
-            checkJob(j);await refreshSheets();
-          }else await download(f,j);
+          if(f.type==='GOOGLE_SHEETS')await prepareSheetV2863(f,j);
+          else await download(f,j);
           j.ready++;
         }
         catch(e){if(e.name==='AbortError')throw e;j.failures.push((f.nom||f.id)+' : '+(e.message||e));}
         j.finished++;j.fraction=0;progress();
       }
-      j.message=j.failures.length?'Certains fichiers n’ont pas été préparés. Décochez les fichiers prêts et réessayez.':(files.some(f=>f.type==='GOOGLE_SHEETS')?'PDF conservés. Pour les Google Sheets sélectionnés, ouvrez chaque feuille depuis la liste habituelle et activez Disponible hors connexion.':'Les PDF cochés sont conservés, même après fermeture de CDQ.');
+      j.message=j.failures.length?'Certains fichiers ne sont pas prêts. Reconnectez Internet et recommencez seulement ceux qui ont échoué.':(files.some(f=>f.type==='GOOGLE_SHEETS')?'Les copies de Google Sheets sont consultables dans CDQ hors connexion en lecture seule. Pour modifier avec Google Sheets, activez son propre mode hors connexion.':'Les PDF cochés sont conservés, même après fermeture de CDQ.');
     }catch(e){j.error=e.name!=='AbortError';j.message=e.message;}
     finally{j.running=false;progress();renderStored();paintDots();}
   }
@@ -17824,24 +18452,25 @@ const cdqOffline24 = (() => {
     modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','cdqOfflineTitleV2815');
     o.querySelector('.cdq-v19-title').id='cdqOfflineTitleV2815';
     const closeMenu=()=>{view++;o.style.display='none';body.replaceChildren();if(returnFocus?.isConnected)returnFocus.focus();};
-    closeButton.textContent='Retour à la liste';o.querySelector('[data-cdq-offline-download-v2819]')?.remove();closeButton.onclick=closeMenu;o.onclick=event=>{if(event.target===o)closeMenu();};
+    closeButton.textContent='Retour';o.querySelector('[data-cdq-offline-download-v2819]')?.remove();closeButton.onclick=closeMenu;o.onclick=event=>{if(event.target===o)closeMenu();};
     o.onkeydown=event=>{if(event.key==='Escape'){event.preventDefault();closeMenu();}else if(event.key==='Tab'){
       const nodes=[...o.querySelectorAll('button,input,select,summary,[tabindex="0"]')].filter(n=>!n.disabled&&n.getClientRects().length);
       const first=nodes[0],last=nodes.at(-1);if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
     }};closeButton.focus();
     const currentView=()=>ticket===view&&email===account()&&menuClient===(company()?.id||'')&&o.style.display!=='none';
     const context=el('p',comp?.nom||'Tous les documents','cdq-menu-context-v2815');body.append(context);
-    body.append(el('p','Choisissez les fichiers à rendre disponibles hors ligne.','cdq24-help'));
     const localStatus=el('p','Lecture des documents de cet appareil…','cdq-menu-status-v2815');localStatus.setAttribute('role','status');body.append(localStatus);
     const prog=el('section');prog.dataset.progress24='';body.append(prog);progress();
     const choose=el('section');choose.className='cdq26-offline-select';body.append(choose);choose.setAttribute('aria-busy','true');choose.append(el('h3','Préparer des fichiers'),el('p','Lecture du dossier client…'));
-    const drawer=el('details');drawer.className='cdq26-offline-stored';drawer.append(el('summary','Fichiers conservés et récupération'));drawer.append(el('p','Ouvrez vos PDF dans la liste habituelle. Nouveau rapport utilise les modèles embarqués, même sans réseau.','cdq24-help'));const stored=el('section');stored.dataset.stored24='';drawer.append(stored);body.append(drawer);
-    if(cdqPwaAvailable())button(body,'Copies conservées et modifications à vérifier',()=>{closeMenu();cdqPostToPwa({type:'CDQ_OFFLINE_SHOW_LOCAL',email});});
-    drawer.append(el('p','Fermer ce menu laisse la préparation en cours. Si CDQ est fermé complètement, les fichiers terminés restent disponibles; relancez la préparation des autres.','cdq24-help'));
+    // One compact optional list, scoped to this client. The twelve approved
+    // report templates are already inside "Nouveau rapport" and never re-listed.
+    const drawer=el('details');drawer.className='cdq26-offline-stored';
+    drawer.hidden=true;drawer.append(el('summary','Déjà hors ligne'));
+    const stored=el('section');stored.dataset.stored24='';drawer.append(stored);body.append(drawer);
     // Paint the shell before reads; local documents and the client catalog load independently.
     await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));if(!currentView())return;
     const readLocal=async()=>{if(!currentView())return;localStatus.textContent='Lecture des documents de cet appareil…';
-      try{await refresh();valid(email);if(!currentView())return;localStatus.textContent=navigator.onLine===false?'Sans réseau · les copies terminées restent disponibles.':'Réseau détecté · envoi automatique des sauvegardes en attente.';
+      try{await refresh();valid(email);if(!currentView())return;localStatus.textContent=navigator.onLine===false?'Sans réseau · copies locales disponibles':'';localStatus.hidden=navigator.onLine!==false;
         const mirror=await bridge('CDQ_OFFLINE_DOCUMENT_LIST');valid(email);if(!currentView())return;
         for(const id of mirror?.removed||[]){if(!currentView())return;await removeLocal(id);}
         if(mirror?.removed?.length)await refresh();
@@ -17856,39 +18485,70 @@ const cdqOffline24 = (() => {
     if(!currentView())return;valid(email);choose.replaceChildren();choose.setAttribute('aria-busy','false');
     if(!comp){choose.append(el('p','Choisissez une compagnie pour ajouter des fichiers hors ligne.'));return;}
     catalog={company:comp,files:manifest?.fichiers||[]};
-    choose.append(el('h3','Fichiers du client'));
+    const chooserHeading=el('div','', 'cdq-v2861-offline-heading');chooserHeading.append(el('h3','Fichiers du client'));choose.append(chooserHeading);
     if(error){choose.append(el('p',error));button(choose,'Réessayer la liste du client',()=>{if(currentView())return open(comp);});}
-    choose.append(el('p',navigator.onLine?'Liste du dossier consultée. Choisis les fichiers à conserver.':'Liste conservée sur cet appareil; le serveur n’a pas été vérifié.','cdq24-help'));
-    const inputs=[],ids=new Set(Array.from(document.querySelectorAll('.file-checkbox:checked')).map(n=>n.dataset.fileId));
+    choose.append(el('p',navigator.onLine?'Choisissez les documents puis appuyez sur Préparer.':'Liste locale : reconnectez Internet pour ajouter des documents.','cdq24-help'));
+    // Simple file picker: one folder view at a time. No nested arrows,
+    // template library, retry/outbox dashboard or duplicate client controls.
+    const preselected=new Set(Array.from(document.querySelectorAll('.file-checkbox:checked')).map(n=>String(n.dataset.fileId)));
+    const selectedFiles=new Map(),visitedFiles=new Map();
     const tools=el('div','', 'cdq24-actions');choose.append(tools);
-    const count=el('span','0 sélectionné','cdq26-offline-count');tools.append(count);
-    const updateCount=()=>{count.textContent=inputs.filter(i=>i.checked).length+' sélectionné(s)';};
-    button(tools,'Sélectionner affichés',()=>{inputs.filter(i=>i.getClientRects().length).forEach(i=>i.checked=true);updateCount();});button(tools,'Tout désélectionner',()=>{inputs.forEach(i=>i.checked=false);updateCount();});
-    const search=el('input');search.type='search';search.placeholder='Rechercher dans les fichiers affichés';search.setAttribute('aria-label','Rechercher un fichier');search.className='cdq26-offline-search';choose.append(search);
-    search.addEventListener('input',()=>{const q=search.value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();for(const label of list.querySelectorAll('label'))label.hidden=!label.textContent.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(q);});
+    const count=el('span','0 sélectionné','cdq26-offline-count');chooserHeading.append(count);
+    const search=el('input');search.type='search';search.placeholder='Rechercher un fichier';search.setAttribute('aria-label','Rechercher un fichier');search.className='cdq26-offline-search';choose.append(search);
+    const pathBar=el('div','', 'cdq26-offline-path');choose.append(pathBar);
     const list=el('div','', 'cdq24-checklist');choose.append(list);
-    catalog.files=[];
-    function renderFolder(data,host,ancestors){
-      for(const file of data?.fichiers||[]){if(!['PDF','GOOGLE_SHEETS'].includes(file.type))continue;
-        if(catalog.files.some(f=>String(f.id)===String(file.id)))continue;file.ancestorIds=[...ancestors];file.folderId=[...ancestors].at(-1)||comp.id;catalog.files.push(file);
-        const label=el('label'),input=el('input');input.type='checkbox';input.value=file.id;input.checked=ids.has(String(file.id));inputs.push(input);input.addEventListener('change',updateCount);label.append(input,el('span',(file.nom||file.id)+(file.type==='GOOGLE_SHEETS'?' — Sheets':'')));host.append(label);updateCount();
+    const updateCount=()=>{count.textContent=selectedFiles.size+' sélectionné(s)';if(start)start.disabled=!selectedFiles.size||navigator.onLine===false;};
+    let start=null,folderToken=0;
+    function renderLevel(level){
+      if(!currentView())return;
+      list.replaceChildren();pathBar.replaceChildren();pathBar.hidden=!level.parent;search.value='';
+      if(level.parent)button(pathBar,'← Retour',()=>renderLevel(level.parent));
+      pathBar.append(el('strong',level.title||'Fichiers du client'));
+      let found=0;
+      for(const file of level.content?.fichiers||[]){
+        if(!['PDF','GOOGLE_SHEETS'].includes(file.type))continue;
+        const id=String(file.id),item={...file,ancestorIds:[...level.ancestors],folderId:level.id};
+        visitedFiles.set(id,item);if(preselected.has(id)&&!selectedFiles.has(id))selectedFiles.set(id,item);
+        found++;
+        const label=el('label'),input=el('input');input.type='checkbox';input.value=id;
+        input.checked=selectedFiles.has(id);
+        input.addEventListener('change',()=>{if(input.checked)selectedFiles.set(id,item);else{selectedFiles.delete(id);preselected.delete(id);}updateCount();});
+        label.append(input,el('span',(file.nom||id)+(file.type==='GOOGLE_SHEETS'?' — Sheets':'')));
+        list.append(label);
       }
-      for(const folder of data?.dossiers||[]){if(ancestors.has(String(folder.id)))continue;
-        const details=el('details'),summary=el('summary',folder.nom||'Dossier'),children=el('div');details.append(summary,children);host.append(details);const removeFolder=button(summary,'Retirer du hors ligne',event=>removeScope({clientId:String(comp.id),folderIds:[String(folder.id)]}));removeFolder.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();});
-        details.addEventListener('toggle',async()=>{if(!details.open||details.dataset.loaded||details.dataset.loading)return;
-          details.dataset.loading='true';children.textContent='Chargement…';try{const cached=await cdqV19GetRecord('offline-folder-v2658',folder.id);valid(email);let content=cached?.content;
-            if(navigator.onLine&&(!content||Date.now()-Number(cached.savedAt)>300000)){content=await cdqV19Gs('obtenirContenuDossierParesseux',[String(folder.id),comp.id]);valid(email);await cdqV19PutRecord('offline-folder-v2658',folder.id,{content,savedAt:Date.now()});}
-            if(!currentView())return;children.replaceChildren();if(!content){children.textContent='Ouvrez ce dossier avec Internet pour charger sa liste.';return;}
-            details.dataset.loaded='true';renderFolder(content?.contenu||content,children,new Set([...ancestors,String(folder.id)]));start.disabled=!inputs.length||navigator.onLine===false;
-          }catch(e){if(currentView()){children.textContent=e.message||String(e);button(children,'Réessayer',()=>{if(currentView()){details.open=false;requestAnimationFrame(()=>{if(currentView())details.open=true;});}});}}finally{delete details.dataset.loading;}
+      for(const folder of level.content?.dossiers||[]){
+        if(level.ancestors.includes(String(folder.id)))continue;
+        found++;
+        const entry=button(list,'Ouvrir '+(folder.nom||'Dossier'),async()=>{
+          if(entry.disabled)return;entry.disabled=true;
+          const token=++folderToken;
+          try{
+            const cached=await cdqV19GetRecord('offline-folder-v2658',folder.id);valid(email);
+            let content=cached?.content;
+            if(navigator.onLine&&(!content||Date.now()-Number(cached.savedAt)>300000)){
+              content=await cdqV19Gs('obtenirContenuDossierParesseux',[String(folder.id),comp.id]);valid(email);
+              await cdqV19PutRecord('offline-folder-v2658',folder.id,{content,savedAt:Date.now()});
+            }
+            if(!currentView()||token!==folderToken)return;
+            renderLevel({id:String(folder.id),title:folder.nom||'Dossier',content:content?.contenu||content||{},
+              ancestors:[...level.ancestors,String(folder.id)],parent:level});
+            if(!content)list.append(el('p','Liste non disponible hors connexion. Rouvrez avec Internet.'));
+          }catch(error){if(currentView()){afficherErreur(error);entry.disabled=false;}}
         });
+        entry.classList.add('cdq26-folder-link-v2860');
       }
+      if(!found)list.append(el('p','Aucun PDF ou Google Sheets dans ce dossier.'));
+      search.oninput=()=>{const q=search.value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+        for(const child of list.children)if(child.matches('label,button'))child.hidden=!child.textContent.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes(q);};
+      updateCount();
     }
-    renderFolder(manifest?.contenu||manifest,list,new Set([comp.id]));
-    if(catalog.files.some(f=>f.type==='GOOGLE_SHEETS'))list.before(el('p','PDF : téléchargés dans CDQ. Sheets : hors connexion à activer dans Google Sheets.','cdq24-help'));
-    if(!inputs.length)choose.append(el('p',manifest?'Aucun PDF ou Google Sheets dans cette liste.':'Liste non disponible. Réessaie avec Internet.'));
-    const start=button(choose,'Préparer la sélection hors ligne',()=>{if(!currentView())return;valid(email);return run(catalog.files.filter(f=>inputs.some(i=>i.checked&&i.value===String(f.id))),comp);});start.disabled=!inputs.length||navigator.onLine===false;start.dataset.cdqOfflineDownloadV2819='';o.querySelector('.modal-buttons').prepend(start);
-    if(catalog.files.some(f=>f.type==='GOOGLE_SHEETS'))drawer.append(el('p','Les PDF sont téléchargés dans CDQ. Les Google Sheets cochés sont ajoutés aux raccourcis; ouvrez-les ensuite depuis la liste habituelle pour activer ⋮ → Disponible hors connexion dans Google Sheets.','cdq24-help'));
+    button(tools,'Tout cocher',()=>{for(const label of list.querySelectorAll('label:not([hidden])')){const box=label.querySelector('input');if(!box)continue;box.checked=true;selectedFiles.set(String(box.value),visitedFiles.get(String(box.value)));}updateCount();});
+    button(tools,'Tout décocher',()=>{selectedFiles.clear();preselected.clear();list.querySelectorAll('input[type=checkbox]').forEach(input=>input.checked=false);updateCount();});
+    start=button(choose,'Préparer',()=>{if(!currentView())return;valid(email);return run([...selectedFiles.values()],comp);});
+    start.dataset.cdqOfflineDownloadV2819='';o.querySelector('.modal-buttons').prepend(start);
+    renderLevel({id:String(comp.id),title:comp.nom||'Fichiers du client',content:manifest?.contenu||manifest||{},ancestors:[String(comp.id)],parent:null});
+    if(!navigator.onLine)start.disabled=true;
+
   }
   let scheduled=false;
   new MutationObserver(changes=>{if(changes.some(c=>Array.from(c.addedNodes).some(n=>n.nodeType===1&&!n.classList.contains('cdq24-offline-dot')))&&!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;if(cdqAccessState==='ready')paintDots();});}}).observe(document.body,{childList:true,subtree:true});
@@ -17915,9 +18575,46 @@ const cdqOffline24 = (() => {
     if(r?.metadataOnlyV2835!==true||r.clientId!==clientId||!Array.isArray(r.documents))throw Object.assign(Error('Les copies locales du client doivent être vérifiées avant cet envoi.'),{code:'SEND_LOCAL_STATE_UNAVAILABLE'});
     return r.documents.map(d=>({id:d.fileId,clientId:d.clientId,folderId:d.folderId,revision:d.revision,editVersion:d.editVersion,pending:d.pending,uploadId:d.uploadId,syncedUploadId:d.syncedUploadId,remoteDeletedV2784:d.remoteDeletedV2784}));
   }
-  return {open,refresh,reconcile,legacySaved,load,stateV2835,clientStateV2835,save,remove,removeScope,get job(){return job;}};
+  return {open,refresh,reconcile,legacySaved,load,stateV2835,clientStateV2835,save,remove,removeScope,
+    openSheetSnapshotV2863,get job(){return job;}};
 })();
 window.cdqOffline24=cdqOffline24;
+// 28.42: Only this private IIFE may read the account-scoped V19 outbox and PDF cache.
+// The separate send IIFE calls this guarded read-only gateway; no queue mutation occurs.
+window.cdqSendLocalStateV2842=async function(clientId,sources,includesList,expectedOwner){
+  const owner=String(utilisateurCourantEmail||''),epoch=cdqDriveAccessEpochV2745;
+  const check=()=>{
+    if(!owner||owner!==String(expectedOwner||'')||owner!==String(utilisateurCourantEmail||'')||
+       epoch!==cdqDriveAccessEpochV2745||cdqAccessState!=='ready'||
+       String(compagnieSelectionnee||'')!==String(clientId||''))
+      throw Object.assign(Error('Le compte ou le client a changé. Rouvrez la confirmation d’envoi.'),{code:'SEND_SCOPE_CHANGED'});
+  };
+  check();
+  if(!Array.isArray(sources)||!sources.length||sources.length>1000||typeof includesList!=='boolean')
+    throw Object.assign(Error('La sélection locale doit être vérifiée avant l’envoi.'),{code:'SEND_LOCAL_STATE_UNAVAILABLE'});
+  const queue=await cdqV19QueueGet();check();
+  const legacy=[];
+  if(includesList){
+    const prefix=cdqV19Key('document-pdf',''),all=await cdqPdfSessionV2664.all();check();
+    for(const record of all){
+      if(String(record.key||'').startsWith(prefix)&&String(record.clientId||'')===String(clientId)){
+        const {blob,...metadata}=record;legacy.push(metadata);
+      }
+    }
+    legacy.push(...await cdqOffline24.clientStateV2835(clientId));check();
+  }else{
+    for(const source of sources){
+      if(source.kind!=='pdf')continue;
+      const record=await cdqV19GetRecord('document-pdf',source.fileId);check();
+      if(record){const {blob,...metadata}=record;legacy.push({...metadata,id:source.fileId});}
+      const offline=await cdqOffline24.stateV2835(source.fileId);check();
+      if(offline)legacy.push(offline);
+    }
+  }
+  const native=cdqPwaAvailable()?await cdqArchiveNativeStateV2754(clientId):[];check();
+  const list=includesList?window.cdqBalanceListV2638?.sendState(clientId):null;
+  return {queue,legacy,native,list};
+};
 
 async function cdqV19RefreshOfflineClientStatus(comp){await cdqOffline24.refresh();return true;}
 async function cdqV19PrepareClientOffline(comp){return cdqOffline24.open(comp);}
@@ -18424,7 +19121,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.03-v28.35-r3-pdf-performance-reliability";
+const CDQ_V20_BUILD = "2026.11.09-v28.70-pc-sync";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -19271,7 +19968,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.03-v28.35-r3-pdf-performance-reliability";
+const CDQ_V21_BUILD = "2026.11.09-v28.70-pc-sync";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -22840,10 +23537,21 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     if (el.id === 'cdqClientPortalButton20261028' && key === 'display') return true;
     if(el.matches('#cdqCreateClientV2640[data-company-action="rename"] svg')&&['width','height','min-width','max-width','min-height','max-height','font-size'].includes(key))return true;
     if (el.matches('#cdqTopActionsV2204 > .cdq-top-action > svg,#cdqTopActionsV2204 > .cdq-top-action > span:first-child:not(:last-child),#cdqTopActionsV2204 > .cdq-top-action > span:first-child > svg') && ['width','height','min-width','max-width','min-height','max-height','flex','font-size'].includes(key)) return true;
+    if (root.matches('html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]') &&
+        el.matches('#cdqTopActionsV2204 > .cdq-top-action:not(#cdqTopDisplayButtonV2204)') &&
+        ['flex-direction','align-items','justify-content','height','min-height','max-height',
+         'gap','padding','white-space','line-height'].includes(key)) return true;
+    if (root.matches('html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]') &&
+        el.matches('#cdqTopActionsV2204 > .cdq-top-action > span:last-child:not(:first-child)') &&
+        ['font-size','line-height','white-space','overflow-wrap','word-break','min-width',
+         'width','flex','max-width','text-overflow','text-align'].includes(key)) return true;
     if (!root.dataset.cdqBackgroundV2793) return false;
     if (key === 'background' && (el === document.body || el.matches('.container,.top-bar,.bottom-nav,#appHeader,#companyButton,#cdqTopActionsV2204,#cdqTopActionsV2204 > .cdq-top-action,#cdqClientActionsV2640,#filesContainer,.file-row,.folder-header,.folder-content'))) return true;
     if (el.id === 'cdqCreateClientV2640' && ['width','min-width','max-width','height','min-height','max-height','flex','padding-left','padding-right'].includes(key)) return true;
     if (el.id === 'appHeader' && ['height','min-height','max-height'].includes(key)) return true;
+    // Release the old native inline nav dimensions while the selection dock owns them.
+    if (el.matches('.bottom-nav') && document.body.classList.contains('selection-active') &&
+        ['height','min-height','max-height','padding'].includes(key)) return true;
     if (el.matches('.bottom-nav') && ['border','border-radius','box-shadow','bottom'].includes(key)) return true;
     if (el.id === 'cdqTopActionsV2204' && ['padding','gap','margin-top','margin-bottom'].includes(key)) return true;
     if (el.matches('#cdqTopActionsV2204 > .cdq-top-action') && ['height','min-height','max-height','padding','gap','font-size','line-height'].includes(key)) return true;
@@ -22864,6 +23572,33 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
       'min-height': px(size), 'max-height': px(size), 'font-size': px(size), 'line-height': '1', 'flex-shrink': '0'});
   }
   let lastMenuMetrics = {unit:1, textScale:1};
+  // V28.55: one geometric icon owner for the seven home tiles and selection.
+  // Use the actual 0..100 navigation size; only limit it if the longest word
+  // could not fit beside the image inside the narrowest real tile.
+  function fitUnifiedArtworkV2856(target) {
+    if(!Number.isFinite(target))return 30;
+    const buttons=[...document.querySelectorAll(
+      '#cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028),'+
+      '#cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report])')];
+    const canvas=document.createElement('canvas'),pen=canvas.getContext('2d');
+    let permitted=target;
+    for(const button of buttons){
+      const width=button.getBoundingClientRect().width;
+      if(width<24)continue;
+      const caption=button.querySelector(':scope > span:last-child:not(:first-child)');
+      if(!caption||!caption.textContent.trim())continue;
+      const style=getComputedStyle(button),label=getComputedStyle(caption);
+      pen.font=label.fontWeight+' '+label.fontSize+' '+label.fontFamily;
+      const words=caption.textContent.trim().split(/\s+/).filter(Boolean);
+      const longest=Math.max(0,...words.map(word=>pen.measureText(word).width));
+      const padding=(parseFloat(style.paddingLeft)||0)+(parseFloat(style.paddingRight)||0);
+      // The space after the icon grows naturally; words never need to break.
+      const gap=parseFloat(style.gap)||4;
+      const allowed=width-padding-gap-longest-2;
+      permitted=Math.min(permitted,allowed);
+    }
+    return Math.round(Math.max(20,Math.min(target,permitted))*10)/10;
+  }
   function apply() {
     if(root.classList.contains("cdq-desktop-v2676")){if(window.cdqFileActionsV2655)applyPalette();window.cdqDesktopModel2?.layout();return;}
     if (!root.matches('.android,.ios,.mobile-device') && window.innerWidth > 899) return;
@@ -22887,12 +23622,33 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     lastMenuMetrics = {unit, textScale};
     root.style.setProperty("--cdq-home-action-height-v2798",px(Math.max(49*unit,18*unit*iconScale+8*unit,8*unit*textScale*2.25+6*unit)));
     root.style.setProperty("--cdq-material-action-icon",px(34*unit*iconScale/1.5));
-    const top = 18 * unit * iconScale, bottom = 22 * unit * iconScale;
+    const top = 18 * unit * iconScale;
+    // V28.50: ONE MONOTONIC 0–100 icon scale, shared by all seven home
+    // actions and the six bottom navigation icons. No early saturation at 34px.
+    // Grow the card HEIGHT (image above the label) instead of stealing label width.
+    // The maximum fits a sixth of the screen even at 320 CSS px.
+    const navCell = cdqViewportWidthNowV2606 / 6;
+    const maxIcon = Math.min(navCell - 6, Math.max(35, 62 * reference * density));
+    const minIcon = Math.min(maxIcon - 12, Math.max(25, 30 * reference * density));
+    const preference = Math.max(0, Math.min(100, Number(i) || 0));
+    const bottom = minIcon + (maxIcon - minIcon) * preference / 100;
+    const homeLabel = Math.max(10, Math.min(14, 11.7 * reference * density * textScale));
+    root.style.setProperty('--cdq-home-icon-v2850', px(bottom));
+    // Reserve readable caption width before drawing a larger icon. At 100%,
+    // a small font and tighter side padding preserve full words even in 4 columns.
+    const captionBase=Math.max(9,Math.min(11,cdqViewportWidthNowV2606*.0255));
+    root.style.setProperty('--cdq-adaptive-home-label-v2856',px(Math.max(8,captionBase-1.7*preference/100)));
+    root.style.setProperty('--cdq-adaptive-home-gap-v2856',px(Math.max(3,(cdqViewportWidthNowV2606<=379?3.2:6)-2*preference/100)));
+    const fittedHomeIconV2859=fitUnifiedArtworkV2856(bottom);
+    root.style.setProperty('--cdq-unified-art-v2856',px(fittedHomeIconV2859));
+    root.style.setProperty('--cdq-home-label-v2850', px(homeLabel));
+    root.style.setProperty('--cdq-home-tile-v2850', px(bottom + Math.max(39, 2 * homeLabel * 1.2 + 14)));
     const label = 8 * unit * textScale, text = 18.5 * unit * textScale;
     const action = 16 * unit * iconScale;
     Object.entries({text,date:13.5*unit*textScale,fileIcon:24*unit*iconScale,rowMin:54*unit,rowY:5*unit,rowLeft:10*unit,rowRight:8*unit,rowGap:6*unit}).forEach(([key,value])=>root.style.setProperty('--cdq-row-'+key+'-v2631',px(value)));
     // Let the grid account for its padding AND wrapping labels before measuring it.
-    const navMinimum = 'calc(' + px(49 * unit) + ' + var(--cdq-safe-bottom))';
+    const navMinimum = 'calc(' + px(bottom + Math.max(10,label*1.15) + 9*unit) + ' + var(--cdq-safe-bottom))';
+    root.style.setProperty('--cdq-nav-adaptive-min-v2859', navMinimum);
     root.style.setProperty('--cdq-phone-reference', String(reference));
     Object.entries({bottom, top, quick: top, file:24 * unit * iconScale, action})
       .forEach(([name, value]) => root.style.setProperty('--cdq-icon-' + name + '-v2213', px(value)));
@@ -22905,13 +23661,13 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
       const count = nav.querySelectorAll(':scope > .bottom-nav-item').length || 1;
       set(nav, {'position':'fixed','left':'0','right':'0','bottom':'0','width':'100%','max-width':'100%','transform':'none','zoom':'1','margin':'0','display':'grid',
         'height':'auto', 'min-height':navMinimum, 'max-height':'none',
-        'padding':px(4 * unit)+' max(2px,var(--cdq-content-safe-right,env(safe-area-inset-right,0px))) calc('+px(4 * unit)+' + max(10px,var(--cdq-safe-bottom))) max(2px,var(--cdq-content-safe-left,env(safe-area-inset-left,0px)))',
+        'padding':px(2 * unit)+' max(2px,var(--cdq-content-safe-right,env(safe-area-inset-right,0px))) calc('+px(3 * unit)+' + max(10px,var(--cdq-safe-bottom))) max(2px,var(--cdq-content-safe-left,env(safe-area-inset-left,0px)))',
         'gap':'0', 'z-index':'1000', 'grid-template-columns':document.body.classList.contains('selection-active')?'minmax(0,1fr)':'none', 'grid-auto-flow':'column',
         'grid-template-rows':'auto', 'align-items':'stretch', 'border':'0', 'box-shadow':'none', 'border-radius':'0'});
       set(document.body, {'padding-top':'var(--cdq-safe-top)', ...(root.dataset.cdqSafeFrame === '1' ? {'padding-left':'0','padding-right':'0'} : {})});
     }
-    each('.bottom-nav > .bottom-nav-item', {'height':'auto', 'min-height':px(44 * reference), 'max-height':'none',
-      'padding':px(2 * unit)+' 0 '+px(6 * unit), 'gap':px(2 * unit), 'justify-content':'center',
+    each('.bottom-nav > .bottom-nav-item', {'height':'auto', 'min-height':px(bottom + Math.max(10,label*1.15) + 4*unit), 'max-height':'none',
+      'padding':px(2 * unit)+' 0 '+px(2 * unit), 'gap':px(2 * unit), 'justify-content':'center',
       'min-width':'0', 'width':'100%', 'box-sizing':'border-box', 'overflow':'visible', 'border':'0'});
     icon('.bottom-nav > .bottom-nav-item > span, .bottom-nav > .bottom-nav-item > span svg', bottom);
     each('.bottom-nav > .bottom-nav-item > span', {'display':'inline-flex','align-items':'center','justify-content':'center','white-space':'nowrap'});
@@ -22922,7 +23678,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     each('.bottom-nav > .bottom-nav-item small', {'font-size':px(label), 'flex':'0 0 auto',
       'line-height':'1.15','padding':'0','margin':'0','max-width':'100%','white-space':'normal','overflow-wrap':'anywhere','text-overflow':'clip','overflow':'visible'});
     const topLabel = 8 * unit * textScale;
-    const buttonHeight = Math.max(34 * unit, top + 8 * unit, topLabel * 2.25 + 6 * unit);
+    const buttonHeight = Math.max(32 * unit, fittedHomeIconV2859 + 8 * unit, Math.max(8,captionBase-1.7*preference/100) * 2.28 + 8 * unit);
     each('#cdqTopActionsV2204, .quick-buttons', {'gap':px(4 * unit),'margin-top':'0','margin-bottom':'0'});
     each('.quick-buttons', {'margin-top':px(6 * unit),'margin-bottom':px(7 * unit)});
     each('#cdqTopActionsV2204', {'padding':px(5 * unit),'margin-top':'0','margin-bottom':px(6 * unit)});
@@ -23709,7 +24465,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.03-v28.35-r3-pdf-performance-reliability',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.09-v28.70-pc-sync',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -23808,12 +24564,19 @@ html:not(.windows) .cdq23-drive-main{height:auto;overflow:visible}html:not(.wind
 <script id="cdq-creation-23">
 (function(){
 const base=CDQ_PWA_ORIGIN+'/Balance-CDQ-distribution/';
+const contactEpochs=new Map();
+window.addEventListener('cdq:client-contact-saved-v2866',event=>{
+ const d=event.detail;if(!d||d.email!==String(utilisateurCourantEmail||''))return;
+ const key='cdq-client-context23:'+d.email+':'+d.clientId;
+ contactEpochs.set(key,(contactEpochs.get(key)||0)+1);
+ try{localStorage.removeItem(key);}catch{}
+});
 window.cdqCreationV2523={
  async context(clientId){
-  const email=String(utilisateurCourantEmail||''),key='cdq-client-context23:'+email+':'+clientId;let v={};try{v=JSON.parse(localStorage.getItem(key)||'{}')}catch{}
-  if(navigator.onLine!==false){try{const fresh=await window.cdqAppelServeur('obtenirContexteCreationCDQV2523',[clientId]);if(String(utilisateurCourantEmail||'')!==email)throw Error('Le compte a changé.');const {completeClientContext}=await import(base+'client-context-v2638.mjs');v=await completeClientContext(fresh,clientId);try{localStorage.setItem(key,JSON.stringify(v));}catch{}}catch(error){if(String(utilisateurCourantEmail||'')!==email)throw Error('Le compte a changé.');if(/autorisé|autorisation|permission|droits|Choisissez un client/i.test(error.message||''))throw error;/* Un réseau indisponible ne bloque pas la copie locale : garder les coordonnées connues. */}}
+  const email=String(utilisateurCourantEmail||''),key='cdq-client-context23:'+email+':'+clientId,contactEpoch=contactEpochs.get(key)||0;let v={};try{v=JSON.parse(localStorage.getItem(key)||'{}')}catch{}
+  if(navigator.onLine!==false){try{const fresh=await window.cdqAppelServeur('obtenirContexteCreationCDQV2523',[clientId]);if(String(utilisateurCourantEmail||'')!==email)throw Error('Le compte a changé.');const {completeClientContext}=await import(base+'client-context-v2638.mjs');v=await completeClientContext(fresh,clientId);if((contactEpochs.get(key)||0)!==contactEpoch)throw Error('CONTACT_CONTEXT_CHANGED : les coordonnées ont changé.');try{localStorage.setItem(key,JSON.stringify(v));}catch{}}catch(error){if(String(utilisateurCourantEmail||'')!==email)throw Error('Le compte a changé.');if(/CONTACT_CONTEXT_CHANGED|autorisé|autorisation|permission|droits|Choisissez un client/i.test(error.message||''))throw error;v={};/* Un réseau indisponible ne bloque pas la copie locale : garder les coordonnées connues. */}}
   v.client_nom=String(clientId)===String(compagnieSelectionnee)?String(nomCompagnieSelectionnee||v.client_nom||''):v.client_nom||'';
-  v.client_technicien=String(utilisateurCourantNomRapport||v.client_technicien||'').trim();return v;
+  v.client_technicien=String(utilisateurCourantNomRapport||v.client_technicien||'').trim();return cdqCreationFieldsV2866(v);
  },
  async fill(blob,clientId){const values=await this.context(clientId),{fillInFrame}=await import(base+'pdf-fill-client-v2523.mjs');return fillInFrame(values,{blob,strict:false});},
  async created(result,clientId,requestId){
@@ -23973,6 +24736,7 @@ html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item{box-shadow:
   'use strict';
   const ICON='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBAUEBAYFBQUGBgYHCQ4JCQgICRINDQoOFRIWFhUSFBQXGiEcFxgfGRQUHScdHyIjJSUlFhwpLCgkKyEkJST/2wBDAQYGBgkICREJCREkGBQYJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCT/wAARCABgAGADASIAAhEBAxEB/8QAHAAAAgIDAQEAAAAAAAAAAAAABQYEBwACAwEI/8QAPhAAAQMCBAQDBgQDBgcAAAAAAQIDBAURAAYSIQcTMUEiUWEUIzJCcYFSkaGxCCViFRYXksLwQ4KDosHR8f/EABkBAAMBAQEAAAAAAAAAAAAAAAIDBAUBAP/EADERAAEEAAMGAwcFAQAAAAAAAAEAAgMRBBIhBTFRYXHBQZGhExQiMlKBsRUjctHwYv/aAAwDAQACEQMRAD8A+VMZjMZjy8sxmDOWMr1HNlTRT6azzHFbqUTZDae6lHsMPUrgNV4cgx36zl9p4bFt2cEKv9CMWR4GR7M+gHM0lOma05TvVWYzFux/4dq9KSeTVsvukdm56VfbbGR/4c8zSJbcVMyjF1zVpAmJI2AJuQNtj3wXuLvqb5hD7dvA+RVRY9ti4h/DpWkLKHa3lpB33NSRiPN4BTYSLuZmyoD+E1RAP7YL9PcRYe3zC57y26o+RVSYzDVmDh/UqEwqT7RT58dBSHHafJD6Wyq+nUU9L2P+7YV1JKTviWSB7BZGicHA7lrjMZjMJRL0C+O7EJ+SbNNLWfJKScS8usNyKzDadbS6hTqQUKvZW/Q23scXZm/iCKW3Cp9Ho0WOlcJpSSwhA1EoCiRfpYqKe5sm+LooY2RCaayCaockpzyXZWpN4asTaBKM1SFtqC7hGrSo2ZeN7XvYG36Y6xuINJey3KiVOk0+XUHdftMqWwh599RUejihrRpTpCOWRZVyq4ONOGHPzFmqeJIDrrrLgO4SB7pzpYDAMUKGmputyUDQwXn3VX/4bY+Gw8zYdtj64dtCRs7o/ZNoZaA+5QxW3MXcewW2VqfWqmqOzAcdjk2UCEJWpVzsQCNh63xbdP4M54lwEyUVacErG1lBKVW+ibbeuInCaqRqDmaRHrcdBWkBarWspJSCCLdrHULWGPppnOtKZgNpMtLiGkDmKSAVOpt4bAq2N7XBv18t8ZRFGiqQV8X5rpGb8syND899RKdOlxCfEAegNrHfvhafVUpcbnPSC6i9iCUoKSOqT4dji7OO+c6bVUqjwUx1ajshtIASL/CfoT16eWKgeaMNaBKCUSD7mSlYB0q0haDfsbGx7+EYOMOIJHggeQKtWPwCpsKp5IzYmYUpQ3KYUkLAIUOW4Cncb9RcW3F7b4SM+5CjxI6q3QyV04uFDrCjdyIu+yVf0n5VfY7jDNwcob9TyvXHGVvpSzOaCtKro3Bsbfi7X8jjtBq0irMTagqjOUx1T5jPQ30nRJbtdV0EA3vYHyO4N8aOBxrY7gnFsPpzCTNE40+M6j1VHKTpNsa4bs35XbhfzOmcxymPKsnUPGwo78tfrbcH5h63AUiLHE+MwpgfW8HceITI3h4sKbR3zGqUZ4dUOpV+RBxaHEZv+U5dlKccbKozkdZIG+lak2HmLI/fFURFBLySfPFq53eTJy1T5SbpS3JWEkJOwV4uvTq5h1XgejvyCl3+9XJReCrqo2bZDrcVuSpCFDkrd5QUnluA+KxsbXPra3fAXNUhxvMk5plTaEyFvsIJskaVLHxWOw7/AE88GuCqT/e9/wAKVHx+FSQb+7d7HAqrGmP52eTU1riR0S3F7p1alBeyFG+yfNW9hhUu6Pp3K63e7r2CsKl8QuHDLtLhpiVMy4cVqnyZwbSUSEpSEl5KdWq4tsDa6T2I31zFTVRcx0uiUDNlLqVOri1Ljy3JKW0sgfEHQSCiw2ANiTcYDT8pzeH2aJdQpFcysqNN5rbRmyWSkMu3tdskkEA22B3GxItgZJpuXMrwKlluoMsVirVhDKoVTaUAiGUk9AoarKVdPbYAnrbHJoYsjS11uO9Ex7rII0CbarXOGOXKixEmS5uZkQglS5URpKUPu3+FJWbFA/F36DucVfmKXEnZlmyID6zBny1TGhcBbSFavAe2pN9PkbbbHDOctVCfT2snxK9liRBRI9rS4p9piTqULaVlwpV07AkdxfArONEpWXszRaXTJ7M2THZajvFhOpta+WNZB7nUSLW6WOx2wcscTGgxOux6+KFrnONOCJZB4sjh5R6tRHqW5KVPkpfW7zQgtlKSE7WN+t+uMXxHpE6S1LkCoJloc1c4lCri5NtyOlz+ZwJqNIiSFKK9TstQu44o3F/PboO1zgJJy/p1rAAShViSbC/74i0O8J1kblaMPOORagHG6hJXCRISpt9tUcqbeRfYqKL2VsCCPhP54rHOWXItEn8ymVCPU6Y/dUeUysKuPwrHyrG1wfQjY4n5ak5cpUCoxaxSY8ues2bdkLUA2iw2SEqTYm5OrxK2SANzjpWGY6Mh01aGeUVvqUBvcixAJ9TYY08KTPG6B24Akckh4yOD+OiTGdnE/XFo1tOrICVAqUAlh8HbSk6UpPrf3f0/XFWINlDFoQVCdw9mtK3KIoIAFybLc/a4xzD07ByjhR9a7rz79q09VG4PNe0VSbdxxNka9aDpUClt1Q37bpH16d8D8xQnahOqOnSX25K3E2B8J2uLfe5HTfEzhGoomz1pVpsjchJNrtui9hvbf/3tjYx5c7OkunQFtNqlylpSmQ4G20kbk6uwsDuPpucT4kUyL+Pcoo/md17BKNODiai4h9lJu2vUUCxT4Sbgj/5bD7VsmwkLqDzM6PMRHXIaZWX1Ic0xUJcUEpKOp1ae/wAJO18THODmZ6ktMmDVcttqCSnSif8AKbi1tFzsD642cy3ndkhtyp04LcXMVpDcm95adDu4asNQTbCA3OmE0kHNkdmmyVxozqJaFLDgk6TZWptC/CD03V+g7Y8o1PUtZmyiltKE3QUW0ja/QfbbrhzVwhzVUExpb9SoegJQG21S1NrASEtg6Si42SnqMbvcO65FWlpVWy22DcJS1MXY7i52bI++Bc7wtdAS1IkpZFkEoSoAlQG587A9B126Y8bmlLXKVYtq2KNVjbrsb2P17bjBZ7JM5A1Kq9C2N/dynN/vyt+uAtYhSKMtpDr0GQHgSkMOlaQU2+LUBY73H1wI10C8o1Qjx3ZbPMKVhTgASg3tci9/Q/79W/iNHjR8sRkMpCQ3KUhAHQJCTYDCc4429NbfTrbcW8hSkKPXxDYdL/TDdxAWJeXW3EW0plrAsb22VjX2Swl0n8SpcSfl6qrE9RizcroQ/k+UkOICg28lSFD4kjlqFjfY3v2Nxfvish1xYnD1fMpk1Fz8K0dbfEy5/wCUjA7OGaOZn/P41RzaFp5qXwcjtOoqqnElVkAW/wCk9gRWYUmrZrmw6ezJkSnpavZks7uagAdrb+v64n8LXlRl1ZIUUp8KVaQSbaXQbAddjf0AJ7YF1x6VEzLUXo7jrUlMpRadTckm1iCLeK/T74XjiMkVfT3K5DeZ/XsEUjZB4o/HGo1bcA3CkoKh9b3wQTlbjE02UimVUC3zBN/1OF6n5tznEKfZxLOnoEsqHp5YNt5/z5yShdKkui1gTHXsP8uHYVpLdSftf9IZdDoAo0jKvFG5Min1ZskdTYf6sBptEzpT0LcmIqTDbSbrUXDZCfOwV0xOqOcc4SkqD8J1Kb3IMY9f8uBDdRrtcmpp61FKniG1JSyAoA7Wta9+wHe4GJpWPMmQE2evcJrSALW1JgZmr0tMOnuypLilBFklSgCeg9SfIXPpiyGeGJ4fzKNXc6T2NBnNtOR37ulCfiUFoTfTcDoSCSRt1wdqWaKdwRy01SKPHQ7mV5CkPPmxDF9lISQb7HYkWK1Ai4SABTr8muZ2rUVuq1F5Tkp5LKVPEkN6lAAgDYC56AYdHJkeGQ6niew7oHNtpL9B/t6bWcvZQrGZ5lPZq0uOObzWH0sILJSTcC2sK28xe47YYsycOHoWU32o05upMNvB0ymTqbbGk7LBAU316qTp81YV+InBudkCC1Pl5gg1Bx14MaI2pSkmx63Fu2AuVs9VrKc5omS9yRdIUlXwg7HSe306Hv54rjxk+EkuQA5uQ1HUKcNixMdxO0HBI4w+8Mipx6UwCnSeUpWoXFtYT0/58IOHHh3PTEnyAr5mFf8AapKv9OJtjuAmLT4gj0VGJvJY4j8o3w3YU3PrCihaktm50kgj3b1um/XAuoVKXQc4TKhTXEtzI8tRaNtKSCmx8rE3IH74K5VlCHU8xgIQpnWrUhRISQEOnyO4IBHqMBHayIWZF1dpMaaWH1q9neaT4wRa+9wqxO1wbEXtbCcbWWKvp7lFDeZ18ewRmDxvzdAISiU9YJ0WS6roD53vgoOP+YCxodTKJ67Sli+1t98QafxmXBJCqHTSLW8UNkkbn+jrvb7YN/46w1NEKpTSSflERkg/fl4dhXsDdXV5JcrST8tpXqfGOvTzdSl2PZT67fkFY78N6jUa5nRdTEZc+pIZU6w0mxKloTZFyo2AB0qJJsNGNKxxURUQQmmMpvvdLDKf2bwJyo1Ir1VmmDMVTZb2txoNKKUqUPGEEJ7HQbW72wgkl7iw3of9omAfCLXapQarm3PzlLTHPty3eS0w+4kWUBsCq9ux3vY3w60zhDm6HVoE6bGhhuPJadWRNaKtKVAn5t9hhE9rqmSM4xqi8ETJDFnWtVwhwEG1vTxYZ6PxJfqVWix3aJGbVKfQ2XC854dSgLjf1xq7GbhSQZD8fhof7AWVtN2NGkABbWqf8/ZaqGbILsSnNpceNR9o948lsBsJUL3UQPyxWGb+HWYaJSXJtTTCTGZIT7uW2sgqNhZKTfDtmvMy6BDekoaTP5Ez2RLT61WCbE9j6Driv8xcRpNYosilf2MxEQ+pKlOpWsqBSbjr2xr7XiwjQROfirTQ/bx7LI2L761jREB7O9ePPxX/2Q==';
   const MODELS=Object.freeze({
+    poids:{label:'Certificat Poids étalons',sourceId:''},
     plancher:{label:'Balance de plancher',sourceId:'1JO4ZPGPOvvQlMp0HuEnesZQ92EUnx820'},
     table:{label:'Balance de table',sourceId:'11r43Krp9fADODB8DqGDMNzDhiTihPgEl'},
     cuve4:{label:'Balance à cuve',sourceId:'1CmepO33oCLcI1Fb68zHOhmNwJcuLkmMC'},
@@ -23986,7 +24750,7 @@ html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item{box-shadow:
     camion:{label:'Balance à camion',sourceId:'1b7hbZhpOMzocffDLlE9Zt_ScCn57CCZ1'},
     precision:{label:'Balance de précision',sourceId:'1sqh-ziHpOQt0pbmTNOkynPcqkSAzOhFW'}
   });
-  const INTERMEDIATE=Object.freeze(['plancher','table','cuve4','chariot','convoyeur','multitete','tremie4','train','suspendue','trackscale']);
+  const INTERMEDIATE=Object.freeze(['plancher','table','cuve4','chariot','convoyeur','multitete','tremie4','train','suspendue','trackscale','camion','precision']);
   let overlay=null,busy=false,scheduled=false,activeCreation=null,creationEpoch=0;
   const pendingCreations=new Map();
 
@@ -24048,19 +24812,32 @@ html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item{box-shadow:
     body.replaceChildren();
     const grid=document.createElement('div');grid.className='cdq-report-grid-v2578 cdq-report-root-v2578';
     grid.append(
-      button('Balance intermédiaire','12 types de rapports',renderIntermediate),
-      button('Balance à camion','Créer directement dans ce dossier',()=>createReport('camion')),
-      button('Balance de précision','Créer directement dans ce dossier',()=>createReport('precision'))
+      button('Balance','12 types de rapports',renderIntermediate),
+      button('Poids étalons','Certificat d’étalonnage',showWeights),
+      button('Coordonnées du client','Adresse et sites',renderContacts)
     );
     body.append(grid);status('Choisissez une catégorie.',false);setBusy(false);
   }
   function renderIntermediate(){
     if(busy)return;
     const d=ensureOverlay(),body=d.querySelector('[data-report-body]'),back=d.querySelector('[data-report-back]');
-    back.hidden=false;d.querySelector('#cdqReportTitleV2578').textContent='Balance intermédiaire';d.querySelector('[data-report-context]').textContent='Choisissez le type de rapport';
+    back.hidden=false;d.querySelector('#cdqReportTitleV2578').textContent='Balance';d.querySelector('[data-report-context]').textContent='Choisissez le type de rapport';
     body.replaceChildren();const grid=document.createElement('div');grid.className='cdq-report-grid-v2578 cdq-report-models-v2578';
     INTERMEDIATE.forEach(key=>{const m=MODELS[key];grid.append(button(m.label,'Créer dans le dossier client',()=>createReport(key)));});
     body.append(grid);status('Un toucher crée immédiatement une copie du modèle choisi.',false);setBusy(false);
+  }
+  function showWeights(){return createReport('poids');}
+  async function renderContacts(){
+    if(busy)return;
+    const client=companyId(),name=companyName();if(!client)return;
+    show();const d=ensureOverlay(),body=d.querySelector('[data-report-body]');
+    d.querySelector('[data-report-back]').hidden=false;d.querySelector('#cdqReportTitleV2578').textContent='Coordonnées du client';d.querySelector('[data-report-context]').textContent=name;
+    body.replaceChildren();const marker=document.createElement('span');body.append(marker);status('Ouverture de la fiche…',false);
+    try{
+      const module=await import('./client-contacts-v2866.mjs');
+      if(!marker.isConnected||client!==companyId()||d.hidden)return;
+      module.renderClientContacts({body,status,clientId:client,clientName:name,isCurrent:()=>client===companyId()&&!d.hidden,setBusy});
+    }catch(error){if(marker.isConnected&&client===companyId())status(error.message||String(error),true);}
   }
   async function createReport(key){
     if(busy)return;const model=MODELS[key];if(!model)return;
@@ -24098,9 +24875,9 @@ html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item{box-shadow:
     const client=companyId(),actions=document.getElementById('cdqClientActionsV2640');if(!actions)return;
     try{if(window.parent!==window)window.parent.postMessage({type:'CDQ_PREWARM_READER_V2554'},location.origin);}catch(_){}
     const menu=document.createElement('div');menu.dataset.newReportMenu='';menu.setAttribute('aria-label','Nouveau rapport');
-    for(const [label,key]of [['Balance intermédiaire',''],['Balance à camion','camion'],['Balance de précision','precision']]){
+    for(const [label,key]of [['Balance','balance'],['Poids étalons','poids'],['Coordonnées du client','coordonnees']]){
       const b=document.createElement('button');b.type='button';b.textContent=label;
-      b.onclick=()=>{closeMenuV2660();if(client!==companyId())return;if(key)createReport(key);else{show();renderIntermediate();}};menu.append(b);
+      b.onclick=()=>{closeMenuV2660();if(client!==companyId())return;show();if(key==='balance')renderIntermediate();else if(key==='poids')showWeights();else renderContacts();};menu.append(b);
     }
     actions.append(menu);actions.querySelector('[data-client-report]')?.setAttribute('aria-expanded','true');
   }
@@ -24233,6 +25010,93 @@ html:is(.android,.ios,.mobile-device) .bottom-nav{
 })();
 </script>
 
+<style id="cdq-v2863-sheet-snapshot-viewer">
+.cdq-offline-sheet-overlay-v2863{position:fixed;inset:0;box-sizing:border-box;z-index:2147483100;background:#05080bf2;color:#f4f7fa;padding:calc(8px + env(safe-area-inset-top)) 7px calc(8px + env(safe-area-inset-bottom));display:flex;align-items:stretch}
+.cdq-offline-sheet-panel-v2863{box-sizing:border-box;border:1px solid #617681;border-radius:12px;background:#10171c;width:100%;min-width:0;min-height:0;display:flex;flex-direction:column;gap:6px;overflow:hidden;padding:9px}
+.cdq-offline-sheet-header-v2863{display:flex;gap:8px;justify-content:space-between;align-items:center;min-height:40px}
+.cdq-offline-sheet-title-v2863{font-size:17px;font-weight:700;overflow:hidden;text-overflow:ellipsis;max-height:48px}
+.cdq-offline-sheet-header-v2863 button{flex:0 0 auto;min-height:38px;padding:4px 12px}
+.cdq-offline-sheet-notice-v2863{font-size:12px;line-height:1.25;color:#bcd5e0;margin:0;padding:2px 0}
+.cdq-offline-sheet-tabs-v2863{display:flex;gap:4px;overflow-x:auto;min-height:38px;flex:0 0 auto}
+.cdq-offline-sheet-tabs-v2863 button{flex:0 0 auto;padding:4px 10px;border:1px solid #4d6874;border-radius:6px;background:#152129;color:#eef7ff;font-size:13px}
+.cdq-offline-sheet-tabs-v2863 button[aria-selected="true"]{border-color:#5ecab2;background:#184c48}
+.cdq-offline-sheet-content-v2863{flex:1 1 0;min-height:0;overflow:auto;background:#0a1117;border:1px solid #334958;border-radius:6px}
+.cdq-offline-sheet-table-v2863{border-collapse:collapse;width:max-content;min-width:100%;font:13px/1.35 Arial,Helvetica,sans-serif;color:#eff7ff}
+.cdq-offline-sheet-table-v2863 :is(td,th){border:1px solid #344753;padding:6px 8px;min-width:68px;max-width:350px;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere}
+.cdq-offline-sheet-table-v2863 th{position:sticky;left:0;background:#1b2933;min-width:36px;text-align:right;z-index:1}
+.cdq-offline-sheet-pages-v2863{display:flex;gap:10px;align-items:center;justify-content:space-between;min-height:42px}
+.cdq-offline-sheet-pages-v2863 button{min-height:38px;padding:5px 9px;font-size:13px}
+</style>
+<style id="cdq-v2862-offline-completion-empty-home">
+/* A completed offline preparation is a short confirmation, not a 100% progress bar. */
+#cdqDocumentPrepare [data-progress24].cdq-offline-complete-v2862{
+  display:flex!important;flex:0 0 auto!important;align-items:center!important;
+  box-sizing:border-box!important;min-height:36px!important;max-height:none!important;
+  margin:1px 0 3px!important;padding:7px 10px!important;gap:0!important;
+  border:1px solid #267953!important;border-radius:9px!important;background:#092319!important;
+  color:#b9f5d1!important;
+}
+#cdqDocumentPrepare [data-progress24].cdq-offline-complete-v2862>p{
+  margin:0!important;padding:0!important;font:600 13px/1.25 Arial,Helvetica,sans-serif!important;
+  white-space:normal!important;overflow-wrap:break-word!important;
+}
+#cdqDocumentPrepare [data-progress24].cdq-offline-complete-v2862 progress{display:none!important}
+/* Empty home has no list to scroll: no artificially reserved 1-screen+nav height. */
+html:is(.android,.ios,.mobile-device).cdq-empty-home-v2862{
+  box-sizing:border-box!important;height:100dvh!important;min-height:0!important;
+  overflow-y:hidden!important;overscroll-behavior-y:none!important;
+}
+html:is(.android,.ios,.mobile-device).cdq-empty-home-v2862 body{
+  box-sizing:border-box!important;height:100dvh!important;min-height:0!important;max-height:100dvh!important;
+  overflow-y:hidden!important;overscroll-behavior-y:none!important;
+}
+html:is(.android,.ios,.mobile-device).cdq-empty-home-v2862 body .container{
+  min-height:0!important;height:auto!important;max-height:none!important;
+  padding-bottom:0!important;
+}
+</style>
+<script id="cdq-v2862-empty-home-scroll-guard">
+(function(){
+ 'use strict';
+ const root=document.documentElement;
+ if(!root.matches('.android,.ios,.mobile-device'))return;
+ const files=document.getElementById('filesContainer'),chooser=document.getElementById('companyButton');
+ if(!files||!chooser)return;
+ let queued=false;
+ function emptyHome(){
+   // Keep normal scrolling for every real client, workspace page and reader.
+   if(typeof compagnieSelectionnee!=='undefined' && compagnieSelectionnee)return false;
+   if(files.children.length || files.textContent.trim())return false;
+   if(root.classList.contains('cdq-workspace-reader-open'))return false;
+   const route=String(root.dataset.cdqWorkspace||'').toLowerCase();
+   if(route && route!=='home' && route!=='accueil')return false;
+   const nav=document.querySelector('.bottom-nav'),footer=document.querySelector('.brand-footer');
+   if(!nav||!footer||!nav.getClientRects().length)return false;
+   // Lock only if all visible home controls really fit above the bottom dock.
+   const contentBottom=footer.getBoundingClientRect().bottom+(window.scrollY||0);
+   const available=(window.visualViewport?.height||window.innerHeight)-nav.getBoundingClientRect().height-8;
+   return contentBottom<=available;
+ }
+ function refresh(){
+   queued=false;
+   const lock=emptyHome(),had=root.classList.contains('cdq-empty-home-v2862');
+   if(had!==lock)root.classList.toggle('cdq-empty-home-v2862',lock);
+   if(lock && (window.scrollY||root.scrollTop||document.body.scrollTop)){
+     window.scrollTo(0,0);root.scrollTop=0;document.body.scrollTop=0;
+   }
+ }
+ function schedule(){if(queued)return;queued=true;requestAnimationFrame(refresh);}
+ new MutationObserver(schedule).observe(files,{childList:true});
+ new MutationObserver(schedule).observe(chooser,{childList:true,characterData:true,subtree:true});
+ // Other feature panels must retain their own scrolling.
+ new MutationObserver(schedule).observe(root,{attributes:true,attributeFilter:['data-cdq-workspace']});
+ window.addEventListener('resize',schedule,{passive:true});
+ window.addEventListener('pageshow',schedule,{passive:true});
+ window.addEventListener('cdq:client-content-ready-v2745',schedule);
+ document.addEventListener('click',e=>{if(e.target.closest?.('.company-item,.company-reset-item,#companyButton,.home-nav-button'))schedule();},true);
+ schedule();
+})();
+</script>
 <style id="cdq-mobile-workflow-v2605">
 html:is(.android,.ios,.mobile-device) #modalOverlay{
   box-sizing:border-box!important;
@@ -25655,3 +26519,10 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
 </html>
 
 
+
+<style id="cdq-contact-style-v2866">
+.cdq-client-contacts-v2866{display:grid;gap:12px;color:inherit}.cdq-contact-fields-v2866{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.cdq-client-contacts-v2866 label{display:grid;gap:5px;min-width:0}.cdq-client-contacts-v2866 input,.cdq-client-contacts-v2866 select{box-sizing:border-box;width:100%;min-width:0;min-height:44px;padding:9px;border:1px solid #557388;border-radius:8px;background:#122332;color:#fff;font:inherit}.cdq-client-contacts-v2866 button{min-height:44px;padding:10px;border:1px solid #557388;border-radius:8px;background:#173a53;color:#fff;font:inherit}.cdq-client-contacts-v2866 button:disabled{opacity:.55}@media(max-width:440px){.cdq-contact-fields-v2866{grid-template-columns:minmax(0,1fr)}}
+</style>
+
+<style>#modalOverlay .modal-section[hidden],#modalOverlay #cdqSendSaveRecipientV2553[hidden],#modalOverlay #cdqSendRecipientStatusV2553[hidden]{display:none!important}#cdqDeliveryActionsV2866 label{display:flex;gap:10px;align-items:center;min-height:44px}#cdqDeliveryActionsV2866 input{width:auto;min-width:20px;min-height:20px}</style>
+<script type="module" src="./delivery-actions-v2866.mjs"></script>

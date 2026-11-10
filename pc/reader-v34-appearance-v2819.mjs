@@ -1,5 +1,5 @@
 import {isCorrectionReadingV2736} from './reader-measurements-v2736.mjs';
-import {cdqPlainProblemLabelV3,cdqFitTrialTextV4,cdqTrialTextSpecV4,cdqWinAnsiCodeV4} from './reader-choices-v2572.mjs';
+import {cdqPlainProblemLabelV3,cdqProblemCaptionV3,cdqFitDetailTextV2864,cdqFitTrialTextV4,cdqTrialTextSpecV4,cdqWinAnsiCodeV4} from './reader-choices-v2572.mjs';
 function nativeTrialChoiceAppearanceV2(pdf,form,L,field,text){
   const N=L.PDFName.of,dr=form.acroForm.dict.lookupMaybe(N('DR'),L.PDFDict);
   const fonts=dr?.lookupMaybe(N('Font'),L.PDFDict),fontRef=fonts?.get(N('FRC'));
@@ -22,17 +22,17 @@ function nativeTrialChoiceAppearanceV2(pdf,form,L,field,text){
     const nativeSize=(widget.dict.lookupMaybe(N('CDQAutoFitBaseSize'),L.PDFNumber)||field.acroField.dict.lookupMaybe(N('CDQAutoFitBaseSize'),L.PDFNumber))?.asNumber();
     const base=nativeSize||spec?.base||Number(/\/FRC\s+([\d.]+)\s+Tf/.exec(da)?.[1]);
     if(!(base>0))return false;
-    const fit=cdqFitTrialTextV4(text,w,h,base,!!spec?.multiline,textWidth),size=fit.size;
+    const fit=field.getName()==='essai_cdq_problemes_detail'?cdqFitDetailTextV2864(text,w,h,base,textWidth):cdqFitTrialTextV4(text,w,h,base,!!spec?.multiline,textWidth),size=fit.size;
     const align=(widget.dict.lookup(N('Q'))||field.acroField.dict.lookup(N('Q')))?.asNumber?.()??0;
     const mk=widget.dict.lookupMaybe(N('MK'),L.PDFDict),bs=widget.dict.lookupMaybe(N('BS'),L.PDFDict);
     const fill=color(mk?.lookup(N('BG'))),stroke=color(mk?.lookup(N('BC')),true),border=bs?.lookup(N('W'))?.asNumber?.()??0;
     const commands=['/Tx BMC q'];
     if(fill)commands.push(fill+` 0 0 ${w} ${h} re f`);
     if(stroke&&border>0)commands.push(stroke+` ${border} w ${border/2} ${border/2} ${w-border} ${h-border} re S`);
-    commands.push(`1 1 ${Math.max(0,w-2)} ${Math.max(0,h-2)} re W n`);
-    const firstY=spec?.multiline?h-3-size*.83:(h-size)/2+size*.22;
+    const clip=fit.lineHeight===1.03?.2:1;commands.push(`${clip} ${clip} ${Math.max(0,w-2*clip)} ${Math.max(0,h-2*clip)} re W n`);
+    const firstY=spec?.multiline?h-(fit.padding??3)-size*(fit.ascent??.83):(h-size)/2+size*.22;
     fit.lines.forEach((line,index)=>{
-      const length=textWidth(line,size),x=align===1?(w-length)/2:align===2?w-3-length:3,y=firstY-index*size*1.19;
+      const length=textWidth(line,size),x=align===1?(w-length)/2:align===2?w-3-length:3,y=firstY-index*size*(fit.lineHeight??1.19);
       const encoded='<'+codes(line).map(code=>code.toString(16).padStart(2,'0')).join('')+'>';
       commands.push('BT',`/FRC ${size.toFixed(3)} Tf 0 g`,`1 0 0 1 ${x.toFixed(3)} ${y.toFixed(3)} Tm ${encoded} Tj`,'ET');
     });
@@ -54,7 +54,8 @@ function fitTrialTextAppearancesV4(pdf,form,L){
     let text;
     if(field.getName()==='essai_cdq_probleme_constate'){
       const options=field.acroField.getOptions();
-      text=field.getSelected().map(value=>{const option=options.find(item=>item.value.decodeText()===value);return cdqPlainProblemLabelV3(option?.display?.decodeText()||value);}).join(' ; ')||'Aucun problème constaté';
+      text=field.getSelected().map(value=>{const option=options.find(item=>item.value.decodeText()===value);return cdqPlainProblemLabelV3(option?.display?.decodeText()||value);});
+      text=cdqProblemCaptionV3(text,Infinity,10.008).text;
     }else if(typeof field.getText==='function')text=field.getText()||'';
     else continue;
     nativeTrialChoiceAppearanceV2(pdf,form,L,field,text);
@@ -65,7 +66,7 @@ function persistTrialProblemReadOnlyV2(form){
   const menu=form.getFieldMaybe('essai_cdq_probleme_constate');
   if(menu?.isMultiselect?.()!==true||typeof menu.getSelected!=='function')return;
   const selected=menu.getSelected().filter(value=>value&&value!=='aucun');
-  const invalid=selected.length>0,unresolved=selected.some(value=>!value.endsWith('_corrige'));
+  const invalid=selected.some(value=>value.replace(/_corrige$/,'')!=='niveau'),unresolved=selected.some(value=>!value.endsWith('_corrige'));
   for(const field of form.getFields()){
     const name=field.getName();
     if(!isCorrectionReadingV2736(name))continue;
