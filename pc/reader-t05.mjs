@@ -73,6 +73,7 @@ export function prepareT05Save(pdf,L){
   // The native DA, Q and full embedded Roboto font let PDF.js retain its own
   // formatted strings (notably 1000.000, ±1e and multiline notes) in each AP.
   centerSerializedT05Text(pdf,L);
+  if(pdf.catalog.lookupMaybe(N('CDQGeometryV2871'),L.PDFNumber)?.asNumber()===2871)centerSerializedT05Text(pdf,L,'FRC');
   form.acroForm.dict.set(N('NeedAppearances'),pdf.context.obj(false));
   return true;
 }
@@ -80,7 +81,7 @@ export function prepareT05Save(pdf,L){
 // PDF.js writes combo-box appearances left aligned even with /Q 1. Adjust
 // only its serialized single-line text position/size, keeping the actual
 // formatted literal, font, color, frame and calculation value untouched.
-function centerSerializedT05Text(pdf,L){
+export function centerSerializedT05Text(pdf,L,fontName='Roboto850'){
   const N=L.PDFName.of;
   for(const field of pdf.getForm().getFields()){
     if(!(field instanceof L.PDFTextField||field instanceof L.PDFDropdown)||field.isMultiline?.())continue;
@@ -89,10 +90,10 @@ function centerSerializedT05Text(pdf,L){
       const raw=L.decodePDFRawStream(stream).decode();let source='';for(let i=0;i<raw.length;i+=8192)source+=String.fromCharCode(...raw.subarray(i,i+8192));
       if(!source.startsWith('/Tx BMC'))continue;
       const blocks=source.match(/BT[\s\S]*?ET/g);if(blocks?.length!==1)continue;
-      const block=blocks[0],tf=/\/Roboto850\s+([\d.]+)\s+Tf/.exec(block),td=/1 0 0 1 0 0 Tm\s+([-\d.]+)\s+([-\d.]+)\s+Td/.exec(block);
+      const block=blocks[0],tf=new RegExp('/'+fontName+'\\s+([\\d.]+)\\s+Tf').exec(block),td=/1 0 0 1 0 0 Tm\s+([-\d.]+)\s+([-\d.]+)\s+Td/.exec(block);
       const draws=[...block.matchAll(/(\((?:\\[\s\S]|[^\\()])*\)|<[\da-fA-F]+>)\s*Tj/g)];if(!tf||!td||draws.length!==1)continue;
       const token=draws[0][1],chars=(token[0]==='('?L.PDFString.of(token.slice(1,-1)):L.PDFHexString.of(token.slice(1,-1))).asBytes();
-      const fonts=stream.dict.lookupMaybe(N('Resources'),L.PDFDict)?.lookupMaybe(N('Font'),L.PDFDict),font=fonts?.lookupMaybe(N('Roboto850'),L.PDFDict);
+      const fonts=stream.dict.lookupMaybe(N('Resources'),L.PDFDict)?.lookupMaybe(N('Font'),L.PDFDict),font=fonts?.lookupMaybe(N(fontName),L.PDFDict);
       const widths=font?.lookupMaybe(N('Widths'),L.PDFArray),first=font?.lookupMaybe(N('FirstChar'),L.PDFNumber)?.asNumber()||0;if(!widths)continue;
       let advance=0;for(const c of chars)advance+=widths.lookup(c-first,L.PDFNumber).asNumber()/1000;
       if(!(advance>0))continue;
@@ -100,7 +101,7 @@ function centerSerializedT05Text(pdf,L){
       if(!(nextSize>0))continue;
       const x=(rect.width-advance*nextSize)/2,y=Number(td[2])+(size-nextSize)*.718/2;
       if(Math.abs(x-Number(td[1]))<.02&&Math.abs(nextSize-size)<.001)continue;
-      const nextBlock=block.replace(tf[0],'/Roboto850 '+nextSize.toFixed(5)+' Tf').replace(td[0],'1 0 0 1 0 0 Tm '+x.toFixed(5)+' '+y.toFixed(5)+' Td');
+      const nextBlock=block.replace(tf[0],'/'+fontName+' '+nextSize.toFixed(5)+' Tf').replace(td[0],'1 0 0 1 0 0 Tm '+x.toFixed(5)+' '+y.toFixed(5)+' Td');
       const next=pdf.context.flateStream(Uint8Array.from(source.replace(block,nextBlock),c=>c.charCodeAt(0)));
       for(const [key,value]of stream.dict.entries())if(!['Length','Filter','DecodeParms'].includes(key.decodeText()))next.dict.set(key,value);
       ap.set(N('N'),pdf.context.register(next));
@@ -111,17 +112,17 @@ function centerSerializedT05Text(pdf,L){
 export function installT05Font(){
   if(typeof document==='undefined'||document.getElementById('cdq-t05-font'))return;
   const style=document.createElement('style');style.id='cdq-t05-font';
-  style.textContent=`@font-face{font-family:CDQRoboto850;src:url("${new URL('./assets/fonts/t05-roboto850.ttf',import.meta.url).href}") format("truetype");font-weight:850;font-style:normal;font-display:swap}#viewer[data-cdq-t05="true"] button.cdq-choice-field{padding-left:0!important;padding-right:0!important}#viewer[data-cdq-t05="true"] .textWidgetAnnotation.hasOwnCanvas:not(.sandboxModified:has(>input[value="Balance de Plancher"])):has(>input[name="type_balance"][data-cdq-auto-field="true"]){border-color:transparent!important}`;
+  style.textContent=`@font-face{font-family:CDQRoboto850;src:url("${new URL('./assets/fonts/t05-roboto850.ttf',import.meta.url).href}") format("truetype");font-weight:850;font-style:normal;font-display:swap}#viewer[data-cdq-t05="true"] button.cdq-choice-field{padding-left:0!important;padding-right:0!important}`;
   document.head.append(style);
 }
 
-export function styleT05Fields(surface){
+export function styleT05Fields(surface,fontNames=new Map()){
   if(surface?.dataset.cdqT05!=='true')return false;
   const corrected=!!surface.querySelector('input[name^="_cdq_visual_"]');
   if(corrected)for(const indicator of surface.querySelectorAll('input[name^="_cdq_visual_"]')){const section=indicator.closest('section');if(section)section.style.setProperty('pointer-events','none','important');}
   for(const field of surface.querySelectorAll('input:not([type=checkbox]),textarea,select,button.cdq-choice-field')){
     if(!field.name||field.name.startsWith('essai_cdq_'))continue;
-    for(const [key,value]of Object.entries({'font-family':'CDQRoboto850,Arial,sans-serif','font-weight':'850','text-align':'center',color:corrected&&!field.name.endsWith('_numero_tete')&&/^(charge_point_|excentricite_(avant|apres)_|B4_|charge_excentricite$|tolerance_excentricite$)/.test(field.name)?'#000000':field.name.endsWith('_numero_tete')?'#101B7A':'#061B35'}))if(field.style.getPropertyValue(key)!==value||field.style.getPropertyPriority(key)!=='important')field.style.setProperty(key,value,'important');
+    for(const [key,value]of Object.entries({'font-family':fontNames.get(field.name)==='FRC'?'CDQSummary,Arial,sans-serif':'CDQRoboto850,Arial,sans-serif','font-weight':fontNames.get(field.name)==='FRC'?'400':'850','text-align':'center',color:corrected&&!field.name.endsWith('_numero_tete')&&/^(charge_point_|excentricite_(avant|apres)_|B4_|charge_excentricite$|tolerance_excentricite$)/.test(field.name)?'#000000':field.name.endsWith('_numero_tete')?'#101B7A':'#061B35'}))if(field.style.getPropertyValue(key)!==value||field.style.getPropertyPriority(key)!=='important')field.style.setProperty(key,value,'important');
     // PDF.js leaves the native /BS width in unscaled CSS pixels. Scale its
     // existing border like the .6pt native correction-frame canvases, without
     // adding a second rectangle or changing any widget geometry.

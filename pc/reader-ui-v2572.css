@@ -113,14 +113,14 @@ body.cdq-reader-pc #status[data-active=true]{opacity:1}
 .cdq-result-indicator:not(.row-result) span{text-align:right;white-space:nowrap}
 
 
-/* Autofill must keep the printed cyan cell, including focus and hover. */
+/* Keep each field's authored/background state when a saved suggestion is selected. */
 #viewer .annotationLayer :is(.textWidgetAnnotation,.choiceWidgetAnnotation) :is(input,textarea,select):-webkit-autofill,
 #viewer .annotationLayer :is(.textWidgetAnnotation,.choiceWidgetAnnotation) :is(input,textarea,select):-webkit-autofill:hover,
 #viewer .annotationLayer :is(.textWidgetAnnotation,.choiceWidgetAnnotation) :is(input,textarea,select):-webkit-autofill:focus {
- -webkit-box-shadow:0 0 0 1000px #99fdfd inset!important;box-shadow:0 0 0 1000px #99fdfd inset!important;
- -webkit-text-fill-color:#000!important;caret-color:#000!important;background-color:#99fdfd!important;
+ -webkit-box-shadow:0 0 0 1000px var(--cdq-authored-field-background, #fff) inset!important;box-shadow:0 0 0 1000px var(--cdq-authored-field-background, #fff) inset!important;
+ -webkit-text-fill-color:#000!important;caret-color:#000!important;background-color:var(--cdq-authored-field-background, #fff)!important;
 }
-#viewer .annotationLayer :is(input,textarea,select):autofill{background-color:#99fdfd!important;box-shadow:0 0 0 1000px #99fdfd inset!important;color:#000!important}
+#viewer .annotationLayer :is(input,textarea,select):autofill{background-color:var(--cdq-authored-field-background, #fff)!important;box-shadow:0 0 0 1000px var(--cdq-authored-field-background, #fff) inset!important;color:#000!important}
 
 /* V27.38 preview — the existing Suspendue conclusion widget owns its
    original /MK/BG cyan and /MK/BC border; keep them visible in PDF.js.

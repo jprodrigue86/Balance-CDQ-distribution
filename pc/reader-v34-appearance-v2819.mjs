@@ -95,5 +95,37 @@ function repairV34KitIndices(pdf,form,L){
   kit.acroField.dict.set(L.PDFName.of('I'),pdf.context.obj(ordered));
 }
 
+// V28.71: a listbox AP shows its first options even with /V=[]. Paint only
+// this native kit's selected labels, retaining its font and PDF resources.
+function repairV34KitAppearanceV2871(pdf,form,L){
+  const kit=form.getFieldMaybe('essai_cdq_etalon_utilise');
+  if(!kit?.isMultiselect?.()||typeof kit.getSelected!=='function')return;
+  const N=L.PDFName.of,options=kit.acroField.getOptions();
+  const text=kit.getSelected().map(value=>{
+    const option=options.find(item=>item.value.decodeText()===value);
+    if(!option)throw Error('V34 kit choices do not match approved PDF options.');
+    return cdqPlainProblemLabelV3(option.display?.decodeText()||value);
+  }).join(' + ');
+  const widgets=kit.acroField.getWidgets();
+  // Unknown historical widget/font layouts keep their existing save behavior.
+  if(widgets.length!==1)return;
+  const fontRef=form.acroForm.dict.lookupMaybe(N('DR'),L.PDFDict)?.lookupMaybe(N('Font'),L.PDFDict)?.get(N('FRC'));
+  const originals=widgets.map(widget=>{
+    const ap=widget.dict.lookupMaybe(N('AP'),L.PDFDict),normal=ap?.lookup(N('N'));
+    const resources=normal?.dict?.get(N('Resources'));
+    const existingFont=normal?.dict?.lookupMaybe(N('Resources'),L.PDFDict)?.lookupMaybe(N('Font'),L.PDFDict)?.get(N('FRC'));
+    if(resources&&existingFont?.toString()!==fontRef?.toString())return null;
+    return {widget,ap,normal,resources};
+  });
+  if(originals.some(item=>!item)||!nativeTrialChoiceAppearanceV2(pdf,form,L,kit,text))return;
+  for(const {widget,ap,normal,resources} of originals){
+    const replacement=widget.dict.lookup(N('AP'),L.PDFDict).get(N('N'));
+    const stream=pdf.context.lookup(replacement);
+    if(resources)stream.dict.set(N('Resources'),resources);
+    for(const key of ['BBox','Matrix'])if(normal?.dict?.has(N(key)))stream.dict.set(N(key),normal.dict.get(N(key)));
+    if(ap){const retained=ap.clone();retained.set(N('N'),replacement);widget.dict.set(N('AP'),retained);}
+  }
+}
+
 export function nativeV34Form(form){return form.getFieldMaybe('essai_cdq_probleme_constate')?.isMultiselect?.()===true&&!!form.getFieldMaybe('essai_cdq__recalcul')&&!!form.getFieldMaybe('essai_cdq_client_nom');}
-export function prepareV34Save(pdf,L){const form=pdf.getForm();if(form.getFieldMaybe('essai_cdq_probleme_constate')?.isMultiselect?.()!==true||!form.getFieldMaybe('essai_cdq__recalcul'))return false;persistTrialProblemReadOnlyV2(form);repairV34KitIndices(pdf,form,L);fitTrialTextAppearancesV4(pdf,form,L);form.acroForm.dict.set(L.PDFName.of('NeedAppearances'),pdf.context.obj(false));return nativeV34Form(form);}
+export function prepareV34Save(pdf,L){const form=pdf.getForm();if(form.getFieldMaybe('essai_cdq_probleme_constate')?.isMultiselect?.()!==true||!form.getFieldMaybe('essai_cdq__recalcul'))return false;persistTrialProblemReadOnlyV2(form);repairV34KitIndices(pdf,form,L);fitTrialTextAppearancesV4(pdf,form,L);repairV34KitAppearanceV2871(pdf,form,L);form.acroForm.dict.set(L.PDFName.of('NeedAppearances'),pdf.context.obj(false));return nativeV34Form(form);}

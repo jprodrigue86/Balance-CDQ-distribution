@@ -1,3 +1,8 @@
+import {measurementDisplayV2871,problemLocksV2871} from './reader-ne-v2871.mjs';
+let fieldFontNamesV2871=new Map();
+import {installWeightsControlsV2871,weightsDateParts} from './reader-weights-v2871.mjs';
+let cleanupWeightsV2871=()=>{};
+import {installAutofillPaletteV2871} from './reader-autofill-v2871.mjs';
 import {reportFieldNameV2819,legacyReportFieldNameV2819} from './report-field-aliases-v2819.mjs';
 import {ECHELON_FIELD_V22,isEchelonDraftV22,echelonErrorV22} from './reader-echelon-v2819.mjs';
 import {installV34Commits} from './reader-v34-commits-v2819.mjs';
@@ -55,6 +60,7 @@ function loadReaderModulesV2730(load,base){
   return Promise.all([core,ui,sandbox]);
 }
 const $=id=>document.getElementById(id),hosted=parent!==window;
+installAutofillPaletteV2871($('viewer'));
 let parentOrigin='',autoReportName=false;
 const formattedFields=new Map(),fieldTypography=new Map();
 function fitTrialTextFieldV4(field){
@@ -73,7 +79,10 @@ function fitTrialTextFieldV4(field){
   set('font-family','CDQSummary, Arial, sans-serif');set('font-weight','400');set('font-size',fit.size+'px');
   set('box-sizing','border-box');set('text-align','left');set('text-overflow','clip');set('overflow','hidden');
   set('white-space',spec.multiline?'pre-wrap':'pre');set('word-break','normal');set('overflow-wrap','normal');set('hyphens','none');
-  set('padding',spec.multiline?((fit.padding??3)*scale)+'px':'0 '+(3*scale)+'px');
+  const padding=spec.multiline?((fit.padding??3)*scale)+'px':'0 '+(3*scale)+'px';
+  // Compact the vertical leading only; keep the same 3pt horizontal inset
+  // used by the PDF appearance and its width calculation (width minus 6pt).
+  set('padding',field.name==='essai_cdq_problemes_detail'&&fit.padding!==3?((fit.padding??3)*scale)+'px '+(3*scale)+'px':padding);
   set('line-height',spec.multiline?(fit.size*(fit.lineHeight??1.19))+'px':fit.height+'px');
   if(field.tagName==='TEXTAREA')field.wrap=spec.multiline?'soft':'off';
   field.scrollLeft=0;field.scrollTop=0;
@@ -81,7 +90,7 @@ function fitTrialTextFieldV4(field){
   return true;
 }
 function applyFieldTypography(){
-  const t05=styleT05Fields($('viewer'));
+  const t05=styleT05Fields($('viewer'),fieldFontNamesV2871);
   const fields=[];
   for(const field of $('viewer').querySelectorAll('input,textarea,select,button.cdq-choice-field')){
     if(isCorrectionReadingV2736(field.name))field.inputMode='text';
@@ -148,7 +157,8 @@ const cdqNewReportIdentityV2779=()=>initialPreparedDraftV2730&&!reportSnapshotV2
 function initializeSandboxIdentityV2730(data,values,document,locked,preparedDraft=false){
   const updates=[];if(locked)return updates;
   for(const [name,value] of Object.entries(values||{})){
-    if(!/^client_(nom|telephone|technicien|adresse|ville|province|code_postal)$/.test(name)||typeof value!=='string'||value.length>1000||!value.trim())continue;
+    const weightDate=name==='date_etalonnage'&&weightsDateParts(value)&&!!(data.objects?.get?.('poids_14_06')||data.objects?.poids_14_06);
+    if((!/^client_(nom|telephone|technicien|adresse|ville|province|code_postal)$/.test(name)&&!weightDate)||typeof value!=='string'||value.length>1000||!value.trim())continue;
     const actualName=reportFieldNameV2819(data.objects,name),raw=data.objects?.get?.(actualName)||data.objects?.[actualName],defs=raw?(Array.isArray(raw)?raw:[raw]):[];
     // CREATE historically replaced the approved template's static Qc default.
     // Keep onlyEmpty protection for every private value and untrusted report.
@@ -236,7 +246,7 @@ function cdqStoredFieldStateV2581(name){
   }
   const state={value:hasValue?value:'',formattedValue,readOnly:pdfReadOnly,...(items?{items}: {})};
   const precision=name==='tolerance_excentricite'&&cdqFieldDefinitionsV2581('type_plateau').length>0&&cdqFieldDefinitionsV2581('charge_point_7_charge_utilisee').length>0;
-  const display=precisionToleranceDisplayV2726(name,state,precision);
+  const display=measurementDisplayV2871(name,precisionToleranceDisplayV2726(name,state,precision));
   if(display!==state)for(const definition of definitions)if(definition?.id){
     // Persist the repaired format too: PDF.js uses it for the saved AP stream.
     doc.annotationStorage.setValue(definition.id,{formattedValue:display.formattedValue});
@@ -274,8 +284,7 @@ function cdqApplyConstraintDefaultsV2583(){
 function cdqTrialProblemLocksV2(){
   const menu=$('viewer').querySelector('select[name="essai_cdq_probleme_constate"]');
   if(!menu?.multiple)return null;
-  const selected=Array.from(menu.selectedOptions,option=>String(option.value)).filter(value=>value&&value!=='aucun');
-  return {avant:selected.length>0,apres:selected.some(value=>!value.endsWith('_corrige'))};
+  return problemLocksV2871(Array.from(menu.selectedOptions,option=>String(option.value)));
 }
 function cdqTrialReadingLockedV2819(name,locks){
   const state=cdqStoredFieldStateV2581(name);
@@ -289,6 +298,8 @@ function cdqRefreshProblemLocksV2819(){
   // refresh even when PDF.js suppresses that redundant readonly notification.
   for(const field of $('viewer').querySelectorAll('input,textarea'))if(isCorrectionReadingV2736(field.name)){
     const disabled=cdqTrialReadingLockedV2819(field.name,locks);
+    const state=cdqStoredFieldStateV2581(field.name);
+    if((state.value==='N/É'||field.value==='N/É')&&(disabled||document.activeElement!==field)){const wanted=state.formattedValue??String(state.value??'');if(field.value!==wanted)field.value=wanted;}
     if(field.disabled!==disabled)field.disabled=disabled;
     if(field.readOnly)field.readOnly=false;
   }
@@ -763,7 +774,7 @@ async function open(data){
         // Scripting can initialise fields after the first canvas appears. Input
         // becomes available only after the canvas, widgets and calculations.
         const [metadata]=await Promise.all([readReaderMetadataV2724(doc),viewer.firstPagePromise]);checkLease();
-        const {fields,actions,typography,firstPageHasAnnotations}=metadata;fieldDefinitions=fields;
+        const {fields,actions,typography,firstPageHasAnnotations}=metadata;fieldDefinitions=fields;fieldFontNamesV2871=metadata.fontNames||new Map();
         await hydrateNativeKitV2819(doc,fields);checkLease();
         $('viewer').dataset.cdqV34=String(cdqFieldDefinitionsV2581('essai_cdq__recalcul').length>0);
         staticDocumentV2788=(fields instanceof Map?fields.size:Object.keys(fields||{}).length)===0;
@@ -785,6 +796,7 @@ async function open(data){
         for(const [field,size] of typography)fieldTypography.set(field,size);
         applyFieldTypography();cdqApplyConstraintDefaultsV2583();
         readerCalibration=installReaderCalibration({surface:$('viewer'),doc,fields,tell});
+        cleanupWeightsV2871();cleanupWeightsV2871=installWeightsControlsV2871({surface:$('viewer'),doc,fields});
         nativeInput.configure(fields);$('viewer').classList.toggle('cdq-form',!!(fields?.get?.('client_nom')||fields?.client_nom)&&!!(fields?.get?.('charge_point_1_charge_utilisee')||fields?.charge_point_1_charge_utilisee));
         // Fresh artwork and sandbox startup compete for the same browser
         // thread. Let PDF.js finish its first paint before initializing actions.

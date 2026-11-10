@@ -3,7 +3,9 @@ export const truckPhotoShaV2730='74b16cca4b4262cf5dd5356204da6d78a06d9acb7ce7344
 const paint='q 0 0 1 1 re W n 1 0 0 2.843137254901961 0 -0.9019607843137255 cm /Camion95 Do Q\n';
 let imagePromise;
 export async function normalizeTruckPhotoV2730(pdf,L,{truckSourceBytes}={}){
- const N=L.PDFName.of,form=pdf.getForm();
+ const N=L.PDFName.of;
+ if(pdf.catalog.lookupMaybe(N('CDQGeometryV2871'),L.PDFNumber)?.asNumber()===2871)return false;
+ const form=pdf.getForm();
  if(!form.getFieldMaybe('B4_Aller_P6_AvantCorrection')||!form.getFieldMaybe('B4_Retour_P6_ApresCorrection'))return false;
  const targets=pdf.context.enumerateIndirectObjects().filter(([,o])=>{
   if(!(o instanceof L.PDFRawStream)||o.dict.get(N('Subtype'))!==N('Form'))return false;

@@ -14,12 +14,13 @@ export async function readReaderMetadataV2724(doc){
     doc.getFieldObjects(),doc.getJSActions(),
     Promise.all(Array.from({length:Math.min(3,doc.numPages)},worker))
   ]);
-  const typography=new Map();
+  const typography=new Map(),fontNames=new Map();
   for(const annotations of pages)for(const annotation of annotations){
     if(!annotation.fieldName||!annotation.defaultAppearanceData||!['Tx','Ch'].includes(annotation.fieldType))continue;
     typography.set(annotation.fieldName,Number(annotation.defaultAppearanceData.fontSize)||11.25);
+    fontNames.set(annotation.fieldName,annotation.defaultAppearanceData.fontName);
   }
-  return {fields,actions,typography,t05:pages.some(list=>list.some(a=>a.defaultAppearanceData?.fontName==='Roboto850')),firstPageHasAnnotations:!!pages[0]?.length};
+  return {fields,actions,typography,fontNames,t05:pages.some(list=>list.some(a=>a.defaultAppearanceData?.fontName==='Roboto850')),firstPageHasAnnotations:!!pages[0]?.length};
 }
 
 export async function readCalculationMetadataV2724(doc){

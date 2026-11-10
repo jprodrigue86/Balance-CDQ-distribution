@@ -1,3 +1,4 @@
+import {weightsInitialValuesV2871,weightRowsV2871} from './weights-creation-v2871.mjs';
 import {ownReceiptAdvanceV20261103,captureUnresolvedAncestorV20261103,validUnresolvedAncestorV20261103,copyReceiptRecordV20261103} from './report-receipt-continuity-v20261103.mjs';
 import {reportFieldValueV2819} from './report-field-aliases-v2819.mjs';
 import {COPY_BASE_V2816,tagCopyV2816,copyEditBasisV2816,writeCopyV2816} from './offline-copy-guard-v2816.mjs';
@@ -70,7 +71,7 @@ export function makeCopy(template,destination,email,requestId,existingNames=[]) 
     throw new Error('Préparez le modèle et choisissez le dossier du client.');
   const name=nextNumberedReportNameV2731(MODELS[template.modeleId],existingNames);
   return {id:requestId,email,modeleId:template.modeleId,blob:template.blob,templateId:template.templateId,
-    bundled:!!template.bundled,readerPreparedVersion:template.readerPreparedVersion===2730?2730:undefined,templateBlob:template.bundled?(template.creationBlob||(template.creation?null:template.blob)):null,creationAsset:template.creation||null,sourceId:template.sourceId||'',modifieLe:template.modifieLe,destination:{...destination},name,creationName:name,
+    bundled:!!template.bundled,...(template.modeleId==='poids'?{weightRowsV2871:weightRowsV2871(template.weightRowsV2871)}:{}),readerPreparedVersion:template.readerPreparedVersion===2730?2730:undefined,templateBlob:template.bundled?(template.creationBlob||(template.creation?null:template.blob)):null,creationAsset:template.creation||null,sourceId:template.sourceId||'',modifieLe:template.modifieLe,destination:{...destination},name,creationName:name,
     autoReportName:true,createdAt:Date.now(),status:'pending',editVersion:0,uploadId:(template.creationBlob||template.creation)?requestId+'_appearance':'',syncedUploadId:'',driveId:''};
 }
 export function syncRequest(copy) {
@@ -392,10 +393,10 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
     b.onclick=async()=>{b.disabled=true;try{await fn();}catch(e){status.textContent=e.message||String(e);}finally{b.disabled=false;}};parent.append(b);return b;
   }
   function text(parent,value){const p=document.createElement('p');p.textContent=value;parent.append(p);}
-  async function loadTemplate(email,key) {
+  async function loadTemplate(email,key,options={}) {
     // Blank templates are packaged; account documents still belong to private storage.
     const canonical=Object.prototype.hasOwnProperty.call(REPORT_NAMES,key)?key:engineFamilyAliasV2754[key]||key;
-    const template=await bundledTemplate(canonical);return canonical===key?template:{...template,modeleId:key};
+    const template=await bundledTemplate(canonical,options);return canonical===key?template:{...template,modeleId:key};
   }
 
   function requestModel(key){
@@ -927,17 +928,17 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
         if(!current.canWrite||!/^[\w-]{8,100}$/.test(id)||!known(data.modeleId))throw new Error('Copie locale non autorisée ou demande invalide.');
         const d={clientId:String(data.clientId||''),folderId:String(data.folderId||''),name:String(data.destinationName||data.name||'Dossier client')};
         if(!validDestination(d))throw new Error('Dossier client invalide.');
-        const t=await loadTemplate(current.email,data.modeleId);if(!validTemplate(t))throw new Error('Le modèle embarqué est indisponible. Rouvrez CDQ après sa mise à jour.');
+        const t=await loadTemplate(current.email,data.modeleId,{weightRowsV2871:data.weightRowsV2871});if(!validTemplate(t))throw new Error('Le modèle embarqué est indisponible. Rouvrez CDQ après sa mise à jour.');
         let c=await get('copies',id);
         if(c?.removed)throw Error('Cette création a été annulée. Créez un nouveau rapport.');
-        if(c&&(c.email!==current.email||c.modeleId!==data.modeleId||c.destination.clientId!==d.clientId||c.destination.folderId!==d.folderId))throw new Error('Identifiant déjà utilisé pour une autre copie.');
+        if(c&&(c.email!==current.email||c.modeleId!==data.modeleId||c.destination.clientId!==d.clientId||c.destination.folderId!==d.folderId||(data.modeleId==='poids'&&weightRowsV2871(c.weightRowsV2871)!==weightRowsV2871(data.weightRowsV2871))))throw new Error('Identifiant déjà utilisé pour une autre copie.');
         if(!currentCreation())return;
         if(!c)c=await reserveDestination(current.email,d.folderId,async()=>{
           if(!currentCreation())return null;
           const names=destinationNames.get(nameKey(current.email,d.folderId))||new Set();
           if(Array.isArray(data.existingNames))for(const name of data.existingNames)if(typeof name==='string'&&name.length<=220)names.add(name);
           let copy=makeCopy(t,d,current.email,id,[...names]);copy=await attachEngineV2754(copy,t,current);
-          if(data.prefill&&Object.keys(data.prefill).length){const identity=identityDraftV2730(data.prefill);if((copy.reportEngineV2754||data.open===true)&&identity)copy.initialValues=identity;else{copy.blob=await fillInFrame(data.prefill,{blob:copy.blob,strict:false});copy.uploadId=id+'_prefill';copy.editVersion=1;}}
+          if(data.prefill&&Object.keys(data.prefill).length){const identity=data.modeleId==='poids'?weightsInitialValuesV2871(data.prefill):identityDraftV2730(data.prefill);if((copy.reportEngineV2754||data.open===true)&&identity)copy.initialValues=identity;else{copy.blob=await fillInFrame(data.prefill,{blob:copy.blob,strict:false});copy.uploadId=id+'_prefill';copy.editVersion=1;}}
           if(!currentCreation())return null;
           await put('copies',copy);if(!currentCreation())return null;
           destinationNames.set(nameKey(current.email,d.folderId),names);rememberNames(copy);return copy;

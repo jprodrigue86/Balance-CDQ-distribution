@@ -1,12 +1,12 @@
 {
-  "androidSelectorSha256": "d5aa67fbce2ed12bbd61fb3adb427c2160b4ffb5319bf0e7cf6a1696715869c4",
-  "androidSourceBuild": "2026.11.09-v28.70-unused-master-cleanup",
-  "build": "2026.11.09-v28.70-pc-sync",
+  "androidSelectorSha256": "2c67104878eb687a8701686c5d66e9b6ab69398375caf681f183d8d5fbf71105",
+  "androidSourceBuild": "2026.11.10-v28.71-pdf-v2",
+  "build": "2026.11.10-v28.71-pdf-v2-pc",
   "desktopModel": 3,
-  "files": 1035,
-  "generatedFrom": "patches/pc-2870/compose.py",
+  "files": 1066,
+  "generatedFrom": "patches/pdf-v2-2871/integration/compose-pc.py",
   "platform": "pc-pwa",
-  "release": "670ece76c1e31824437d9b3712d2e7927a5481bfcdef9a302ea938754909824e",
-  "version": "28.70",
-  "webBaseCommit": "6ad0df90cd56b7365a74322ba535ff8395d38cf6"
+  "release": "bc60fd6dac3292fb9c35c75b8c70d7cf0e21880f179469c38324ad138e8945e0",
+  "version": "28.71",
+  "webBaseCommit": "85314b028370fc1ce2401139571bce9870ec89ae"
 }

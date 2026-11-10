@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.70" data-cdq-pc-release="670ece76c1e31824437d9b3712d2e7927a5481bfcdef9a302ea938754909824e">
+<html data-cdq-pc-version="28.71" data-cdq-pc-release="bc60fd6dac3292fb9c35c75b8c70d7cf0e21880f179469c38324ad138e8945e0">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -932,7 +932,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.11.09-v28.70-pc-sync">
+<meta name="cdq-package-build" content="2026.11.10-v28.71-pdf-v2-pc">
 
 
 <script id="cdqBridgeV23">
@@ -986,7 +986,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.09-v28.70-pc-sync'
+    build:'2026.11.10-v28.71-pdf-v2-pc'
   });
 }
 
@@ -999,7 +999,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.09-v28.70-pc-sync'
+        build:'2026.11.10-v28.71-pdf-v2-pc'
       });
     }
   } catch(e) {}
@@ -12285,7 +12285,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.09-v28.70-pc-sync";
+  const CDQ_BUILD = "2026.11.10-v28.71-pdf-v2-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14894,7 +14894,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.09-v28.70-pc-sync";
+const CDQ_V19_BUILD = "2026.11.10-v28.71-pdf-v2-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15740,13 +15740,14 @@ function reportRuntimeV2636(){
     });
     return confirmed;
   };
-  window.cdqCreateReportV2636=async function(key,folderId,clientId,destinationName,requestId){
+  window.cdqCreateReportV2636=async function(key,folderId,clientId,destinationName,requestId,options={}){
     const email=cdqReaderOwnerV2520(),epoch=accessEpoch;guard(email,epoch);
     const existingNames=existingReportNamesV2731(clientId,folderId);
     if(!cdqPwaAvailable()){
       const {bundledTemplate}=await catalog();
-      const t=await bundledTemplate(key);guard(email,epoch);
-      const blob=await window.cdqCreationV2523.fill(t.blob,clientId);guard(email,epoch);
+      const t=await bundledTemplate(key,options);guard(email,epoch);
+      const initial=key==='poids'?(await import('./weights-creation-v2871.mjs')).weightsInitialValuesV2871({}):{};
+      const blob=await window.cdqCreationV2523.fill(t.blob,clientId,initial);guard(email,epoch);
       const names=await import('https://jprodrigue86.github.io/Balance-CDQ-distribution/pc/report-name-v2648.mjs');guard(email,epoch);
       const fallbackId=JSON.stringify([email,clientId,folderId,key,requestId]);
       const name=fallbackNames.get(fallbackId)||names.nextNumberedReportNameV2731(t.name,existingNames);fallbackNames.set(fallbackId,name);
@@ -15765,7 +15766,8 @@ function reportRuntimeV2636(){
       guard(email,epoch);await cdqOpenPdfInternal(result.id);guard(email,epoch);fallbackNames.delete(fallbackId);return final;
     }
     // Cached identity opens immediately; slow address discovery cannot hold the reader.
-    const prefill=key==='poids'?(await import('./report-field-aliases-v2819.mjs')).weightsCreationIdentityV2866(peek(clientId)):peek(clientId);guard(email);
+    let prefill=key==='poids'?(await import('./report-field-aliases-v2819.mjs')).weightsCreationIdentityV2866(peek(clientId)):peek(clientId);
+    if(key==='poids')prefill=(await import('./weights-creation-v2871.mjs')).weightsInitialValuesV2871(prefill);guard(email);
     // This is only the creation preamble. A normal session announcement must
     // still replay local rows when the Selector itself reloads.
     cdqPostToPwa({type:'CDQ_OFFLINE_SESSION',email,
@@ -15778,7 +15780,7 @@ function reportRuntimeV2636(){
         try{guard(email,epoch);if(event.data.email&&event.data.email!==email)throw Error('Le compte a changé.');if(!event.data.ok)throw Error(event.data.message||'Création du rapport impossible.');resolve({ok:true,local:true,nom:event.data.name});}catch(error){reject(error);}
       }
       window.addEventListener('message',receive);
-      cdqPostToPwa({type:'CDQ_OFFLINE_CREATE_LOCAL',email,requestId,modeleId:key,clientId,folderId,destinationName,prefill,existingNames,open:true});
+      cdqPostToPwa({type:'CDQ_OFFLINE_CREATE_LOCAL',email,requestId,modeleId:key,weightRowsV2871:options.weightRowsV2871,clientId,folderId,destinationName,prefill,existingNames,open:true});
       warm(clientId).then(async values=>{if(key==='poids')values=(await import('./report-field-aliases-v2819.mjs')).weightsCreationIdentityV2866(values);guard(email,epoch);cdqPostToPwa({type:'CDQ_OFFLINE_PREFILL_V2642',email,requestId,values});}).catch(()=>{});
     });
   };
@@ -19121,7 +19123,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.09-v28.70-pc-sync";
+const CDQ_V20_BUILD = "2026.11.10-v28.71-pdf-v2-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -19968,7 +19970,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.09-v28.70-pc-sync";
+const CDQ_V21_BUILD = "2026.11.10-v28.71-pdf-v2-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24465,7 +24467,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.09-v28.70-pc-sync',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.10-v28.71-pdf-v2-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -24578,7 +24580,7 @@ window.cdqCreationV2523={
   v.client_nom=String(clientId)===String(compagnieSelectionnee)?String(nomCompagnieSelectionnee||v.client_nom||''):v.client_nom||'';
   v.client_technicien=String(utilisateurCourantNomRapport||v.client_technicien||'').trim();return cdqCreationFieldsV2866(v);
  },
- async fill(blob,clientId){const values=await this.context(clientId),{fillInFrame}=await import(base+'pdf-fill-client-v2523.mjs');return fillInFrame(values,{blob,strict:false});},
+ async fill(blob,clientId,initial={}){const values={...await this.context(clientId),...initial},{fillInFrame}=await import(base+'pdf-fill-client-v2523.mjs');return fillInFrame(values,{blob,strict:false});},
  async created(result,clientId,requestId){
   if(!result?.id)return;if(await window.cdqAppelServeur('verifierCreationPreRemplieCDQV2523',[result.id,'save-'+requestId]))return;const email=String(utilisateurCourantEmail||''),meta=await window.cdqAppelServeur('obtenirPdfLecteurCDQV2520',[result.id,'']);
   let bytes;if(meta.base64)bytes=Uint8Array.from(atob(meta.base64),c=>c.charCodeAt(0));else{const parts=[];for(let i=0;i<meta.chunks;i++){const p=await window.cdqAppelServeur('obtenirChunkDocumentPdfCDQ',[result.id,meta.revision,i]);parts.push(Uint8Array.from(atob(p.base64),c=>c.charCodeAt(0)));}bytes=new Uint8Array(await new Blob(parts).arrayBuffer());}
@@ -24787,7 +24789,7 @@ html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item{box-shadow:
     const d=ensureOverlay(),node=d.querySelector('[data-report-status]');node.textContent=message||'';node.classList.toggle('error',!!error);
   }
   function setBusy(value){
-    busy=!!value;const d=ensureOverlay();d.querySelectorAll('button').forEach(b=>{if(!b.hasAttribute('data-report-close'))b.disabled=busy;});d.querySelector('[data-report-close]').disabled=busy;d.classList.toggle('busy',busy);
+    busy=!!value;const d=ensureOverlay();d.querySelectorAll('button,select').forEach(b=>{if(!b.hasAttribute('data-report-close'))b.disabled=busy;});d.querySelector('[data-report-close]').disabled=busy;d.classList.toggle('busy',busy);
   }
   function show(){
     const d=ensureOverlay();d.hidden=false;document.documentElement.classList.add('cdq-report-open-v2578');
@@ -24826,7 +24828,20 @@ html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item{box-shadow:
     INTERMEDIATE.forEach(key=>{const m=MODELS[key];grid.append(button(m.label,'Créer dans le dossier client',()=>createReport(key)));});
     body.append(grid);status('Un toucher crée immédiatement une copie du modèle choisi.',false);setBusy(false);
   }
-  function showWeights(){return createReport('poids');}
+  async function showWeights(){
+    if(busy)return;
+    const client=companyId(),d=ensureOverlay(),body=d.querySelector('[data-report-body]');
+    d.querySelector('[data-report-back]').hidden=false;
+    d.querySelector('#cdqReportTitleV2578').textContent='Certificat Poids étalons';
+    d.querySelector('[data-report-context]').textContent=companyName()||'Dossier client sélectionné';
+    const marker=document.createElement('span');body.replaceChildren(marker);status('Choisissez le nombre de poids.',false);
+    try{
+      const {renderWeightsCountV2871}=await import('./weights-creation-v2871.mjs');
+      if(client!==companyId()||!marker.isConnected||d.hidden)return;
+      renderWeightsCountV2871({body,create:count=>createReport('poids',{weightRowsV2871:count})});
+      setBusy(false);
+    }catch(error){if(marker.isConnected&&client===companyId())status(error.message||String(error),true);}
+  }
   async function renderContacts(){
     if(busy)return;
     const client=companyId(),name=companyName();if(!client)return;
@@ -24839,18 +24854,18 @@ html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item{box-shadow:
       module.renderClientContacts({body,status,clientId:client,clientName:name,isCurrent:()=>client===companyId()&&!d.hidden,setBusy});
     }catch(error){if(marker.isConnected&&client===companyId())status(error.message||String(error),true);}
   }
-  async function createReport(key){
+  async function createReport(key,options={}){
     if(busy)return;const model=MODELS[key];if(!model)return;
     const client=companyId();let destination;
     try{destination=destinationId();}catch(error){status(error?.message||String(error),true);return;}
     if(!client||!destination){status('Choisissez d’abord une compagnie et un dossier client.',true);return;}
     // Keep the same identity after an interrupted creation/save. A second tap
     // resumes that report instead of creating another file in the same folder.
-    const scope=JSON.stringify([String(typeof utilisateurCourantEmail==='undefined'?'':utilisateurCourantEmail),client,destination,key]);
+    const scope=JSON.stringify([String(typeof utilisateurCourantEmail==='undefined'?'':utilisateurCourantEmail),client,destination,key,key==='poids'?options.weightRowsV2871:undefined]);
     const creation=pendingCreations.get(scope)||requestId(),epoch=creationEpoch;pendingCreations.set(scope,creation);activeCreation=creation;setBusy(true);status('Création de « '+model.label+' »…',false);
     try{
       if(typeof window.cdqCreateReportV2636!=='function')throw Error('Mettez à jour CDQ pour créer ce rapport.');
-      const result=await window.cdqCreateReportV2636(key,destination,client,companyName(),creation);
+      const result=await window.cdqCreateReportV2636(key,destination,client,companyName(),creation,options);
       if(epoch!==creationEpoch||activeCreation!==creation)return;
       if(!result||result.ok!==true)throw Error('La copie du rapport n’a pas été confirmée.');
       if(typeof window.afficherMessage==='function')window.afficherMessage('Rapport créé : '+String(result.nom||model.label),true);

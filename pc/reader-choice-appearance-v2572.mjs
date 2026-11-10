@@ -2,7 +2,7 @@ import {fitBacklogStatusCaptionsV2868} from './footer-status-fit-v2868.mjs';
 import {restoreBacklogCommentBorderV2866} from './reader-backlog-save-v2866.mjs';
 import {normalizeConformityV2823} from './reader-conformity-v2823.mjs';
 import {nativeV34Form,prepareV34Save} from './reader-v34-appearance-v2819.mjs';
-import {t05Family,prepareT05Save} from './reader-t05.mjs';
+import {t05Family,prepareT05Save,centerSerializedT05Text} from './reader-t05.mjs';
 import {normalizeMeasurementRulesV2736} from './reader-measurements-v2736.mjs';
 import {compactApprovedFloorToleranceV2739} from './reader-floor-tolerance-v2739.mjs';
 import {normalizeReportVisualV2736} from './reader-report-visual-v2736.mjs';
@@ -74,7 +74,9 @@ export async function normalizeEditableFormOnOpen(bytes,providedLibrary,onPrepar
   const pdf=await PDFDocument.load(data,{updateMetadata:false});
   // Observe this exact repaired document before choosing original bytes or
   // serialization. Only a verified palette-restoration marker forces a save.
-  const prepared=async changed=>{const captions=fitBacklogStatusCaptionsV2868(pdf,L);changed=normalizeConformityV2823(pdf,L)||captions||changed;const observed=typeof onPrepared==='function'?await onPrepared(pdf):null;return changed||observed?.nativeWidgetPaletteRestoredV2755===true?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;};
+  const prepared=async changed=>{const captions=pdf.catalog.lookupMaybe(PDFName.of('CDQGeometryV2871'),L.PDFNumber)?.asNumber()===2871?false:fitBacklogStatusCaptionsV2868(pdf,L);changed=normalizeConformityV2823(pdf,L)||captions||changed;const observed=typeof onPrepared==='function'?await onPrepared(pdf):null;return changed||observed?.nativeWidgetPaletteRestoredV2755===true?pdf.save({updateFieldAppearances:false,useObjectStreams:true}):data;};
+  if(pdf.catalog.lookupMaybe(PDFName.of('CDQGeometryV2871'),L.PDFNumber)?.asNumber()===2871)return prepared(false);
+  if(pdf.catalog.lookupMaybe(PDFName.of('CDQWeightsV2871'),L.PDFNumber)?.asNumber()===2871&&pdf.getForm().getFieldMaybe('poids_14_06')&&pdf.getForm().getFieldMaybe('classe'))return prepared(false);
   if(pdf.catalog.has(PDFName.of('AcroForm'))&&nativeV34Form(pdf.getForm())||t05Family(pdf,L))return prepared(false);
   const correctedFamilyV2736=approvedReportFamilyV2735(pdf,L);
   if(correctedFamilyV2736){
@@ -117,7 +119,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary,onPrepare
   const form=pdf.getForm();
   // Extract save metadata from this already-loaded, repaired document. The
   // observer may restore only the authenticated native widget MK palette.
-  const persist=async()=>{fitBacklogStatusCaptionsV2868(pdf,L);normalizeConformityV2823(pdf,L);restoreBacklogCommentBorderV2866(pdf,L);if(typeof onPrepared==='function')await onPrepared(pdf);return pdf.save({updateFieldAppearances:false,useObjectStreams:true});};
+  const persist=async()=>{if(pdf.catalog.lookupMaybe(PDFName.of('CDQGeometryV2871'),L.PDFNumber)?.asNumber()!==2871)fitBacklogStatusCaptionsV2868(pdf,L);normalizeConformityV2823(pdf,L);restoreBacklogCommentBorderV2866(pdf,L);if(typeof onPrepared==='function')await onPrepared(pdf);return pdf.save({updateFieldAppearances:false,useObjectStreams:true});};
   // PDF.js saves a dynamically added technician as /V, but does not serialize
   // the dropdown's updated items into /Opt. Keep that exact saved value valid
   // for the next editable opening and other PDF viewers, without replacing the
@@ -130,6 +132,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary,onPrepare
   }
   // The V34 family adapter returns before the legacy Camion branch.
   // Refresh its native indicator here as well, preserving its original AP/font.
+  if(pdf.catalog.lookupMaybe(PDFName.of('CDQWeightsV2871'),L.PDFNumber)?.asNumber()===2871&&pdf.getForm().getFieldMaybe('poids_14_06')&&pdf.getForm().getFieldMaybe('classe')){centerSerializedT05Text(pdf,L,'FRC');form.acroForm.dict.set(PDFName.of('NeedAppearances'),pdf.context.obj(false));return persist();}
   normalizeCamionDisplayV2741(pdf,L);
   if(prepareV34Save(pdf,L)||prepareT05Save(pdf,L))return persist();
   const correctedFamilyV2736=approvedReportFamilyV2735(pdf,L);

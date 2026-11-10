@@ -1,5 +1,5 @@
 import {REPORT_TEMPLATES} from './report-templates-v2636.mjs';
-import {REPORT_ENGINE_TEMPLATES_V2754,V2868_REPORT_ENGINE_TEMPLATES_V2754,PRE_BACKLOG_REPORT_ENGINE_TEMPLATES_V2754,V2864_LOCAL_REPORT_ENGINE_TEMPLATES_V2754,LEGACY_REPORT_ENGINE_TEMPLATES_V2754,CYAN30_REPORT_ENGINE_TEMPLATES_V2754,T05_R1_REPORT_ENGINE_TEMPLATES_V2754,VISUAL2787_REPORT_ENGINE_TEMPLATES_V2754} from './report-engine-templates-v2754.mjs';
+import {REPORT_ENGINE_TEMPLATES_V2754,V2870_REPORT_ENGINE_TEMPLATES_V2754,V2868_REPORT_ENGINE_TEMPLATES_V2754,PRE_BACKLOG_REPORT_ENGINE_TEMPLATES_V2754,V2864_LOCAL_REPORT_ENGINE_TEMPLATES_V2754,LEGACY_REPORT_ENGINE_TEMPLATES_V2754,CYAN30_REPORT_ENGINE_TEMPLATES_V2754,T05_R1_REPORT_ENGINE_TEMPLATES_V2754,VISUAL2787_REPORT_ENGINE_TEMPLATES_V2754} from './report-engine-templates-v2754.mjs';
 
 // Historical blank masters are public, immutable assets, never customer PDFs.
 // Their authority is the packaged server registry, not a path supplied by a caller.
@@ -21,6 +21,8 @@ export function pinnedReportTemplateV2788(expected,{family=expected?.modeleId}={
   const matches=meta=>meta&&meta.modeleId===key&&meta.sha256===expected.sha256&&meta.version===expected.version;
   const current=REPORT_ENGINE_TEMPLATES_V2754[key],local=REPORT_TEMPLATES[key];
   if(matches(current)&&local.sha256===current.sha256&&local.taille===current.taille)return Object.freeze({...current,url:new URL('./'+local.path,import.meta.url).href});
+  const delivered2870=V2870_REPORT_ENGINE_TEMPLATES_V2754[key];
+  if(matches(delivered2870))return Object.freeze({...delivered2870,url:new URL('./'+delivered2870.path,import.meta.url).href});
   const delivered2868=V2868_REPORT_ENGINE_TEMPLATES_V2754[key];
   if(matches(delivered2868))return Object.freeze({...delivered2868,url:new URL('./'+delivered2868.path,import.meta.url).href});
   const prior=V2864_LOCAL_REPORT_ENGINE_TEMPLATES_V2754[key];
