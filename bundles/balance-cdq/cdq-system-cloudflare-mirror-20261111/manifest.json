@@ -1,0 +1,22 @@
+{
+  "schema": "cdq-script-bundle-v2",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "CDQ System - Cloudflare - etape 3 lecture miroir (inactive)",
+  "title": "Preparer une lecture miroir privee sans modifier les fonctions ni les donnees Drive",
+  "patches": [
+    {
+      "id": "bridge-stage-noop-preserve-code-20261111",
+      "file": "Code.gs",
+      "op": "replace_literal_if_present",
+      "search": "/* CDQ_SYSTEM_CF_NOOP_20261111_70A617860EA8 - NE PAS MODIFIER */",
+      "replacement": "/* CDQ_SYSTEM_CF_NOOP_20261111_70A617860EA8 - NE PAS MODIFIER */"
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQSystemCloudflareBridgeV20261111.gs",
+      "url": "files/CDQSystemCloudflareBridgeV20261111.gs",
+      "sha256": "7e6cb325beff05bcfbac6dc63997138340af5ec3c164a654ebb2a07b23f715e3"
+    }
+  ]
+}
