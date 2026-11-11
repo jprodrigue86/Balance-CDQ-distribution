@@ -11,7 +11,9 @@ function createRpcBudgetV2751({limit=3,backgroundLimit=1,context=()=>'',defer=qu
     }
   }
   function schedule(){if(!scheduled){scheduled=true;defer(pump);}}
-  function run(send,{kind=priority,write=false,interactive=false,label='rpc',traceId,readKey='',valid=()=>true,signal=null}={}){if(write)kind='foreground';interactive=interactive&&kind!=='background'&&!write;return new Promise((resolve,reject)=>{
+  // Visible list work uses ordinary slots, never the slot reserved for a click
+  // or a write, even when its folder RPC is normally classified interactive.
+  function run(send,{kind=priority,write=false,interactive=false,label='rpc',traceId,readKey='',valid=()=>true,signal=null}={}){if(write)kind='foreground';interactive=interactive&&kind==='foreground'&&!write;return new Promise((resolve,reject)=>{
     if(signal?.aborted){reject(Object.assign(Error('Lecture annulée.'),{name:'AbortError',code:'READ_CANCELLED'}));return;}
     const id=traceId??sequence++,job={send,resolve,reject,owner:context(),priority:kind,write,interactive,label,valid,signal,readKey:write?'':readKey,rank:interactive?-1:write?0:kind==='background'?2:1,sequence:id};
     if(signal){const abort=()=>{const index=queue.indexOf(job);if(index<0)return;queue.splice(index,1);job.detachAbort();trace(id,'settled',label);reject(Object.assign(Error('Lecture annulée.'),{name:'AbortError',code:'READ_CANCELLED'}));schedule();};job.detachAbort=()=>signal.removeEventListener('abort',abort);signal.addEventListener('abort',abort,{once:true});}

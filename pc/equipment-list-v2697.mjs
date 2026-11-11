@@ -5,6 +5,7 @@ import {pdfReportConformityV2727} from './report-conformity-v2727.mjs';
 import {sheetReportConformityV2727} from './sheet-report-conformity-v2727.mjs';
 import {pdfWorkV2729} from './pdf-work-v2729.mjs';
 import {validateReportReadV2729} from './report-conformity-cache-v2727.mjs';
+import {validHistoricalMetadata} from './historical-metadata-v2866.mjs';
 const clean=v=>{const t=String(v??'').normalize('NFC').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,160);return /^(?:[-–—]+|n\/?a|non renseign[eé]|true|false|vrai|faux)$/i.test(t)?'':t;};
 export function equipmentValuesV2697(form){
  const actual=new Map(form.getFields().map(f=>[f.getName(),f]));
@@ -27,6 +28,7 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
  function valid(email,generation){sync();return !!email&&owner===email&&epoch===generation;}
  function persist(){if(!owner||owner!==account())return false;try{storage.setItem(storageKey(),JSON.stringify(data));return true;}catch(cause){readDirty=true;onStorageError(Object.assign(Error('Les rapports analysés ne peuvent pas être conservés sur cet appareil. Libérez de l’espace puis reprenez l’analyse.'),{code:'LOCAL_CHECKPOINT_FAILED',cause,owner}));return false;}}
  const stamp=f=>JSON.stringify([f.modifiedTime||f.dateModification||f.revision||'',String(f.version||''),f.md5Checksum||f.sha256Checksum||'']);
+ const readStamp=f=>JSON.stringify([String(f.id),f.nom||f.name||'',({'application/pdf':'PDF','application/vnd.google-apps.spreadsheet':'GOOGLE_SHEETS'})[f.mimeType||f.type]||f.mimeType||f.type||'',stamp(f)]);
  const completeSignature=s=>{try{const value=JSON.parse(s);return value===null||Array.isArray(value)&&value.length===6&&value.slice(0,5).every(v=>typeof v==='string')&&['conforming','nonconforming','unknown'].includes(value[5]);}catch{return false;}};
  async function snapshot(blob){return equipmentSnapshotV2697(blob,await library());}
  function noteSave(rec,blob,saveId){
@@ -71,10 +73,27 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
   if(clientId&&!report.clientId&&freshFolder){report.clientId=String(clientId);readDirty=true;}
   return !clientId||report.clientId===String(clientId)?report.signature:null;
  }
+ // A signature alone cannot resume the historical-metadata import. Keep the
+ // complete verified read under the same account/client/source revision.
+ function confirmedRead(file,clientId=''){
+  const signature=confirmedSignature(file,clientId),report=data.reports[file.id];
+  if(!signature||!clientId||report.clientId!==String(clientId)||report.readStamp!==readStamp(file)||report.metadataVersion!==2866||!validHistoricalMetadata(report.metadata))return null;
+  return {signature,metadataVersion:2866,metadata:{...report.metadata}};
+ }
  // Called only after the fast-list path has verified the exact source bytes.
  // Persist those fields so a later scan or a fresh app session cannot download
  // every report again merely to recover values already read for this list.
- function rememberRead(file,signature,clientId='',persistNow=true){sync();if(!owner||!file?.id||!String(file.modifiedTime||file.dateModification||file.revision||'')||!completeSignature(signature)||data.reports[file.id]?.local)return false;data.reports[file.id]={signature,stamp:stamp(file),clientId:String(clientId||''),verifiedReadV2729:true};readDirty=true;if(persistNow)flushReads();return true;}
+ function rememberRead(file,signature,clientId='',persistNow=true,read=null){
+  sync();const previous=data.reports[file?.id],revision=String(file?.modifiedTime||file?.dateModification||file?.revision||'');
+  if(!owner||!file?.id||!revision||!completeSignature(signature)||previous?.local)return false;
+  // A late read cannot replace a newer confirmed save or another fresh read.
+  let previousRevision='';try{previousRevision=JSON.parse(previous?.stamp||'[]')[0]||'';}catch{}
+  if(Date.parse(previousRevision)>Date.parse(revision))return false;
+  const sourceStamp=readStamp(file),prior=previous?.clientId===String(clientId)&&previous.readStamp===sourceStamp&&previous.signature===signature?previous:null;
+  const complete=read?.metadataVersion===2866&&validHistoricalMetadata(read.metadata)?read:prior?.metadataVersion===2866&&validHistoricalMetadata(prior.metadata)?prior:null;
+  data.reports[file.id]={signature,stamp:stamp(file),clientId:String(clientId||''),verifiedReadV2729:true,...(complete?{readStamp:sourceStamp,metadataVersion:2866,metadata:{...complete.metadata}}:{})};
+  readDirty=true;if(persistNow)flushReads();return true;
+ }
  function flushReads(){sync();if(readDirty){if(!persist())throw Object.assign(Error('Les rapports analysés ne peuvent pas être conservés sur cet appareil. Libérez de l’espace puis reprenez l’analyse.'),{code:'LOCAL_CHECKPOINT_FAILED'});readDirty=false;}return true;}
- return {noteSave,decision,awaitDecision,acknowledge,retire,signature,signatureForSave,confirmedSignature,rememberRead,flushReads,inspect};
+ return {noteSave,decision,awaitDecision,acknowledge,retire,signature,signatureForSave,confirmedSignature,confirmedRead,rememberRead,flushReads,inspect};
 }

@@ -17,6 +17,8 @@ const canRead=()=>!!window.cdqDriveEntryV2632?.canRead()&&!!calibrationIdentity(
 const canWrite=()=>canRead()&&['admin','technicien'].includes(calibrationIdentity().role);
 // A list belongs to the client, never the archive or child folder currently expanded.
 const client=()=>{try{return String(compagnieSelectionnee||'');}catch{return '';}};
+const visibleListReadV2872=id=>String(id)===client()&&!document.hidden;
+const listReadOptionsV2872=id=>({readConcurrency:visibleListReadV2872(id)?2:1,cachedRead:file=>equipment.confirmedRead?.(file,String(id))});
 const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
 const excluded=v=>/^(?:liste (?:de|des) balances?|archives?|rs(?: pdf)?|irs(?: pdf)?)(?:\b|[._ -])/.test(norm(v));
 let epoch=0,owner='',visibleClient='',timer=0,scanTimer=0,pcScan=null;
@@ -30,11 +32,11 @@ const previewJobs=new Map(),previews=new Map(),waitChecks=new Map(),warmIndexes=
 const engineListsV2754=new Map(),engineImportsV2754=new Map(),engineListFlightsV2754=new Map(),enginePendingRowsV2754=new Map(),engineDataAcksV2754=new Map(),engineRetiredRequestsV2754=new Map();
 const engineV2754=()=>window.cdqReportEngineSelectorV2754?.enabled?window.cdqReportEngineSelectorV2754:null;
 const cdqListProgressV2778=new Map();
-function cdqListProgressStepV2778(id,value,label,terminal=''){
+function cdqListProgressStepV2778(id,value,label,terminal='',restart=false){
  if(!id||String(id)!==String(client())||!canRead()||document.hidden)return;
  const k=key(id),owner=calibrationIdentity().email;let entry=cdqListProgressV2778.get(k);
  if(entry&&entry.owner!==owner){cdqListProgressV2778.delete(k);entry=null;}
- if(entry?.failed&&!terminal){cdqListProgressV2778.delete(k);entry=null;}
+ if(entry?.failed&&!terminal){if(!restart)return;cdqListProgressV2778.delete(k);entry=null;}
  if(!entry&&terminal)return;
  if(!entry){const seq=window.cdqProgressStartV2293?.('Liste de balance — '+(label||'préparation'),k);if(!seq)return;entry={owner,seq,value:0};cdqListProgressV2778.set(k,entry);}
  const amount=Number(value);if(Number.isFinite(amount))entry.value=Math.max(entry.value,Math.min(99,Math.floor(amount)));
@@ -72,12 +74,21 @@ function engineMergedRowsV2754(id,items){
  const reportIds=new Set(pending.map(row=>row.reportId)),fileIds=new Set(pending.map(row=>row.id));
  return balanceDisplayRowsV2751(engineRowsV2754(items).filter(row=>!reportIds.has(row.reportId)&&!fileIds.has(row.id)).concat(pending));
 }
-async function refreshEngineListV2754(id,{repair=false,hydrate=false}={}){
+function finishEngineListProgressV2872(id,record){
+ const pdf=record?.enginePdfV2754,revision=record?.engineBaselineV2754?.revision;
+ if(!record?.reconciliationRequired&&pdf?.status==='confirmed'&&pdf.fileId&&pdf.driveRevision&&pdf.revision===revision){
+  cdqListProgressStepV2778(id,100,'Confirmée','ready');paint(id,'Liste à jour · '+(record.count||0)+' balance(s)');
+ }
+}
+async function refreshEngineListV2754(id,{repair=false,hydrate=false,deferReady=false}={}){
  const api=engineV2754(),k=key(id),stamp=epoch,account=calibrationIdentity().email;
  if(!api||!engineListsV2754.has(k)&&!hydrate)return null;
- if(engineListFlightsV2754.has(k)){const flight=engineListFlightsV2754.get(k);if(repair&&!flight.repair){await flight.promise;return refreshEngineListV2754(id,{repair,hydrate});}return flight.promise;}
+ // Reading the old published PDF is not completion of an active source scan.
+ // A joined authority request inherits deferral from the composed refresh.
+ deferReady=deferReady||refreshFlightsV2792.has(k);
+ if(engineListFlightsV2754.has(k)){const flight=engineListFlightsV2754.get(k);flight.deferReady=flight.deferReady||deferReady;if(repair&&!flight.repair){await flight.promise;return refreshEngineListV2754(id,{repair,hydrate,deferReady});}return flight.promise;}
  if(repair&&!persistClient(id))throw Object.assign(Error(journalErrorsV20261028.get(k)),{code:'LOCAL_JOURNAL_FAILED'});
- const flight={change:changes.get(k)||0,repair,promise:null};
+ const flight={change:changes.get(k)||0,repair,deferReady,promise:null};
  flight.promise=api.call('list',{clientId:String(id),...(repair?{repair:true}:{})}).catch(async error=>{
   // A verified ownership conflict must keep the engine authoritative while
   // leaving the current Drive PDF readable. Never use the legacy writer.
@@ -97,21 +108,21 @@ async function refreshEngineListV2754(id,{repair=false,hydrate=false}={}){
   }
   const old=states.get(k)||{},rows=engineMergedRowsV2754(id,result.items),entry=engineListsV2754.get(k)||{fingerprint:clientFingerprint(id)},reconciliationRequired=typeof result.reconciliationRequired==='boolean'?result.reconciliationRequired:!repair&&!!entry.reconciliationRequired,pdf=reconciliationRequired?{...result.pdf,status:'conflict',errorCode:'CONFLICT_EXTERNAL_DRIVE'}:result.pdf,managed=new Map(entry.managed||[]);
   for(const row of result.items)if(row.reportId&&row.pdf?.fileId&&row.pdf?.driveRevision)managed.set(String(row.pdf.fileId),String(row.pdf.driveRevision));
-  const baseline={...entry,sourceReadCacheV2791:balanceEngineReadCacheV2791(result,id),reportId:result.reportId||entry.reportId,managed:[...managed],pdf,reconciliationRequired,polls:pdf?.status==='confirmed'?0:entry.polls||0};engineListsV2754.set(k,baseline);
+  const baseline={...entry,revision:result.revision,sourceReadCacheV2791:balanceEngineReadCacheV2791(result,id),reportId:result.reportId||entry.reportId,managed:[...managed],pdf,reconciliationRequired,polls:pdf?.status==='confirmed'?0:entry.polls||0};engineListsV2754.set(k,baseline);
   // The imported legacy source index belongs to the preceding PDF. Retaining
   // it here would make projection.project prefer stale rows over engine data.
   const record={...old,status:'ready',rows,count:rows.length,clientId:String(id),folderId:result.destinationId||old.folderId,sourceIndexV2751:null,fileId:pdf?.fileId||'',updatedAt:pdf?.driveRevision||'',reconciliationRequired,enginePdfV2754:pdf,engineBaselineV2754:baseline};
   states.set(k,record);projection.confirmed(id,rows,null);persistClient(id);paintRows();
   window.dispatchEvent(new CustomEvent('cdq:balance-list-rows-v2730',{detail:{clientId:String(id),engine:2754,pending:pdf?.status!=='confirmed'}}));
   if(pdf?.status==='confirmed'&&pdf.fileId)window.cdqInstantFiles2530?.confirm?.({id:pdf.fileId,nom:'Liste de balance.pdf',type:'PDF',revision:pdf.driveRevision,dateModification:pdf.driveRevision},id,old.folderId);
-  clearFailure(k);
-   if(!reconciliationRequired&&pdf?.status==='confirmed'&&pdf?.fileId&&pdf?.driveRevision&&pdf?.revision===result.revision)cdqListProgressStepV2778(id,100,'Confirmée','ready');
+  // Clear retry history only when the composed refresh has also reconciled sources.
+   if(!flight.deferReady&&!reconciliationRequired&&pdf?.status==='confirmed'&&pdf?.fileId&&pdf?.driveRevision&&pdf?.revision===result.revision)cdqListProgressStepV2778(id,100,'Confirmée','ready');
    else if(pdf?.status==='conflict')cdqListProgressStepV2778(id,95, 'Erreur de publication : '+String(pdf.errorCode||'conflit Drive'),'error');
    else if(['pending','running'].includes(pdf?.status))cdqListProgressStepV2778(id,pdf.status==='running'?94:88,pdf.status==='running'?'Publication Drive en cours…':'PDF en attente de publication…');
-   if(reconciliationRequired)paint(id,result.repairQueued?'La copie Drive reste consultable. La nouvelle liste est en préparation.':listConflictNoticeV2755);else if(pdf?.status==='confirmed'&&pdf?.fileId&&pdf?.driveRevision&&pdf?.revision===result.revision)paint(id,'Liste à jour · '+rows.length+' balance(s)');
+   if(reconciliationRequired)paint(id,result.repairQueued?'La copie Drive reste consultable. La nouvelle liste est en préparation.':listConflictNoticeV2755);else if(!flight.deferReady&&pdf?.status==='confirmed'&&pdf?.fileId&&pdf?.driveRevision&&pdf?.revision===result.revision)paint(id,'Liste à jour · '+rows.length+' balance(s)');
   if((['pending','running'].includes(pdf?.status)||result.repairQueued&&['pending','running'].includes(result.pdf?.status))&&baseline.polls<12&&canWrite()){baseline.polls++;scheduleClient(id,Math.min(30000,1500*2**Math.min(5,baseline.polls-1)));}
   return record;
- }).finally(()=>{if(engineListFlightsV2754.get(k)===flight)engineListFlightsV2754.delete(k);if(flight.change!==(changes.get(k)||0)&&stamp===epoch&&account===calibrationIdentity().email&&canRead())refreshEngineListV2754(id).catch(()=>{});});
+ }).finally(()=>{if(engineListFlightsV2754.get(k)===flight)engineListFlightsV2754.delete(k);if(flight.change!==(changes.get(k)||0)&&stamp===epoch&&account===calibrationIdentity().email&&canRead())refreshEngineListV2754(id,{deferReady:flight.deferReady}).catch(()=>{});});
  engineListFlightsV2754.set(k,flight);return flight.promise;
 }
 async function importEngineIndexV2754(id,state){
@@ -144,7 +155,7 @@ async function reconcileEngineSourcesImplV2792(id){
  // Finish the engine's own publication before taking the two source snapshots.
  if(['pending','running'].includes(state.enginePdfV2754?.status))return state;
  const version=epoch,account=calibrationIdentity().email,fingerprint=clientFingerprint(id),current=()=>version===epoch&&account===calibrationIdentity().email&&canWrite()&&fingerprint===clientFingerprint(id);
- const result=await updateBalanceListFastV2729({clientId:id,fileId:state.fileId,indexOnly:true,rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision,{background:true}),loadSheet:(file,clientId,revision)=>readBalanceSheetV2788(file,clientId,revision),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true)||balanceEngineSignatureV2791(engineListsV2754.get(k)?.sourceReadCacheV2791,file,id),onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,true),onProgress:progress=>reportListReadProgressV20261028(id,progress),previousState:state,stillCurrent:current});
+ const result=await updateBalanceListFastV2729({clientId:id,fileId:state.fileId,indexOnly:true,...listReadOptionsV2872(id),rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision,{background:true}),loadSheet:(file,clientId,revision)=>readBalanceSheetV2788(file,clientId,revision),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true)||balanceEngineSignatureV2791(engineListsV2754.get(k)?.sourceReadCacheV2791,file,id),onSourceRead:(file,signature,read)=>equipment.rememberRead?.(file,signature,id,true,read),onProgress:progress=>reportListReadProgressV20261028(id,progress),previousState:state,stillCurrent:current});
  if(!current())throw Error('Le compte, le client ou les sources ont changé.');
  states.set(k,{...state,...result,engineBaselineV2754:engineListsV2754.get(k)});return importEngineIndexV2754(id,states.get(k));
 }
@@ -280,7 +291,11 @@ function temporaryFailure(error){
 function fail(id,stamp,error){
  const k=key(id),prior=failed.get(k),attempts=prior?.stamp===stamp?prior.attempts+1:1,transient=temporaryFailure(error);
  const retryAt=transient&&attempts<3?Date.now()+(attempts===1?2000:8000):0;
- failed.set(k,{stamp,attempts,transient,retryAt});if(retryAt)scheduleClient(id,retryAt-Date.now());
+ const failure={stamp,attempts,transient,retryAt};failed.set(k,failure);if(retryAt)scheduleClient(id,retryAt-Date.now());return failure;
+}
+function reportListFailureV2872(id,stamp,error){
+ const failure=fail(id,stamp,error),message=String(error?.message||error)+(failure.retryAt?' Analyse en pause; reprise automatique dans '+Math.ceil((failure.retryAt-Date.now())/1000)+' s.':' Choisissez « Actualiser la liste » pour reprendre.');
+ cdqListProgressStepV2778(id,95,message,'error');paint(id,message,true);return failure;
 }
 function clearFailure(k){failed.delete(k);if(clientTimers.has(k)){clearTimeout(clientTimers.get(k));clientTimers.delete(k);}}
 function updateConfirmedRows(id,detail,sourceId){
@@ -359,8 +374,8 @@ const receiptPrefix=()=> 'cdqBalanceListV2703:';
 function remembered(id){const k=key(id);if(receipts.has(k))return receipts.get(k);try{const r=JSON.parse(localStorage.getItem(receiptPrefix()+k)||'null');if(r){receipts.set(k,r);return r;}}catch{}return null;}
 function remember(id,fingerprint){const r={fingerprint,requestedAt:Date.now()};receipts.set(key(id),r);try{localStorage.setItem(receiptPrefix()+key(id),JSON.stringify(r));}catch{}}
 function paint(id,text,error=false){if(id!==client())return;const localError=journalErrorsV20261028.get(key(id));if(localError){text=(text?text+' — ':'')+localError;error=true;}const p=document.getElementById('cdqClientActionsV2640');if(!p||p.hidden)return;let el=p.querySelector('[data-balance-list-status]');text=text.replace(/^Liste à jour · \d+ balance\(s\)(?: · | — )?/,'');if(!text&&!error){el?.remove();return;}if(!el){el=document.createElement('p');el.dataset.balanceListStatus='';el.className='cdq-workspace-status';el.setAttribute('role','status');p.append(el);}if(el.textContent!==text)el.textContent=text;el.classList.toggle('cdq-workspace-error',error);}
-function ready(id,r,notify=false){const folderId=listFolder(id)?.id||r.listFolderId||r.folderId||id;states.set(key(id),{...r,clientId:String(id),folderId});projection.confirmed(id,r.rows,r.sourceIndexV2751);if(r.sourceIndexV2751?.exhaustive)warmIndexes.add(key(id));persistClient(id);queuePreview(id);if(r.fileId&&r.updatedAt)window.cdqInstantFiles2530?.confirm?.({id:r.fileId,nom:'Liste de balance.pdf',type:'PDF',dateModification:r.updatedAt},id,folderId);if(notify)paint(id,'Liste à jour · '+(r.count||0)+' balance(s)'+(r.warnings?.length?' · '+r.warnings.length+' fichier(s) à vérifier':''));if(r.sourceIndexV2751?.exhaustive)importEngineIndexV2754(id,states.get(key(id))).catch(()=>{});}
-async function call(name,id,...args){const account=calibrationIdentity().email,version=epoch;if(!canRead())throw Error('Accès Drive requis.');if(/^(?:enregistrerPdfLecteur|cdqSaveBalanceListV2751|cdqActualiserListeBalance|cdqAssurerDossierListeBalance|deplacerElementCDQ|creerDossierDansCompagnie)/.test(name)&&!queueOwner())throw Error('La synchronisation a changé de contexte.');const read=/^(?:obtenirContenuDossierParesseux|obtenirMetaFichier|obtenirSnapshotGoogleSheetHorsLigne|cdqLireConformiteRapportV2775|cdqEtatListeBalanceV2638)$/.test(name),send=()=>calibrationRpc(name,id,...args);const r=await(read&&window.cdqRpcBudgetV2751?window.cdqRpcBudgetV2751.withPriority('background',send):send());if(version!==epoch||account!==calibrationIdentity().email||!canRead())throw Error('Le compte a changé.');return r;}
+function ready(id,r,notify=false){if(r?.status==='ready'&&r.fileId&&r.updatedAt)cdqListProgressStepV2778(id,100,'Confirmée','ready');const folderId=listFolder(id)?.id||r.listFolderId||r.folderId||id;states.set(key(id),{...r,clientId:String(id),folderId});projection.confirmed(id,r.rows,r.sourceIndexV2751);if(r.sourceIndexV2751?.exhaustive)warmIndexes.add(key(id));persistClient(id);queuePreview(id);if(r.fileId&&r.updatedAt)window.cdqInstantFiles2530?.confirm?.({id:r.fileId,nom:'Liste de balance.pdf',type:'PDF',dateModification:r.updatedAt},id,folderId);if(notify)paint(id,'Liste à jour · '+(r.count||0)+' balance(s)'+(r.warnings?.length?' · '+r.warnings.length+' fichier(s) à vérifier':''));if(r.sourceIndexV2751?.exhaustive)importEngineIndexV2754(id,states.get(key(id))).catch(()=>{});}
+async function call(name,id,...args){const account=calibrationIdentity().email,version=epoch;if(!canRead())throw Error('Accès Drive requis.');if(/^(?:enregistrerPdfLecteur|cdqSaveBalanceListV2751|cdqActualiserListeBalance|cdqAssurerDossierListeBalance|deplacerElementCDQ|creerDossierDansCompagnie)/.test(name)&&!queueOwner())throw Error('La synchronisation a changé de contexte.');const read=/^(?:obtenirContenuDossierParesseux|obtenirMetaFichier|obtenirSnapshotGoogleSheetHorsLigne|cdqLireConformiteRapportV2775|cdqEtatListeBalanceV2638)$/.test(name),send=()=>calibrationRpc(name,id,...args);const readClient=/^(?:obtenirContenuDossierParesseux|obtenirSnapshotGoogleSheetHorsLigne|cdqLireConformiteRapportV2775)$/.test(name)?String(args[0]||''):String(id),priority=visibleListReadV2872(readClient)?'list':'background';const r=await(read&&window.cdqRpcBudgetV2751?window.cdqRpcBudgetV2751.withPriority(priority,send):send());if(version!==epoch||account!==calibrationIdentity().email||!canRead())throw Error('Le compte a changé.');return r;}
 function queueOwner(){let native=window.BalanceCDQBackgroundV2746;try{if(window.cdqDriveBackgroundV2746?.isQueueOwner)return window.cdqDriveBackgroundV2746.isQueueOwner(calibrationIdentity().email)!==false;if(!native)try{native=window.parent.BalanceCDQBackgroundV2746;}catch{}return native?.isQueueOwner?.(calibrationIdentity().email)!==false;}catch{return false;}}
 // Same account-scoped local projection as the top-menu entry. A name match
 // alone never identifies a list; incomplete, replaced or conflicted lists fall
@@ -420,23 +435,27 @@ async function refreshImplV2789(force=false,verify=false,id=client()){
    // Check backoff BEFORE authority RPCs. Repainting the client must not keep
    // contacting the engine after a paused or exhausted source read.
    const gateStamp=clientFingerprint(id)+'|saved:'+(changes.get(k)||0),failure=failed.get(k);
-   if(force)failed.delete(k);
+   if(force)clearFailure(k);
    else if(failure?.stamp===gateStamp){if(!failure.retryAt)return {status:'retry-manually'};if(failure.retryAt>Date.now()){scheduleClient(id,failure.retryAt-Date.now());return {status:'retry-wait'};}}
-   if(force)cdqListProgressStepV2778(id,4,'Vérification du dossier client…');
+   // Progress starts only for real work after the backoff gate, never on paint.
+   cdqListProgressStepV2778(id,4,'Vérification du dossier client…','',true);
+   paint(id,'Vérification de la liste…');
    // A fresh installation has no local import marker. Ask the authoritative
   // engine before any legacy placement, scan or write; an unavailable answer
   // must not authorize a competing producer.
   let hydratedEngineV2755=null;
   const authorityV2755=engineV2754(),authorityEpochV2755=epoch,authorityOwnerV2755=calibrationIdentity().email;
   if(authorityV2755&&!engineListsV2754.has(k)){
-    try{hydratedEngineV2755=await refreshEngineListV2754(id,{hydrate:true,repair:canWrite()});}
-     catch(error){if(error?.code==='LIST_CONTEXT_CHANGED'){cdqListProgressStepV2778(id,0,'','cancelled');return {status:'pending',code:error.code};}cdqListProgressStepV2778(id,95,String(error?.message||error),'error');return {status:'error',message:error.message,code:error.code};}
+    try{hydratedEngineV2755=await refreshEngineListV2754(id,{hydrate:true,repair:canWrite(),deferReady:true});}
+     catch(error){if(error?.code==='LIST_CONTEXT_CHANGED'){cdqListProgressStepV2778(id,0,'','cancelled');return {status:'pending',code:error.code};}reportListFailureV2872(id,gateStamp,error);return {status:'error',message:error.message,code:error.code};}
     if(authorityEpochV2755!==epoch||authorityOwnerV2755!==calibrationIdentity().email||authorityV2755!==engineV2754()||!canWrite()||!queueOwner())return {status:'unavailable'};
   }
+  // A completed source check clears only its failure counter; an engine PDF
+  // still pending/running keeps the publication poll just scheduled above.
   // Once imported, only the engine may publish this list, including forced
   // refresh and a missing/trashed original folder. Never create a second
   // folder or render a competing legacy list before the server repair check.
-  if(engineV2754()&&engineListsV2754.has(k)){const version=epoch,change=changes.get(k)||0;try{await reconcileWaits(id);let result=hydratedEngineV2755||await refreshEngineListV2754(id,{repair:canWrite()});if(result&&version===epoch){result=await reconcileEngineSourcesV2754(id)||result;remember(id,clientFingerprint(id));if(!waiting(id)&&!(enginePendingRowsV2754.get(k)?.size))satisfied.set(k,change);persistClient(id);publishBackground();return result;}}catch(error){if(error?.code==='LIST_CONTEXT_CHANGED'){cdqListProgressStepV2778(id,0,'','cancelled');return {status:'pending',code:error.code};}cdqListProgressStepV2778(id,95,String(error?.message||error),'error');return {status:'error',message:error.message,code:error.code};}return {status:'pending'};}
+  if(engineV2754()&&engineListsV2754.has(k)){const version=epoch,change=changes.get(k)||0;try{await reconcileWaits(id);let result=hydratedEngineV2755||await refreshEngineListV2754(id,{repair:canWrite(),deferReady:true});if(result&&version===epoch){result=await reconcileEngineSourcesV2754(id)||result;if(version!==epoch)throw Object.assign(Error('Le compte ou l’accès a changé.'),{code:'LIST_CONTEXT_CHANGED'});failed.delete(k);remember(id,clientFingerprint(id));if(!waiting(id)&&!(enginePendingRowsV2754.get(k)?.size))satisfied.set(k,change);persistClient(id);finishEngineListProgressV2872(id,result);publishBackground();return result;}}catch(error){if(error?.code==='LIST_CONTEXT_CHANGED'){cdqListProgressStepV2778(id,0,'','cancelled');return {status:'pending',code:error.code};}reportListFailureV2872(id,gateStamp,error);return {status:'error',message:error.message,code:error.code};}return {status:'pending'};}
   const active=jobs.get(k);let fingerprint=clientFingerprint(id);
   let stamp=fingerprint+'|saved:'+(changes.get(k)||0);
   if(active){
@@ -449,7 +468,7 @@ async function refreshImplV2789(force=false,verify=false,id=client()){
   }
   if(waiting(id))reconcileWaits(id);
   fingerprint=clientFingerprint(id);stamp=fingerprint+'|saved:'+(changes.get(k)||0);
-  if(!force&&!verify&&remembered(id)?.fingerprint===fingerprint&&!needsUpdate(k)&&!needsPlacement(id))return {status:'cached'};
+  if(!force&&!verify&&remembered(id)?.fingerprint===fingerprint&&!needsUpdate(k)&&!needsPlacement(id)){cdqListProgressStepV2778(id,100,'Confirmée','ready');paint(id,'Liste à jour');return {status:'cached'};}
   // Automatic checks are silent; only an explicit refresh reports progress.
   const progress=(text,error=false)=>{if(force)paint(id,text,error);};
   const version=epoch,change=changes.get(k)||0,pendingReviews=[...(reviews.get(k)||[])],job={fingerprint,version,dirty:false,promise:null};jobs.set(k,job);paintRows();
@@ -458,7 +477,7 @@ async function refreshImplV2789(force=false,verify=false,id=client()){
     const finish=window.cdqDriveBackgroundV2746?.begin?.('list:'+id,calibrationIdentity().email)||(()=>{});
     try{
     const capabilities=await window.cdqDriveTransferV2751?.capabilities?.(),guardedSave=capabilities?.ok===true&&capabilities.guardedSaveV2751===true&&capabilities.sourceManifestValidation===true;
-    const updateOptions={guardedSave,sourceIndex:warmIndexes.has(k)?states.get(k)?.sourceIndexV2751:null,clientId:id,fileId:String(fileId),rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision,{background:true}),loadSheet:(file,clientId,revision)=>readBalanceSheetV2788(file,clientId,revision),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true),onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,true),onProgress:progress=>reportListReadProgressV20261028(id,progress),previousState:states.get(k),stillCurrent:()=>version===epoch&&canWrite()&&queueOwner()&&change===(changes.get(k)||0)&&fingerprint===clientFingerprint(id),onSaved:record=>window.cdqStoreBalanceListV2729(record)};
+    const updateOptions={...listReadOptionsV2872(id),guardedSave,sourceIndex:warmIndexes.has(k)?states.get(k)?.sourceIndexV2751:null,clientId:id,fileId:String(fileId),rpc:(name,...args)=>call(name,...args),loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision,{background:true}),loadSheet:(file,clientId,revision)=>readBalanceSheetV2788(file,clientId,revision),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},cachedSignature:file=>equipment.confirmedSignature(file,id,true),onSourceRead:(file,signature,read)=>equipment.rememberRead?.(file,signature,id,true,read),onProgress:progress=>reportListReadProgressV20261028(id,progress),previousState:states.get(k),stillCurrent:()=>version===epoch&&canWrite()&&queueOwner()&&change===(changes.get(k)||0)&&fingerprint===clientFingerprint(id),onSaved:record=>window.cdqStoreBalanceListV2729(record)};
     let result;try{result=await updateBalanceListFastV2729(updateOptions);}catch(error){if(!updateOptions.sourceIndex||!/(?:SOURCE_MANIFEST_CONFLICT|CONFLICT_REVISION)/.test(String(error?.message||error)))throw error;warmIndexes.delete(k);result=await updateBalanceListFastV2729({...updateOptions,sourceIndex:null});}
     equipment.flushReads?.();clearFailure(k);satisfiedNow();ready(id,result,force);return result;
     }finally{finish();}
@@ -479,13 +498,13 @@ async function refreshImplV2789(force=false,verify=false,id=client()){
       // Another technician may have created the list while the folder was read.
       if(!listFile(id)){
         const current=()=>version===epoch&&canWrite()&&queueOwner()&&change===(changes.get(k)||0)&&fingerprint===clientFingerprint(id);
-        const index=await updateBalanceListFastV2729({clientId:id,fileId:'',listDestinationId:destination,indexOnly:true,
+        const index=await updateBalanceListFastV2729({clientId:id,fileId:'',listDestinationId:destination,indexOnly:true,...listReadOptionsV2872(id),
           rpc:(name,...args)=>call(name,...args),
           loadPdf:(file,revision)=>window.cdqLoadPdfForCalibrationV2668(file,revision,{background:true}),
           loadSheet:(file,clientId,revision)=>readBalanceSheetV2788(file,clientId,revision),
           library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},
           cachedSignature:file=>equipment.confirmedSignature(file,id,true),
-          onSourceRead:(file,signature)=>equipment.rememberRead?.(file,signature,id,true),
+          onSourceRead:(file,signature,read)=>equipment.rememberRead?.(file,signature,id,true,read),
           onProgress:progress=>reportListReadProgressV20261028(id,progress),
           stillCurrent:current});
         if(!index?.sourceIndexV2751?.exhaustive||!current())throw Error('L’index initial des balances est incomplet.');
@@ -496,7 +515,7 @@ async function refreshImplV2789(force=false,verify=false,id=client()){
         states.set(k,initial);
         const confirmed=await importEngineIndexV2754(id,initial);
         if(!confirmed||!engineListsV2754.has(k)||!current())throw Error('La création de la liste n’a pas été confirmée par le moteur.');
-        clearFailure(k);satisfiedNow();remember(id,clientFingerprint(id));persistClient(id);
+        failed.delete(k);satisfiedNow();remember(id,clientFingerprint(id));persistClient(id);finishEngineListProgressV2872(id,confirmed);
         return confirmed;
       }
     }
@@ -537,10 +556,10 @@ async function refreshImplV2789(force=false,verify=false,id=client()){
     // The server can acquire ownership between the cold check and the legacy
     // save. Resolve that exact race through the engine, with no legacy retry.
     if(version===epoch&&engineV2754()&&/ENGINE_LIST_MANAGED/.test(String(e?.code||'')+' '+String(e?.message||''))){
-      try{const managed=await refreshEngineListV2754(id,{hydrate:true,repair:canWrite()});if(managed&&version===epoch){clearFailure(k);remember(id,clientFingerprint(id));persistClient(id);return managed;}}
+      try{const managed=await refreshEngineListV2754(id,{hydrate:true,repair:canWrite()});if(managed&&version===epoch){failed.delete(k);remember(id,clientFingerprint(id));persistClient(id);finishEngineListProgressV2872(id,managed);return managed;}}
       catch(error){e=error;}
     }
-    if(version===epoch){equipment.flushReads?.();fail(id,stamp,e);cdqListProgressStepV2778(id,95,String(e?.message||e),'error');progress(String(e?.message||e)+' Choisissez « Actualiser la liste » pour reprendre.',true);}return {status:'error',message:e.message,code:e.code};}
+    if(version===epoch){try{equipment.flushReads?.();}catch(checkpointError){e=checkpointError;}reportListFailureV2872(id,stamp,e);}return {status:'error',message:e.message,code:e.code};}
   finally{if(jobs.get(k)===job)jobs.delete(k);if(version===epoch){if(!job.followup&&job.dirty)scheduleClient(id,0);paintRows();publishBackground();}}})();
   return job.promise;
 }
@@ -573,7 +592,6 @@ function inspect(){
   const id=client(),entered=id!==visibleClient;if(entered){visibleClient=id;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();}
   paintRows();if(!canWrite()||document.hidden)return;
   const tree=root(id);if(!id||!tree)return;
-   if(!listFile(id)&&!states.get(key(id))?.enginePdfV2754?.fileId)cdqListProgressStepV2778(id,4,'Vérification du dossier client…');
   if(waiting(id))reconcileWaits(id);
   const fingerprint=clientFingerprint(id),job=jobs.get(key(id));
   if(remembered(id)?.fingerprint&&remembered(id).fingerprint!==fingerprint)warmIndexes.delete(key(id));
@@ -653,7 +671,7 @@ function confirmedConformityV2776(file,clientId){
  if(indexed&&listedRow&&indexed!==listedRow)return null;
  return indexed||listedRow;
 }
-window.cdqBalanceListV2638={confirmedSignature:(file,id)=>canRead()?equipment.confirmedSignature(file,String(id)):null,confirmedConformityV2776,refresh,open,menu,inspect,snapshot,localPreview,previewForFileV2781,flushBackground,prepareSend,sendState};
+window.cdqBalanceListV2638={readSheet:(id,clientId,revision)=>canRead()?readBalanceSheetV2788(id,clientId,revision):Promise.reject(Error('Accès Drive requis.')),confirmedSignature:(file,id)=>canRead()?equipment.confirmedSignature(file,String(id)):null,confirmedConformityV2776,refresh,open,menu,inspect,snapshot,localPreview,previewForFileV2781,flushBackground,prepareSend,sendState};
 window.addEventListener('cdq:report-equipment-edited-v2746',event=>{if(owner!==calibrationIdentity().email)reset();if(canWrite())projection.edit(event.detail);});
 window.addEventListener('cdq:report-equipment-edit-ended-v2746',event=>{if(canRead())projection.ended(event.detail);});
 function retireEngineRowsV2754(id,accept){const k=key(id),pending=enginePendingRowsV2754.get(k);if(!pending)return;let retired=engineRetiredRequestsV2754.get(k);if(!retired)engineRetiredRequestsV2754.set(k,retired=new Set());for(const [reportId,row]of pending)if(accept(row)){pending.delete(reportId);if(row.saveId)retired.add(String(row.saveId));}const state=states.get(k);if(state)states.set(k,{...state,enginePendingRowsV2754:[...pending.values()]});}

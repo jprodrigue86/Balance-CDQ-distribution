@@ -20,6 +20,10 @@ const tracker=createReportConformityTrackerV2727({
  retryMs:3000,
  loadPdf:(id,client,revision)=>window.cdqLoadPdfForCalibrationV2668(id,revision,{background:!displayedFiles().has(String(id))}),
  loadSheet:async(id,clientId,revision)=>{const owner=calibrationIdentity().email;if(!canRead())throw Error('Accès Drive requis.');
+  // Join the list's authenticated in-flight summary for the same exact source
+  // instead of dispatching a second Sheets scan for its conformity badge.
+  const shared=window.cdqBalanceListV2638?.readSheet;
+  if(typeof shared==='function'){const record=await shared(id,clientId,revision);if(!canRead()||owner!==calibrationIdentity().email)throw Error('Le compte a changé.');return record;}
   const send=async()=>{
    if(cdqCompactSheetAvailableV2775){
     try{return await calibrationRpc('cdqLireConformiteRapportV2775',id,clientId,revision);}

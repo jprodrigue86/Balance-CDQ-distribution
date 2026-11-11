@@ -37,7 +37,7 @@ function snapshotChangedV2792(before,after){
 }
 // A rejected lane must release the caller even if another read never answers.
 // RPCs already sent cannot be cancelled: fence every late callback instead.
-export async function readBalanceListGroupV20261028(items,read,{stillCurrent=()=>true,onProgress=()=>{},timeoutMs=180000,pulseMs=1000}={}){
+export async function readBalanceListGroupV20261028(items,read,{stillCurrent=()=>true,onProgress=()=>{},timeoutMs=180000,pulseMs=1000,concurrency=3}={}){
  const out=new Array(items.length),active=new Map(),controller=new AbortController();let next=0,done=0,stopped=null;
  const check=()=>{if(stopped)throw stopped;if(!stillCurrent())throw listSupersededV2809();};
  const announce=()=>{if(stopped)return;try{onProgress({phase:'analyse',done,total:items.length,active:[...active.values()].map(({file,started})=>({id:String(file.id),name:String(file.nom||file.name||file.id),elapsedMs:Date.now()-started}))});}catch{}};
@@ -45,7 +45,7 @@ export async function readBalanceListGroupV20261028(items,read,{stillCurrent=()=
  const pulse=setInterval(()=>{try{check();announce();}catch(error){stop(error);}},pulseMs);
  announce();
  try{
-  await Promise.all(Array.from({length:Math.min(3,items.length)},async()=>{
+  await Promise.all(Array.from({length:Math.min(3,Math.max(1,Math.floor(concurrency)||1),items.length)},async()=>{
    while(!stopped){check();const i=next++;if(i>=items.length)return;const file=items[i];active.set(i,{file,started:Date.now()});announce();
     let timer,onAbort;
     try{
@@ -59,7 +59,8 @@ export async function readBalanceListGroupV20261028(items,read,{stillCurrent=()=
     }catch(cause){
      if(stopped)throw stopped;
      const error=Error('Lecture interrompue : « '+String(file.nom||file.name||file.id)+' » ('+done+' / '+items.length+' analysés). '+String(cause?.message||cause));
-     error.code=cause?.code||'LIST_SOURCE_READ_FAILED';error.sourceId=String(file.id);error.completed=done;error.total=items.length;
+     error.code=cause?.code||'LIST_SOURCE_READ_FAILED';error.sourceId=String(file.id);error.completed=done;error.total=items.length;error.readOnly=true;
+     if(cause?.phase)error.phase=cause.phase;if(cause?.method)error.method=cause.method;
      throw stop(error);
     }finally{clearTimeout(timer);controller.signal.removeEventListener('abort',onAbort);active.delete(i);announce();}
    }
@@ -98,7 +99,7 @@ export async function updateBalanceListFastV2729(options){
   }
  }
 }
-async function prepareBalanceListFastV2792({clientId,fileId,rpc,loadPdf,loadSheet,library,cachedSignature,stillCurrent,onSaved=()=>{},onSourceRead=()=>{},previousState=null,hashText=hash,render=null,sourceIndex=null,guardedSave=false,indexOnly=false,listDestinationId='',onProgress=()=>{}}){
+async function prepareBalanceListFastV2792({clientId,fileId,rpc,loadPdf,loadSheet,library,cachedSignature,cachedRead,readConcurrency=1,stillCurrent,onSaved=()=>{},onSourceRead=()=>{},previousState=null,hashText=hash,render=null,sourceIndex=null,guardedSave=false,indexOnly=false,listDestinationId='',onProgress=()=>{}}){
  // V27.77: an initial engine import has no list PDF to reopen or render.
  // It must still inspect and recheck a COMPLETE authorised Drive snapshot.
  const bootstrap=indexOnly===true&&!fileId;
@@ -112,7 +113,7 @@ async function prepareBalanceListFastV2792({clientId,fileId,rpc,loadPdf,loadShee
   if(folders.some(f=>!f.id)||new Set(folders.map(f=>String(f.id))).size!==folders.length)throw Error('Dossier de rapports incomplet.');
   // Fetch independent list/report folders in one bounded batch. Both full
   // snapshots still authenticate membership before any import or write.
-  const folderRows=await groups([...listFolders,...folders],async folder=>{const r=await rpc('obtenirContenuDossierParesseux',folder.id,clientId);guard();return folderContent(r,folder.id);});
+  const folderRows=await groups([...listFolders,...folders],async folder=>{const r=await rpc('obtenirContenuDossierParesseux',folder.id,clientId);guard();return folderContent(r,folder.id);},{stillCurrent,concurrency:1});
   for(let i=0;i<listFolders.length;i++)for(const file of folderRows[i].fichiers)if(norm(file.nom||file.name)==='liste de balance.pdf'&&pdf(file))lists.push({file,folderId:String(listFolders[i].id)});
   const children=folderRows.slice(listFolders.length);
   const selected=lists.filter(row=>String(row.file.id)===String(fileId));
@@ -133,16 +134,22 @@ async function prepareBalanceListFastV2792({clientId,fileId,rpc,loadPdf,loadShee
  const before=indexed?{name:sourceIndex.name||'',files:sourceIndex.sources.map(source=>({...source.file,id:source.id,revision:source.revision,modifiedTime:source.revision,dateModification:source.revision})),folders:sourceIndex.folders,listFolderId:sourceIndex.listFolderId,list:{...sourceIndex.list,revision:sourceIndex.listRevision,modifiedTime:sourceIndex.listRevision,dateModification:sourceIndex.listRevision}}:await snapshot(),beforeKey=snapshotKey(before),records=[],signatures=new Map(),metadataBySource=new Map();let L,existing,old,libraryPromise;
  const pdfLibrary=async()=>{libraryPromise??=Promise.resolve().then(library);L=await libraryPromise;guard();return L;};
  await groups(before.files,async(file,guard)=>{
-  guard();let signature=indexed?sourceIndex.sources.find(source=>source.id===String(file.id))?.signature:cachedSignature?.(file),parsed=signatureValues(signature);
+  guard();const cached=cachedRead?.(file);
   const previous=indexed?sourceIndex:previousState?.clientId===String(clientId)?previousState?.sourceIndexV2751:null;
   const prior=previous?.clientId===String(clientId)?previous.sources?.find(s=>s.id===String(file.id)&&s.revision===sourceRev(file)&&JSON.stringify(fileKey(s.file||{}))===JSON.stringify(fileKey(file))):null;
-  let metadata=prior?.metadataVersion===2866&&validHistoricalMetadata(prior.metadata)?prior.metadata:null;
+  let signature=indexed?prior?.signature:cached?.signature||cachedSignature?.(file)||prior?.signature,parsed=signatureValues(signature);
+  const completeCached=cached?.signature===signature&&cached?.metadataVersion===2866&&validHistoricalMetadata(cached.metadata)&&!!signatureValues(cached.signature);
+  let metadata=completeCached?cached.metadata:prior?.signature===signature&&prior?.metadataVersion===2866&&validHistoricalMetadata(prior.metadata)?prior.metadata:null,loaded=false;
   if(!parsed||!metadata){if(sheet(file)){const returned=await loadSheet(file.id,clientId,sourceRev(file));guard();signature=balanceSheetSignatureV2788(returned,file,{clientId});metadata=readHistoricalSheet(returned);}
    else{const record=await loadPdf(file.id,sourceRev(file));guard();if(!record?.blob||record.id&&String(record.id)!==String(file.id)||rev(record)!==sourceRev(file)||record.clientId&&String(record.clientId)!==String(clientId))throw Error('Un rapport a changé pendant la préparation.');const read=await readHistoricalPdf(record.blob,await pdfLibrary());signature=read.equipment;metadata=read.metadata;}
-   guard();onSourceRead(file,signature);}
-  guard();parsed=signatureValues(signature);if(!parsed)throw Error('Données de balance incomplètes.');const {values}=parsed;signatures.set(String(file.id),signature);if(!validHistoricalMetadata(metadata))throw Error('Métadonnées historiques incomplètes.');metadataBySource.set(String(file.id),metadata);if(values===null)return;
+   loaded=true;}
+  guard();parsed=signatureValues(signature);if(!parsed)throw Error('Données de balance incomplètes.');if(!validHistoricalMetadata(metadata))throw Error('Métadonnées historiques incomplètes.');
+  if(loaded||!completeCached){onSourceRead(file,signature,{metadataVersion:2866,metadata:{...metadata}});guard();}
+  const {values}=parsed;signatures.set(String(file.id),signature);metadataBySource.set(String(file.id),metadata);if(values===null)return;
   const [fabricant,modele,capacite,echelon,identification,conformity]=values;records.push({id:String(file.id),source:file.nom||file.name||'',revision:sourceRev(file),fabricant,modele,capacite,echelon,identification,conformity:metadata.conformity,type:metadata.type||'',dateEtalonnage:metadata.reportDate||'',prochaineDate:metadata.nextDate||''});
- },{stillCurrent,onProgress});
+ // PDF downloads still share the single background slot of the native bridge.
+ // Visible Sheets use at most the two ordinary slots; clicks/writes keep theirs.
+ },{stillCurrent,onProgress,concurrency:before.files.every(sheet)?Math.min(2,readConcurrency):1});
  const rows=balanceDisplayRowsV2751(records);
  const digest=await hashText(JSON.stringify([String(clientId),before.name,rows.map(r=>[r.fabricant,r.modele,r.capacite,r.echelon,r.identification,r.conformity])]));guard();
  // A confirmed revision/digest receipt survives an app restart. Rechecking an

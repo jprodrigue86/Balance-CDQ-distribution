@@ -1,12 +1,12 @@
 {
-  "androidSelectorSha256": "2c67104878eb687a8701686c5d66e9b6ab69398375caf681f183d8d5fbf71105",
-  "androidSourceBuild": "2026.11.10-v28.71-pdf-v2",
-  "build": "2026.11.10-v28.71-pdf-v2-pc",
+  "androidSelectorSha256": "65a76039a12dc00781d80fd38ce28775fa33d66e9dff6e269b7362cca7f6f47d",
+  "androidSourceBuild": "2026.11.10-v28.72-lists-portal-pdf",
+  "build": "2026.11.10-v28.72-lists-portal-pdf-pc",
   "desktopModel": 3,
-  "files": 1066,
-  "generatedFrom": "patches/pdf-v2-2871/integration/compose-pc.py",
+  "files": 1095,
+  "generatedFrom": "patches/lists-portal-pdf-2872/build/package-2872.py",
   "platform": "pc-pwa",
-  "release": "bc60fd6dac3292fb9c35c75b8c70d7cf0e21880f179469c38324ad138e8945e0",
-  "version": "28.71",
-  "webBaseCommit": "85314b028370fc1ce2401139571bce9870ec89ae"
+  "release": "aabd42579012af4f053380be6a8f846b76c45321b70de8fba4902d9b66bbec07",
+  "version": "28.72",
+  "webBaseCommit": "de1e05294f308cd67502ccc4093422501af56e22"
 }

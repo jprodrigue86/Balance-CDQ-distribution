@@ -1,4 +1,5 @@
 // Weight certificate controls. Opening an existing report never rewrites dates.
+import {tableBorderStyleV2872} from './pdf-layout-borders-v2872.mjs';
 export const WEIGHT_FREQUENCIES=Object.freeze(['1 mois','2 mois','3 mois','4 mois','5 mois','6 mois','12 mois','24 mois','1 an','2 ans']);
 export function weightsDateParts(value){
  const s=String(value??'').trim(),iso=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s),fr=/^(\d{1,2})[/.](\d{1,2})[/.](\d{4})$/.exec(s);
@@ -20,7 +21,7 @@ export function weightsToday(now=new Date()){return `${now.getFullYear()}-${Stri
 export function installWeightsControlsV2871({surface,doc,fields}){
  const definitions=name=>{const f=fields instanceof Map?fields.get(name):fields?.[name];return f?(Array.isArray(f)?f:[f]):[];};
  if(!definitions('poids_01_01').length||!definitions('poids_14_06').length||!definitions('date_prochain').length)return ()=>{};
- const controller=new AbortController(),signal=controller.signal,buttons=new Set();let dialog=null,writing=false;
+ const controller=new AbortController(),signal=controller.signal,buttons=new Set();let dialog=null,writing=false,uniformBorders=false;
  const live=name=>surface.querySelector(`[name="${name}"]`);
  const read=name=>{const el=live(name);if(el)return el.value;const d=definitions(name)[0];return d?String(doc.annotationStorage.getValue(d.id,d)?.value??''):'';};
  let automatic=!read('date_prochain')||iso(read('date_prochain'))===weightNextDate(read('date_etalonnage'),read('frequence'));
@@ -50,6 +51,14 @@ export function installWeightsControlsV2871({surface,doc,fields}){
   button('Annuler',close);picker.oninput=()=>picker.setCustomValidity('');dialog.addEventListener('cancel',e=>{e.preventDefault();close();});document.body.append(dialog);dialog.showModal();picker.focus();
  }
  function refresh(){
+  if(uniformBorders)for(const field of surface.querySelectorAll('input,textarea,select')){
+   const section=field.closest('section'),sides=tableBorderStyleV2872(field.name);if(!section||!sides)continue;
+   for(const [key,value]of Object.entries(sides)){
+    const property=key.replace(/[A-Z]/g,c=>'-'+c.toLowerCase());
+    const next=key.startsWith('border')&&key.endsWith('Width')&&value!=='0px'?'calc(0.6px * var(--total-scale-factor))':value;
+    if(section.style.getPropertyValue(property)!==next||section.style.getPropertyPriority(property)!=='important')section.style.setProperty(property,next,'important');
+   }
+  }
   // The historical reader has a global Arial Bold rule. New certificates
   // keep their authored regular Roboto Condensed typeface in live controls.
   if(definitions('classe').length)for(const field of surface.querySelectorAll('input,textarea,select,button.cdq-choice-field')){
@@ -64,5 +73,6 @@ export function installWeightsControlsV2871({surface,doc,fields}){
   }
  }
  const observer=new MutationObserver(refresh);observer.observe(surface,{subtree:true,childList:true});refresh();
+ Promise.resolve(doc.getMetadata()).then(metadata=>{if(!signal.aborted&&String(metadata?.info?.Custom?.CDQVisualV2872||'')==='2872'){uniformBorders=true;refresh();}}).catch(()=>{});
  return()=>{controller.abort();observer.disconnect();for(const b of buttons)b.remove();dialog?.remove();};
 }

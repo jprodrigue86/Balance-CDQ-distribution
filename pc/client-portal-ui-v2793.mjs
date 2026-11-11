@@ -63,11 +63,20 @@ async function open(){
   }catch(error){if(valid())status.textContent=error?.message||'Gestion des PDF indisponible.'}
   finally{if(valid())manage.disabled=false}
  },'cdq-portal-primary-v2793');
+ const publish=button('Publier les rapports sélectionnés',()=>{
+  if(!valid())return;
+  const confirm=window.ouvrirConfirmation;
+  if(typeof confirm!=='function'){status.textContent='La confirmation de publication est indisponible. Rechargez l’application.';return;}
+  // The existing confirmation validates the selection and resets publish=true/email=false.
+  // Closing this dialog returns an empty selection to the client file list.
+  close();confirm();
+ },'cdq-portal-primary-v2793');
+ const publicationHelp=document.createElement('p');publicationHelp.textContent='Sélectionnez les rapports dans le dossier du client, puis confirmez leur publication ici. Les PDF enregistrés dans Drive restent privés tant que vous ne les publiez pas. Aucun courriel n’est envoyé par défaut.';
  const management=document.createElement('section');management.className='cdq-portal-group-v2815';const managementTitle=document.createElement('h3');managementTitle.textContent='Documents du client';const regroup=button('Corriger le classement des visites',async()=>{
  if(!valid()||regroup.disabled)return;regroup.disabled=true;
  try{const {openVisitRegroup}=await import('./portal-visit-regroup-ui.mjs');if(valid())await openVisitRegroup({body,clientId:id,valid,rpc:calibrationRpc});}
  catch(error){if(valid())status.textContent=error.message||'Correction indisponible.';}finally{if(valid())regroup.disabled=false;}
- });management.append(managementTitle,manage,regroup);body.append(management);
+ });management.append(managementTitle,publicationHelp,publish,manage,regroup);body.append(management);
  const retryRead=button('Réessayer la lecture',()=>{if(valid())open()});retryRead.hidden=true;linkSection.append(retryRead);
  try{
   await afterPaint();if(!valid())return;

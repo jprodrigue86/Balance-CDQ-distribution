@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.71" data-cdq-pc-release="bc60fd6dac3292fb9c35c75b8c70d7cf0e21880f179469c38324ad138e8945e0">
+<html data-cdq-pc-version="28.72" data-cdq-pc-release="aabd42579012af4f053380be6a8f846b76c45321b70de8fba4902d9b66bbec07">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -932,7 +932,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.11.10-v28.71-pdf-v2-pc">
+<meta name="cdq-package-build" content="2026.11.10-v28.72-lists-portal-pdf-pc">
 
 
 <script id="cdqBridgeV23">
@@ -986,7 +986,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.10-v28.71-pdf-v2-pc'
+    build:'2026.11.10-v28.72-lists-portal-pdf-pc'
   });
 }
 
@@ -999,7 +999,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.10-v28.71-pdf-v2-pc'
+        build:'2026.11.10-v28.72-lists-portal-pdf-pc'
       });
     }
   } catch(e) {}
@@ -12285,7 +12285,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.10-v28.71-pdf-v2-pc";
+  const CDQ_BUILD = "2026.11.10-v28.72-lists-portal-pdf-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14894,7 +14894,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.10-v28.71-pdf-v2-pc";
+const CDQ_V19_BUILD = "2026.11.10-v28.72-lists-portal-pdf-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15746,7 +15746,7 @@ function reportRuntimeV2636(){
     if(!cdqPwaAvailable()){
       const {bundledTemplate}=await catalog();
       const t=await bundledTemplate(key,options);guard(email,epoch);
-      const initial=key==='poids'?(await import('./weights-creation-v2871.mjs')).weightsInitialValuesV2871({}):{};
+      const initial=key==='poids'?(await import('./weights-creation-v2871.mjs')).weightCreationValuesV2872({},options):{};
       const blob=await window.cdqCreationV2523.fill(t.blob,clientId,initial);guard(email,epoch);
       const names=await import('https://jprodrigue86.github.io/Balance-CDQ-distribution/pc/report-name-v2648.mjs');guard(email,epoch);
       const fallbackId=JSON.stringify([email,clientId,folderId,key,requestId]);
@@ -15780,7 +15780,7 @@ function reportRuntimeV2636(){
         try{guard(email,epoch);if(event.data.email&&event.data.email!==email)throw Error('Le compte a changé.');if(!event.data.ok)throw Error(event.data.message||'Création du rapport impossible.');resolve({ok:true,local:true,nom:event.data.name});}catch(error){reject(error);}
       }
       window.addEventListener('message',receive);
-      cdqPostToPwa({type:'CDQ_OFFLINE_CREATE_LOCAL',email,requestId,modeleId:key,weightRowsV2871:options.weightRowsV2871,clientId,folderId,destinationName,prefill,existingNames,open:true});
+      cdqPostToPwa({type:'CDQ_OFFLINE_CREATE_LOCAL',email,requestId,modeleId:key,weightRowsV2871:options.weightRowsV2871,weightSelectionV2872:options.weightSelectionV2872,clientId,folderId,destinationName,prefill,existingNames,open:true});
       warm(clientId).then(async values=>{if(key==='poids')values=(await import('./report-field-aliases-v2819.mjs')).weightsCreationIdentityV2866(values);guard(email,epoch);cdqPostToPwa({type:'CDQ_OFFLINE_PREFILL_V2642',email,requestId,values});}).catch(()=>{});
     });
   };
@@ -19123,7 +19123,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.10-v28.71-pdf-v2-pc";
+const CDQ_V20_BUILD = "2026.11.10-v28.72-lists-portal-pdf-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -19970,7 +19970,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.10-v28.71-pdf-v2-pc";
+const CDQ_V21_BUILD = "2026.11.10-v28.72-lists-portal-pdf-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24467,7 +24467,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.10-v28.71-pdf-v2-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.10-v28.72-lists-portal-pdf-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -24789,7 +24789,7 @@ html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item{box-shadow:
     const d=ensureOverlay(),node=d.querySelector('[data-report-status]');node.textContent=message||'';node.classList.toggle('error',!!error);
   }
   function setBusy(value){
-    busy=!!value;const d=ensureOverlay();d.querySelectorAll('button,select').forEach(b=>{if(!b.hasAttribute('data-report-close'))b.disabled=busy;});d.querySelector('[data-report-close]').disabled=busy;d.classList.toggle('busy',busy);
+    busy=!!value;const d=ensureOverlay();d.querySelectorAll('button,select,input,textarea').forEach(b=>{if(!b.hasAttribute('data-report-close'))b.disabled=busy;});d.querySelector('[data-report-close]').disabled=busy;d.classList.toggle('busy',busy);
   }
   function show(){
     const d=ensureOverlay();d.hidden=false;document.documentElement.classList.add('cdq-report-open-v2578');
@@ -24834,11 +24834,11 @@ html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item{box-shadow:
     d.querySelector('[data-report-back]').hidden=false;
     d.querySelector('#cdqReportTitleV2578').textContent='Certificat Poids étalons';
     d.querySelector('[data-report-context]').textContent=companyName()||'Dossier client sélectionné';
-    const marker=document.createElement('span');body.replaceChildren(marker);status('Choisissez le nombre de poids.',false);
+    const marker=document.createElement('span');body.replaceChildren(marker);status('Choisissez le nombre et la valeur des poids.',false);
     try{
       const {renderWeightsCountV2871}=await import('./weights-creation-v2871.mjs');
       if(client!==companyId()||!marker.isConnected||d.hidden)return;
-      renderWeightsCountV2871({body,create:count=>createReport('poids',{weightRowsV2871:count})});
+      renderWeightsCountV2871({body,create:(count,selection)=>createReport('poids',{weightRowsV2871:count,weightSelectionV2872:selection})});
       setBusy(false);
     }catch(error){if(marker.isConnected&&client===companyId())status(error.message||String(error),true);}
   }
@@ -24856,13 +24856,16 @@ html:is(.android,.ios,.mobile-device) .bottom-nav > .bottom-nav-item{box-shadow:
   }
   async function createReport(key,options={}){
     if(busy)return;const model=MODELS[key];if(!model)return;
-    const client=companyId();let destination;
-    try{destination=destinationId();}catch(error){status(error?.message||String(error),true);return;}
+    const client=companyId(),owner=String(typeof utilisateurCourantEmail==='undefined'?'':utilisateurCourantEmail),epoch=creationEpoch;let destination;
+    try{destination=destinationId();if(key==='poids'){const {weightRowsV2871}=await import('./weights-creation-v2871.mjs'),{normalizeWeightSelectionV2872}=await import('./weights-catalog-v2872.mjs');const count=weightRowsV2871(options.weightRowsV2871);options={...options,weightRowsV2871:count,weightSelectionV2872:normalizeWeightSelectionV2872(options.weightSelectionV2872,count)};}}catch(error){status(error?.message||String(error),true);return;}
     if(!client||!destination){status('Choisissez d’abord une compagnie et un dossier client.',true);return;}
     // Keep the same identity after an interrupted creation/save. A second tap
     // resumes that report instead of creating another file in the same folder.
-    const scope=JSON.stringify([String(typeof utilisateurCourantEmail==='undefined'?'':utilisateurCourantEmail),client,destination,key,key==='poids'?options.weightRowsV2871:undefined]);
-    const creation=pendingCreations.get(scope)||requestId(),epoch=creationEpoch;pendingCreations.set(scope,creation);activeCreation=creation;setBusy(true);status('Création de « '+model.label+' »…',false);
+    // Imports may finish after an account, screen, or destination change.
+    // Keep the context that received the click; never adopt a new account.
+    try{if(epoch!==creationEpoch||owner!==String(typeof utilisateurCourantEmail==='undefined'?'':utilisateurCourantEmail)||client!==companyId()||destination!==destinationId()||busy)return;}catch{return;}
+    const scope=JSON.stringify([owner,client,destination,key,key==='poids'?options.weightRowsV2871:undefined,key==='poids'?options.weightSelectionV2872:undefined]);
+    const creation=pendingCreations.get(scope)||requestId();pendingCreations.set(scope,creation);activeCreation=creation;setBusy(true);status('Création de « '+model.label+' »…',false);
     try{
       if(typeof window.cdqCreateReportV2636!=='function')throw Error('Mettez à jour CDQ pour créer ce rapport.');
       const result=await window.cdqCreateReportV2636(key,destination,client,companyName(),creation,options);

@@ -1,6 +1,8 @@
 // New certificates choose their visible rows before their durable identity is created.
 // Existing copies retain their own PDF and their saved dates.
 import {weightsToday} from './reader-weights-v2871.mjs';
+import {weightSelectionPrefillV2872} from './weights-catalog-v2872.mjs';
+export {renderWeightsCountV2871} from './weights-creation-ui-v2872.mjs';
 
 export function weightRowsV2871(value=14){
   const count=Number(value);
@@ -19,20 +21,9 @@ export function weightsInitialValuesV2871(values,now=new Date()){
   return result;
 }
 
-export function renderWeightsCountV2871({body,create}){
-  const label=document.createElement('label');
-  label.textContent='Nombre de poids à étalonner';
-  label.style.cssText='display:block;font-weight:600;margin:12px 0';
-  const select=document.createElement('select');
-  select.dataset.cdqWeightRowsV2871='';
-  select.style.cssText='display:block;width:100%;margin-top:12px;padding:14px;border:1px solid #7896a5;border-radius:9px;background:#193545;color:white;font:inherit';
-  for(let count=1;count<=14;count++){
-    const option=document.createElement('option');option.value=String(count);
-    option.textContent=count+' poids';option.selected=count===14;select.append(option);
-  }
-  label.append(select);
-  const button=document.createElement('button');button.type='button';
-  button.className='cdq-report-choice-v2578';button.textContent='Créer le certificat';
-  button.addEventListener('click',()=>create(weightRowsV2871(select.value)));
-  body.replaceChildren(label,button);select.focus();
+export function weightCreationValuesV2872(values,options={},now=new Date()){
+  const identity=weightsInitialValuesV2871(values,now);
+  if(!identity)throw Error('Les coordonnées du nouveau certificat sont invalides.');
+  const count=weightRowsV2871(options.weightRowsV2871);
+  return {...identity,...weightSelectionPrefillV2872(options.weightSelectionV2872,count)};
 }

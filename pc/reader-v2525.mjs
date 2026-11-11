@@ -1,6 +1,7 @@
 import {measurementDisplayV2871,problemLocksV2871} from './reader-ne-v2871.mjs';
 let fieldFontNamesV2871=new Map();
 import {installWeightsControlsV2871,weightsDateParts} from './reader-weights-v2871.mjs';
+import {isWeightCreationFieldV2872,isWeightCreationDraftV2872} from './weights-catalog-v2872.mjs';
 let cleanupWeightsV2871=()=>{};
 import {installAutofillPaletteV2871} from './reader-autofill-v2871.mjs';
 import {reportFieldNameV2819,legacyReportFieldNameV2819} from './report-field-aliases-v2819.mjs';
@@ -157,8 +158,10 @@ const cdqNewReportIdentityV2779=()=>initialPreparedDraftV2730&&!reportSnapshotV2
 function initializeSandboxIdentityV2730(data,values,document,locked,preparedDraft=false){
   const updates=[];if(locked)return updates;
   for(const [name,value] of Object.entries(values||{})){
-    const weightDate=name==='date_etalonnage'&&weightsDateParts(value)&&!!(data.objects?.get?.('poids_14_06')||data.objects?.poids_14_06);
-    if((!/^client_(nom|telephone|technicien|adresse|ville|province|code_postal)$/.test(name)&&!weightDate)||typeof value!=='string'||value.length>1000||!value.trim())continue;
+    const weights=!!(data.objects?.get?.('poids_14_06')||data.objects?.poids_14_06);
+    const weightDate=name==='date_etalonnage'&&weightsDateParts(value)&&weights;
+    const weightChoice=preparedDraft&&weights&&isWeightCreationFieldV2872(name,value);
+    if((!/^client_(nom|telephone|technicien|adresse|ville|province|code_postal)$/.test(name)&&!weightDate&&!weightChoice)||typeof value!=='string'||value.length>1000||!value.trim())continue;
     const actualName=reportFieldNameV2819(data.objects,name),raw=data.objects?.get?.(actualName)||data.objects?.[actualName],defs=raw?(Array.isArray(raw)?raw:[raw]):[];
     // CREATE historically replaced the approved template's static Qc default.
     // Keep onlyEmpty protection for every private value and untrusted report.
@@ -715,7 +718,7 @@ async function open(data){
   resumeContextV2767=data.resumeContextV2767||null;
   resumeSavedV2767=resumeContextV2767?resumeJournalV2767.restore(resumeContextV2767):null;
   techniciansV2767=normalizeTechniciansV2767(data.techniciansV2767);
-  initialValuesV2730=data.initialValues||null;initialAppliedV2730=false;initialUpdatesV2730=[];initialPreparedDraftV2730=data.readerPreparedVersion===2730&&isCacheableReaderDraftV2730({...data,bytes:blob.size});
+  initialValuesV2730=data.initialValues||null;initialAppliedV2730=false;initialUpdatesV2730=[];initialPreparedDraftV2730=data.readerPreparedVersion===2730&&(isCacheableReaderDraftV2730({...data,bytes:blob.size})||isWeightCreationDraftV2872({...data,bytes:blob.size}));
   $('name').textContent=name;$('empty').style.display='none';status('Ouverture du PDF…');
   const preparedBlob=data.preparedBlob instanceof Blob?data.preparedBlob:data.readerPreparedVersion===2730?blob:null;
   readerEquipmentV2746.configure(String(data.readerRequestId||data.readerSession||''));

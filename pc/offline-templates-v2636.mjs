@@ -1,4 +1,5 @@
-import {weightsInitialValuesV2871,weightRowsV2871} from './weights-creation-v2871.mjs';
+import {weightCreationValuesV2872,weightRowsV2871} from './weights-creation-v2871.mjs';
+import {normalizeWeightSelectionV2872,weightSelectionKeyV2872} from './weights-catalog-v2872.mjs';
 import {ownReceiptAdvanceV20261103,captureUnresolvedAncestorV20261103,validUnresolvedAncestorV20261103,copyReceiptRecordV20261103} from './report-receipt-continuity-v20261103.mjs';
 import {reportFieldValueV2819} from './report-field-aliases-v2819.mjs';
 import {COPY_BASE_V2816,tagCopyV2816,copyEditBasisV2816,writeCopyV2816} from './offline-copy-guard-v2816.mjs';
@@ -928,17 +929,19 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
         if(!current.canWrite||!/^[\w-]{8,100}$/.test(id)||!known(data.modeleId))throw new Error('Copie locale non autorisée ou demande invalide.');
         const d={clientId:String(data.clientId||''),folderId:String(data.folderId||''),name:String(data.destinationName||data.name||'Dossier client')};
         if(!validDestination(d))throw new Error('Dossier client invalide.');
+        const weights=data.modeleId==='poids'?{weightRowsV2871:weightRowsV2871(data.weightRowsV2871),weightSelectionV2872:normalizeWeightSelectionV2872(data.weightSelectionV2872,weightRowsV2871(data.weightRowsV2871))}:null;
         const t=await loadTemplate(current.email,data.modeleId,{weightRowsV2871:data.weightRowsV2871});if(!validTemplate(t))throw new Error('Le modèle embarqué est indisponible. Rouvrez CDQ après sa mise à jour.');
         let c=await get('copies',id);
         if(c?.removed)throw Error('Cette création a été annulée. Créez un nouveau rapport.');
-        if(c&&(c.email!==current.email||c.modeleId!==data.modeleId||c.destination.clientId!==d.clientId||c.destination.folderId!==d.folderId||(data.modeleId==='poids'&&weightRowsV2871(c.weightRowsV2871)!==weightRowsV2871(data.weightRowsV2871))))throw new Error('Identifiant déjà utilisé pour une autre copie.');
+        if(c&&(c.email!==current.email||c.modeleId!==data.modeleId||c.destination.clientId!==d.clientId||c.destination.folderId!==d.folderId||(weights&&(weightRowsV2871(c.weightRowsV2871)!==weights.weightRowsV2871||weightSelectionKeyV2872(c.weightSelectionV2872,c.weightRowsV2871)!==weightSelectionKeyV2872(weights.weightSelectionV2872,weights.weightRowsV2871)))))throw new Error('Identifiant déjà utilisé pour une autre copie.');
         if(!currentCreation())return;
         if(!c)c=await reserveDestination(current.email,d.folderId,async()=>{
           if(!currentCreation())return null;
           const names=destinationNames.get(nameKey(current.email,d.folderId))||new Set();
           if(Array.isArray(data.existingNames))for(const name of data.existingNames)if(typeof name==='string'&&name.length<=220)names.add(name);
-          let copy=makeCopy(t,d,current.email,id,[...names]);copy=await attachEngineV2754(copy,t,current);
-          if(data.prefill&&Object.keys(data.prefill).length){const identity=data.modeleId==='poids'?weightsInitialValuesV2871(data.prefill):identityDraftV2730(data.prefill);if((copy.reportEngineV2754||data.open===true)&&identity)copy.initialValues=identity;else{copy.blob=await fillInFrame(data.prefill,{blob:copy.blob,strict:false});copy.uploadId=id+'_prefill';copy.editVersion=1;}}
+          let copy=makeCopy(t,d,current.email,id,[...names]);if(weights)copy.weightSelectionV2872=weights.weightSelectionV2872;copy=await attachEngineV2754(copy,t,current);
+          const creationValues=weights?weightCreationValuesV2872(data.prefill,weights):data.prefill;
+          if(creationValues&&Object.keys(creationValues).length){const identity=weights?creationValues:identityDraftV2730(creationValues);if((copy.reportEngineV2754||data.open===true)&&identity)copy.initialValues=identity;else{copy.blob=await fillInFrame(creationValues,{blob:copy.blob,strict:false});copy.uploadId=id+'_prefill';copy.editVersion=1;}}
           if(!currentCreation())return null;
           await put('copies',copy);if(!currentCreation())return null;
           destinationNames.set(nameKey(current.email,d.folderId),names);rememberNames(copy);return copy;

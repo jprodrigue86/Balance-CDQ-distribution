@@ -1,4 +1,7 @@
 import {reportFieldNameV2819,reportFieldV2819,reportFieldValueV2819,isV34ReportFieldsV2819,isWeightsV6FieldsV2866,weightsCreationIdentityV2866} from './report-field-aliases-v2819.mjs';
+import {isWeightCreationFieldV2872} from './weights-catalog-v2872.mjs';
+import {weightsDateParts} from './reader-weights-v2871.mjs';
+import {normalizePdfLayoutBordersV2872,refreshWeightTextAppearanceV2872} from './pdf-layout-borders-v2872.mjs';
 import {t05Family} from './reader-t05.mjs';
 import {normalizeMeasurementRulesV2736} from './reader-measurements-v2736.mjs';
 import {normalizeReportVisualV2736} from './reader-report-visual-v2736.mjs';
@@ -15,11 +18,12 @@ let engine;
 const norm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLowerCase();
 export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=null}={}){
   const entries=Object.entries(values||{}).filter(([,v])=>v!==null&&v!==undefined&&String(v).trim()!=='');
-  for(const [k,v] of entries)if(!rawField.test(k)||String(v).length>1000)throw Error('Champ de transfert refusé : '+k);
+  for(const [k,v] of entries)if((!rawField.test(k)&&!(k==='date_etalonnage'&&weightsDateParts(v))&&!isWeightCreationFieldV2872(k,v))||String(v).length>1000)throw Error('Champ de transfert refusé : '+k);
   let bytes=new Uint8Array(await (blob||(await floorTemplate()).blob).arrayBuffer());
   await import('./vendor/pdf-lib-1.17.1.min.js');
   const L=library||globalThis.PDFLib,lib=await L.PDFDocument.load(bytes),form=lib.getForm(),approved=approvedReportFamilyV2735(lib,L);let changed=false;
   if(isWeightsV6FieldsV2866(form)){
+    for(const [k,v] of entries)if(!/^client_(nom|telephone|technicien|adresse|ville|province|code_postal)$/.test(k)&&!(k==='date_etalonnage'&&weightsDateParts(v))&&!isWeightCreationFieldV2872(k,v))throw Error('Champ de transfert refusé : '+k);
     const touched=[];
     for(const [key,value]of Object.entries(weightsCreationIdentityV2866(Object.fromEntries(entries)))){
       const name=reportFieldNameV2819(form,key),field=form.getFieldMaybe(name);
@@ -28,10 +32,16 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
       if(field instanceof L.PDFTextField&&(!onlyEmpty||!String(field.getText()||'').trim())){field.setText(String(value));touched.push(field);}
     }
     if(!touched.length)return blob;
-    const font=await lib.embedFont(L.StandardFonts.Helvetica);
-    for(const field of touched)field.defaultUpdateAppearances(font);
+    if(lib.catalog.lookupMaybe(L.PDFName.of('CDQVisualV2872'),L.PDFNumber)?.asNumber()===2872){
+      refreshWeightTextAppearanceV2872(lib,L,touched.map(field=>field.getName()));
+      normalizePdfLayoutBordersV2872(lib,L);
+    }else{
+      const font=await lib.embedFont(L.StandardFonts.Helvetica);
+      for(const field of touched)field.defaultUpdateAppearances(font);
+    }
     return new Blob([await lib.save({updateFieldAppearances:false})],{type:'application/pdf'});
   }
+  for(const [k] of entries)if(!rawField.test(k))throw Error('Champ de transfert refusé : '+k);
   // A V27.37 reviewed Multi-têtes has its own 57 native calculators with
   // independent Poids 1 / Poids 2 states. Do not wrap them again during
   // creation/prefill: the V27.36 wrapper overwrites valid native results.
@@ -87,6 +97,7 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
     if(t05){ /* Preserve native T05 identity appearance. */ }
     else if(approved)normalizeReportVisualV2736(lib,L,approved);
     else centerSingleLineAppearances(lib,L);
+    normalizePdfLayoutBordersV2872(lib,L);
     return new Blob([await lib.save({updateFieldAppearances:false})],{type:'application/pdf'});
   }
   if(changed)bytes=await lib.save({updateFieldAppearances:false});
