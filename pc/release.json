@@ -1,12 +1,12 @@
 {
-  "androidSelectorSha256": "65a76039a12dc00781d80fd38ce28775fa33d66e9dff6e269b7362cca7f6f47d",
-  "androidSourceBuild": "2026.11.10-v28.72-lists-portal-pdf",
-  "build": "2026.11.10-v28.72-lists-portal-pdf-pc",
+  "androidSelectorSha256": "38cf734c03ee49e746f191fbc76516e6462e957596129bd3a9a4f130065c9cd6",
+  "androidSourceBuild": "2026.11.12-v28.73-sanimarc-pending",
+  "build": "2026.11.12-v28.73-sanimarc-pending-pc",
   "desktopModel": 3,
   "files": 1095,
-  "generatedFrom": "patches/lists-portal-pdf-2872/build/package-2872.py",
+  "generatedFrom": "patches/sanimarc-send-pending-20261112/build/stage-pc-2873.py",
   "platform": "pc-pwa",
-  "release": "aabd42579012af4f053380be6a8f846b76c45321b70de8fba4902d9b66bbec07",
-  "version": "28.72",
+  "release": "6903f98fd4f97b08ac599e5b16b73e4f31e7e77c6c6beb3e2131e03d8d928395",
+  "version": "28.73",
   "webBaseCommit": "de1e05294f308cd67502ccc4093422501af56e22"
 }

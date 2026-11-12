@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.72" data-cdq-pc-release="aabd42579012af4f053380be6a8f846b76c45321b70de8fba4902d9b66bbec07">
+<html data-cdq-pc-version="28.73" data-cdq-pc-release="6903f98fd4f97b08ac599e5b16b73e4f31e7e77c6c6beb3e2131e03d8d928395">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -932,7 +932,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.11.10-v28.72-lists-portal-pdf-pc">
+<meta name="cdq-package-build" content="2026.11.12-v28.73-sanimarc-pending-pc">
 
 
 <script id="cdqBridgeV23">
@@ -986,7 +986,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.10-v28.72-lists-portal-pdf-pc'
+    build:'2026.11.12-v28.73-sanimarc-pending-pc'
   });
 }
 
@@ -999,7 +999,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.10-v28.72-lists-portal-pdf-pc'
+        build:'2026.11.12-v28.73-sanimarc-pending-pc'
       });
     }
   } catch(e) {}
@@ -12285,7 +12285,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.10-v28.72-lists-portal-pdf-pc";
+  const CDQ_BUILD = "2026.11.12-v28.73-sanimarc-pending-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14894,7 +14894,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.10-v28.72-lists-portal-pdf-pc";
+const CDQ_V19_BUILD = "2026.11.12-v28.73-sanimarc-pending-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -19123,7 +19123,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.10-v28.72-lists-portal-pdf-pc";
+const CDQ_V20_BUILD = "2026.11.12-v28.73-sanimarc-pending-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -19970,7 +19970,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.10-v28.72-lists-portal-pdf-pc";
+const CDQ_V21_BUILD = "2026.11.12-v28.73-sanimarc-pending-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24467,7 +24467,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.10-v28.72-lists-portal-pdf-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.12-v28.73-sanimarc-pending-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -26533,6 +26533,154 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
 <link rel="stylesheet" href="./file-state-v2784.css">
 <link rel="stylesheet" href="./desktop-workspace-v2688.css">
 <script src="./desktop-model2-v2676.js"></script>
+
+<!-- CDQ - Menu Tâches en attente v20261112 : injection autonome dans Selector -->
+<style id="cdqSendPendingStyleV20261112">
+#cdqSendPendingOpenV20261112{display:inline-flex;align-items:center;justify-content:center;padding:9px 15px;min-height:42px;margin:10px 0;border:1px solid #448fba;border-radius:10px;background:#142a3b;color:#eff8ff;font:700 14px system-ui;cursor:pointer}
+#cdqSendPendingOverlayV20261112{position:fixed;inset:0;z-index:2147482800;background:rgba(0,0,0,.83);display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}
+#cdqSendPendingOverlayV20261112 .cdq-pending-card{width:min(640px,100%);max-height:94dvh;display:flex;flex-direction:column;overflow:hidden;color:#f6f8fd;background:#101216;border:1px solid #536074;border-radius:20px;box-shadow:0 20px 70px rgba(0,0,0,.8);font:14px/1.5 system-ui}
+#cdqSendPendingOverlayV20261112 .cdq-pending-title{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border-bottom:1px solid #36404d;font-size:18px;font-weight:800}
+#cdqSendPendingOverlayV20261112 .cdq-pending-scroll{padding:14px;overflow-y:auto;overscroll-behavior:contain}
+#cdqSendPendingOverlayV20261112 .cdq-pending-intro{font-size:13px;color:#b8cad9;margin-bottom:12px}
+#cdqSendPendingOverlayV20261112 .cdq-pending-task{padding:12px;margin:0 0 10px;background:#20242b;border:1px solid #444e59;border-radius:12px}
+#cdqSendPendingOverlayV20261112 .cdq-pending-task strong{display:block;font-size:15px}
+#cdqSendPendingOverlayV20261112 .cdq-pending-meta{color:#b3c3d0;margin:5px 0 9px;overflow-wrap:anywhere}
+#cdqSendPendingOverlayV20261112 .cdq-pending-actions{display:flex;gap:6px;flex-wrap:wrap}
+#cdqSendPendingOverlayV20261112 button{font:700 13px system-ui;border:1px solid #4b7493;color:#f8fcff;background:#233c50;border-radius:9px;padding:9px 12px;min-height:40px;cursor:pointer}
+#cdqSendPendingOverlayV20261112 button:disabled{opacity:.45;cursor:default}
+#cdqSendPendingOverlayV20261112 button.cdq-pending-close{background:#333c47}
+#cdqSendPendingOverlayV20261112 button.cdq-pending-caution{border-color:#a46f3a;background:#493323}
+#cdqSendPendingOverlayV20261112 button.cdq-pending-refresh{border-color:#268be1;background:#14476e}
+#cdqSendPendingOverlayV20261112 .cdq-pending-message{margin-bottom:12px;color:#e6d098;white-space:pre-wrap}
+</style>
+<script id="cdqSendPendingScriptV20261112">
+(function(){
+  'use strict';
+  if(window.cdqPendingTasksV20261112)return;
+  const V='V20261112',overlayId='cdqSendPendingOverlay'+V,buttonId='cdqSendPendingOpen'+V;
+  const labels={a_verifier:'À vérifier — résultat du courriel incertain',bloque:'Bloquée avant la fin',
+    en_cours:'En cours',annule:'Annulée avant l’email',clos_apres_verification:'Clôturée après vérification',
+    envoye_confirme:'Courriel confirmé',termine:'Terminée'};
+  function current(){
+    if(typeof cdqSendContextV2750!=='function')throw Error('Contexte d’envoi indisponible.');
+    const v=cdqSendContextV2750(String(compagnieSelectionnee||''));
+    if(!v?.clientId)throw Error('Choisir un client avant de consulter les tâches.');
+    return v;
+  }
+  async function rpc(method,args){
+    if(typeof cdqRpcV2553!=='function')throw Error('Connexion aux tâches indisponible.');
+    return cdqRpcV2553(method,args);
+  }
+  function button(text,action,kind){
+    const el=document.createElement('button');el.type='button';el.textContent=text;
+    if(kind)el.className='cdq-pending-'+kind;
+    if(action)el.addEventListener('click',()=>{void action();});
+    return el;
+  }
+  function note(text){
+    const holder=document.querySelector('#'+overlayId+' .cdq-pending-message');
+    if(holder)holder.textContent=String(text||'');
+  }
+  function dateOf(epoch){
+    return epoch?new Date(epoch).toLocaleString('fr-CA',{dateStyle:'medium',timeStyle:'short'}):'Date inconnue';
+  }
+  function stateName(v){return labels[v]||v||'État inconnu';}
+  let busy=false,clientId='';
+  async function load(){
+    if(busy)return;busy=true;note('Vérification des tâches enregistrées…');
+    try{
+      const result=await rpc('cdqEnvoisEnAttenteV20261112',[clientId]);
+      if(!result?.ok||result.clientId!==clientId||!Array.isArray(result.tasks))
+        throw Error('Liste des tâches non confirmée par le serveur.');
+      const body=document.querySelector('#'+overlayId+' .cdq-pending-tasks');
+      if(!body)return;body.replaceChildren();
+      if(!result.tasks.length){const p=document.createElement('p');p.textContent='Aucune tâche enregistrée pour ce client.';body.append(p);}
+      for(const task of result.tasks){
+        if(!task?.jobId||task.clientId!==clientId)continue;
+        const item=document.createElement('div');item.className='cdq-pending-task';
+        const name=document.createElement('strong');name.textContent=stateName(task.status);
+        const meta=document.createElement('div');meta.className='cdq-pending-meta';
+        meta.textContent=dateOf(task.createdAt)+' · '+(task.count||0)+' document(s) · '+(task.recipient||'Destinataire inconnu')+
+          ' · '+(task.protocol===20261103?'Nouvelle tâche':'Tâche historique');
+        const acts=document.createElement('div');acts.className='cdq-pending-actions';
+        if(task.status==='a_verifier'||task.status==='bloque'||task.status==='en_cours'){
+          acts.append(button('Vérifier',()=>manage(task,'verifier'),'refresh'));
+        }
+        if(task.canResume)acts.append(button('Reprendre',()=>manage(task,'reprendre')));
+        if(task.canCancel)acts.append(button('Annuler la tâche',()=>manage(task,'annuler'),'caution'));
+        if(task.needsConfirmation)acts.append(button('Clore après vérification',()=>manage(task,'clore_apres_verification'),'caution'));
+        item.append(name,meta,acts);body.append(item);
+      }
+      note('Le bouton « Annuler » de ce menu traite une tâche enregistrée. Il ne renvoie jamais d’email.');
+    }catch(e){note('Impossible de récupérer les tâches : '+String(e?.message||e));}
+    finally{busy=false;}
+  }
+  async function manage(task,action){
+    if(busy)return;
+    let confirmation='';
+    if(action==='annuler'){
+      if(!window.confirm('Annuler cette préparation ? Aucun email ne doit avoir été tenté. Les fichiers seront conservés.'))return;
+    }else if(action==='reprendre'){
+      if(!window.confirm('Reprendre cette tâche seulement si aucun courriel n’a été tenté ? Le traitement pourra poursuivre son envoi.'))return;
+    }else if(action==='clore_apres_verification'){
+      if(!window.confirm('ATTENTION : le courriel a peut-être déjà été envoyé. Vérifiez les messages envoyés dans Gmail avant de clore la tâche. Libérer le blocage permettra un nouvel envoi MANUEL qui pourrait créer un doublon. Continuer ?'))return;
+      const typed=window.prompt('Pour confirmer après vérification de Gmail, écrivez : VERIFIE');
+      if(String(typed||'').trim().toUpperCase()!=='VERIFIE'){note('Clôture annulée : confirmation manquante.');return;}
+      confirmation='JE_CONFIRME_VERIFICATION_ET_RISQUE_DE_DOUBLON';
+    }
+    busy=true;note('Contrôle sécurisé de la tâche…');
+    let outcome='';
+    try{
+      const x=await rpc('cdqGererEnvoiEnAttenteV20261112',[clientId,task.jobId,action,confirmation]);
+      if(!x?.ok)throw Error(x?.message||x?.state||'Le serveur a refusé cette action.');
+      outcome=action==='clore_apres_verification'?'Tâche clôturée après votre vérification. Un nouvel envoi devra être lancé manuellement.':
+           action==='verifier'?(x.evidenceFound?'Une preuve Gmail exacte a été confirmée. Aucun nouvel email envoyé.':'Aucun reçu Gmail confirmé. La tâche demeure à vérifier.'):
+           action==='annuler'?'Préparation annulée sans email.':'Reprise demandée. Cette tâche peut ensuite poursuivre automatiquement son traitement.';
+    }catch(e){outcome='Action refusée : '+String(e?.message||e);}
+    finally{busy=false;await load();note(outcome);}
+  }
+  function close(){
+    document.getElementById(overlayId)?.remove();
+  }
+  function open(){
+    if(document.getElementById(overlayId))return;
+    try{clientId=current().clientId;}catch(e){window.alert(String(e.message||e));return;}
+    const overlay=document.createElement('div');overlay.id=overlayId;overlay.setAttribute('role','dialog');
+    overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Tâches en attente');
+    const card=document.createElement('div');card.className='cdq-pending-card';
+    const header=document.createElement('div');header.className='cdq-pending-title';header.textContent='Tâches en attente';
+    header.append(button('Fermer',close,'close'));
+    const scroll=document.createElement('div');scroll.className='cdq-pending-scroll';
+    const intro=document.createElement('div');intro.className='cdq-pending-intro';
+    intro.textContent='Consultez les envois du client. Une tentative d’email sans reçu ne sera jamais renvoyée automatiquement.';
+    const message=document.createElement('div');message.className='cdq-pending-message';
+    const actions=document.createElement('div');actions.className='cdq-pending-actions';
+    actions.append(button('Actualiser',load,'refresh'));
+    const body=document.createElement('div');body.className='cdq-pending-tasks';
+    scroll.append(intro,message,actions,body);card.append(header,scroll);overlay.append(card);
+    overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
+    document.body.append(overlay);
+    void load();
+  }
+  function attach(){
+    const send=document.getElementById('sendButton');
+    if(!send||document.getElementById(buttonId))return;
+    const trigger=button('Tâches en attente',open,'refresh');trigger.id=buttonId;
+    const modal=send.closest('.modal')||send.parentElement;
+    const textbox=modal?.querySelector('textarea');
+    if(textbox)textbox.insertAdjacentElement('afterend',trigger);
+    else send.parentElement?.insertBefore(trigger,send);
+  }
+  window.cdqPendingTasksV20261112={open,refresh:load};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',attach,{once:true});
+  else attach();
+  window.addEventListener('cdq:client-content-ready-v2745',attach);
+  window.addEventListener('cdq:access-ready',attach);
+  const observer=new MutationObserver(()=>{if(!document.getElementById(buttonId))attach();});
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
 </body>
 </html>
 
