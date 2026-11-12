@@ -1,0 +1,14 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "Sani-Marc 2026-11-12 — cohérence reçus d'envoi",
+  "title": "Ne plus afficher un email comme confirmé sans reçu; rendre visibles les anciens blocages au gestionnaire admin, en conservant les protections",
+  "patches": [],
+  "extraFiles": [
+    {
+      "name": "CDQSendPendingV20261112.gs",
+      "url": "files/CDQSendPendingV20261112.gs",
+      "sha256": "07db0afb94b58ba34efd2d76484d6dc4323bc06ec4866c7a099136933e59d8fe"
+    }
+  ]
+}
