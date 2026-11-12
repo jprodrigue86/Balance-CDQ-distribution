@@ -1,0 +1,89 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "Sécurité expéditeur 2026-11-12 (protection temporaire sans usurpation)",
+  "title": "Empêcher tout envoi Gmail propriétaire initié par un autre compte CDQ; garde-fou sans effacer les ZIP ni les tâches",
+  "patches": [
+    {
+      "id": "gmail-owner-guard-1",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "function cdqSpActor_(){return verifierDroit_('envoi');}",
+      "replacement": "function cdqSpActor_(){return verifierDroit_('envoi');}\nfunction cdqGmailSenderGuardV20261112_(expectedActor){\n var verified=verifierDroit_('envoi');\n var actual=normaliserEmailCDQ_(verified&&verified.email||'');\n var expected=normaliserEmailCDQ_(expectedActor||actual);\n var execution=normaliserEmailCDQ_(Session.getEffectiveUser().getEmail()||'');\n // Never allow the owner-owned Apps Script worker to send as a technician.\n // Revalidation at the last possible boundary protects old client versions.\n if(!actual||!execution||actual!==expected||actual!==execution)\n   throw Error('CDQ_GMAIL_IDENTITE_REQUISE : le compte Gmail exécutant ne correspond pas au technicien connecté. Aucun courriel envoyé.');\n return actual;\n}",
+      "expected": 1
+    },
+    {
+      "id": "gmail-owner-guard-2",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "if(selected.email)cdqSpLegacyUncertain_(clientId,email);",
+      "replacement": "if(selected.email){cdqGmailSenderGuardV20261112_(actor.email);cdqSpLegacyUncertain_(clientId,email);}",
+      "expected": 1
+    },
+    {
+      "id": "gmail-owner-guard-3",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "if(cdqSpActionsV2866_(plan).email)cdqSpLegacyUncertain_(clientId,email);",
+      "replacement": "if(cdqSpActionsV2866_(plan).email){cdqGmailSenderGuardV20261112_(actor.email);cdqSpLegacyUncertain_(clientId,email);}",
+      "expected": 1
+    },
+    {
+      "id": "gmail-owner-guard-4",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "function cdqSpMail_(job,request,manifest){",
+      "replacement": "function cdqSpMail_(job,request,manifest){\n cdqGmailSenderGuardV20261112_(job.actor);",
+      "expected": 1
+    },
+    {
+      "id": "gmail-owner-guard-5",
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "function cdqSendEmailZipV2823_(delivery,email,subject,body,sender,clientId,force) {",
+      "replacement": "function cdqSendEmailZipV2823_(delivery,email,subject,body,sender,clientId,force) {\n  cdqGmailSenderGuardV20261112_();",
+      "expected": 1
+    },
+    {
+      "id": "gmail-owner-guard-6",
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "function cdqSendQueueStartV2826_(files,email,message,companyName,clientId,session,force) {\n  var actor=verifierDroit_('envoi');",
+      "replacement": "function cdqSendQueueStartV2826_(files,email,message,companyName,clientId,session,force) {\n  var actor=verifierDroit_('envoi');\n  cdqGmailSenderGuardV20261112_(actor.email);",
+      "expected": 1
+    },
+    {
+      "id": "gmail-owner-guard-7",
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "function cdqSendQueueMailV2826_(job,request) {",
+      "replacement": "function cdqSendQueueMailV2826_(job,request) {\n  cdqGmailSenderGuardV20261112_(job.actor);",
+      "expected": 1
+    },
+    {
+      "id": "gmail-owner-guard-8",
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "function cdqDeliverySentEvidenceV2825_(job){",
+      "replacement": "function cdqDeliverySentEvidenceV2825_(job){\n cdqGmailSenderGuardV20261112_(job.actor);",
+      "expected": 1
+    },
+    {
+      "id": "gmail-owner-guard-9",
+      "file": "CDQEmailPortalV20261030.gs",
+      "op": "replace_literal",
+      "search": "  GmailApp.sendEmail(email,subject,prepared.text,options);",
+      "replacement": "  cdqGmailSenderGuardV20261112_();\n  GmailApp.sendEmail(email,subject,prepared.text,options);",
+      "expected": 1
+    },
+    {
+      "id": "gmail-owner-guard-10",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "GmailApp.sendEmail(email, sujet, corps, {",
+      "replacement": "cdqGmailSenderGuardV20261112_();\n  GmailApp.sendEmail(email, sujet, corps, {",
+      "expected": 3
+    }
+  ],
+  "extraFiles": []
+}
