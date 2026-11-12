@@ -1,0 +1,180 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "Balance CDQ 28.74 — Gmail propre au technicien 2026-11-12",
+  "title": "Remplacer la file Gmail propriétaire par autorisation OAuth de l'utilisateur identifié, garder ZIP et reçus, bloquer anciens appels",
+  "patches": [
+    {
+      "id": "gmailtech-activate",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "job.phase=cdqSpActionsV2866_(job).email?'mail':'complete';",
+      "replacement": "job.phase=cdqSpActionsV2866_(job).email?'awaiting_gmail':'complete';",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-package",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "job.phase=actions.publish?'activate':'mail';return manifest;",
+      "replacement": "job.phase=actions.publish?'activate':'awaiting_gmail';return manifest;",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-no-owner-gmail",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "function cdqSpSentEvidence_(job,request){\n var marker='Référence d’envoi CDQ : '+job.id,threads=GmailApp.search('in:sent after:'+Math.floor((job.at-1000)/1000)+' \"'+job.id+'\"',0,20),found=null;\n threads.some(function(thread){return thread.getMessages().some(function(m){if(m.getDate().getTime()<job.at-1000||cdqSpRecipients_(m.getTo()).indexOf(request.email)<0||String(m.getPlainBody()).indexOf(marker)<0)return false;var match=m.getAttachments({includeInlineImages:false,includeAttachments:true}).some(function(b){return b.getName()===job.zipName&&cdqSpHash_(b.getBytes())===job.zipHash;});if(match)found={messageId:m.getId(),at:m.getDate().getTime()};return match;});});return found;\n}\nfunction cdqSpMail_(job,request,manifest){\n cdqSpAssert_(cdqSpActionsV2866_(job).email&&(!cdqSpActionsV2866_(job).publish||job.portalConfirmed===true)&&job.phase==='mail','INVALID_SEND_ORDER','La page client doit être confirmée avant le courriel.');\n if(job.mailAttempted){var evidence=cdqSpSentEvidence_(job,request);cdqSpAssert_(evidence,'CDQ_ENVOI_A_VERIFIER','Résultat du courriel incertain. Aucun renvoi automatique.');cdqSpLock_(function(){var receipt=cdqSpGet_(job.sendKey);cdqSpAssert_(receipt&&receipt.jobId===job.id&&receipt.protocol===CDQ_SP_VERSION_&&['sending','sent'].indexOf(receipt.phase)>=0,'CONFLICT_SEND_RECEIPT','Le reçu du courriel appartient à une autre demande.');cdqSpPut_(job.sendKey,{phase:'sent',at:evidence.at,jobId:job.id,protocol:CDQ_SP_VERSION_,messageId:evidence.messageId});});job.mailSent=true;job.messageId=evidence.messageId;job.mailConfirmedAt=evidence.at;job.phase='complete';return;}\n var zip=cdqSpBlob_({fileId:job.zipId,name:job.zipName,size:job.zipSize,sha256:job.zipHash});\n var body=request.message.trim()?request.message:'Bonjour,\\n\\nVeuillez trouver ci-joint les éléments d’étalonnage de '+(request.companyName||'votre entreprise')+'.\\n\\nMerci.';\n var prepared;\n if(cdqSpActionsV2866_(job).publish){\n var info=cdqSpPortalLink_({email:job.actor},job.clientId,request.companyName);prepared=cdqEmailPortalPrepareV20261030_(body,job.clientId,'convertir',info);cdqSpAssert_(prepared&&prepared.linkIncluded===true&&['INCLUDED','LINK_ONLY'].indexOf(prepared.status)>=0,'PORTAL_LINK_UNAVAILABLE','Le lien client n’est pas confirmé. Aucun courriel envoyé.');\n }else prepared=cdqSpMailTextV2866_(body);\n // Reuse the legacy send key for Sheets; a legacy uncertain identical send remains protected.\n var identities=request.sources.map(function(s,i){return s.fileId+':'+(s.kind==='sheet'?'modified:'+new Date(s.driveRevision).getTime():(s.sourceSha256||manifest.entries[i].sourceSha256))+':'+s.conversionName;}).sort();\n var key='CDQ_SEND_ZIP_V2823_'+cdqSpHash_(cdqSpJson_([job.clientId,request.email,identities]));\n if(cdqSpActionsV2866_(job).publish){\n var active=cdqSpEngine_({email:job.actor},'portalBatchVerifyV2835',cdqSpVisitPayloadV2866_(job,{clientId:job.clientId,batchId:job.id,manifestSha256:job.portalManifestHash}),job.clientId);\n cdqSpAssert_(active&&active.ok===true&&active.active===true&&active.committed===true&&active.batchId===job.id&&active.count===job.count&&active.manifestSha256===job.portalManifestHash,'INVALID_PORTAL_ACTIVE_RECEIPT','Un document publié a changé ou a été retiré. Aucun courriel envoyé.');\n cdqSpConfirmVisitV2866_(job,active);\n }\n cdqSpLegacyUncertain_(job.clientId,request.email);\n cdqSpLock_(function(){var receipt=cdqSpGet_(key);cdqSpAssert_(!receipt||receipt.phase!=='sending'||(typeof cdqSendReviewAllowsSendKeyV20261112_==='function'&&cdqSendReviewAllowsSendKeyV20261112_(key)),'CDQ_ENVOI_A_VERIFIER','Un résultat de courriel identique est incertain.');cdqSpAssert_(!receipt||receipt.phase!=='sent'||Date.now()-receipt.at>=86400000||request.force,'CDQ_DOUBLE_ENVOI','Cet envoi est déjà confirmé.');job.mailAttempted=true;job.sendKey=key;cdqSpSave_(job);cdqSpPut_(key,{phase:'sending',at:Date.now(),jobId:job.id,protocol:CDQ_SP_VERSION_});});\n var marker='Référence d’envoi CDQ : '+job.id,subject='Rapports d’étalonnages - '+(request.companyName||'Client')+' - '+job.date,options={attachments:[zip],name:CONFIG.NOM_EXPEDITEUR,htmlBody:prepared.htmlBody+'<p>'+marker+'</p>'};if(prepared.inlineImages)options.inlineImages=prepared.inlineImages;\n GmailApp.sendEmail(request.email,subject,prepared.text+'\\n\\n'+marker,options);\n cdqSpPut_(key,{phase:'sent',at:Date.now(),jobId:job.id,protocol:CDQ_SP_VERSION_});job.mailSent=true;job.mailConfirmedAt=Date.now();job.phase='complete';\n}\n",
+      "replacement": "function cdqSpSentEvidence_(job,request){\n var receipt=job&&job.sendKey?cdqSpGet_(job.sendKey):null;\n if(receipt&&receipt.phase==='sent'&&receipt.jobId===job.id&&\n    (receipt.actor===job.actor||!receipt.actor)&&receipt.messageId)\n   return {messageId:receipt.messageId,at:receipt.at};\n return null;\n}\n// Background execution prepares the PDF/ZIP, never borrows the owner's Gmail.\nfunction cdqSpMail_(job,request,manifest){\n cdqSpAssert_(cdqSpActionsV2866_(job).email&&job.archiveConfirmed===true,\n   'INVALID_SEND_ORDER','Les PDF doivent être préparés avant Gmail.');\n if(job.mailAttempted&&!job.mailSent)\n   throw cdqSpError_('CDQ_ENVOI_A_VERIFIER','Tentative antérieure incertaine.');\n job.phase='awaiting_gmail';job.mailMode='gmail-user-oauth-v1';\n}\n",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-ticket",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "cdqSpAssert_(Date.now()-plan.createdAt>=0&&Date.now()-plan.createdAt<300000,",
+      "replacement": "if(cdqSpActionsV2866_(plan).email)cdqSpAssert_(plan.mailMode==='gmail-user-oauth-v1','GMAIL_TECH_UPDATE_REQUIRED','Mettez l’application à jour pour envoyer avec votre Gmail.');\n cdqSpAssert_(Date.now()-plan.createdAt>=0&&Date.now()-plan.createdAt<300000,",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-sender-start",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "if(cdqSpActionsV2866_(plan).email)cdqSpLegacyUncertain_(clientId,email);",
+      "replacement": "if(cdqSpActionsV2866_(plan).email){cdqSpAssert_(plan.mailMode==='gmail-user-oauth-v1','GMAIL_TECH_UPDATE_REQUIRED','Mettez l’application à jour.');cdqSpLegacyUncertain_(clientId,email);}",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-job-mode",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "cdqSpCopyActionsV2866_(j,plan);cdqSpSave_(j);",
+      "replacement": "cdqSpCopyActionsV2866_(j,plan);if(cdqSpActionsV2866_(plan).email)j.mailMode=plan.mailMode;cdqSpSave_(j);",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-drain",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "else if(before==='mail'){if(Date.now()+25000>=deadline)break;manifest=manifest||cdqSpPublication_(job);cdqSpMail_(job,request,manifest);}",
+      "replacement": "else if(before==='mail'){manifest=manifest||cdqSpPublication_(job);cdqSpMail_(job,request,manifest);}\n    else if(before==='awaiting_gmail')break;",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-index",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "cdqSpActive_(job,job.phase==='complete');",
+      "replacement": "cdqSpActive_(job,job.phase==='complete'||job.phase==='awaiting_gmail');",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-preflight",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "function cdqPreparerLivraisonV2866(files,folders,email,clientId,hours,actions,visit){\n var safe=cdqSpActionsV2866_({actionsV2866:actions});\n return cdqSpBindVisitV2866_(cdqSpPreflight_(files,folders,email,clientId,hours,safe),visit);\n}",
+      "replacement": "function cdqPreparerLivraisonV2866(files,folders,email,clientId,hours,actions,visit,senderMode){\n var safe=cdqSpActionsV2866_({actionsV2866:actions});\n if(safe.email)cdqSpAssert_(senderMode==='gmail-user-oauth-v1','GMAIL_TECH_UPDATE_REQUIRED','Mettez l’application à jour pour envoyer avec votre Gmail.');\n var result=cdqSpPreflight_(files,folders,email,clientId,hours,safe);\n if(safe.email){result.sendV20261103.plan.mailMode='gmail-user-oauth-v1';\n  result.sendV20261103.signature=cdqSpSignPlanV20261104_(result.sendV20261103.plan);}\n return cdqSpBindVisitV2866_(result,visit);\n}",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-status",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "function cdqSpStatusV2866_(job){\n var actions=cdqSpActionsV2866_(job),complete=job.phase==='complete'&&job.archiveConfirmed===true&&(!actions.email||job.mailSent===true)&&(!actions.publish||job.portalConfirmed===true&&job.visitConfirmed===true);\n var uncertain=actions.email&&job.mailAttempted&&!job.mailSent;\n var message=complete?(actions.publish?(actions.email?'PDF archivés et publiés; courriel envoyé.':'PDF archivés et publiés. Aucun courriel demandé.'):'PDF archivés; courriel envoyé. Aucune publication demandée.'):\n  uncertain?(job.portalConfirmed?'PDF publiés et archivés; résultat du courriel à vérifier. Aucun renvoi automatique.':'PDF archivés; résultat du courriel à vérifier. Aucun renvoi automatique.'):\n  job.blocked?(job.portalConfirmed?'PDF publiés et archivés; courriel non envoyé.':'Traitement arrêté; les copies et résultats déjà confirmés sont conservés.'):\n  job.portalConfirmed?'PDF publiés et archivés; courriel en attente.':'Préparation des PDF : '+(job.prepared||0)+' sur '+job.count+'.';\n return {ok:true,queued:true,envoyes:actions.email&&job.mailSent?job.count:0,publies:actions.publish&&job.portalConfirmed?job.count:0,echecs:[],trackingVersion:2828,sendProtocol:CDQ_SP_VERSION_,actionsProtocol:2866,actionsV2866:actions,...(actions.publish?{visitId:job.visitV2866.visitId,visitDone:!!job.visitConfirmed}:{}),archiveDone:!!job.archiveConfirmed,jobId:job.id,sessionId:job.session||'',clientId:job.clientId,createdAt:job.at,total:job.count,termine:complete?job.count:job.prepared||0,phase:complete?'termine':uncertain?'verification':job.phase==='mail'?'envoi':job.phase==='activate'?'publication':job.phase==='package'?'assemblage':'preparation',status:complete?'complete':job.blocked?'blocked':'pending',mailSent:!!job.mailSent,portalDone:!!job.portalConfirmed,...(job.nextAt?{retryAt:job.nextAt}:{}),...(job.error?{error:uncertain?'MAIL_UNCONFIRMED':'PREPARATION_PENDING'}:{}),message:message};\n}\n",
+      "replacement": "function cdqSpStatusV2866_(job){\n var actions=cdqSpActionsV2866_(job),complete=job.phase==='complete'&&job.archiveConfirmed===true&&(!actions.email||job.mailSent===true)&&(!actions.publish||job.portalConfirmed===true&&job.visitConfirmed===true);\n var uncertain=actions.email&&job.mailAttempted&&!job.mailSent;\n var awaiting=actions.email&&job.phase==='awaiting_gmail'&&!job.mailAttempted&&!job.mailSent;\n var message=complete?(actions.publish?(actions.email?'PDF archivés et publiés; courriel envoyé.':'PDF archivés et publiés. Aucun courriel demandé.'):'PDF archivés; courriel envoyé. Aucune publication demandée.'):\n  awaiting?'ZIP prêt. Autorisez votre compte Google pour envoyer depuis votre adresse.':\n  uncertain?(job.portalConfirmed?'PDF publiés et archivés; résultat du courriel à vérifier. Aucun renvoi automatique.':'PDF archivés; résultat du courriel à vérifier. Aucun renvoi automatique.'):\n  job.blocked?(job.portalConfirmed?'PDF publiés et archivés; courriel non envoyé.':'Traitement arrêté; les copies et résultats déjà confirmés sont conservés.'):\n  job.portalConfirmed?'PDF publiés et archivés; courriel en attente.':'Préparation des PDF : '+(job.prepared||0)+' sur '+job.count+'.';\n return {ok:true,queued:true,envoyes:actions.email&&job.mailSent?job.count:0,publies:actions.publish&&job.portalConfirmed?job.count:0,echecs:[],trackingVersion:2828,sendProtocol:CDQ_SP_VERSION_,actionsProtocol:2866,actionsV2866:actions,...(actions.publish?{visitId:job.visitV2866.visitId,visitDone:!!job.visitConfirmed}:{}),archiveDone:!!job.archiveConfirmed,mailReady:awaiting,senderAccount:awaiting?job.actor:'',jobId:job.id,sessionId:job.session||'',clientId:job.clientId,createdAt:job.at,total:job.count,termine:complete?job.count:job.prepared||0,phase:complete?'termine':awaiting?'autorisation_gmail':uncertain?'verification':job.phase==='mail'?'envoi':job.phase==='activate'?'publication':job.phase==='package'?'assemblage':'preparation',status:complete?'complete':awaiting?'awaiting_authorization':job.blocked?'blocked':'pending',mailSent:!!job.mailSent,portalDone:!!job.portalConfirmed,...(job.nextAt?{retryAt:job.nextAt}:{}),...(job.error?{error:uncertain?'MAIL_UNCONFIRMED':'PREPARATION_PENDING'}:{}),message:message};\n}\n",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-job-recipient",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "if(cdqSpActionsV2866_(plan).email)j.mailMode=plan.mailMode;cdqSpSave_(j);",
+      "replacement": "if(cdqSpActionsV2866_(plan).email){j.mailMode=plan.mailMode;j.mailRecipient=plan.email;}cdqSpSave_(j);",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-status-recipient",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "mailReady:awaiting,senderAccount:awaiting?job.actor:'',jobId:",
+      "replacement": "mailReady:awaiting,senderAccount:awaiting?job.actor:'',mailRecipient:awaiting?job.mailRecipient:'',jobId:",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-legacy-direct-zip",
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "function cdqSendEmailZipV2823_(delivery,email,subject,body,sender,clientId,force) {",
+      "replacement": "function cdqSendEmailZipV2823_(delivery,email,subject,body,sender,clientId,force) {\n  throw Error('GMAIL_TECH_UPDATE_REQUIRED : mettez l’application à jour. Aucun envoi depuis le compte du créateur.');",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-legacy-queue-start",
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "function cdqSendQueueStartV2826_(files,email,message,companyName,clientId,session,force) {",
+      "replacement": "function cdqSendQueueStartV2826_(files,email,message,companyName,clientId,session,force) {\n  throw Error('GMAIL_TECH_UPDATE_REQUIRED : votre compte Gmail doit autoriser l’envoi. Actualisez l’application.');",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-legacy-queue-worker",
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "function cdqSendQueueMailV2826_(job,request) {",
+      "replacement": "function cdqSendQueueMailV2826_(job,request) {\n  throw Error('GMAIL_TECH_UPDATE_REQUIRED : l’ancien moteur n’envoie plus depuis le compte du créateur.');",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-legacy-worker-stop",
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "job.blocked=job.attempts>=4||/^(SCOPE_|CONFLICT_|INVALID_|CDQ_DOUBLE_ENVOI)/.test(job.error);",
+      "replacement": "job.blocked=job.attempts>=4||/^(SCOPE_|CONFLICT_|INVALID_|CDQ_DOUBLE_ENVOI|GMAIL_TECH_UPDATE_REQUIRED)/.test(job.error);",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-retire-code-1",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "function convertirEtEnvoyer(fichiersIds, email, message, nomCompagnie) {",
+      "replacement": "function convertirEtEnvoyer(fichiersIds, email, message, nomCompagnie) {\n  throw Error('GMAIL_TECH_UPDATE_REQUIRED : Envoi historique non autorisé. Envoyez depuis le compte Google du technicien avec la nouvelle version de Balance CDQ.');",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-retire-code-2",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "function convertirEtEnvoyerSuivi(fichiersIds, email, message, nomCompagnie, idCompagnie, sessionId, forcerDoublon) {",
+      "replacement": "function convertirEtEnvoyerSuivi(fichiersIds, email, message, nomCompagnie, idCompagnie, sessionId, forcerDoublon) {\n  throw Error('GMAIL_TECH_UPDATE_REQUIRED : Envoi historique non autorisé. Envoyez depuis le compte Google du technicien avec la nouvelle version de Balance CDQ.');",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-retire-code-3",
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "function envoyerSelectionSuivi(fichiersIds, dossiersIds, modeEnvoi, email, message, nomCompagnie, idCompagnie, sessionId, forcerDoublon) {",
+      "replacement": "function envoyerSelectionSuivi(fichiersIds, dossiersIds, modeEnvoi, email, message, nomCompagnie, idCompagnie, sessionId, forcerDoublon) {\n  throw Error('GMAIL_TECH_UPDATE_REQUIRED : Envoi historique non autorisé. Envoyez depuis le compte Google du technicien avec la nouvelle version de Balance CDQ.');",
+      "expected": 1
+    },
+    {
+      "id": "gmailtech-retire-central-mail-helper",
+      "file": "CDQEmailPortalV20261030.gs",
+      "op": "replace_literal",
+      "search": "function cdqEmailPortalSendV20261030_(email,subject,body,attachments,senderName,clientId,mode) {",
+      "replacement": "function cdqEmailPortalSendV20261030_(email,subject,body,attachments,senderName,clientId,mode) {\n  throw Error('GMAIL_TECH_UPDATE_REQUIRED : Transport propriétaire désactivé. Envoyez depuis le compte Google du technicien avec la nouvelle version de Balance CDQ.');",
+      "expected": 1
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQGmailTechnicianTransportV20261112.gs",
+      "url": "files/CDQGmailTechnicianTransportV20261112.gs",
+      "sha256": "ec4a3d9598532b06572ae6ed6686107172b3b7b74ecb10f7cc8c70a520e8d1c0"
+    },
+    {
+      "name": "CDQGmailDelegatedFinalizeV20261112.gs",
+      "url": "files/CDQGmailDelegatedFinalizeV20261112.gs",
+      "sha256": "62c0a43461b2e57ba83848edb247fed4755117dd6198c7178a404452ef81c4bf"
+    }
+  ]
+}
