@@ -1,0 +1,17 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "patches": [],
+  "extraFiles": [
+    {
+      "name": "CDQSystemMediaMigrationV20261113.gs",
+      "url": "CDQSystemMediaMigrationV20261113.gs",
+      "sha256": "f7e9bee434d11f58c57183763d3e43fbe962743fa3ef407d407c8c041589fd09"
+    },
+    {
+      "name": "CDQSystemMediaV20261113.gs",
+      "url": "CDQSystemMediaV20261113.gs",
+      "sha256": "7a6f4f8c18b611cf440133600c33b59d21ae3672cdf24526ecda43953816d40e"
+    }
+  ]
+}
