@@ -1,0 +1,28 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "patches": [],
+  "extraFiles": [
+    {
+      "name": "Code.gs",
+      "sha256": "57747bbdc7e8e010aa80cae4c9872abd5170426d1e12cb7c7ca21dafeae5de9b"
+    },
+    {
+      "name": "CDQInventoryV2593.gs",
+      "sha256": "32fb1a71592c9d2b360469ac557175618c4306683ae03394a609ff0789104faa"
+    },
+    {
+      "name": "CDQInventoryImportV2623.gs",
+      "sha256": "e757b546db2d8e5ac384388cc994dc71c531b4e6ecdab6c7fe2ff39f52baac79"
+    },
+    {
+      "name": "CDQZohoV2642.gs",
+      "sha256": "542060664a4cec0fdbaa08b83e301f7d01c8b930e9939af2e83d470bb670bb65"
+    },
+    {
+      "name": "CDQSystemInventoryV20261113.gs",
+      "sha256": "996feae4e154959629137ed9c3006952a0c3d09008bc9948553bd8a60ae5fda0"
+    }
+  ]
+}
+
