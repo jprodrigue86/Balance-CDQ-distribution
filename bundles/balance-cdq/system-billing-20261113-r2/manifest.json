@@ -1,0 +1,46 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "patches": [
+    {
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "function obtenirClasseurFacturesCDQ_(){const props=PropertiesService.getScriptProperties();let id=String(props.getProperty(CDQ_FACTURES_PROP_ID_)||''),ss=null;if(id){try{ss=SpreadsheetApp.openById(id);}catch(e){}}if(!ss){const lock=LockService.getScriptLock();lock.waitLock(20000);try{id=String(props.getProperty(CDQ_FACTURES_PROP_ID_)||'');if(id){try{ss=SpreadsheetApp.openById(id);}catch(e){}}if(!ss){ss=SpreadsheetApp.create('_CDQ_Factures',300,CDQ_FACTURES_HEADERS_.length);props.setProperty(CDQ_FACTURES_PROP_ID_,ss.getId());try{DriveApp.getFileById(ss.getId()).moveTo(obtenirDossierSystemeCDQ_());}catch(e){}}}finally{try{lock.releaseLock();}catch(e){}}}let sh=ss.getSheetByName('Factures');if(!sh){sh=ss.getSheets()[0];sh.setName('Factures')}if(sh.getMaxColumns()<CDQ_FACTURES_HEADERS_.length)sh.insertColumnsAfter(sh.getMaxColumns(),CDQ_FACTURES_HEADERS_.length-sh.getMaxColumns());sh.getRange(1,1,1,CDQ_FACTURES_HEADERS_.length).setValues([CDQ_FACTURES_HEADERS_]);sh.setFrozenRows(1);return{ss:ss,sh:sh}}",
+      "replacement": "function obtenirClasseurFacturesCDQ_(){if(PropertiesService.getScriptProperties().getProperty('CDQ_SYSTEM_BILLING_V1')==='on')return cdqBillingBookCloudV20261113_();const props=PropertiesService.getScriptProperties();let id=String(props.getProperty(CDQ_FACTURES_PROP_ID_)||''),ss=null;if(id){try{ss=SpreadsheetApp.openById(id);}catch(e){}}if(!ss){const lock=LockService.getScriptLock();lock.waitLock(20000);try{id=String(props.getProperty(CDQ_FACTURES_PROP_ID_)||'');if(id){try{ss=SpreadsheetApp.openById(id);}catch(e){}}if(!ss){ss=SpreadsheetApp.create('_CDQ_Factures',300,CDQ_FACTURES_HEADERS_.length);props.setProperty(CDQ_FACTURES_PROP_ID_,ss.getId());try{DriveApp.getFileById(ss.getId()).moveTo(obtenirDossierSystemeCDQ_());}catch(e){}}}finally{try{lock.releaseLock();}catch(e){}}}let sh=ss.getSheetByName('Factures');if(!sh){sh=ss.getSheets()[0];sh.setName('Factures')}if(sh.getMaxColumns()<CDQ_FACTURES_HEADERS_.length)sh.insertColumnsAfter(sh.getMaxColumns(),CDQ_FACTURES_HEADERS_.length-sh.getMaxColumns());sh.getRange(1,1,1,CDQ_FACTURES_HEADERS_.length).setValues([CDQ_FACTURES_HEADERS_]);sh.setFrozenRows(1);return{ss:ss,sh:sh}}",
+      "expected": 1
+    },
+    {
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "function obtenirFacturesCDQ(limit){verifierDroit_('lecture');limit=Math.max(1,Math.min(1000,Number(limit)||500));return lignesFacturesCDQ_().sort(function(a,b){return new Date(b.date||b.creeLe)-new Date(a.date||a.creeLe)}).slice(0,limit).map(function(x){delete x._row;return x})}",
+      "replacement": "function obtenirFacturesCDQ(limit){return cdqBillingTxnV20261113_('obtenirFacturesCDQ',function(){verifierDroit_('lecture');limit=Math.max(1,Math.min(1000,Number(limit)||500));return lignesFacturesCDQ_().sort(function(a,b){return new Date(b.date||b.creeLe)-new Date(a.date||a.creeLe)}).slice(0,limit).map(function(x){delete x._row;return x})});}",
+      "expected": 1
+    },
+    {
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "function ajouterFactureCDQ(data){const acces=verifierDroit_('ecriture');data=data&&typeof data==='object'?data:{};let clientId=String(data.clientId||'').trim(),clientNom=String(data.clientNomLibre||'').trim();if(clientId){try{const d=DriveApp.getFolderById(clientId);if(!verifierDossierClientDirect_(d))throw new Error('Client non autorisé.');clientNom=d.getName()}catch(e){throw new Error('Client introuvable.')}}if(!clientNom)throw new Error('Choisissez ou écrivez un client.');const numero=String(data.numero||'').trim()||numeroFactureAutoCDQ_(),date=String(data.date||'').trim()||Utilities.formatDate(new Date(),Session.getScriptTimeZone()||'America/Toronto','yyyy-MM-dd'),montant=Math.max(0,Number(data.montant||0)||0),statut=normaliserStatutFactureCDQ_(data.statut),note=String(data.note||'').trim().slice(0,2000),now=new Date(),id=Utilities.getUuid();obtenirClasseurFacturesCDQ_().sh.appendRow([id,numero,clientId,clientNom,date,montant,statut,note,acces.email,now,now]);return{ok:true,factureId:id,numero:numero}}",
+      "replacement": "function ajouterFactureCDQ(data){return cdqBillingTxnV20261113_('ajouterFactureCDQ',function(){const acces=verifierDroit_('ecriture');data=data&&typeof data==='object'?data:{};let clientId=String(data.clientId||'').trim(),clientNom=String(data.clientNomLibre||'').trim();if(clientId){try{const d=DriveApp.getFolderById(clientId);if(!verifierDossierClientDirect_(d))throw new Error('Client non autorisé.');clientNom=d.getName()}catch(e){throw new Error('Client introuvable.')}}if(!clientNom)throw new Error('Choisissez ou écrivez un client.');const numero=String(data.numero||'').trim()||numeroFactureAutoCDQ_(),date=String(data.date||'').trim()||Utilities.formatDate(new Date(),Session.getScriptTimeZone()||'America/Toronto','yyyy-MM-dd'),montant=Math.max(0,Number(data.montant||0)||0),statut=normaliserStatutFactureCDQ_(data.statut),note=String(data.note||'').trim().slice(0,2000),now=new Date(),id=Utilities.getUuid();obtenirClasseurFacturesCDQ_().sh.appendRow([id,numero,clientId,clientNom,date,montant,statut,note,acces.email,now,now]);return{ok:true,factureId:id,numero:numero}});}",
+      "expected": 1
+    },
+    {
+      "file": "Code.gs",
+      "op": "replace_literal",
+      "search": "function mettreAJourStatutFactureCDQ(factureId,statut){verifierDroit_('ecriture');factureId=String(factureId||'').trim();statut=normaliserStatutFactureCDQ_(statut);const x=lignesFacturesCDQ_().find(function(r){return String(r.factureId)===factureId});if(!x)throw new Error('Facture introuvable.');const sh=obtenirClasseurFacturesCDQ_().sh;sh.getRange(x._row,7).setValue(statut);sh.getRange(x._row,11).setValue(new Date());return{ok:true,statut:statut}}",
+      "replacement": "function mettreAJourStatutFactureCDQ(factureId,statut){return cdqBillingTxnV20261113_('mettreAJourStatutFactureCDQ',function(){verifierDroit_('ecriture');factureId=String(factureId||'').trim();statut=normaliserStatutFactureCDQ_(statut);const x=lignesFacturesCDQ_().find(function(r){return String(r.factureId)===factureId});if(!x)throw new Error('Facture introuvable.');const sh=obtenirClasseurFacturesCDQ_().sh;sh.getRange(x._row,7).setValue(statut);sh.getRange(x._row,11).setValue(new Date());return{ok:true,statut:statut}});}",
+      "expected": 1
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQSystemBillingV20261113.gs",
+      "url": "CDQSystemBillingV20261113.gs",
+      "sha256": "1677678883fccd57cfad62de21d4d4742fce733ae300910ca6f4b6d8553740e5"
+    },
+    {
+      "name": "CDQSystemBillingMigrationV20261113.gs",
+      "url": "CDQSystemBillingMigrationV20261113.gs",
+      "sha256": "45fe604c88ef6b65a8b44af861c1a12b009fe4120a21db96f78f80af21520fc8"
+    }
+  ]
+}
