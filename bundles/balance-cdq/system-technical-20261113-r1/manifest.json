@@ -1,0 +1,123 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "patches": [
+    {
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "function cdqSpMeta_(id){return Drive.Files.get(id,{fields:CDQ_SP_FIELDS_,supportsAllDrives:true});}\nfunction cdqSpList_(folderId){var out=[],next;do{var p={q:\"'\"+cdqSpId_(folderId)+\"' in parents and trashed=false\",fields:'nextPageToken,files('+CDQ_SP_FIELDS_+')',pageSize:1000,supportsAllDrives:true,includeItemsFromAllDrives:true};if(next)p.pageToken=next;var page=Drive.Files.list(p);out=out.concat(page.files||[]);next=page.nextPageToken;}while(next);return out;}\n",
+      "replacement": "function cdqSpMeta_(id){return cdqTechnicalMetaV20261113_(id);}\nfunction cdqSpList_(folderId){var cloud=cdqTechnicalListV20261113_(folderId);if(cloud!==null)return cloud;var out=[],next;do{var p={q:\"'\"+cdqSpId_(folderId)+\"' in parents and trashed=false\",fields:'nextPageToken,files('+CDQ_SP_FIELDS_+')',pageSize:1000,supportsAllDrives:true,includeItemsFromAllDrives:true};if(next)p.pageToken=next;var page=Drive.Files.list(p);out=out.concat(page.files||[]);next=page.nextPageToken;}while(next);return out;}\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": " try{Drive.Files.create({id:job.technicalFolderId,name:'Envoi technique '+job.id,mimeType:'application/vnd.google-apps.folder',parents:[CDQ_WS_SYSTEM_V2638_],appProperties:{cdqSp:String(CDQ_SP_VERSION_),cdqSj:job.id,cdqClient:job.clientId}},null,{fields:CDQ_SP_FIELDS_,supportsAllDrives:true});}\n",
+      "replacement": " try{cdqTechnicalCreateV20261113_({id:job.technicalFolderId,name:'Envoi technique '+job.id,mimeType:'application/vnd.google-apps.folder',parents:[CDQ_WS_SYSTEM_V2638_],appProperties:{cdqSp:String(CDQ_SP_VERSION_),cdqSj:job.id,cdqClient:job.clientId}},null);}\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "function cdqSpBlob_(artifact){var blob=DriveApp.getFileById(artifact.fileId).getBlob(),bytes=blob.getBytes();cdqSpAssert_(bytes.length===artifact.size&&cdqSpHash_(bytes)===artifact.sha256,'CONFLICT_SEND_ARTIFACT','Les octets archivés ont changé.');return blob.setName(artifact.name);}\n",
+      "replacement": "function cdqSpBlob_(artifact){var blob=cdqTechnicalBlobV20261113_(artifact.fileId),bytes=blob.getBytes();cdqSpAssert_(bytes.length===artifact.size&&cdqSpHash_(bytes)===artifact.sha256,'CONFLICT_SEND_ARTIFACT','Les octets archivés ont changé.');return blob.setName(artifact.name);}\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": " var result;try{result=Drive.Files.create(metadata,blob,{fields:CDQ_SP_FIELDS_,supportsAllDrives:true});}catch(error){try{result=cdqSpMeta_(id);}catch(_){throw error;}}\n",
+      "replacement": " var result;try{result=cdqTechnicalCreateV20261113_(metadata,blob);}catch(error){try{result=cdqSpMeta_(id);}catch(_){throw error;}}\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "function cdqSpReadRequest_(job){cdqSpCheckRequestLocationV2866_(job);var blob=DriveApp.getFileById(job.requestId).getBlob();cdqSpAssert_(cdqSpHash_(blob.getBytes())===job.requestHash,'CONFLICT_SEND_REQUEST','Le manifeste de sélection a changé.');var request=JSON.parse(blob.getDataAsString());cdqSpAssert_(request.protocol===CDQ_SP_VERSION_&&request.clientId===job.clientId&&request.actor===job.actor&&request.sources.length===job.count,'CONFLICT_SEND_REQUEST','Le lot ne correspond plus à sa sélection.');cdqSpAssert_(cdqSpSameActionsV2866_(job,request),'CONFLICT_DELIVERY_ACTIONS','Les destinations du lot ont changé.');return request;}\n",
+      "replacement": "function cdqSpReadRequest_(job){cdqSpCheckRequestLocationV2866_(job);var blob=cdqTechnicalBlobV20261113_(job.requestId);cdqSpAssert_(cdqSpHash_(blob.getBytes())===job.requestHash,'CONFLICT_SEND_REQUEST','Le manifeste de sélection a changé.');var request=JSON.parse(blob.getDataAsString());cdqSpAssert_(request.protocol===CDQ_SP_VERSION_&&request.clientId===job.clientId&&request.actor===job.actor&&request.sources.length===job.count,'CONFLICT_SEND_REQUEST','Le lot ne correspond plus à sa sélection.');cdqSpAssert_(cdqSpSameActionsV2866_(job,request),'CONFLICT_DELIVERY_ACTIONS','Les destinations du lot ont changé.');return request;}\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "function cdqSpPublication_(job){if(job.technicalFolderId){cdqSpTechnicalScopeV2866_(job);cdqSpCheckArtifact_(job,{},cdqSpMeta_(job.manifestId),'publication.json');}var blob=DriveApp.getFileById(job.manifestId).getBlob();cdqSpAssert_(cdqSpHash_(blob.getBytes())===job.manifestHash,'CONFLICT_DELIVERY_MANIFEST','Manifeste de publication modifié.');var result=JSON.parse(blob.getDataAsString());cdqSpAssert_(result.protocol===CDQ_SP_VERSION_&&result.batchId===job.id&&result.clientId===job.clientId&&result.entries.length===job.count,'INVALID_DELIVERY_MANIFEST','Manifeste de publication incohérent.');return cdqSpCheckActionsManifestV2866_(job,result);}\n",
+      "replacement": "function cdqSpPublication_(job){if(job.technicalFolderId){cdqSpTechnicalScopeV2866_(job);cdqSpCheckArtifact_(job,{},cdqSpMeta_(job.manifestId),'publication.json');}var blob=cdqTechnicalBlobV20261113_(job.manifestId);cdqSpAssert_(cdqSpHash_(blob.getBytes())===job.manifestHash,'CONFLICT_DELIVERY_MANIFEST','Manifeste de publication modifié.');var result=JSON.parse(blob.getDataAsString());cdqSpAssert_(result.protocol===CDQ_SP_VERSION_&&result.batchId===job.id&&result.clientId===job.clientId&&result.entries.length===job.count,'INVALID_DELIVERY_MANIFEST','Manifeste de publication incohérent.');return cdqSpCheckActionsManifestV2866_(job,result);}\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "      var txt=DriveApp.getFileById(job.requestId).getBlob().getDataAsString();\n",
+      "replacement": "      var txt=cdqTechnicalBlobV20261113_(job.requestId).getDataAsString();\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "   var zip=DriveApp.getFileById(job.zipId).getBlob();\n   var manifestBlob=DriveApp.getFileById(job.manifestId).getBlob();if(cdqUploadHashV2751_(manifestBlob.getBytes())!==job.manifestHash)throw Error('CONFLICT_DELIVERY_MANIFEST');\n",
+      "replacement": "   var zip=cdqTechnicalBlobV20261113_(job.zipId);\n   var manifestBlob=cdqTechnicalBlobV20261113_(job.manifestId);if(cdqUploadHashV2751_(manifestBlob.getBytes())!==job.manifestHash)throw Error('CONFLICT_DELIVERY_MANIFEST');\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "  var zip=DriveApp.getFileById(delivery.zipId).getBlob();\n",
+      "replacement": "  var zip=cdqTechnicalBlobV20261113_(delivery.zipId);\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "      var blob=DriveApp.getFileById(job.requestId).getBlob();\n",
+      "replacement": "      var blob=cdqTechnicalBlobV20261113_(job.requestId);\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": "  var requestBlob=DriveApp.getFileById(job.requestId).getBlob();\n",
+      "replacement": "  var requestBlob=cdqTechnicalBlobV20261113_(job.requestId);\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": " var result=Drive.Files.create({name:'Envoi technique historique '+job.id,mimeType:'application/vnd.google-apps.folder',parents:[CDQ_WS_SYSTEM_V2638_],appProperties:{cdqLegacyDeliveryV2866:'1',cdqJob:String(job.id),cdqClient:String(job.clientId)}},null,{fields:'id',supportsAllDrives:true});\n",
+      "replacement": " var result=cdqTechnicalCreateV20261113_({name:'Envoi technique historique '+job.id,mimeType:'application/vnd.google-apps.folder',parents:[CDQ_WS_SYSTEM_V2638_],appProperties:{cdqLegacyDeliveryV2866:'1',cdqJob:String(job.id),cdqClient:String(job.clientId)}},null);\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": " var meta=Drive.Files.get(String(job.technicalFolderId),{fields:'id,mimeType,parents,trashed,appProperties',supportsAllDrives:true}),p=meta.appProperties||{};\n",
+      "replacement": " var meta=cdqTechnicalMetaV20261113_(String(job.technicalFolderId)),p=meta.appProperties||{};\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": " return DriveApp.getFolderById(job.technicalFolderId);\n",
+      "replacement": " return cdqTechnicalFolderFacadeV20261113_(job.technicalFolderId);\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQSendV2553.gs",
+      "op": "replace_literal",
+      "search": " var meta=Drive.Files.get(String(id),{fields:'id,mimeType,parents,trashed',supportsAllDrives:true});\n",
+      "replacement": " var meta=cdqTechnicalMetaV20261113_(String(id));\n",
+      "expected": 1
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQSystemTechnicalV20261113.gs",
+      "url": "CDQSystemTechnicalV20261113.gs",
+      "sha256": "a07dab4b809864654f639480a5a97347818848bf243fd5bb5014886ed8f2c4a5"
+    },
+    {
+      "name": "CDQSystemTechnicalMigrationV20261113.gs",
+      "url": "CDQSystemTechnicalMigrationV20261113.gs",
+      "sha256": "8347327f4d9992e0ee33dbbdb0b5ebcf857c0ad5d157034acac8fb9f6abcb068"
+    }
+  ]
+}
