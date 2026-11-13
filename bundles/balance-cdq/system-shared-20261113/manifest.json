@@ -1,0 +1,15 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "patches": [],
+  "extraFiles": [
+    {
+      "name": "CDQWorkspaceV2638.gs",
+      "sha256": "eea36f7908cf403c0e32a6409e4a7afb870c1dc6f2ace506383f9561cccd3c50"
+    },
+    {
+      "name": "CDQSystemSharedV20261113.gs",
+      "sha256": "52321de11fc0b8fe95a92885dfe20acd3af5f9494b1971052ae749c8c2727994"
+    }
+  ]
+}
