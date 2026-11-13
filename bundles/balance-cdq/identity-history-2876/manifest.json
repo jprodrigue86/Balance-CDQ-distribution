@@ -1,0 +1,18 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "patches": [],
+  "extraFiles": [
+    {
+      "name": "CDQDirectAccessV2645.gs",
+      "url": "files/CDQDirectAccessV2645.gs",
+      "sha256": "511fa1fe82c36420653b36c819f9c7bb20caf3ecb33a64d3b0709cbd70d01cca"
+    },
+    {
+      "name": "CDQSendPendingV20261112.gs",
+      "url": "files/CDQSendPendingV20261112.gs",
+      "sha256": "d886990c732e362dbca7f3b4db37423b6355fba0a676effb758ccb20a685a2e2"
+    }
+  ],
+  "removeFiles": []
+}
