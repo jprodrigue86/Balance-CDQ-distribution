@@ -26,6 +26,8 @@ function cdqCoordMigrationHashV20261113_(bytes){return Utilities.computeDigest(U
 function cdqCoordMigrateFilesV20261113_(actor,files,activateAll){
  var props=PropertiesService.getScriptProperties(),lock=LockService.getScriptLock();lock.waitLock(30000);
  try{
+  // Discover under the same lock as writers, so no new Drive file is missed.
+  files=files||cdqCoordFilesV20261113_();
   var map=JSON.parse(props.getProperty('CDQ_SYSTEM_COORDINATES_MAP_V1')||'{}');
   if(!map||typeof map!=='object'||Array.isArray(map))throw Error('MIGRATION_MAP_INVALID');
   var cloud=cdqCoordMigrationCallV20261113_(actor,'systemCoordinatesListV1',{}).documents,index={},items=[];
@@ -96,6 +98,6 @@ function cdqMigrerCoordonneesV20261113(){
  return cdqCoordMigrationOwnerV20261113_(function(actor){
   var qa=JSON.parse(PropertiesService.getScriptProperties().getProperty('CDQ_SYSTEM_COORDINATES_QA_V1')||'{}');
   if(qa.ok!==true||qa.kind!=='coordinates-gas-cloud-roundtrip-v1'||qa.driveUnchanged!==true||Date.now()-Date.parse(qa.at)>86400000)throw Error('REAL_TEST_REQUIRED');
-  return cdqCoordMigrateFilesV20261113_(actor,cdqCoordFilesV20261113_(),true);
+  return cdqCoordMigrateFilesV20261113_(actor,null,true);
  });
 }
