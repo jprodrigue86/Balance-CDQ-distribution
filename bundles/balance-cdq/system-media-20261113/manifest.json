@@ -1,0 +1,42 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "patches": [],
+  "extraFiles": [
+    {
+      "name": "Code.gs",
+      "url": "Code.gs",
+      "sha256": "2723d4158a4c114fc16851db0f18e528cccd0f18f2c87c5898012a19e8689164"
+    },
+    {
+      "name": "CDQInvoicesV2590.gs",
+      "url": "CDQInvoicesV2590.gs",
+      "sha256": "e50e7387808ea96fc4038e11deb93f26660992ea9a50a49ed09ef1a8c5fc45dc"
+    },
+    {
+      "name": "CDQInventoryV2593.gs",
+      "url": "CDQInventoryV2593.gs",
+      "sha256": "33eadcc48cd53fc3154dc2940b802c07205aa6c71d5c480e81436d3c2398185a"
+    },
+    {
+      "name": "CDQSystemInventoryV20261113.gs",
+      "url": "CDQSystemInventoryV20261113.gs",
+      "sha256": "b1f32a518a6b8513618eacb69aaac5d4955e1ef9eb64aeca8dd8b8193a41837c"
+    },
+    {
+      "name": "CDQZohoV2642.gs",
+      "url": "CDQZohoV2642.gs",
+      "sha256": "6bb06032de18e36a481a9ae74d3b501e2872ab2fe5e056ff1f8e86a25846c563"
+    },
+    {
+      "name": "CDQSystemMediaV20261113.gs",
+      "url": "CDQSystemMediaV20261113.gs",
+      "sha256": "0bee103bec54e098479079e24873bbb80a4f7723af082aff937c0379e7cb090a"
+    },
+    {
+      "name": "CDQSystemMediaMigrationV20261113.gs",
+      "url": "CDQSystemMediaMigrationV20261113.gs",
+      "sha256": "f0078b1228fb7ba39ed5578f022c94d89fa6b28aac147edee19ce0473ea4c54a"
+    }
+  ]
+}
