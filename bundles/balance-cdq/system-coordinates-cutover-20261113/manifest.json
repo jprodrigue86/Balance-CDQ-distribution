@@ -1,0 +1,19 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "patches": [],
+  "extraFiles": [
+    {
+      "name": "CDQSystemCoordinatesV2874.gs",
+      "sha256": "0cf3482a89da4037987ae4d8e6a25b587fb9c3804d5cd4a5d1ece53c17bac7be"
+    },
+    {
+      "name": "CDQClientContactsV2866.gs",
+      "sha256": "2bf8a7248ec5398a0328bdf1c20d9b5fbe405d6a59b7b33aec4d0f091a163ee2"
+    },
+    {
+      "name": "CDQSystemCoordinatesMigrationV20261113.gs",
+      "sha256": "a8820f573e3dbd30743076d1f10e46c636de25b5cef9fc213c0b6b51c91be024"
+    }
+  ]
+}
