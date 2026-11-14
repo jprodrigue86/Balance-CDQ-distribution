@@ -1,0 +1,28 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "patches": [
+    {
+      "file": "CDQInvoiceDriveV20261114.gs",
+      "op": "replace_literal",
+      "search": "/* Receipts",
+      "replacement": "function cdqInvoiceRestoreFolderDatesV20261114_(){[{id:CDQ_INVOICE_DRIVE_FOLDER_V20261114_,name:'_CDQ_Factures',date:'2026-10-02T11:07:32.413Z'},{id:CDQ_INVOICE_DRIVE_ARCHIVE_V20261114_,name:'_CDQ_Factures - Archives',date:'2026-09-29T03:07:19.969Z'}].forEach(function(p){var m=cdqInvoiceRestoreMetaV20261114_(p.id);if(m.name!==p.name||m.parents.length!==1||m.parents[0]!=='0ACpfRMXujffZUk9PVA')return;if(m.modifiedTime!==p.date)Drive.Files.update({modifiedTime:p.date},p.id,null,{fields:'id,modifiedTime',supportsAllDrives:true});if(cdqInvoiceRestoreMetaV20261114_(p.id).modifiedTime!==p.date)throw Error('INVOICE_FOLDER_DATE_UNCONFIRMED');});}\n/* Receipts",
+      "expected": 1
+    },
+    {
+      "file": "CDQInvoiceDriveV20261114.gs",
+      "op": "replace_literal",
+      "search": " var before=cdqInvoiceRestoreTree",
+      "replacement": " cdqInvoiceRestoreFolderDatesV20261114_();\n var before=cdqInvoiceRestoreTree",
+      "expected": 1
+    },
+    {
+      "file": "CDQInvoiceDriveV20261114.gs",
+      "op": "replace_literal",
+      "search": " var after=cdqInvoiceRestoreTree",
+      "replacement": " cdqInvoiceRestoreFolderDatesV20261114_();\n var after=cdqInvoiceRestoreTree",
+      "expected": 1
+    }
+  ],
+  "extraFiles": []
+}
