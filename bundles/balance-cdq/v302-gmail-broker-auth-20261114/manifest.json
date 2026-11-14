@@ -1,0 +1,19 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V3-02 connexion Gmail — relais privé",
+  "title": "Préparer l’autorisation Gmail individuelle sans modifier les envois actifs",
+  "patches": [],
+  "extraFiles": [
+    {
+      "name": "CDQGmailAuthorizationV2874.gs",
+      "url": "files/CDQGmailAuthorizationV2874.gs",
+      "sha256": "2c75027d0465179bc08818d296fd6dd7d53a7a7735597708828fec170114fb3d"
+    },
+    {
+      "name": "CDQGmailTechnicianTransportV20261112.gs",
+      "url": "files/CDQGmailTechnicianTransportV20261112.gs",
+      "sha256": "ec4a3d9598532b06572ae6ed6686107172b3b7b74ecb10f7cc8c70a520e8d1c0"
+    }
+  ]
+}
