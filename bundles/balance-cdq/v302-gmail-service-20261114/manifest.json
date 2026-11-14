@@ -1,0 +1,25 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "version": "V3-02 Gmail service-disabled diagnosis",
+  "title": "Distinguer API Gmail désactivée et consentement utilisateur sans renvoi automatique",
+  "patches": [
+    {
+      "id": "gmail-service-disabled-403",
+      "file": "CDQGmailTechnicianTransportV20261112.gs",
+      "op": "replace_literal",
+      "search": "  if(code===401||code===403)throw Error('GMAIL_TECH_CONSENT_REQUIRED');",
+      "replacement": "  if(code===401)throw Error('GMAIL_TECH_CONSENT_REQUIRED');\n  if(code===403){\n    var rejection={};try{rejection=JSON.parse(response.getContentText()).error||{};}catch(_){}\n    var reasons=(Array.isArray(rejection.errors)?rejection.errors:[]).map(function(x){return x&&x.reason;});\n    var details=(Array.isArray(rejection.details)?rejection.details:[]).map(function(x){return x&&x.reason;});\n    if(reasons.indexOf('accessNotConfigured')>=0||details.indexOf('SERVICE_DISABLED')>=0)\n      throw Error('GMAIL_SERVICE_DISABLED');\n    if(reasons.indexOf('insufficientPermissions')>=0||details.indexOf('ACCESS_TOKEN_SCOPE_INSUFFICIENT')>=0)\n      throw Error('GMAIL_TECH_CONSENT_REQUIRED');\n    throw Error('GMAIL_TECH_FORBIDDEN');\n  }",
+      "expected": 1
+    },
+    {
+      "id": "gmail-service-disabled-status",
+      "file": "CDQSendPipelineV20261103.gs",
+      "op": "replace_literal",
+      "search": "  uncertain?(job.portalConfirmed?'PDF publiés et archivés; résultat du courriel à vérifier. Aucun renvoi automatique.':'PDF archivés; résultat du courriel à vérifier. Aucun renvoi automatique.'):",
+      "replacement": "  job.error==='GMAIL_SERVICE_DISABLED'?'PDF archivés; aucun courriel envoyé. L’administrateur doit activer l’API Gmail du projet Google Cloud. Aucun renvoi automatique.':\n  uncertain?(job.portalConfirmed?'PDF publiés et archivés; résultat du courriel à vérifier. Aucun renvoi automatique.':'PDF archivés; résultat du courriel à vérifier. Aucun renvoi automatique.'):",
+      "expected": 1
+    }
+  ],
+  "extraFiles": []
+}
