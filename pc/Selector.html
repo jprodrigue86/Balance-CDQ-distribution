@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.73" data-cdq-pc-release="6903f98fd4f97b08ac599e5b16b73e4f31e7e77c6c6beb3e2131e03d8d928395">
+<html data-cdq-pc-version="28.81" data-cdq-pc-release="6afc1fb2afafb05f3e6bee7d44a0988ed36bf8582cbafdba66c6146fbb6a6533">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -316,9 +316,9 @@ for(const name of ["workspace-v2638.mjs","opportunity-fields-v2699.mjs","drive-f
 try{var root=document.documentElement,p=root.dataset.cdqPalette||localStorage.getItem("cdqTheme")||"dark",
  stored=localStorage.getItem("cdqBackgroundV2793:device")||"current";
  if(stored==='letter'){stored='leather';localStorage.setItem('cdqBackgroundV2793:device',stored);}
- root.dataset.cdqBackgroundV2793=p==="metal"&&stored==="current"?"brushed":stored;
+ root.dataset.cdqBackgroundV2793=stored;
 }catch(error){document.documentElement.dataset.cdqBackgroundV2793=
- document.documentElement.dataset.cdqPalette==="metal"?"brushed":"current";}
+ "current";}
 })();</script>
 <script id="cdqMaterialArtworkV2799">// 27.99: the selected icon family owns its images, independently of palette
 // and background. All consumers receive the same alpha PNG and crop geometry.
@@ -932,7 +932,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.11.12-v28.73-sanimarc-pending-pc">
+<meta name="cdq-package-build" content="2026.11.14-v28.81-gmail-durable-pc">
 
 
 <script id="cdqBridgeV23">
@@ -986,7 +986,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.12-v28.73-sanimarc-pending-pc'
+    build:'2026.11.14-v28.81-gmail-durable-pc'
   });
 }
 
@@ -999,7 +999,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.12-v28.73-sanimarc-pending-pc'
+        build:'2026.11.14-v28.81-gmail-durable-pc'
       });
     }
   } catch(e) {}
@@ -6822,6 +6822,8 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
     </fieldset>
     <fieldset id="cdqVisitChoiceV2866" class="modal-section">
       <legend>Visite à publier</legend>
+      <label><input id="cdqRepairV2874" type="checkbox" disabled> Réparation</label>
+      <small id="cdqRepairHelpV2874">Met à jour les balances sélectionnées dans Toutes les balances et Dernière visite. Les autres rapports sont conservés.</small>
       <label for="cdqVisitModeV2866">Visite</label><select id="cdqVisitModeV2866" disabled></select>
       <label for="cdqVisitDateV2866">Date de la visite</label><input id="cdqVisitDateV2866" type="date" disabled>
       <p id="cdqVisitInfoV2866" role="status"></p>
@@ -7641,23 +7643,18 @@ function mettreAJourFichierDansCache(idCompagnie,meta){
   return true;
 }
 
+function cdqDuplicationActorV2879(){
+  return JSON.stringify([String(utilisateurCourantEmail||''),String(utilisateurCourantRole||''),String(window.cdqAppSessionV2661?.id||'')]);
+}
 function ajouterCopieDansCache(idCompagnie,originalId,meta){
-  const contenu = cacheContenuCompagnies[idCompagnie];
-  if(!contenu || !meta) return false;
-  const trouve = trouverFichierDansArbre(contenu,originalId);
-  if(!trouve) return false;
-  trouve.noeud.fichiers = trouve.noeud.fichiers || [];
-  trouve.noeud.fichiers.push({
-    id:meta.id,
-    nom:meta.nom,
-    type:meta.type,
-    dateModification:meta.dateModification,
-    favori:!!meta.favori,
-    notePresente:!!meta.notePresente,
-    photoPresente:!!meta.photoPresente
-  });
-  sauvegarderEtAfficherCacheClient(idCompagnie,contenu,Date.now());
-  return true;
+  const contenu=cacheContenuCompagnies[idCompagnie];
+  if(!contenu||!meta?.id||meta.ok===false||String(meta.id)===String(originalId))return false;
+  if(meta.originalId&&String(meta.originalId)!==String(originalId))return false;
+  const trouve=trouverFichierDansArbre(contenu,originalId);
+  if(!trouve)return false;
+  const confirmed=window.cdqInstantFiles2530?.confirm(meta,idCompagnie,trouve.noeud.id,{type:trouve.fichier.type});
+  if(confirmed)window.dispatchEvent(new CustomEvent('cdq:copied',{detail:{clientId:String(idCompagnie),parentId:String(trouve.noeud.id),originalId:String(originalId),fileId:String(meta.id),owner:String(utilisateurCourantEmail||'')}}));
+  return !!confirmed;
 }
 
 function supprimerFichiersDuCache(idCompagnie,ids){
@@ -8539,7 +8536,7 @@ function chargerClients(forceRefresh, initialCompanies){
   // Show cached clients first, then check Drive without holding up the first screen.
   function refreshLater(){setTimeout(()=>{if(typeof navigator==='undefined'||navigator.onLine!==false)server(true);},3000);}
   if(!force&&Array.isArray(initialCompanies)&&initialCompanies.length){
-    apply(initialCompanies);sauvegarderCachePersistantCompagnies(toutesLesCompagnies);refreshLater();return ready;
+    apply(initialCompanies);sauvegarderCachePersistantCompagnies(toutesLesCompagnies);return ready;
   }
   lireCachePersistantCompagnies().then(record=>{
     if(!current())return;
@@ -11557,7 +11554,7 @@ function cdqPrepareSendOptionsV2553(files,clientId,folders,recipientReady){
   if(original){original.checked=false;original.disabled=true;const label=original.closest('label');if(label)label.hidden=true;}
   if(convert)convert.disabled=true;
   const syncMode=()=>{const convertSelected=!!convert?.checked;if(flatten)flatten.checked=convertSelected&&!!profile.pdf;for(const id of ['cdqSendPdfLabelV2750','cdqSendPdfModeV2750','cdqSendPdfHelpV2750']){const el=document.getElementById(id);if(el)el.hidden=!profile.pdf||!convertSelected;}};if(convert)convert.onchange=syncMode;if(original)original.onchange=syncMode;syncMode();
-  const help=document.getElementById('sendModeHelp');if(help)help.textContent='Un seul ZIP, limite de 24 Mio (16 Mio par PDF pour la page client). Si un document échoue, aucun courriel n’est envoyé.';
+  const help=document.getElementById('sendModeHelp');if(help)help.textContent='Un seul ZIP, limite de 18 Mio (16 Mio par PDF pour la page client). Si un document échoue, aucun courriel n’est envoyé.';
   const initial=email.value;
   if(!recipientReady)cdqRpcV2553('obtenirDestinataireClientV2553',[String(clientId||'')]).then(value=>{try{cdqSendGuardV2750(context);if(view===cdqSendViewV2750&&email.value===initial&&String(value||'').trim())email.value=String(value).trim()}catch(_){}}).catch(()=>{});
   if(saveRecipient)saveRecipient.disabled=false;
@@ -11577,7 +11574,7 @@ function ouvrirConfirmation(){
  let context;try{context=cdqSendContextV2750(String(compagnieSelectionnee||''))}catch(e){afficherErreur(e);return;}
  const generation=++cdqSendDialogGenerationV2708,modal=document.getElementById('modalOverlay'),input=document.getElementById('emailDestinataire');
  input.value='';document.getElementById('messageEmail').value='';
- const summary=document.getElementById('sendSummary');if(summary){summary.replaceChildren();const title=document.createElement('strong');title.textContent=nomCompagnieSelectionnee||'Client';const detail=document.createElement('div');detail.textContent=files.length+' fichier(s)'+(folders.length?' + '+folders.length+' dossier(s)':'')+' sélectionné(s)';summary.append(title,detail);}
+ const summary=document.getElementById('sendSummary');if(summary){summary.replaceChildren();const title=document.createElement('strong');title.textContent=nomCompagnieSelectionnee||'Client';const detail=document.createElement('div');detail.textContent=files.length+' fichier(s)'+(folders.length?' + '+folders.length+' dossier(s)':'')+' sélectionné(s)';const sender=document.createElement('div');sender.textContent='De : '+context.owner;summary.append(title,detail,sender);}
  modal.style.display='flex';cdqPrepareSendOptionsV2553(files,context.clientId,folders.length,true);window.cdqDeliveryActionsV2866.reset();void window.cdqDeliveryVisitsV2866.open(context.clientId,()=>{try{cdqSendGuardV2750(context);return generation===cdqSendDialogGenerationV2708&&modal.style.display!=='none';}catch(_){return false;}});
  const status=document.getElementById('cdqSendRecipientStatusV2553');if(status)status.textContent='Chargement de l’adresse par défaut… Vous pouvez déjà la saisir.';
  cdqRpcV2553('obtenirDestinataireClientV2553',[context.clientId]).then(value=>{
@@ -11946,12 +11943,20 @@ function actionDossierOuDupliquer(){
   if(!confirm(question)) return;
 
   const idCompagnie = compagnieSelectionnee ? String(compagnieSelectionnee) : "";
+  const actorV2879=cdqDuplicationActorV2879();
   afficherMessage("Duplication des rapports...",false);
 
   cdqApiRun()
     .withSuccessHandler(function(resultat){
-      quitterModeSelection();
-      if(idCompagnie) actualiserCompagnieEnArrierePlan(idCompagnie);
+      if(actorV2879!==cdqDuplicationActorV2879()||cdqAccessState!=='ready')return;
+      const copies=Array.isArray(resultat?.fichiers)?resultat.fichiers:[];
+      let complete=copies.length===ids.length;
+      for(const copie of copies){
+        const original=ids.find(id=>String(id)===String(copie?.originalId||''));
+        if(!original||!ajouterCopieDansCache(idCompagnie,original,copie))complete=false;
+      }
+      if(String(compagnieSelectionnee||'')===idCompagnie)quitterModeSelection();
+      if(!complete&&idCompagnie)actualiserCompagnieEnArrierePlan(idCompagnie);
       afficherMessage((resultat && resultat.message) || "Rapports dupliqués.",true);
     })
     .withFailureHandler(afficherErreur)
@@ -12164,10 +12169,12 @@ function dupliquerFichierDepuisInterface(fichier){
   if(!confirm("Dupliquer « "+fichier.nom+" » ?")) return;
 
   const idCompagnie = compagnieSelectionnee ? String(compagnieSelectionnee) : "";
+  const actorV2879=cdqDuplicationActorV2879();
   afficherMessage("Duplication du rapport...",false);
 
   cdqApiRun()
     .withSuccessHandler(function(resultat){
+      if(actorV2879!==cdqDuplicationActorV2879()||cdqAccessState!=='ready')return;
       if(!ajouterCopieDansCache(idCompagnie,fichier.id,resultat)){
         actualiserCompagnieEnArrierePlan(idCompagnie);
       }
@@ -12285,7 +12292,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.12-v28.73-sanimarc-pending-pc";
+  const CDQ_BUILD = "2026.11.14-v28.81-gmail-durable-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13200,6 +13207,7 @@ function cdqInstallSwipeGesture(row){
       return result;
     }).finally(()=>clearTimeout(timeout));
   }
+  window.cdqSendWatchTransportV2874={read:job=>cdqReadTrackingV2828(job.session,{jobId:job.id,clientId:job.clientId}),foreground:()=>cdqQueuedSendV2828&&!cdqQueuedSendV2828.blocked?cdqQueuedSendV2828.context.clientId+'|'+cdqQueuedSendV2828.id:''};
   function cdqTrackingControlsV2828(job){
     const modal=cdqEnsureSendProgressV2759();
     let actions=document.getElementById('cdqSendTrackingActionsV2828');
@@ -13234,6 +13242,7 @@ function cdqInstallSwipeGesture(row){
     if(cdqQueuedSendV2828!==job)return;
     cdqSendGuardV2750(job.context);
     if(result.jobId!==job.id||result.status==='none')throw Error('Le résultat de cet envoi ne peut pas encore être vérifié.');
+    window.cdqSendBackgroundV2874?.observe(job.id,job.context.clientId,result);
     const completed=window.cdqDeliveryActionsV2866.complete(result);
     const wasBlocked=job.blocked;job.blocked=result.status==='blocked';
     job.canDismiss=result.mailSent===true||result.error==='PREPARATION_PENDING';
@@ -13280,6 +13289,7 @@ function cdqInstallSwipeGesture(row){
     if(cdqProgressTimer){clearInterval(cdqProgressTimer);cdqProgressTimer=null;}
     const job=cdqQueuedSendV2828={id:receipt.jobId,session:receipt.sessionId||cdqSendProgressV2759.session,context,total:receipt.total||cdqSendProgressV2759.total,files:selection?.files||[],folders:selection?.folders||[],reading:false,blocked:false,background:false};
     cdqTrackingSaveV2828(context,{id:job.id,session:job.session,total:job.total,createdAt:Date.now()});
+    window.cdqSendBackgroundV2874?.watch({...receipt,sessionId:job.session},context);
     cdqSetProgress({total:job.total,message:receipt.message||'Envoi enregistré. Préparation en cours…'});
     cdqTrackingControlsV2828(job);
     void cdqTrackingPollV2828(job);
@@ -13577,7 +13587,7 @@ function cdqSendPreflightV2780(args,timeoutMs=CDQ_SEND_PREFLIGHT_TIMEOUT_MS_V278
    fermerConfirmation();
    cdqStartProgress('check-'+crypto.randomUUID(),total);cdqSetProgress({total,message:'Vérification de l’envoi…'});
    try{
-    const check=await cdqSendPreflightV2780([files,folders,actions.email?email:'',context.clientId,24,actions,visit]);cdqSendGuardV2750(context);
+    const check=await (async()=>{if(actions.email)await window.cdqGmailTechnicienV20261112.ensure(context);cdqSendGuardV2750(context);return cdqSendPreflightV2780([files,folders,actions.email?email:'',context.clientId,24,actions,visit,actions.email?'gmail-server-oauth-v2':null]);})();cdqSendGuardV2750(context);
     window.cdqDeliveryActionsV2866.assertTicket(check?.sendV20261103,actions,visit);
     let force=false;if(check?.doublon){force=confirm('Cette sélection a déjà été envoyée récemment. Voulez-vous l’envoyer de nouveau ?');if(!force){cdqStopProgress(false);cdqRestoreSendOptionsV2759(context);return}}
     await cdqRunSendSelection(files,folders,mode,actions.email?email:'',actions.email?message:'',context.clientId,force,flatten,check?.sendV20261103);
@@ -14894,7 +14904,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.12-v28.73-sanimarc-pending-pc";
+const CDQ_V19_BUILD = "2026.11.14-v28.81-gmail-durable-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15821,6 +15831,75 @@ window.addEventListener('online',function(){
   cdqPublierSessionHorsLigne();
   cdqRafraichirTechniciensRapports(true).catch(function(){});
 });
+// Observe existing server jobs only. This component cannot enqueue or resend.
+function createSendBackgroundV2874({identity,read,complete,publish,storage,foreground=()=>'',now=Date.now,schedule=setTimeout,cancel=clearTimeout}){
+  let owner='',generation=0,timer=null,flight=null;
+  const jobs=new Map(),prefix='cdqServerSendWatchV2874|';
+  const validText=x=>typeof x==='string'&&x.length>0&&x.length<=200&&!/[\u0000-\u001f]/.test(x);
+  const key=j=>j.clientId+'|'+j.id;
+  const persist=()=>{if(owner)try{storage.setItem(prefix+owner,JSON.stringify([...jobs.values()].map(({id,clientId,session,started})=>({id,clientId,session,started}))));}catch(_){}};
+  const clearTimer=()=>{if(timer!==null)cancel(timer);timer=null;};
+  function emit(){publish(owner,[...jobs.values()].filter(j=>!j.paused).length);}
+  function account(){
+    const current=identity(),next=current?.authorized?String(current.owner||'').trim().toLowerCase():'';
+    if(next===owner)return !!owner;
+    generation++;clearTimer();jobs.clear();owner=next;
+    if(owner)try{
+      const saved=JSON.parse(storage.getItem(prefix+owner)||'[]');
+      if(Array.isArray(saved))for(const j of saved.slice(0,100))if(validText(j?.id)&&validText(j?.clientId)){
+        jobs.set(key(j),{id:j.id,clientId:j.clientId,session:typeof j.session==='string'?j.session.slice(0,200):'',started:Number(j.started)||now(),failures:0,paused:false});
+      }
+    }catch(_){}
+    emit();return !!owner;
+  }
+  function later(){
+    clearTimer();if(owner&&[...jobs.values()].some(j=>!j.paused))timer=schedule(()=>{timer=null;void flush();},15000);
+  }
+  function observe(id,clientId,result){
+    if(!account())return false;
+    const j=jobs.get(clientId+'|'+id);
+    if(!j||result?.jobId!==id||result.clientId&&result.clientId!==clientId)return false;
+    // A blocked/unknown job stops the ongoing notification without claiming
+    // successful delivery. Server history and its anti-duplicate receipt stay.
+    if(complete(result)||result.status==='blocked'||result.status==='none'||result.error==='NOT_FOUND'){
+      jobs.delete(key(j));persist();emit();later();return true;
+    }
+    j.failures=0;return false;
+  }
+  function watch(receipt,context){
+    if(!account()||String(context?.owner||'').trim().toLowerCase()!==owner||!validText(receipt?.jobId)||!validText(context?.clientId))return false;
+    const j={id:receipt.jobId,clientId:context.clientId,session:String(receipt.sessionId||'').slice(0,200),started:now(),failures:0,paused:false};
+    const prior=jobs.get(key(j));if(prior)j.started=prior.started;
+    if(!prior&&jobs.size>=100)return false;
+    jobs.set(key(j),j);persist();emit();later();return true;
+  }
+  async function flush(){
+    if(!account())return;
+    if(flight)return flight;
+    const stamp=generation,email=owner;
+    flight=(async()=>{
+      for(const j of [...jobs.values()]){
+        if(!account()||stamp!==generation||owner!==email)break;
+        if(j.paused||foreground()===key(j))continue;
+        // A notification is bounded; the durable server job itself is not.
+        if(now()-j.started>2*60*60*1000){j.paused=true;emit();continue;}
+        try{
+          const result=await read(j);
+          if(!account()||stamp!==generation||owner!==email)break;
+          observe(j.id,j.clientId,result);
+        }catch(_){
+          if(stamp!==generation||owner!==email)break;
+          if(++j.failures>=3)j.paused=true;
+          emit();
+        }
+      }
+    })();
+    try{await flight;}finally{flight=null;if(account()){emit();later();}}
+  }
+  function resume(){if(!account())return;for(const j of jobs.values()){j.paused=false;j.failures=0;}emit();void flush();}
+  return {watch,observe,flush,resume,reset(){generation++;clearTimer();jobs.clear();const previous=owner;owner='';publish(previous,0);},size(){account();return jobs.size;}};
+}
+
 function createDriveBackgroundV2746({owner,authorized,native=null,onIdle=()=>{},onNativeStatus=()=>{},flush=()=>{}}){
  const pending=new Map(),running=new Map();let account='',wasBusy=false,serial=0,nativeStamp='';
  const current=()=>String(owner()||'').trim().toLowerCase();
@@ -15999,9 +16078,24 @@ const cdqDriveBackgroundV2746=createDriveBackgroundV2746({owner:()=>String(utili
   if(cdqDriveBackgroundV2746.pendingFor('outbox'))tasks.push(cdqSynchroniserEnAttente());
   if(cdqDriveBackgroundV2746.pendingFor('deletion'))tasks.push(window.cdqFileDeletionV2746?.retryPending?.());
   if(cdqDriveBackgroundV2746.pendingFor('balance-list'))tasks.push(window.cdqBalanceListV2638?.flushBackground?.());
+  tasks.push(window.cdqSendBackgroundV2874?.flush());
   await Promise.allSettled(tasks);}});
 window.cdqDriveBackgroundV2746=cdqDriveBackgroundV2746;
 window.cdqDriveWritesPendingV2746=()=>cdqDriveBackgroundV2746.busy();
+window.cdqSendBackgroundV2874=createSendBackgroundV2874({
+ identity:()=>({owner:utilisateurCourantEmail,authorized:cdqAccessState==='ready'&&['admin','technicien'].includes(utilisateurCourantRole)}),
+ read:job=>window.cdqSendWatchTransportV2874.read(job),
+ complete:result=>window.cdqDeliveryActionsV2866.complete(result),
+ foreground:()=>window.cdqSendWatchTransportV2874.foreground(),
+ publish:(owner,count)=>{if(owner)cdqDriveBackgroundV2746.setPending('server-sends',count,owner);},
+ storage:{getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)}
+});
+window.addEventListener('cdq:access-ready',()=>window.cdqSendBackgroundV2874.resume());
+window.addEventListener('cdq:drive-ready-v2632',()=>window.cdqSendBackgroundV2874.resume());
+window.addEventListener('online',()=>window.cdqSendBackgroundV2874.resume());
+window.addEventListener('cdq:drive-cleared-v2632',()=>window.cdqSendBackgroundV2874.reset());
+window.addEventListener('cdq:access-state-v2527',event=>{if(event.detail!=='ready')window.cdqSendBackgroundV2874.reset();else window.cdqSendBackgroundV2874.resume();});
+
 const cdqDriveWriteFlightsV2746=createDriveWriteFlightsV2746({begin:cdqDriveBackgroundV2746.begin,onSlow:work=>{
  let job;try{job=JSON.parse(work.id);}catch{};
  if(job?.requestId)cdqPostToPwa({type:'CDQ_OFFLINE_SYNC_PENDING_V2746',email:work.owner,requestId:job.requestId,uploadId:job.uploadId||'',message:'Drive traite encore cet envoi. Le rapport reste conservé sur cet appareil.'});
@@ -19123,7 +19217,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.12-v28.73-sanimarc-pending-pc";
+const CDQ_V20_BUILD = "2026.11.14-v28.81-gmail-durable-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -19970,7 +20064,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.12-v28.73-sanimarc-pending-pc";
+const CDQ_V21_BUILD = "2026.11.14-v28.81-gmail-durable-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24467,7 +24561,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.12-v28.73-sanimarc-pending-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.14-v28.81-gmail-durable-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -25495,10 +25589,10 @@ window.cdqDriveAccessGateV2620=Object.freeze({
 (() => {
   'use strict';
   let active=false,busy=false,sequence=0;
-  const creator='jp.rodrigue86@gmail.com';
+  // Identity and role are confirmed by the server for every account.
   const normalize=email=>String(email||'').trim().toLowerCase();
   const fail=error=>{busy=false;cdqGoogleAuthPendingV42=false;cdqDirectFailureV2645(error);};
-  function start(){if(busy)return;active=true;sequence++;cdqDemanderConnexionGoogleV42('Confirmez votre compte Google créateur.');}
+  function start(){if(busy)return;active=true;sequence++;cdqDemanderConnexionGoogleV42('Connectez le compte Google associé à votre compte CDQ.');}
   async function credential(data){
     if(!active||busy||!data?.credential||!data.challengeId)return;
     busy=true;const attempt=sequence;
@@ -25506,17 +25600,23 @@ window.cdqDriveAccessGateV2620=Object.freeze({
       const proof=await cdqDirectRpcV2645('verifierJetonGoogleCDQ',[String(data.credential),String(data.challengeId)]);
       if(attempt!==sequence||!active)return;
       const owner=normalize(proof?.email);
-      if(proof?.ok!==true||!proof.ticket||owner!==creator)throw Error('Choisissez le compte Google créateur '+creator+'.');
+      if(proof?.ok!==true||!proof.ticket||!owner)throw Error('Google n’a pas confirmé ce compte.');
       const state=await cdqDirectRpcV2645('obtenirEtatAcces',['',String(proof.ticket)]);
       if(attempt!==sequence||!active)return;
-      if(state?.autorise!==true||normalize(state.email)!==owner||state.role!=='admin'||!state.jetonAppareil||!state.jetonSession)throw Error('Le serveur n’a pas confirmé l’accès de ce compte créateur.');
+      if(state?.activationRequise===true&&normalize(state.emailSuggere)===owner){
+        active=false;busy=false;sequence++;cdqGoogleAuthPendingV42=false;
+        cdqSauverTicketGoogleV42(String(proof.ticket));cdqGooglePromptDelegatedV42=false;
+        cdqPostToPwa({type:'CDQ_GOOGLE_AUTH_HIDE',authProtocol:42});
+        afficherConnexionCodePersonnel(state.message,owner);return;
+      }
+      if(state?.autorise!==true||normalize(state.email)!==owner||!['admin','technicien','lecture'].includes(state.role)||!state.jetonAppareil||!state.jetonSession)throw Error('Le serveur n’a pas confirmé l’accès de ce compte CDQ.');
       active=false;busy=false;sequence++;cdqGoogleAuthPendingV42=false;
       appliquerAccesAutorise(state);
     }catch(error){if(attempt===sequence&&active)fail(error);}
   }
   function cancel(){active=false;busy=false;sequence++;cdqGoogleAuthPendingV42=false;afficherConnexionCodePersonnel('Connexion CDQ','');}
   const host=document.getElementById('accessLogin');
-  if(host){const button=document.createElement('button');button.type='button';button.textContent='Récupérer mon accès créateur';button.className='cdq-creator-entry-v2628';button.onclick=start;host.appendChild(button);}
+  if(host){const button=document.createElement('button');button.type='button';button.textContent='Se connecter avec Google';button.className='cdq-creator-entry-v2628';button.onclick=start;host.appendChild(button);}
   window.cdqCreatorRecoveryV2628={isActive:()=>active,credential,start,cancel};
 })();
 
@@ -26615,6 +26715,19 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
     }catch(e){note('Impossible de récupérer les tâches : '+String(e?.message||e));}
     finally{busy=false;}
   }
+  async function clearHistory(){
+    if(busy)return;
+    try{if(current().clientId!==clientId)throw Error('Le client a changé. Rouvrez les tâches.');}
+    catch(e){note(String(e.message||e));return;}
+    if(!window.confirm('Effacer les envois terminés de cet historique ? Les tâches actives ou à vérifier et les documents seront conservés.'))return;
+    busy=true;let outcome='';
+    try{
+      const x=await rpc('cdqGererEnvoiEnAttenteV20261112',[clientId,'historique','effacer_historique','EFFACER_HISTORIQUE_TERMINE']);
+      if(!x?.ok||x.clientId!==clientId||!Number.isInteger(x.cleared))throw Error('Nettoyage non confirmé.');
+      outcome=x.cleared+' entrée(s) terminée(s) retirée(s) de l’historique.';
+    }catch(e){outcome='Historique conservé ou nettoyage incomplet : '+String(e.message||e);}
+    finally{busy=false;await load();note(outcome);}
+  }
   async function manage(task,action){
     if(busy)return;
     let confirmation='';
@@ -26655,7 +26768,7 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
     intro.textContent='Consultez les envois du client. Une tentative d’email sans reçu ne sera jamais renvoyée automatiquement.';
     const message=document.createElement('div');message.className='cdq-pending-message';
     const actions=document.createElement('div');actions.className='cdq-pending-actions';
-    actions.append(button('Actualiser',load,'refresh'));
+    actions.append(button('Actualiser',load,'refresh'),button('Effacer l’historique terminé',clearHistory,'caution'));
     const body=document.createElement('div');body.className='cdq-pending-tasks';
     scroll.append(intro,message,actions,body);card.append(header,scroll);overlay.append(card);
     overlay.addEventListener('click',e=>{if(e.target===overlay)close();});
@@ -26681,6 +26794,103 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
 })();
 </script>
 
+
+<script id="cdqGmailTechUIV20261112">
+/* One Google grant per account; queued sending runs on the server after close. */
+(function(){
+ 'use strict';
+ if(window.cdqGmailTechnicienV20261112)return;
+ const EVENT='cdq-gmail-auth-v20261112';
+ const SCOPES='https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email';
+ let pending=null,googleLoading=null;
+ function guard(ctx){
+  const fresh=cdqSendContextV2750(ctx.clientId);
+  if(fresh.owner!==ctx.owner||fresh.role!==ctx.role||fresh.token!==ctx.token||fresh.clientId!==ctx.clientId||fresh.role==='lecture')
+   throw Error('Le compte CDQ a changé. Rouvrez l’envoi.');
+ }
+ async function rpc(ctx,action,input){
+  guard(ctx);const result=await cdqRpcV2553('cdqGmailAuthorizationV2874',[ctx.clientId,action,input]);guard(ctx);
+  if(result?.ok!==true||result.actor!==ctx.owner)throw Error('Le serveur n’a pas confirmé votre compte Gmail.');
+  return result;
+ }
+ function google(){
+  if(window.google?.accounts?.oauth2)return Promise.resolve();
+  if(!googleLoading)googleLoading=new Promise((resolve,reject)=>{
+   const script=document.createElement('script');script.src='https://accounts.google.com/gsi/client';script.async=true;
+   script.onload=()=>window.google?.accounts?.oauth2?resolve():reject(Error('Autorisation Google indisponible.'));
+   script.onerror=()=>{googleLoading=null;reject(Error('Connexion à Google impossible.'));};document.head.appendChild(script);
+  });
+  return googleLoading;
+ }
+ function androidCode(actor){
+  const bridge=window.BalanceCDQNative;
+  if(!bridge||typeof bridge.authorizeGmailSend!=='function')return Promise.reject(Error('La mise à jour Android est requise.'));
+  const requestId='gmail-'+crypto.randomUUID();
+  return new Promise((resolve,reject)=>{
+   const timer=setTimeout(()=>finish(Error('Autorisation Google non confirmée.')),240000);
+   function finish(error,code){clearTimeout(timer);window.removeEventListener(EVENT,onResult);error?reject(error):resolve(code);}
+   function onResult(event){const data=event?.detail;if(data?.requestId!==requestId)return;
+    if(!data.ok||!data.code||data.account!==actor)finish(Error(data.message||'Compte Google non confirmé.'));
+    else finish(null,String(data.code));
+   }
+   window.addEventListener(EVENT,onResult);
+   try{bridge.authorizeGmailSend(requestId,actor);}catch(_){finish(Error('Autorisation Android indisponible.'));}
+  });
+ }
+ async function connect(ctx){
+  const android=/BalanceCDQAndroid\//i.test(String(navigator.userAgent||'')),channel=android?'android':'web';
+  const challenge=await rpc(ctx,'prepare',{channel,origin:android?'':location.origin});
+  if(!android)await google();guard(ctx);
+  const modal=window.cdqV19CreateModal('cdqGmailConsentV2874','Autoriser votre Gmail');
+  modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
+  modal.setAttribute('aria-label','Autoriser votre Gmail');modal.style.zIndex='2147483647';
+  const body=modal.querySelector('.cdq-v19-body');body.replaceChildren();
+  const text=document.createElement('p');text.textContent='Autorisez '+ctx.owner+' à envoyer les rapports que vous confirmez, même après fermeture de CDQ. Cette permission Google ne remplace pas votre accès CDQ.';
+  const approve=document.createElement('button'),cancel=document.createElement('button');
+  approve.type=cancel.type='button';approve.textContent='Autoriser avec Google';cancel.textContent='Annuler';
+  approve.className='modal-button confirm-button';cancel.className='modal-button cancel-button';
+  body.append(text);modal.querySelector('.modal-buttons').replaceChildren(approve,cancel);
+  modal.style.display='flex';approve.focus();
+  return new Promise((resolve,reject)=>{
+   let settled=false,started=false;
+   const cancelConsent=()=>{if(!started)finish(Error('Envoi annulé avant sa création.'));};
+   const outside=event=>{if(event.target===modal){event.preventDefault();event.stopImmediatePropagation();cancelConsent();}};
+   const escape=event=>{if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();cancelConsent();}};
+   const finish=(error)=>{if(settled)return;settled=true;clearTimeout(timer);
+    modal.removeEventListener('click',outside,true);document.removeEventListener('keydown',escape,true);
+    modal.style.display='none';error?reject(error):resolve();};
+   modal.addEventListener('click',outside,true);document.addEventListener('keydown',escape,true);
+   const timer=setTimeout(()=>finish(Error('Autorisation expirée. Rouvrez l’envoi.')),300000);
+   const complete=async code=>{
+    if(settled)return;
+    try{const result=await rpc(ctx,'complete',{state:challenge.state,signature:challenge.signature,code});
+     if(!result.connected)throw Error('Permission Gmail non confirmée.');finish();
+    }catch(error){finish(error);}
+   };
+   const client=android?null:window.google.accounts.oauth2.initCodeClient({
+    client_id:challenge.clientId,scope:SCOPES,hint:ctx.owner,ux_mode:'popup',
+    callback:reply=>reply?.error||!reply?.code?finish(Error('Autorisation Google annulée ou refusée.')):void complete(String(reply.code)),
+    error_callback:()=>finish(Error('La fenêtre Google a été fermée ou bloquée.'))
+   });
+   cancel.onclick=cancelConsent;
+   approve.onclick=()=>{
+    if(started||settled)return;try{guard(ctx);}catch(error){finish(error);return;}
+    started=true;approve.disabled=cancel.disabled=true;
+    try{if(android)void androidCode(ctx.owner).then(complete,finish);else client.requestCode();}
+    catch(_){finish(Error('Impossible d’ouvrir Google.'));}
+   };
+  });
+ }
+ async function ensure(ctx){
+  if(pending)throw Error('Une autorisation Gmail est déjà en cours.');
+  pending=ctx;
+  try{const state=await rpc(ctx,'status');if(!state.connected)await connect(ctx);guard(ctx);}
+  finally{pending=null;}
+ }
+ window.cdqGmailTechnicienV20261112=Object.freeze({ensure});
+})();
+
+</script>
 </body>
 </html>
 

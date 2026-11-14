@@ -1,12 +1,12 @@
 {
-  "androidSelectorSha256": "38cf734c03ee49e746f191fbc76516e6462e957596129bd3a9a4f130065c9cd6",
-  "androidSourceBuild": "2026.11.12-v28.73-sanimarc-pending",
-  "build": "2026.11.12-v28.73-sanimarc-pending-pc",
+  "androidSelectorSha256": "32b7c5e296132df6148426b9dbe9994825dca0c09fd14bf5a53c882e9c53b478",
+  "androidSourceBuild": "2026.11.14-v28.81-gmail-durable",
+  "build": "2026.11.14-v28.81-gmail-durable-pc",
   "desktopModel": 3,
-  "files": 1095,
-  "generatedFrom": "patches/sanimarc-send-pending-20261112/build/stage-pc-2873.py",
+  "files": 1102,
+  "generatedFrom": "patches/gmail-offline-2881-20261114/stage.py",
   "platform": "pc-pwa",
-  "release": "6903f98fd4f97b08ac599e5b16b73e4f31e7e77c6c6beb3e2131e03d8d928395",
-  "version": "28.73",
+  "release": "6afc1fb2afafb05f3e6bee7d44a0988ed36bf8582cbafdba66c6146fbb6a6533",
+  "version": "28.81",
   "webBaseCommit": "de1e05294f308cd67502ccc4093422501af56e22"
 }

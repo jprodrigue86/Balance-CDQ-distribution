@@ -1,7 +1,8 @@
+import {recoverableListReadV2878} from './list-reconciliation-v2878.mjs';
 import {createBalanceSheetReaderV2788} from './balance-sheet-summary-v2788.mjs';
 import {balanceListMessagesV2782} from './file-operation-state-v2782.mjs';
 import {equipmentEditSignatureV2746} from './balance-list-live-v2746.mjs';
-import {balanceEngineReadCacheV2791,balanceEngineSignatureV2791,replaceBalanceSourceV2751,balanceSourceRowsV2751,balanceDisplayRowsV2751,balanceSignatureValuesV2751} from './balance-list-index-v2751.mjs';
+import {balanceEngineReadCacheV2791,balanceEngineSignatureV2791,balanceEngineConfirmedReadV2874,replaceBalanceSourceV2751,balanceSourceRowsV2751,balanceDisplayRowsV2751,balanceSignatureValuesV2751} from './balance-list-index-v2751.mjs';
 import {calibrationIdentity,calibrationRpc} from './calibration-feedback-v2566.mjs';
 import {createEquipmentTrackerV2697} from './equipment-list-v2697.mjs';
 import './balance-list-conformity-v2728.mjs';
@@ -18,7 +19,7 @@ const canWrite=()=>canRead()&&['admin','technicien'].includes(calibrationIdentit
 // A list belongs to the client, never the archive or child folder currently expanded.
 const client=()=>{try{return String(compagnieSelectionnee||'');}catch{return '';}};
 const visibleListReadV2872=id=>String(id)===client()&&!document.hidden;
-const listReadOptionsV2872=id=>({readConcurrency:visibleListReadV2872(id)?2:1,cachedRead:file=>equipment.confirmedRead?.(file,String(id))});
+const listReadOptionsV2872=id=>({readConcurrency:visibleListReadV2872(id)?2:1,cachedRead:file=>equipment.confirmedRead?.(file,String(id))||balanceEngineConfirmedReadV2874(engineListsV2754.get(key(id))?.sourceReadCacheV2791,file,String(id))});
 const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’']/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
 const excluded=v=>/^(?:liste (?:de|des) balances?|archives?|rs(?: pdf)?|irs(?: pdf)?)(?:\b|[._ -])/.test(norm(v));
 let epoch=0,owner='',visibleClient='',timer=0,scanTimer=0,pcScan=null;
@@ -92,7 +93,7 @@ async function refreshEngineListV2754(id,{repair=false,hydrate=false,deferReady=
  flight.promise=api.call('list',{clientId:String(id),...(repair?{repair:true}:{})}).catch(async error=>{
   // A verified ownership conflict must keep the engine authoritative while
   // leaving the current Drive PDF readable. Never use the legacy writer.
-  if(repair&&/CONFLICT_LIST_PROOF/.test(String(error?.code||'')+' '+String(error?.message||''))&&stamp===epoch&&account===calibrationIdentity().email&&canRead()){const latest=await api.call('list',{clientId:String(id)});if(latest?.ok===true&&latest?.baselineComplete===true&&!latest?.reconciliationRequired&&latest?.pdf?.status==='confirmed'&&latest.pdf.fileId&&latest.pdf.driveRevision&&latest.pdf.revision===latest.revision&&Array.isArray(latest.items))return latest;}if(!repair||!(/CONFLICT_EXTERNAL_DRIVE/.test(String(error?.code||'')+' '+String(error?.message||'')))||stamp!==epoch||account!==calibrationIdentity().email||!canRead())throw error;
+  if(repair&&/CONFLICT_LIST_PROOF/.test(String(error?.code||'')+' '+String(error?.message||''))&&stamp===epoch&&account===calibrationIdentity().email&&canRead()){const latest=await api.call('list',{clientId:String(id)});if(recoverableListReadV2878(latest,id))return latest;}if(!repair||!(/CONFLICT_EXTERNAL_DRIVE/.test(String(error?.code||'')+' '+String(error?.message||'')))||stamp!==epoch||account!==calibrationIdentity().email||!canRead())throw error;
   const result=await api.call('list',{clientId:String(id)});
   if(!result?.baselineComplete||!Array.isArray(result.items))throw error;
   return {...result,reconciliationRequired:true,pdf:{...result.pdf,status:'conflict',errorCode:'CONFLICT_EXTERNAL_DRIVE'}};
@@ -302,8 +303,8 @@ function updateConfirmedRows(id,detail,sourceId){
  const k=key(id),state=states.get(k),revision=String(detail.modifiedTime||detail.dateModification||detail.revision||'');if(!state||!revision)return;
  // A file's latest signature can already belong to save B when ACK A arrives.
  const signature=equipment.signatureForSave?.(String(detail.saveId||''),id)||detail.equipmentSignature,parsed=balanceSignatureValuesV2751(signature);if(!parsed){warmIndexes.delete(k);return;}
- const fileId=String(detail.id||detail.fileId||sourceId),index=replaceBalanceSourceV2751(state.sourceIndexV2751,{id:fileId,sourceId,revision,signature,name:detail.name||detail.nom});
- let rows;if(index)rows=balanceDisplayRowsV2751(balanceSourceRowsV2751(index));else{warmIndexes.delete(k);rows=(state.rows||[]).filter(row=>row.id!==fileId&&row.id!==sourceId);if(parsed.values!==null){const[fabricant,modele,capacite,echelon,identification,conformity]=parsed.values;rows.push({id:fileId,source:detail.name||detail.nom||'',revision,fabricant,modele,capacite,echelon,identification,conformity});}rows=balanceDisplayRowsV2751(rows);}
+ const numeroSerie=equipment.serialForSave?.(String(detail.saveId||''),id)||'',fileId=String(detail.id||detail.fileId||sourceId),index=replaceBalanceSourceV2751(state.sourceIndexV2751,{id:fileId,sourceId,revision,signature,name:detail.name||detail.nom});
+ let rows;if(index)rows=balanceDisplayRowsV2751(balanceSourceRowsV2751(index));else{warmIndexes.delete(k);rows=(state.rows||[]).filter(row=>row.id!==fileId&&row.id!==sourceId);if(parsed.values!==null){const[fabricant,modele,capacite,echelon,identification,conformity]=parsed.values;rows.push({id:fileId,source:detail.name||detail.nom||'',revision,fabricant,modele,capacite,echelon,identification,numeroSerie,conformity});}rows=balanceDisplayRowsV2751(rows);}
  states.set(k,{...state,sourceIndexV2751:index,rows,count:rows.length});
  equipment.rememberRead?.({...detail,id:fileId},signature,id);
  window.dispatchEvent(new CustomEvent('cdq:balance-list-rows-v2730',{detail:{clientId:String(id)}}));
@@ -315,7 +316,7 @@ async function saved(event,local=false){
   if(d.owner&&String(d.owner.email||d.owner).trim().toLowerCase()!==String(calibrationIdentity().email).trim().toLowerCase())return;
   restoreClient(id);const k=key(id),file=String(d.sourceId||d.id||d.fileId||''),token=String(d.saveId||'');
   const localDetail={...d,owner:calibrationIdentity().email,clientId:id,sourceId:file};
-  if(local&&d.pending!==false){let pending=saveWaits.get(k);if(!pending)saveWaits.set(k,pending=new Map());if(token)for(const [source,savedToken]of pending)if(savedToken===token&&source!==file)pending.delete(source);pending.set(file,token);projection.saved({...localDetail,equipmentSignature:equipment.signatureForSave?.(token,id)||d.equipmentSignature});persistClient(id);paintRows();}
+  if(local&&d.pending!==false){let pending=saveWaits.get(k);if(!pending)saveWaits.set(k,pending=new Map());if(token)for(const [source,savedToken]of pending)if(savedToken===token&&source!==file)pending.delete(source);pending.set(file,token);projection.saved({...localDetail,numeroSerie:equipment.serialForSave?.(token,id),equipmentSignature:equipment.signatureForSave?.(token,id)||d.equipmentSignature});persistClient(id);paintRows();}
   const pending=saveWaits.get(k);
   const matched=pending?.has(file)?file:token?[...(pending||[])].find(([,value])=>value===token)?.[0]:undefined;
   if(!local||d.pending===false){
@@ -329,7 +330,7 @@ async function saved(event,local=false){
   }
   const savedOwner=owner,savedEpoch=epoch,review=equipment.awaitDecision(token);const decision=review&&typeof review.then==='function'?(await review,equipment.decision(token)):review;if(savedOwner!==owner||savedEpoch!==epoch||!canWrite())return;
   if(decision===false){reviews.get(k)?.delete(token);if(!local||d.pending===false){equipment.acknowledge(token,d);updateConfirmedRows(id,d,matched||file);}persistClient(id);if(failed.has(k)||needsUpdate(k))scheduleClient(id);paintRows();return;}
-  if(local&&d.pending!==false){if(saveWaits.get(k)?.get(file)===token)projection.saved({...localDetail,equipmentSignature:equipment.signatureForSave?.(token,id)||d.equipmentSignature});persistClient(id);paintRows();return;}
+  if(local&&d.pending!==false){if(saveWaits.get(k)?.get(file)===token)projection.saved({...localDetail,numeroSerie:equipment.serialForSave?.(token,id),equipmentSignature:equipment.signatureForSave?.(token,id)||d.equipmentSignature});persistClient(id);paintRows();return;}
   if(!local||d.pending===false)equipment.acknowledge(token,d);
   updateConfirmedRows(id,d,matched||file);
   reviews.get(k)?.delete(token);changes.set(k,(changes.get(k)||0)+1);persistClient(id);const job=jobs.get(k);if(job)job.dirty=true;
@@ -676,12 +677,19 @@ window.addEventListener('cdq:report-equipment-edited-v2746',event=>{if(owner!==c
 window.addEventListener('cdq:report-equipment-edit-ended-v2746',event=>{if(canRead())projection.ended(event.detail);});
 function retireEngineRowsV2754(id,accept){const k=key(id),pending=enginePendingRowsV2754.get(k);if(!pending)return;let retired=engineRetiredRequestsV2754.get(k);if(!retired)engineRetiredRequestsV2754.set(k,retired=new Set());for(const [reportId,row]of pending)if(accept(row)){pending.delete(reportId);if(row.saveId)retired.add(String(row.saveId));}const state=states.get(k);if(state)states.set(k,{...state,enginePendingRowsV2754:[...pending.values()]});}
 function deletionDetail(detail){const id=String(detail?.clientId||''),ids=new Set([...(detail?.ids||[]),...(detail?.descendantIds||[])]),requested=new Set([...(detail?.requestedIds||[]),...(detail?.requestedDescendantIds||[])]),folders=new Set(detail?.folderIds||[]),requestedFolders=new Set(detail?.requestedFolderIds||detail?.folderIds||[]);
- const walk=(node,inside=false,requestedInside=false)=>{if(!node)return;const selected=inside||folders.has(String(node.id)),asked=requestedInside||requestedFolders.has(String(node.id));if(selected||asked)for(const file of node.fichiers||[]){if(selected)ids.add(String(file.id));if(asked)requested.add(String(file.id));}for(const folder of node.dossiers||[])walk(folder,selected,asked);};walk(root(id));return {...detail,clientId:id,ids:[...ids],requestedIds:[...requested]};
+ const walk=(node,inside=false,requestedInside=false)=>{if(!node)return;const selected=inside||folders.has(String(node.id)),asked=requestedInside||requestedFolders.has(String(node.id));if(selected||asked)for(const file of node.fichiers||[]){if(selected)ids.add(String(file.id));if(asked)requested.add(String(file.id));}for(const folder of node.dossiers||[])walk(folder,selected,asked);};walk(root(id));const folderIdsByFile={};const ancestry=(node,parents=[])=>{if(!node)return;const selected=folders.has(String(node.id))?[...parents,String(node.id)]:parents;for(const file of node.fichiers||[])if(selected.length)folderIdsByFile[String(file.id)]=selected;for(const child of node.dossiers||[])ancestry(child,selected);};ancestry(root(id));return {...detail,folderIdsByFile,clientId:id,ids:[...ids],requestedIds:[...requested]};
 }
 for(const type of ['cdq:delete-pending-v2746','cdq:delete-local-v2746'])window.addEventListener(type,event=>{if(canWrite()){projection.deletion(deletionDetail(event.detail),'pending');publishBackground();}});
 window.addEventListener('cdq:delete-rollback-v2746',event=>{if(canRead()){const d=deletionDetail(event.detail);projection.deletion({...d,requestedIds:d.ids,ids:[]},'settled');}});
 window.addEventListener('cdq:delete-settled-v2746',event=>{if(canRead())projection.deletion(deletionDetail(event.detail),'settled');});
-window.addEventListener('cdq:deleted',event=>{if(!canWrite()||event.detail?.owner!==calibrationIdentity().email||!event.detail?.clientId)return;const d=deletionDetail(event.detail),removed=new Set(d.ids.map(String));retireEngineRowsV2754(d.clientId,row=>removed.has(String(row.id))||removed.has(String(row.reportId)));projection.deletion(d,'confirmed');const k=key(d.clientId);clearFailure(k);changes.set(k,(changes.get(k)||0)+1);persistClient(d.clientId);const job=jobs.get(k);if(job)job.dirty=true;scheduleClient(d.clientId,0);});
+window.addEventListener('cdq:deleted',event=>{if(!canWrite()||event.detail?.owner!==calibrationIdentity().email||!event.detail?.clientId)return;const d=deletionDetail(event.detail),removed=new Set(d.ids.map(String));if(d.restored===true){projection.deletion({...d,requestedIds:d.ids,ids:[]},'settled');}else{retireEngineRowsV2754(d.clientId,row=>removed.has(String(row.id))||removed.has(String(row.reportId)));projection.deletion(d,'confirmed');}const k=key(d.clientId);clearFailure(k);changes.set(k,(changes.get(k)||0)+1);persistClient(d.clientId);const job=jobs.get(k);if(job)job.dirty=true;scheduleClient(d.clientId,0);});
+window.addEventListener('cdq:file-restored-v2746',event=>{
+ const d=event.detail;if(!canWrite()||d?.confirmed!==true||d.owner!==calibrationIdentity().email||!d.id)return;
+ const affected=new Set(projection.restored(d));
+ for(const [k,state]of states){if(k.startsWith(d.owner+'|')&&(state.rows||[]).some(row=>String(row.id)===d.id))affected.add(k.slice(d.owner.length+1));}
+ for(const id of affected){const k=key(id);warmIndexes.delete(k);const entry=engineListsV2754.get(k);if(entry)entry.invalidated=true;clearFailure(k);changes.set(k,(changes.get(k)||0)+1);persistClient(id);const job=jobs.get(k);if(job)job.dirty=true;scheduleClient(id,0);}
+ paintRows();schedule();
+});
 window.addEventListener('cdq:access-ready',()=>{if(owner!==calibrationIdentity().email)reset();schedule();});
 window.addEventListener('cdq:drive-cleared-v2632',reset);window.addEventListener('cdq:drive-ready-v2632',schedule);
 function resumePaused(){for(const k of [...pausedClients,...changes.keys(),...reviews.keys()])if(k.startsWith(owner+'|')&&(pausedClients.has(k)||needsUpdate(k)))scheduleClient(k.slice(owner.length+1));schedule();}

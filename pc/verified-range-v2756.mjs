@@ -30,6 +30,21 @@ function massUnit(value){
   if(/^(oz|onces?)$/.test(s))return ratio(45359237n,1600000n);
   return null;
 }
+export function capacityErrorV2874(value,capacity,unit=''){
+  if(!String(value??'').trim())return '';
+  if(!String(unit||'').trim()&&/[a-zé]/i.test(String(value)+String(capacity)))return 'Sélectionnez l’unité de mesure avant de comparer les charges.';
+  function quantity(raw){
+    const m=String(raw??'').trim().match(/^([\d\s\u00a0\u202f.,]+?)\s*([a-zé]+)?$/i);
+    if(!m)return null;
+    const numeric=String(m[1]).trim(),amount=/^0(?:[.,]0+)?$/.test(numeric)?ratio(0n):decimal(numeric);
+    const specified=m[2]||String(unit||'').trim(),u=specified?massUnit(specified):ratio(1n);
+    return amount&&u?mul(amount,u):null;
+  }
+  const load=quantity(value),max=quantity(capacity);
+  if(!max||max.n<=0n)return 'Entrez une capacité maximale valide avant de poursuivre.';
+  if(!load)return 'Entrez une charge positive ou nulle, avec une unité valide.';
+  return less(max,load)?'La charge ou l’étendue vérifiée ne doit pas dépasser la capacité maximale de '+String(capacity).trim()+(unit?' '+unit:'')+'.':'';
+}
 export function verifiedRangePointsV2756(value,names,{family='',unit='',echelon=''}={}){
   const fields=new Set(names.map(rangeFieldNameV2819)),loads=[...fields].filter(n=>/^charge_point_\d+_charge_utilisee(?:_2)?$/.test(n));
   const precision=family==='precision'||fields.has('type_plateau')||fields.has('_cdq_precision12_last_focus');

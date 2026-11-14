@@ -5,13 +5,14 @@ const COLOR=[0.43,0.72,0.79];
 const fmt=v=>String(Number(Number(v).toFixed(7)));
 const gridName=/^(poids|balance|reference)_(\d\d)_(\d\d)$/;
 
-export function tableBorderSidesV2872(name){
+export function tableBorderSidesV2872(name,separated=false){
   const m=gridName.exec(String(name));
   if(!m)return null;
+  if(separated)return {left:true,right:true,top:true,bottom:true};
   return {left:Number(m[3])===1,right:true,top:Number(m[2])===1,bottom:true};
 }
-export function tableBorderStyleV2872(name,pixelsPerPoint=1){
-  const sides=tableBorderSidesV2872(name);
+export function tableBorderStyleV2872(name,pixelsPerPoint=1,separated=false){
+  const sides=tableBorderSidesV2872(name, separated);
   if(!sides)return null;
   if(!(Number.isFinite(pixelsPerPoint)&&pixelsPerPoint>0))throw Error('Invalid PDF scale');
   const width=fmt(CDQ_BORDER_WIDTH_V2872*pixelsPerPoint)+'px';
@@ -128,11 +129,12 @@ export function normalizePdfLayoutBordersV2872(pdf,L){
   if(pdf.catalog.lookupMaybe(N('CDQVisualV2872'),L.PDFNumber)?.asNumber()!==2872)
     return {changed:0,skipped:0,reason:'unmarked PDF'};
   const weights=pdf.catalog.lookupMaybe(N('CDQWeightsV2871'),L.PDFNumber)?.asNumber()===2871;
+  const separated=pdf.catalog.lookupMaybe(N('CDQCellsSeparatedV2874'),L.PDFNumber)?.asNumber()===2874;
   const result={changed:0,skipped:0,grid:0,regular:0,details:[]};
   for(const field of pdf.getForm().getFields()){
     if(!(field instanceof L.PDFTextField||field instanceof L.PDFDropdown))continue;
     for(const widget of field.acroField.getWidgets()){
-      const name=field.getName(),grid=weights?tableBorderSidesV2872(name):null;
+      const name=field.getName(),grid=weights?tableBorderSidesV2872(name,separated):null;
       const mk=widget.dict.lookupMaybe(N('MK'),L.PDFDict),bc=mk?.lookupMaybe(N('BC'),L.PDFArray);
       const color=bc?numbers(bc,L):[];
       if(!grid&&!(color.length===3&&color[0]>.15&&color[0]<.8&&color[1]>.45&&color[1]<.9&&color[2]>.6&&color[2]<.95&&color[1]-color[0]>.1))continue;
@@ -204,6 +206,7 @@ export function refreshWeightTextAppearanceV2872(pdf,L,fieldNames){
   const descriptor=font.lookupMaybe(N('FontDescriptor'),L.PDFDict);
   const ascent=(descriptor?.lookupMaybe(N('Ascent'),L.PDFNumber)?.asNumber()??928)/1000;
   const descent=(descriptor?.lookupMaybe(N('Descent'),L.PDFNumber)?.asNumber()??-244)/1000;
+  const separated=pdf.catalog.lookupMaybe(N('CDQCellsSeparatedV2874'),L.PDFNumber)?.asNumber()===2874;
   const result={changed:0,details:[]};
   for(const name of new Set(fieldNames)){
     const field=form.getFieldMaybe(String(name));
@@ -222,7 +225,7 @@ export function refreshWeightTextAppearanceV2872(pdf,L,fieldNames){
       const x=align===1?(width-textWidth)/2:align===2?width-2.5-textWidth:2.5;
       const y=(height-size*(ascent+descent))/2;
       const hex=bytes.map(b=>b.toString(16).padStart(2,'0')).join('');
-      const sides=tableBorderSidesV2872(name)||{left:true,right:true,top:true,bottom:true};
+      const sides=tableBorderSidesV2872(name,separated)||{left:true,right:true,top:true,bottom:true};
       const source='q\n1 1 1 rg\n0 0 '+fmt(width)+' '+fmt(height)+' re f\nQ\n'+
         'BT\n/FRC '+fmt(size)+' Tf\n.035 .16 .32 rg\n1 0 0 1 '+fmt(x)+' '+fmt(y)+' Tm\n<'+hex+'> Tj\nET\n'+
         borderCommands(width,height,sides);

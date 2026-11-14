@@ -1,3 +1,4 @@
+import {pdfSerialV2876,sheetSerialV2876} from './serial-number-v2876.mjs';
 // Permanent inventory reads the existing incrementally maintained report index.
 // Only confirmed report revisions are exposed; no PDF or image is opened here.
 const fail=(message,status=409)=>{throw Object.assign(Error(message),{status});};
@@ -14,6 +15,7 @@ export function date(value,month=false){
  const d=new Date(s+'T00:00:00Z');return Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===s?(month?s.slice(0,7):s):null;
 }
 const fieldNames=[
+ 'base_balance_numero_serie','essai_cdq_base_balance_numero_serie','indicateur_numero_serie','essai_cdq_indicateur_numero_serie',
  'identification_balance','identification','essai_cdq_identification_balance','type_balance','essai_cdq_type_balance',
  'Statut_conformite','essai_cdq_statut_global','Bouton_Conforme','Bouton_NonConforme','Bouton_ACompleter',
  'essai_cdq_conclusion_green','essai_cdq_conclusion_red','essai_cdq_conclusion_gray','essai_cdq_conclusion_blue','essai_cdq_conclusion_pending',
@@ -51,7 +53,7 @@ export function nativeMetadata(fields){
  // Only actual final choices count. Fill colors and point indicators are ignored.
  const active=selected.flatMap((yes,i)=>yes?[labels[i]]:[]);
  const conformity=active.length>1||active.length===1&&status&&active[0]!==parsed?'unknown':active.length===1?active[0]:parsed;
- return {identification:clean(get('identification_balance'))||clean(get('essai_cdq_identification_balance'))||clean(get('identification')),
+ return {numeroSerie:pdfSerialV2876(f),identification:clean(get('identification_balance'))||clean(get('essai_cdq_identification_balance'))||clean(get('identification')),
   type:clean(get('type_balance'))||clean(get('essai_cdq_type_balance')),conformity,reportDate:dates(f,false),nextDate:dates(f,true)};
 }
 export function legacyMetadata(row){
@@ -105,7 +107,7 @@ import {sheetReportConformityV2727} from './sheet-report-conformity-v2727.mjs';
 export function validHistoricalMetadata(m){return !!m&&['conforming','nonconforming','unknown'].includes(m.conformity)&&(m.type===null||typeof m.type==='string'&&m.type.length<=240)&&(m.reportDate===null||date(m.reportDate)===m.reportDate)&&(m.nextDate===null||date(m.nextDate,true)===m.nextDate);}
 export async function readHistoricalPdf(blob,L){
  if(!(blob instanceof Blob))throw Error('PDF absent');
- const worker=pdfWorkV2729();if(worker){const info=await worker.inspect(blob);if(info.metadataVersion===2866&&validHistoricalMetadata(info.metadata))return info;}
+ const worker=pdfWorkV2729();if(worker){const info=await worker.inspect(blob);if(info.metadataVersion===2866&&validHistoricalMetadata(info.metadata)&&typeof info.metadata.numeroSerie==='string')return info;}
  const pdf=await L.PDFDocument.load(await blob.arrayBuffer(),{updateMetadata:false}),form=pdf.getForm();
  return {equipment:equipmentValuesV2697(form),metadataVersion:2866,metadata:pdfMetadata(form)};
 }
@@ -115,5 +117,5 @@ export function readHistoricalSheet(record){
   return {...record.metadata};
  }
  const visible={onglets:(record.onglets||[]).filter(tab=>!tab.hidden&&!tab.masque&&!tab.isSheetHidden)};
- return {type:null,...sheetDates(visible),conformity:sheetReportConformityV2727(visible)};
+ return {numeroSerie:sheetSerialV2876(visible),type:null,...sheetDates(visible),conformity:sheetReportConformityV2727(visible)};
 }

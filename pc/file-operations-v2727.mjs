@@ -62,7 +62,7 @@ export function installPcFileOperationsV2727({rpc,identity,authorized,openMove})
  let undoTimer;
  function undo(confirmed,clientId,owner){
   const toast=document.getElementById('cdqUndoToast'),button=toast?.querySelector('button');if(!button)return;clearTimeout(undoTimer);const count=confirmed.fileIds.length+confirmed.folderIds.length;document.getElementById('cdqUndoText').textContent=count+(count===1?' élément supprimé.':' éléments supprimés.');toast.classList.add('show');
-  button.onclick=async()=>{toast.classList.remove('show');clearTimeout(undoTimer);if(identity()!==owner||!authorized())return;try{const restored=await rpc('restaurerSelectionMultiple',[confirmed.fileIds,confirmed.folderIds,clientId]);if(identity()!==owner)return;if(Number(restored?.nombre)!==count)throw Error('La restauration complète n’a pas été confirmée. Actualisez le dossier.');if(clientId)window.actualiserCompagnieEnArrierePlan?.(clientId);window.dispatchEvent(new CustomEvent('cdq:deleted',{detail:{restored:true,clientId}}));window.afficherMessage?.(restored.message||'Restauration terminée.',true);}catch(error){if(identity()===owner)window.afficherErreur?.(error);}};
+  button.onclick=async()=>{toast.classList.remove('show');clearTimeout(undoTimer);if(identity()!==owner||!authorized())return;try{const restored=await rpc('restaurerSelectionMultiple',[confirmed.fileIds,confirmed.folderIds,clientId]);if(identity()!==owner)return;if(Number(restored?.nombre)!==count)throw Error('La restauration complète n’a pas été confirmée. Actualisez le dossier.');if(clientId)window.actualiserCompagnieEnArrierePlan?.(clientId);window.dispatchEvent(new CustomEvent('cdq:deleted',{detail:{restored:true,owner,ids:confirmed.fileIds,folderIds:confirmed.folderIds,clientId}}));window.afficherMessage?.(restored.message||'Restauration terminée.',true);}catch(error){if(identity()===owner)window.afficherErreur?.(error);}};
   undoTimer=setTimeout(()=>toast.classList.remove('show'),9000);undoTimer.unref?.();
  }
  async function remove(selection,close){
@@ -76,7 +76,7 @@ export function installPcFileOperationsV2727({rpc,identity,authorized,openMove})
    if(confirmed.fileIds.length)window.supprimerFichiersDuCache?.(clientId,confirmed.fileIds);
    for(const id of confirmed.folderIds)window.supprimerDossierDuCache?.(clientId,id);
    const count=confirmed.fileIds.length+confirmed.folderIds.length,total=selection.fileIds.length+selection.folderIds.length;
-   if(count){window.dispatchEvent(new CustomEvent('cdq:deleted',{detail:{ids:confirmed.fileIds,folderIds:confirmed.folderIds,clientId}}));if(clientId)window.actualiserCompagnieEnArrierePlan?.(clientId);undo(confirmed,clientId,owner);}
+   if(count){window.dispatchEvent(new CustomEvent('cdq:deleted',{detail:{owner,ids:confirmed.fileIds,folderIds:confirmed.folderIds,clientId}}));if(clientId)window.actualiserCompagnieEnArrierePlan?.(clientId);undo(confirmed,clientId,owner);}
    if(count!==total)throw Error(count?'Suppression partielle : '+count+' / '+total+' éléments confirmés. Les autres sont conservés.':'La suppression n’a pas été confirmée. Le fichier reste affiché.');
    if(company()===clientId)window.quitterModeSelection?.();window.afficherMessage?.(result.message||'Sélection supprimée.',true);
   }catch(error){transaction.rollback();if(identity()===owner)window.afficherErreur?.(error);}

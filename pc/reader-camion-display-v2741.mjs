@@ -28,7 +28,7 @@ export function normalizeCamionDisplayV2741(pdf,L){
   const advance=chars.reduce((sum,c)=>sum+(widths.lookup(c-first,L.PDFNumber)?.asNumber()||0),0)/1000;
   const size=advance?Math.min(nominal,Math.max(.1,r.width-.4)/advance):nominal;
   const x=(r.width-advance*size)/2,y=(r.height-size*.718)/2,hex=chars.map(c=>c.toString(16).padStart(2,'0')).join('');
-  const commands=`q 0 0 ${number(r.width)} ${number(r.height)} re W n BT 0 Tc 0 Tw 100 Tz 0 Tr /${alias} ${number(size)} Tf ${color[1]} ${color[2]} ${color[3]} rg 1 0 0 1 ${number(x)} ${number(y)} Tm <${hex}> Tj ET Q`;
+  const commands=`q 0 0 ${number(r.width)} ${number(r.height)} re W n BT 0 Tc 0 Tw 100 Tz 0 Tr /${alias} ${number(size)} Tf 1 0.15 0.1 rg 1 0 0 1 ${number(x)} ${number(y)} Tm <${hex}> Tj ET Q`;
   let changed=false;
   if(asText(display.getText())!==value){dict.set(N('V'),L.PDFHexString.fromText(value));changed=true;}
   const ap=widget.dict.lookupMaybe(N('AP'),L.PDFDict),oldRef=ap?.get(N('N')),old=oldRef?pdf.context.lookup(oldRef):null;
@@ -62,8 +62,8 @@ export function refreshReaderCamionDisplayV2741({surface,document:pdfDocument,fi
   for(const input of inputs){
     if(input.value!==value)input.value=value;
     const section=input.closest('.textWidgetAnnotation');
-    const style=input.style,red=style.getPropertyValue('color')||'rgb(255, 0, 0)';
-    for(const [key,v]of Object.entries({display:'block',color:red,'-webkit-text-fill-color':red,'pointer-events':'none','text-align':'center','caret-color':'transparent'}))style.setProperty(key,v,'important');
+    const style=input.style,red='rgb(255, 38, 26)';
+    for(const [key,v]of Object.entries({display:'block',color:red,background:'transparent',border:'none','-webkit-text-fill-color':red,'pointer-events':'none','text-align':'center','caret-color':'transparent'}))style.setProperty(key,v,'important');
     section.style.setProperty('pointer-events','none','important');
     for(const canvas of section.querySelectorAll('canvas.annotationContent'))canvas.style.setProperty('display','none','important');
     // NimbusSans/Arial digits have equal widths. Preserve the authored size,

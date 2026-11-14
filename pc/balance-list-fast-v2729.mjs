@@ -140,18 +140,18 @@ async function prepareBalanceListFastV2792({clientId,fileId,rpc,loadPdf,loadShee
   let signature=indexed?prior?.signature:cached?.signature||cachedSignature?.(file)||prior?.signature,parsed=signatureValues(signature);
   const completeCached=cached?.signature===signature&&cached?.metadataVersion===2866&&validHistoricalMetadata(cached.metadata)&&!!signatureValues(cached.signature);
   let metadata=completeCached?cached.metadata:prior?.signature===signature&&prior?.metadataVersion===2866&&validHistoricalMetadata(prior.metadata)?prior.metadata:null,loaded=false;
-  if(!parsed||!metadata){if(sheet(file)){const returned=await loadSheet(file.id,clientId,sourceRev(file));guard();signature=balanceSheetSignatureV2788(returned,file,{clientId});metadata=readHistoricalSheet(returned);}
+  if(!parsed||!metadata||typeof metadata.numeroSerie!=='string'){if(sheet(file)){const returned=await loadSheet(file.id,clientId,sourceRev(file));guard();signature=balanceSheetSignatureV2788(returned,file,{clientId});metadata=readHistoricalSheet(returned);}
    else{const record=await loadPdf(file.id,sourceRev(file));guard();if(!record?.blob||record.id&&String(record.id)!==String(file.id)||rev(record)!==sourceRev(file)||record.clientId&&String(record.clientId)!==String(clientId))throw Error('Un rapport a changé pendant la préparation.');const read=await readHistoricalPdf(record.blob,await pdfLibrary());signature=read.equipment;metadata=read.metadata;}
    loaded=true;}
   guard();parsed=signatureValues(signature);if(!parsed)throw Error('Données de balance incomplètes.');if(!validHistoricalMetadata(metadata))throw Error('Métadonnées historiques incomplètes.');
   if(loaded||!completeCached){onSourceRead(file,signature,{metadataVersion:2866,metadata:{...metadata}});guard();}
   const {values}=parsed;signatures.set(String(file.id),signature);metadataBySource.set(String(file.id),metadata);if(values===null)return;
-  const [fabricant,modele,capacite,echelon,identification,conformity]=values;records.push({id:String(file.id),source:file.nom||file.name||'',revision:sourceRev(file),fabricant,modele,capacite,echelon,identification,conformity:metadata.conformity,type:metadata.type||'',dateEtalonnage:metadata.reportDate||'',prochaineDate:metadata.nextDate||''});
+  const [fabricant,modele,capacite,echelon,identification,conformity]=values;records.push({id:String(file.id),source:file.nom||file.name||'',revision:sourceRev(file),fabricant,modele,capacite,echelon,identification,conformity:metadata.conformity,numeroSerie:metadata.numeroSerie||'',type:metadata.type||'',dateEtalonnage:metadata.reportDate||'',prochaineDate:metadata.nextDate||''});
  // PDF downloads still share the single background slot of the native bridge.
  // Visible Sheets use at most the two ordinary slots; clicks/writes keep theirs.
  },{stillCurrent,onProgress,concurrency:before.files.every(sheet)?Math.min(2,readConcurrency):1});
  const rows=balanceDisplayRowsV2751(records);
- const digest=await hashText(JSON.stringify([String(clientId),before.name,rows.map(r=>[r.fabricant,r.modele,r.capacite,r.echelon,r.identification,r.conformity])]));guard();
+ const digest=await hashText(JSON.stringify([String(clientId),before.name,rows.map(r=>[r.fabricant,r.modele,r.capacite,r.echelon,r.identification,r.conformity,r.numeroSerie])]));guard();
  // A confirmed revision/digest receipt survives an app restart. Rechecking an
  // unchanged list needs only its two fresh folder snapshots, without fetching
  // or parsing the same list PDF again. A remote list edit invalidates receipt.

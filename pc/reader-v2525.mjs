@@ -573,7 +573,7 @@ function coherentReportFormatsV2758(fields,objects){
   return coherent;
 }
 async function outputSnapshotV2754(){
-  if(decimalGuard&&!decimalGuard.validateAll())throw Error('Corrigez les décimales de la mesure avant d’enregistrer.');
+  if(decimalGuard&&!decimalGuard.validateAll())throw Error('Corrigez la valeur signalée avant d’enregistrer.');
   const current=doc,generation=documentGenerationV2730;
   commitActive();await new Promise(resolve=>setTimeout(resolve,120));
   await scripting.dispatchWillSave();await new Promise(resolve=>setTimeout(resolve,0));await visualRefreshV2730.flush();
@@ -647,7 +647,7 @@ async function output(){
   // Static lists have no report snapshot and download their original bytes.
   if(staticDocumentV2788)return {blob:staticSourceBlobV2788};
   const work=pdfWorkV2729(),workEpoch=work.stats().epoch;
-  if(decimalGuard&&!decimalGuard.validateAll())throw Error("Corrigez les décimales de la mesure avant d’enregistrer.");
+  if(decimalGuard&&!decimalGuard.validateAll())throw Error("Corrigez la valeur signalée avant d’enregistrer.");
   commitActive();await new Promise(r=>setTimeout(r,120));
   await scripting.dispatchWillSave();await new Promise(r=>setTimeout(r,0));
   await visualRefreshV2730.flush();
@@ -995,7 +995,7 @@ try{
     },
     onOpen:()=>{cdqDirectTextFieldV2557=null;cdqNavigationTextFieldV2562=null;cdqKeyboardFieldV2550(false);form?.refresh();},
     onClose:()=>form.refresh()});
-  decimalGuard=installMeasurementValidationV2736({surface:$('viewer'),getEchelon:()=>cdqStoredFieldStateV2581('echelon').value,status});
+  decimalGuard=installMeasurementValidationV2736({surface:$('viewer'),getEchelon:()=>cdqStoredFieldStateV2581('echelon').value,getCapacity:()=>cdqStoredFieldStateV2581('capacite_maximale').value,getUnit:()=>cdqStoredFieldStateV2581('unite_mesure').value,status});
   $('viewer').addEventListener('input',e=>{if(e.target?.name===ECHELON_FIELD_V22){e.target.setCustomValidity('');e.target.removeAttribute('aria-invalid');}},true);
   form=installFormNavigation({validate:field=>validateEchelonV22(field)&&decimalGuard.validate(field),surface:$('viewer'),toolbar:$('formNav'),previous:$('previousField'),next:$('nextField'),done:$('doneFields'),openChoice:field=>choices.open(field),choiceIsOpen:()=>choices.isOpen(),reveal:field=>{
     if(cdqTextEntryFieldV2550(field)){

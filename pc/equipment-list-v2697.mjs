@@ -5,6 +5,7 @@ import {pdfReportConformityV2727} from './report-conformity-v2727.mjs';
 import {sheetReportConformityV2727} from './sheet-report-conformity-v2727.mjs';
 import {pdfWorkV2729} from './pdf-work-v2729.mjs';
 import {validateReportReadV2729} from './report-conformity-cache-v2727.mjs';
+import {pdfMetadata} from './historical-metadata-v2866.mjs';
 import {validHistoricalMetadata} from './historical-metadata-v2866.mjs';
 const clean=v=>{const t=String(v??'').normalize('NFC').replace(/[\u0000-\u001f\u007f]/g,' ').replace(/\s+/g,' ').trim().slice(0,160);return /^(?:[-–—]+|n\/?a|non renseign[eé]|true|false|vrai|faux)$/i.test(t)?'':t;};
 export function equipmentValuesV2697(form){
@@ -30,6 +31,12 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
  const stamp=f=>JSON.stringify([f.modifiedTime||f.dateModification||f.revision||'',String(f.version||''),f.md5Checksum||f.sha256Checksum||'']);
  const readStamp=f=>JSON.stringify([String(f.id),f.nom||f.name||'',({'application/pdf':'PDF','application/vnd.google-apps.spreadsheet':'GOOGLE_SHEETS'})[f.mimeType||f.type]||f.mimeType||f.type||'',stamp(f)]);
  const completeSignature=s=>{try{const value=JSON.parse(s);return value===null||Array.isArray(value)&&value.length===6&&value.slice(0,5).every(v=>typeof v==='string')&&['conforming','nonconforming','unknown'].includes(value[5]);}catch{return false;}};
+ async function details(blob){
+  if(!(blob instanceof Blob))throw Error('PDF absent');
+  const worker=pdfWorkV2729();if(worker){const info=await worker.inspect(blob);if(typeof info.metadata?.numeroSerie==='string')return {signature:info.equipment,numeroSerie:info.metadata.numeroSerie};}
+  const L=await library(),pdf=await L.PDFDocument.load(await blob.arrayBuffer(),{updateMetadata:false}),form=pdf.getForm();
+  return {signature:equipmentValuesV2697(form),numeroSerie:pdfMetadata(form).numeroSerie};
+ }
  async function snapshot(blob){return equipmentSnapshotV2697(blob,await library());}
  function noteSave(rec,blob,saveId){
   sync();const email=owner,generation=epoch,id=String(rec?.id||''),token=String(saveId||'');if(!email||!id||!token||rec?.owner&&String(rec.owner?.email??rec.owner).trim().toLowerCase()!==email)return Promise.reject(Error('Le compte du rapport a changé.'));
@@ -37,9 +44,9 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
   const clientId=String(rec.clientId||''),known=prior&&(!clientId||prior.clientId===clientId)&&completeSignature(prior.signature)&&((prior.verifiedReadV2729&&!prior.local&&prior.stamp===stamp(rec))||(prior.local&&prior.saveId===rec.pendingSaveId))?prior.signature:null;
   const save={...previous,fileId:id,clientId,at:Date.now(),sequence,previous:prior,ready:false};data.saves[token]=save;
   data.reports[id]={...prior,clientId:clientId||prior?.clientId||'',local:true,saveId:token,confirmedRevision:''};persist();
-  const job=(async()=>{const [before,after]=await Promise.all([known===null?snapshot(rec.blob):Promise.resolve(known),snapshot(blob)]);await Promise.all(waiting);if(!valid(email,generation))throw Error('Le compte a changé.');if(data.saves[token]!==save||save.retired)return false;
-   save.ready=true;save.signature=after;save.changed=!!(previous?.changed||before!==after||Object.values(data.saves).some(s=>s!==save&&s.fileId===id&&s.changed&&!s.acknowledged&&!s.retired));
-   if(data.reports[id]?.saveId===token)data.reports[id]={...data.reports[id],signature:after,verifiedReadV2729:!!(save.acknowledged&&data.reports[id].confirmedRevision)};
+  const job=(async()=>{const [before,after]=await Promise.all([known===null||typeof (prior.numeroSerie??prior.metadata?.numeroSerie)!=='string'?details(rec.blob):Promise.resolve({signature:known,numeroSerie:prior.numeroSerie??prior.metadata.numeroSerie}),details(blob)]);await Promise.all(waiting);if(!valid(email,generation))throw Error('Le compte a changé.');if(data.saves[token]!==save||save.retired)return false;
+   save.ready=true;save.signature=after.signature;save.numeroSerie=after.numeroSerie;save.changed=!!(previous?.changed||before.signature!==after.signature||before.numeroSerie!==after.numeroSerie||Object.values(data.saves).some(s=>s!==save&&s.fileId===id&&s.changed&&!s.acknowledged&&!s.retired));
+   if(data.reports[id]?.saveId===token)data.reports[id]={...data.reports[id],signature:after.signature,numeroSerie:after.numeroSerie,verifiedReadV2729:!!(save.acknowledged&&data.reports[id].confirmedRevision)};
    data.saves=Object.fromEntries(Object.entries(data.saves).sort(([,a],[,b])=>b.at-a.at||b.sequence-a.sequence).slice(0,1000));persist();return save.changed;
   })();analyses.set(token,{owner:email,fileId:id,job});job.finally(()=>{if(analyses.get(token)?.job===job)analyses.delete(token);}).catch(()=>{});return job;
  }
@@ -47,6 +54,7 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
  function decision(saveId){sync();const save=data.saves[saveId];return save?.acknowledged||save?.retired?false:save?.changed;}
  function retire(saveId){sync();const save=data.saves[saveId];if(save&&!save.acknowledged){save.retired=true;if(data.reports[save.fileId]?.saveId===saveId){let prior=save.previous,depth=0;while(prior?.local&&data.saves[prior.saveId]?.retired&&depth++<1000)prior=data.saves[prior.saveId].previous;if(prior)data.reports[save.fileId]=prior;else delete data.reports[save.fileId];}persist()}}
  function acknowledge(saveId,meta={}){sync();if(meta.owner&&String(meta.owner?.email??meta.owner).trim().toLowerCase()!==owner)return;const save=data.saves[saveId];if(save&&!save.retired){if(save.clientId&&meta.clientId&&String(meta.clientId)!==save.clientId)return;save.acknowledged=true;const report=data.reports[save.fileId];if(report?.saveId===saveId){report.confirmedRevision=String(meta.modifiedTime||meta.dateModification||meta.revision||'');report.clientId=save.clientId||String(meta.clientId||report.clientId||'');if(report.confirmedRevision){report.stamp=stamp(meta);report.local=false;report.verifiedReadV2729=!!save.ready;}}persist();}}
+ function serialForSave(saveId,clientId=''){sync();const save=data.saves[saveId];return save&&!save.retired&&save.ready&&(!clientId||save.clientId===String(clientId))?save.numeroSerie:undefined;}
  function signatureForSave(saveId,clientId=''){sync();const save=data.saves[saveId];return save&&!save.retired&&save.ready&&(!clientId||save.clientId===String(clientId))&&completeSignature(save.signature)?save.signature:null;}
  function signature(id,clientId=''){sync();const record=data.reports[id];return !clientId||record?.clientId===String(clientId)?record?.signature||'':'';}
  async function inspect(files,stillCurrent=()=>true,clientId=''){
@@ -95,5 +103,5 @@ export function createEquipmentTrackerV2697({identity,library,loadPdf,loadSheet,
   readDirty=true;if(persistNow)flushReads();return true;
  }
  function flushReads(){sync();if(readDirty){if(!persist())throw Object.assign(Error('Les rapports analysés ne peuvent pas être conservés sur cet appareil. Libérez de l’espace puis reprenez l’analyse.'),{code:'LOCAL_CHECKPOINT_FAILED'});readDirty=false;}return true;}
- return {noteSave,decision,awaitDecision,acknowledge,retire,signature,signatureForSave,confirmedSignature,confirmedRead,rememberRead,flushReads,inspect};
+ return {noteSave,decision,awaitDecision,acknowledge,retire,signature,signatureForSave,serialForSave,confirmedSignature,confirmedRead,rememberRead,flushReads,inspect};
 }

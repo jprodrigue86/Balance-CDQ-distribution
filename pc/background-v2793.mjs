@@ -34,7 +34,7 @@ function read(key,fallback=''){
 function write(key,value){try{w?.localStorage?.setItem(key,value)}catch{}}
 function selected(){
  const palette=d?.documentElement?.dataset?.cdqPalette||read('cdqTheme','dark');
- const fallback=palette==='metal'?'brushed':'current';
+ const fallback='current';
  const name=owner();
  let saved=read(name?storageKey+':'+name:storageKey+':device',read(storageKey+':device',fallback));
  if(saved==='letter'){saved='leather';write(name?storageKey+':'+name:storageKey+':device',saved);}

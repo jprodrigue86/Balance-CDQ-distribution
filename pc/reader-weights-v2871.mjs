@@ -21,7 +21,7 @@ export function weightsToday(now=new Date()){return `${now.getFullYear()}-${Stri
 export function installWeightsControlsV2871({surface,doc,fields}){
  const definitions=name=>{const f=fields instanceof Map?fields.get(name):fields?.[name];return f?(Array.isArray(f)?f:[f]):[];};
  if(!definitions('poids_01_01').length||!definitions('poids_14_06').length||!definitions('date_prochain').length)return ()=>{};
- const controller=new AbortController(),signal=controller.signal,buttons=new Set();let dialog=null,writing=false,uniformBorders=false;
+ const controller=new AbortController(),signal=controller.signal,buttons=new Set();let dialog=null,writing=false,uniformBorders=false,separated=false;
  const live=name=>surface.querySelector(`[name="${name}"]`);
  const read=name=>{const el=live(name);if(el)return el.value;const d=definitions(name)[0];return d?String(doc.annotationStorage.getValue(d.id,d)?.value??''):'';};
  let automatic=!read('date_prochain')||iso(read('date_prochain'))===weightNextDate(read('date_etalonnage'),read('frequence'));
@@ -52,7 +52,7 @@ export function installWeightsControlsV2871({surface,doc,fields}){
  }
  function refresh(){
   if(uniformBorders)for(const field of surface.querySelectorAll('input,textarea,select')){
-   const section=field.closest('section'),sides=tableBorderStyleV2872(field.name);if(!section||!sides)continue;
+   const section=field.closest('section'),sides=tableBorderStyleV2872(field.name,1,separated);if(!section||!sides)continue;
    for(const [key,value]of Object.entries(sides)){
     const property=key.replace(/[A-Z]/g,c=>'-'+c.toLowerCase());
     const next=key.startsWith('border')&&key.endsWith('Width')&&value!=='0px'?'calc(0.6px * var(--total-scale-factor))':value;
@@ -67,12 +67,15 @@ export function installWeightsControlsV2871({surface,doc,fields}){
     if(field.style.getPropertyValue(key)!==value||field.style.getPropertyPriority(key)!=='important')field.style.setProperty(key,value,'important');
   }
   for(const name of ['date_etalonnage','date_prochain','date_approbation']){
-   const field=live(name),section=field?.closest('section');if(!section||section.querySelector('[data-cdq-weight-calendar]'))continue;
-   const b=document.createElement('button');b.type='button';b.dataset.cdqWeightCalendar=name;b.setAttribute('aria-label','Calendrier : '+name.replaceAll('_',' '));b.textContent='▦';b.style.cssText='position:absolute;right:0;top:0;height:100%;width:18px;min-height:0;min-width:0;line-height:1;padding:0;border:0;background:white;color:#102951;font:14px sans-serif;z-index:2';
+   const field=live(name),section=field?.closest('section');if(!section)continue;
+   field.style.setProperty('box-sizing','border-box','important');
+   field.style.setProperty('padding-inline-end','calc(20px * var(--total-scale-factor))','important');
+   if(section.querySelector('[data-cdq-weight-calendar]'))continue;
+   const b=document.createElement('button');b.type='button';b.dataset.cdqWeightCalendar=name;b.setAttribute('aria-label','Calendrier : '+name.replaceAll('_',' '));b.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6M17 2v6M3 11h18M7 15h3M14 15h3M7 18h3M14 18h3"/></svg>';b.style.cssText='position:absolute;box-sizing:border-box;right:calc(.6px * var(--total-scale-factor));top:calc(.6px * var(--total-scale-factor));height:calc(100% - 1.2px * var(--total-scale-factor));width:min(25%,calc(18px * var(--total-scale-factor)));min-height:0;min-width:0;line-height:1;padding:0;border:0;background:white;color:#102951;z-index:2';
    b.addEventListener('click',()=>open(name),{signal});section.append(b);buttons.add(b);
   }
  }
  const observer=new MutationObserver(refresh);observer.observe(surface,{subtree:true,childList:true});refresh();
- Promise.resolve(doc.getMetadata()).then(metadata=>{if(!signal.aborted&&String(metadata?.info?.Custom?.CDQVisualV2872||'')==='2872'){uniformBorders=true;refresh();}}).catch(()=>{});
+ Promise.resolve(doc.getMetadata()).then(metadata=>{if(!signal.aborted&&String(metadata?.info?.Custom?.CDQVisualV2872||'')==='2872'){uniformBorders=true;separated=String(metadata?.info?.Custom?.CDQCellsSeparatedV2874||'')==='2874';refresh();}}).catch(()=>{});
  return()=>{controller.abort();observer.disconnect();for(const b of buttons)b.remove();dialog?.remove();};
 }

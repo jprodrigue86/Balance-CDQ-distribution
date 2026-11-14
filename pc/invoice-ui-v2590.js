@@ -21,11 +21,11 @@ function update(){if(!page)return;$('[data-inv-tech]',page).textContent=tech().r
 function choose(c,source){var next=CATS.indexOf(c)>=0?c:'';if(source==='ocr'){suggestedCategory=next;if(categorySource==='manual'){update();return}categorySource=next?'ocr':''}else if(source==='manual'){categorySource=next?'manual':''}category=next;update()}
 function cancelInvoiceOcrV2733(){clearTimeout(window.__cdqInvoiceOcrTimerV2590);window.__cdqInvoiceOcrRequestV2590='';ocrRunV2733=null}
 function currentInvoiceOcrV2733(run){return ocrRunV2733===run&&run.sequence===photoSequence&&run.owner===email()+'|'+userRole()&&(typeof cdqAccessState==='undefined'||cdqAccessState==='ready')&&(!window.cdqDriveEntryV2632||window.cdqDriveEntryV2632.canRead())}
-function reset(){photoSequence++;cancelInvoiceOcrV2733();page?.querySelector('[data-inv-preview]')?.__cdqPreviewV2783?.destroy();dataUrl='';ocrText='';manualFieldsV2791={};category='';categorySource='';suggestedCategory='';busy=false;requestId=uid();$('#cdqInvoiceAmountV2590',page).value='';$('#cdqInvoiceDateV2590',page).value='';$('#cdqInvoiceMerchantV2590',page).value='';$('[data-inv-preview]',page).innerHTML='<div class="cdq-invoice-empty">'+svg('camera')+'<strong>Aucune photo</strong><span>Appuyez sur Prendre ou Importer pour ajouter le reçu.</span></div>';$('[data-inv-analyze]',page).disabled=true;$('[data-inv-clear]',page).disabled=true;detected("En attente d'une photo",'Montant, date et catégorie seront détectés automatiquement.','idle');status('');update();setBusy(false)}
+function reset(){invoiceReviewClearV2874();photoSequence++;cancelInvoiceOcrV2733();page?.querySelector('[data-inv-preview]')?.__cdqPreviewV2783?.destroy();dataUrl='';ocrText='';manualFieldsV2791={};category='';categorySource='';suggestedCategory='';busy=false;requestId=uid();$('#cdqInvoiceAmountV2590',page).value='';$('#cdqInvoiceDateV2590',page).value='';$('#cdqInvoiceMerchantV2590',page).value='';$('[data-inv-preview]',page).innerHTML='<div class="cdq-invoice-empty">'+svg('camera')+'<strong>Aucune photo</strong><span>Appuyez sur Prendre ou Importer pour ajouter le reçu.</span></div>';$('[data-inv-analyze]',page).disabled=true;$('[data-inv-clear]',page).disabled=true;detected("En attente d'une photo",'Montant, date et catégorie seront détectés automatiquement.','idle');status('');update();setBusy(false)}
 function setBusy(v,msg){busy=!!v;if(!page)return;$$('button,input,select',page).forEach(function(el){if(el.matches('[data-inv-close],[data-inv-file],.cdq-invoice-zoom-v2783 button'))return;el.disabled=busy||(el.matches('[data-inv-analyze]')&&!dataUrl)||(el.matches('[data-inv-clear]')&&!dataUrl)});if(msg)status(msg)}
 function compress(file){return import('./invoice-photo-v2659.mjs').then(function(photo){return photo.prepareInvoicePhoto(file)})}
-async function take(file){if(!file||busy)return;var sequence=++photoSequence,owner=email()+'|'+userRole();cancelInvoiceOcrV2733();setBusy(true,'Préparation de la photo…');try{var prepared=await compress(file);if(sequence!==photoSequence||owner!==email()+'|'+userRole()||(typeof cdqAccessState!=='undefined'&&cdqAccessState!=='ready')||(window.cdqDriveEntryV2632&&!window.cdqDriveEntryV2632.canRead()))return;dataUrl=prepared;ocrText='';manualFieldsV2791={};category='';categorySource='';suggestedCategory='';$('#cdqInvoiceAmountV2590',page).value='';$('#cdqInvoiceDateV2590',page).value='';$('#cdqInvoiceMerchantV2590',page).value='';update();var box=$('[data-inv-preview]',page),im=document.createElement('img');im.src=dataUrl;im.alt='Aperçu du reçu';box.__cdqPreviewV2783?.destroy();box.replaceChildren(im);import('./invoice-preview-v2783.mjs').then(module=>{if(sequence===photoSequence&&box.contains(im))module.installInvoicePreviewV2783(box,im);}).catch(error=>console.warn('Aperçu interactif indisponible',error));$('[data-inv-analyze]',page).disabled=false;$('[data-inv-clear]',page).disabled=false;requestId=uid();detected('Photo prête','Appuyez sur Analyser le reçu pour remplir les champs.','idle');status('Photo prête pour la lecture automatique.')}catch(e){if(sequence===photoSequence&&owner===email()+'|'+userRole())status(e.message||String(e),'error')}finally{if(sequence===photoSequence&&owner===email()+'|'+userRole())setBusy(false)}}
-function removePhoto(){photoSequence++;cancelInvoiceOcrV2733();page?.querySelector('[data-inv-preview]')?.__cdqPreviewV2783?.destroy();dataUrl='';ocrText='';$('[data-inv-preview]',page).innerHTML='<div class="cdq-invoice-empty">'+svg('camera')+'<strong>Aucune photo</strong><span>Appuyez sur Prendre pour photographier le reçu.</span></div>';$('[data-inv-analyze]',page).disabled=true;$('[data-inv-clear]',page).disabled=true;detected("En attente d'une photo",'Montant, date et catégorie seront détectés automatiquement.','idle');status('')}
+async function take(file){if(!file||busy)return;var sequence=++photoSequence,owner=email()+'|'+userRole();cancelInvoiceOcrV2733();setBusy(true,'Préparation de la photo…');try{var prepared=await compress(file);if(sequence!==photoSequence||owner!==email()+'|'+userRole()||(typeof cdqAccessState!=='undefined'&&cdqAccessState!=='ready')||(window.cdqDriveEntryV2632&&!window.cdqDriveEntryV2632.canRead()))return;invoiceReviewClearV2874();dataUrl=prepared;ocrText='';manualFieldsV2791={};category='';categorySource='';suggestedCategory='';$('#cdqInvoiceAmountV2590',page).value='';$('#cdqInvoiceDateV2590',page).value='';$('#cdqInvoiceMerchantV2590',page).value='';update();var box=$('[data-inv-preview]',page),im=document.createElement('img');im.src=dataUrl;im.alt='Aperçu du reçu';box.__cdqPreviewV2783?.destroy();box.replaceChildren(im);import('./invoice-preview-v2783.mjs').then(module=>{if(sequence===photoSequence&&box.contains(im))module.installInvoicePreviewV2783(box,im);}).catch(error=>console.warn('Aperçu interactif indisponible',error));$('[data-inv-analyze]',page).disabled=false;$('[data-inv-clear]',page).disabled=false;requestId=uid();detected('Photo prête','Appuyez sur Analyser le reçu pour remplir les champs.','idle');status('Photo prête pour la lecture automatique.')}catch(e){if(sequence===photoSequence&&owner===email()+'|'+userRole())status(e.message||String(e),'error')}finally{if(sequence===photoSequence&&owner===email()+'|'+userRole())setBusy(false)}}
+function removePhoto(){invoiceReviewClearV2874();photoSequence++;cancelInvoiceOcrV2733();page?.querySelector('[data-inv-preview]')?.__cdqPreviewV2783?.destroy();dataUrl='';ocrText='';$('[data-inv-preview]',page).innerHTML='<div class="cdq-invoice-empty">'+svg('camera')+'<strong>Aucune photo</strong><span>Appuyez sur Prendre pour photographier le reçu.</span></div>';$('[data-inv-analyze]',page).disabled=true;$('[data-inv-clear]',page).disabled=true;detected("En attente d'une photo",'Montant, date et catégorie seront détectés automatiquement.','idle');status('')}
 function textLines(t){return String(t||'').split(/\r?\n/).map(function(x){return x.replace(/\s+/g,' ').trim()}).filter(Boolean)}
 function invoiceAmountTokens(line){
   var out=[],re=/(^|[^\dA-Za-zÀ-ÿ.,])((?:\d{1,3}(?:[ ,.\u00a0]\d{3})+|\d{1,5})\s*[,.]\s*\d{2})(?!\d|[,.]\d)/g,m,s=String(line||'');
@@ -142,8 +142,45 @@ function invoicePaymentAmbiguousV2791(t){
   var text=String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
   return /\b(?:annul(?:e|ee|es|ees|ation)|cancel(?:led|ed|lation)|void(?:ed)?|refus(?:e|ee)|declined|pre[ -]?autori[sz]\w*|paiement\s+partiel|partial\s+payment)\b/.test(text);
 }
-function parseAmount(t,layout){
-  if(invoicePaymentAmbiguousV2791(t))return NaN;
+// Cross-check printed fuel amounts; never replace a printed total with arithmetic.
+function invoiceFuelCheckV2874(rows,total){
+ var sales=[],rates=[],other=false,invalid=false;
+ rows.forEach(function(row){
+  if(row.meta.suggestion||row.suggestionBlock)return;
+  var text=row.meta.text,amounts=lineAmounts(row.line);
+  var sale=/^(?:vente\s+d['’ ]\s*ess(?:e|ence)?|total\s+(?:carb(?:urant)?s?|essence|diesel|fuel|gasoline))(?=\s*(?:$|[:$€]|\d|(?:cad|cdn)\b))/.test(text);
+  if(sale){if(amounts.length===1)sales.push(amounts[0]);else invalid=true;return;}
+  var rate=text.match(/^(\d{1,4}[,.]\d{1,3})\s*l\s*(?:a|@|x)\s*\$?\s*(\d{1,2}[,.]\d{2,4})\s*(?:\$\s*)?\/\s*l\s*$/);
+  if(rate){rates.push(Number(rate[1].replace(',','.'))*Number(rate[2].replace(',','.')));return;}
+  if(amounts.length&&!row.meta.rank&&!/^(?:tps|tvq|gst|qst)\s+(?:incluse?s?|included)\b/.test(text))other=true;
+ });
+ var fuel=sales.length===1?sales[0]:NaN;
+ if(sales.length>1&&sales.some(value=>Math.round(value*100)!==Math.round(sales[0]*100)))invalid=true;
+ // The product is only evidence of a disagreement on the fuel line. Multiple
+ // fills and unrecognized layouts do not support this arithmetic check.
+ if(sales.length===1&&rates.length===1&&Math.abs(Math.round(fuel*100)-Math.round(rates[0]*100))>2)
+  return {reason:'fuel-arithmetic',fuel:fuel};
+ if(sales.length===1&&Number.isFinite(total)&&!other&&Math.round(total*100)!==Math.round(fuel*100))
+  return {reason:'fuel-total',fuel:fuel};
+ return {reason:invalid?'fuel-ambiguous':'',fuel:fuel};
+}
+
+function invoiceReviewDisplayV2874(decision){
+ var box=$('[data-inv-detected]',page),details=page.querySelector('[data-inv-review-v2874]');
+ if(!details){details=document.createElement('details');details.dataset.invReviewV2874='';var summary=document.createElement('summary');summary.textContent='Vérifier la lecture';details.appendChild(summary);details.appendChild(document.createElement('p'));box.insertAdjacentElement('afterend',details);}
+ var labels={'payment':'État de paiement ambigu.','missing':'Total non trouvé.','conflict':'Plusieurs totaux incompatibles.','arithmetic':'Le total ne correspond pas au sous-total et aux taxes.','fuel-total':'Le montant d’essence et le total ne correspondent pas.','fuel-arithmetic':'Le montant d’essence ne correspond pas aux litres et au prix lus.','fuel-ambiguous':'Plusieurs montants d’essence incompatibles.'};
+ var messages=[];
+ if(Number.isFinite(decision.printed))messages.push('Total lu : '+displayMoney(decision.printed)+' $.');
+ if(Number.isFinite(decision.fuel))messages.push('Essence lue : '+displayMoney(decision.fuel)+' $.');
+ messages.push(labels[decision.reason]||'Aucune contradiction détectée dans les montants lus.');
+ messages.push(decision.reason?'Vérifiez la photo et saisissez le montant exact.':'Comparez toujours avec la photo avant d’enregistrer.');
+ details.querySelector('p').textContent=messages.join(' ');details.hidden=false;details.open=!!decision.reason;
+}
+function invoiceReviewClearV2874(){var details=page&&page.querySelector('[data-inv-review-v2874]');if(details){details.hidden=true;details.querySelector('p').textContent='';}}
+
+function parseAmount(t,layout){return invoiceAmountDecisionV2874(t,layout).amount;}
+function invoiceAmountDecisionV2874(t,layout){
+  if(invoicePaymentAmbiguousV2791(t))return {amount:NaN,reason:'payment'};
   // Accept a missing OCR space only for a leading known TOTAL label followed
   // immediately by a complete decimal amount, never for arbitrary identifiers.
   var geometry=invoiceLayoutRowsV2734(layout),physical=geometry!==null,sourceRows=physical?geometry.map(function(line){return {line:line,noAdjacent:true}}):invoiceColumnRowsV2734(textLines(t)),rows=[],suggestionBlock=false,labels=[];
@@ -170,10 +207,11 @@ function parseAmount(t,layout){
     labels.push({rank:row.meta.rank,amounts:amounts});
   });
   var priority=0;labels.forEach(function(label){if(label.rank>priority)priority=label.rank});
-  if(!priority)return NaN;
+  if(!priority)return {amount:NaN,reason:'missing'};
   var chosen=NaN,uncertain=false;
   labels.forEach(function(label){if(label.rank!==priority)return;if(!label.amounts.length){uncertain=true;return}label.amounts.forEach(function(amount){if(!Number.isFinite(chosen))chosen=amount;else if(Math.round(chosen*100)!==Math.round(amount*100))uncertain=true})});
-  return uncertain||!invoiceTotalConsistentV2790(rows,chosen)?NaN:chosen;
+  var fuel=invoiceFuelCheckV2874(rows,chosen),reason=uncertain?'conflict':!invoiceTotalConsistentV2790(rows,chosen)?'arithmetic':fuel.reason;
+  return {amount:reason?NaN:chosen,printed:chosen,fuel:fuel.fuel,reason:reason};
 }
 function invoiceValidDateV2791(value){
   if(!/^20\d{2}-\d{2}-\d{2}$/.test(String(value||'')))return false;
@@ -300,11 +338,12 @@ async function deleteSaved(item){
   finally{setBusy(false)}
 }
 function applyOcr(t,layout){
- ocrText=String(t||'');choose('','ocr');
+ invoiceReviewClearV2874();ocrText=String(t||'');choose('','ocr');
  function field(id,value){if(!manualFieldsV2791[id])$('#'+id,page).value=value;}
  field('cdqInvoiceAmountV2590','');field('cdqInvoiceDateV2590','');field('cdqInvoiceMerchantV2590','');update();
  if(!ocrText.trim()){detected('Aucun texte détecté','Reprenez une photo plus nette ou importez l’image originale.','error');status('Aucun texte lisible détecté dans le reçu.','error');return;}
- var a=parseAmount(t,layout),d=parseDate(t),m=merchant(t),c=infer(t);
+ var decision=invoiceAmountDecisionV2874(t,layout),a=decision.amount,d=parseDate(t),m=merchant(t),c=infer(t);
+ invoiceReviewDisplayV2874(decision);
  if(Number.isFinite(a))field('cdqInvoiceAmountV2590',displayMoney(a));
  if(d)field('cdqInvoiceDateV2590',d);
  if(m)field('cdqInvoiceMerchantV2590',m);

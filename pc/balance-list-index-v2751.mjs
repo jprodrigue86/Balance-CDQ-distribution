@@ -15,7 +15,11 @@ export function balanceEngineReadCacheV2791(result,clientId){
   const row=rows.get(id);if(!row||row.local||row.reportId||row.pdf?.status!=='legacy'||row.pdf.driveRevision!==revision)continue;
   const values=[row.fabricant,row.modele,row.capacite,row.echelon,row.identification,row.conformity];
   const signature=JSON.stringify(values);if(!balanceSignatureValuesV2751(signature))continue;
-  entries.push({id,revision,signature});
+  // Older imports omitted these columns. Missing fields must trigger a read;
+  // explicit empty values are confirmed absence, not an invented date/type.
+  const complete=['type','dateEtalonnage','prochaineDate'].every(key=>Object.hasOwn(row,key)&&typeof row[key]==='string');
+  const metadata=complete?{...(typeof row.numeroSerie==='string'?{numeroSerie:row.numeroSerie}:{}),type:row.type||null,reportDate:row.dateEtalonnage||null,nextDate:row.prochaineDate||null,conformity:row.conformity}:null;
+  entries.push({id,revision,signature,...(validHistoricalMetadata(metadata)?{metadataVersion:2866,metadata}:{})});
  }
  return {clientId:String(clientId),entries};
 }
@@ -27,13 +31,20 @@ export function balanceEngineSignatureV2791(cache,file,clientId){
  const row=rows.length===1?rows[0]:null;
  return row?.revision===revision&&balanceSignatureValuesV2751(row.signature)?.values?row.signature:null;
 }
+export function balanceEngineConfirmedReadV2874(cache,file,clientId){
+ const signature=balanceEngineSignatureV2791(cache,file,clientId);
+ if(!signature)return null;
+ const row=cache.entries.find(row=>row.id===String(file.id));
+ if(row?.metadataVersion!==2866||!validHistoricalMetadata(row.metadata)||row.metadata.conformity!==JSON.parse(signature)[5])return null;
+ return {signature,metadataVersion:2866,metadata:{...row.metadata}};
+}
 export function balanceSignatureValuesV2751(signature){
  if(typeof signature!=='string'||!signature)return null;
  try{const value=JSON.parse(signature);return value===null||Array.isArray(value)&&value.length===6&&value.slice(0,5).every(v=>typeof v==='string')&&['conforming','nonconforming','unknown'].includes(value[5])?{values:value}:null;}catch{return null;}
 }
 export function balanceSourceRowsV2751(index){
  if(!index?.exhaustive||!Array.isArray(index.sources))return null;
- const rows=[];for(const source of index.sources){const parsed=balanceSignatureValuesV2751(source.signature);if(!parsed)return null;if(source.metadataVersion!==2866||!validHistoricalMetadata(source.metadata))return null;if(parsed.values===null)continue;const[fabricant,modele,capacite,echelon,identification,conformity]=parsed.values;rows.push({id:String(source.id),source:source.name||'',revision:source.revision,fabricant,modele,capacite,echelon,identification,conformity:source.metadata.conformity,type:source.metadata.type||'',dateEtalonnage:source.metadata.reportDate||'',prochaineDate:source.metadata.nextDate||''});}return rows;
+ const rows=[];for(const source of index.sources){const parsed=balanceSignatureValuesV2751(source.signature);if(!parsed)return null;if(source.metadataVersion!==2866||!validHistoricalMetadata(source.metadata))return null;if(parsed.values===null)continue;const[fabricant,modele,capacite,echelon,identification,conformity]=parsed.values;rows.push({id:String(source.id),source:source.name||'',revision:source.revision,fabricant,modele,capacite,echelon,identification,conformity:source.metadata.conformity,numeroSerie:source.metadata.numeroSerie||'',type:source.metadata.type||'',dateEtalonnage:source.metadata.reportDate||'',prochaineDate:source.metadata.nextDate||''});}return rows;
 }
 export function balanceDisplayRowsV2751(records){
  const seen=new Set();return records.slice().sort((a,b)=>Number(!!b.local)-Number(!!a.local)||(Date.parse(b.revision)||0)-(Date.parse(a.revision)||0)||String(a.id).localeCompare(String(b.id))).filter(row=>{const id=norm(row.identification);if(id&&seen.has(id))return false;if(id)seen.add(id);return true;}).sort((a,b)=>String(a.identification||a.source).localeCompare(String(b.identification||b.source),'fr',{numeric:true}));

@@ -73,7 +73,7 @@ function wrapRpcRunnerV2751(original,budget,{report=()=>{}}={}){
           if(signal?.aborted){reject(Object.assign(Error('Lecture annulée.'),{name:'AbortError',code:'READ_CANCELLED'}));return;}
           try{onStart?.();let runner=original().withSuccessHandler((...values)=>resolve(values)).withFailureHandler((...values)=>reject({rpcValues:values}));if(hasValue)runner=runner.withUserObject(value);const previous=window.cdqRpcDispatchTraceV2765;window.cdqRpcDispatchTraceV2765={schema:'cdq-rpc-timing-v2765',id:traceId};try{runner[name](...args);}finally{window.cdqRpcDispatchTraceV2765=previous;}}catch(error){reject(error);}
         });
-        const options={write:/^(?:enregistrer|sauvegarder|creer|supprimer|renommer|deplacer|dupliquer|envoyer|restaurer|retirer|ajouter|modifier|definir|cdq(?:Enregistrer|Creer|Supprimer|Restaurer|Renommer|Deplacer|Dupliquer|Envoyer|Retirer|Ajouter|Modifier|Inventory(?:Create|Move|Save|Set|Delete)))/i.test(name)};
+        const options={write:/^(?:enregistrer|sauvegarder|creer|supprimer|renommer|deplacer|copier|dupliquer|envoyer|restaurer|retirer|ajouter|modifier|definir|cdq(?:Enregistrer|Creer|Supprimer|Restaurer|Renommer|Deplacer|Dupliquer|Envoyer|Retirer|Ajouter|Modifier|Inventory(?:Create|Move|Save|Set|Delete)))/i.test(name)};
         // The engine multiplexes reads and writes through one RPC name.
         // Treat an actual save/delete as a write, and receipt polling as
         // background work, so polling cannot occupy every foreground slot.

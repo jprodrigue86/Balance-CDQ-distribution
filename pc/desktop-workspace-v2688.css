@@ -167,3 +167,41 @@ html.cdq-desktop-v2676.cdq-mobile-layout body .bottom-nav>.bottom-nav-item[data-
 
 html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675] :is(span,svg,img){width:56px!important;height:56px!important;min-width:56px!important;min-height:56px!important;max-width:56px!important;max-height:56px!important}
 html.cdq-desktop-v2676.cdq-mobile-layout body .bottom-nav>.bottom-nav-item[data-workspace-route]{filter:none!important}
+
+/* MAJ 02 — PC candidate v28.74, adapted from PR 103 to published v28.73.
+   One icon scale and label scale. No Android/global Selector selectors. */
+html.cdq-desktop-v2676 {--cdq-pc-art-v2871:36px;--cdq-pc-label-v2871:15px;--cdq-pc-action-height-v2874:52px}
+html.cdq-desktop-v2676 body #cdqTopActionsV2204 > #cdqTopDisplayButtonV2204[data-cdq-pc-settings-redirect-v2871="true"] {display:none!important}
+html.cdq-desktop-v2676 body #cdqPcSettingsNavV2871 {order:8;display:flex!important;align-items:center!important;justify-content:flex-start!important;text-align:left!important;cursor:pointer;--cdq-nav-accent:#c574f5}
+html.cdq-desktop-v2676 body #cdqPcSettingsNavV2871 .cdq-pc-settings-art-v2871 {width:var(--cdq-pc-art-v2871)!important;height:var(--cdq-pc-art-v2871)!important;min-width:var(--cdq-pc-art-v2871)!important;min-height:var(--cdq-pc-art-v2871)!important;display:grid!important;place-items:center!important;flex-shrink:0!important}
+html.cdq-desktop-v2676 body #cdqPcSettingsNavV2871 .cdq-pc-settings-art-v2871 > :is(svg,img,span) {width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;display:grid!important;place-items:center!important;font-size:calc(var(--cdq-pc-art-v2871)*.82)!important;line-height:1!important}
+html.cdq-desktop-v2676 body #cdqPcSettingsNavV2871 small {font-family:Arial,Helvetica,sans-serif!important;font-size:var(--cdq-pc-label-v2871)!important;line-height:1.2!important;font-weight:600!important}
+html.cdq-desktop-v2676 body #cdqPcSettingsNavV2871:hover {background:var(--cdq-raised)!important;border-color:var(--cdq-line)!important}
+html.cdq-desktop-v2676 body #cdqPcSettingsNavV2871:focus-visible {outline:2px solid var(--cdq-nav-accent)!important;outline-offset:-3px}
+html.cdq-desktop-v2676 body #cdqPcHomeHeading {grid-template-columns:max(44px,var(--cdq-pc-art-v2871)) minmax(0,1fr) max(44px,var(--cdq-pc-art-v2871))!important;height:72px!important;min-height:72px!important}
+html.cdq-desktop-v2676 body #cdqPcHomeHeading :is([data-pc-home-art],[data-pc-home-art]>span,[data-pc-home-art] svg,[data-pc-home-art] img),
+html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675],
+html.cdq-desktop-v2676 body [data-cdq-heading-icon-v2675] :is(span,svg,img,div,i) {width:var(--cdq-pc-art-v2871)!important;height:var(--cdq-pc-art-v2871)!important;min-width:var(--cdq-pc-art-v2871)!important;min-height:var(--cdq-pc-art-v2871)!important;max-width:var(--cdq-pc-art-v2871)!important;max-height:var(--cdq-pc-art-v2871)!important;object-fit:contain!important}
+html.cdq-desktop-v2676 body [data-cdq-heading-layout-v2675] {grid-template-columns:max(44px,var(--cdq-pc-art-v2871)) minmax(0,1fr) max(44px,var(--cdq-pc-art-v2871))!important;min-height:72px!important}
+html.cdq-desktop-v2676 body #cdqPcHomeControls>#cdqTopActionsV2204>button:not(#cdqTopDisplayButtonV2204) {min-height:var(--cdq-pc-action-height-v2874)!important;height:auto!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;padding:6px 12px!important;font-family:Arial,Helvetica,sans-serif!important;font-size:var(--cdq-pc-label-v2871)!important;font-weight:600!important;box-sizing:border-box!important}
+html.cdq-desktop-v2676 body #cdqPcHomeControls>#cdqTopActionsV2204>button:not(#cdqTopDisplayButtonV2204)>span:not([data-cdq-home-icon]) {font-size:var(--cdq-pc-label-v2871)!important;line-height:1.2!important}
+html.cdq-desktop-v2676 body #cdqPcHomeControls>#cdqTopActionsV2204>button:not(#cdqTopDisplayButtonV2204)>:is(svg,img,[data-cdq-home-icon],.cdq-action-art-v2655) {width:var(--cdq-pc-art-v2871)!important;height:var(--cdq-pc-art-v2871)!important;min-width:var(--cdq-pc-art-v2871)!important;min-height:var(--cdq-pc-art-v2871)!important;max-width:var(--cdq-pc-art-v2871)!important;max-height:var(--cdq-pc-art-v2871)!important;object-fit:contain!important;flex-shrink:0!important}
+html.cdq-desktop-v2676 body #cdqClientActionsV2640 {grid-template-columns:repeat(3,minmax(0,1fr)) minmax(190px,1.2fr)!important;align-items:stretch!important;column-gap:8px!important;row-gap:8px!important;padding:9px 0!important}
+html.cdq-desktop-v2676 body #cdqClientActionsV2640>:is(button[data-client-folder],button[data-client-list],button[data-client-report]) {width:100%!important;max-width:none!important;min-width:0!important;height:auto!important;min-height:var(--cdq-pc-action-height-v2874)!important;align-self:stretch!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:10px!important;flex-direction:row!important;margin:0!important;padding:7px 10px!important;box-sizing:border-box!important;white-space:normal!important;text-align:center!important;line-height:1.15!important;font:600 var(--cdq-pc-label-v2871)/1.15 Arial,Helvetica,sans-serif!important}
+html.cdq-desktop-v2676 body #cdqClientActionsV2640>:is(button[data-client-folder],button[data-client-list],button[data-client-report])>:is(svg,img,[data-cdq-home-icon],.cdq-icon-host-v2514,.cdq-action-art-v2655,.cdq-material-client-icon,span:has(>svg),span:has(>img)) {width:var(--cdq-pc-art-v2871)!important;height:var(--cdq-pc-art-v2871)!important;min-width:var(--cdq-pc-art-v2871)!important;min-height:var(--cdq-pc-art-v2871)!important;max-width:var(--cdq-pc-art-v2871)!important;max-height:var(--cdq-pc-art-v2871)!important;flex-shrink:0!important;object-fit:contain!important;display:grid!important;place-items:center!important}
+html.cdq-desktop-v2676 body #cdqClientActionsV2640>:is(button[data-client-folder],button[data-client-list],button[data-client-report])>:is(span:has(>svg),span:has(>img))>:is(svg,img) {width:100%!important;height:100%!important;object-fit:contain!important}
+html.cdq-desktop-v2676 body #cdqClientActionsV2640>.cdq-pc-file-search {grid-column:4!important;grid-row:1!important;height:48px!important;min-height:48px!important;align-self:center!important}
+@media(max-width:1100px){
+  html.cdq-desktop-v2676 body #cdqClientActionsV2640 {grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  html.cdq-desktop-v2676 body #cdqClientActionsV2640>.cdq-pc-file-search {grid-column:1/-1!important;grid-row:2!important;justify-self:end!important}
+  html.cdq-desktop-v2676 body #cdqClientActionsV2640>:is(button[data-client-folder],button[data-client-list],button[data-client-report]) {white-space:normal!important}
+}
+
+html.cdq-desktop-v2676 body #cdqClientActionsV2640>button>.cdq-material-client-icon>:is(svg,img,span) {width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important}
+html.cdq-desktop-v2676 body #cdqClientActionsV2640>button>span:last-child {min-width:0!important;font:inherit!important;white-space:normal!important;overflow-wrap:normal!important}
+@media(max-width:899px){html.cdq-desktop-v2676 body #cdqPcSettingsNavV2871 small {display:none!important}}
+
+/* Size the drawing, not only its host; shared mobile CSS otherwise keeps it at24px. */
+html.cdq-desktop-v2676.cdq-mobile-layout body .bottom-nav>.bottom-nav-item[data-workspace-route]>span>:is(svg,img,span) {width:100%!important;height:100%!important;min-width:100%!important;min-height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important}
+
+html.cdq-desktop-v2676 body #cdqPcHomeControls>#cdqTopActionsV2204>button>:is([data-cdq-home-icon],.cdq-action-art-v2655)>:is(svg,img,span) {width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important}

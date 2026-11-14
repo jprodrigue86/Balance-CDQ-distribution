@@ -1,3 +1,4 @@
+import {capacityErrorV2874} from './verified-range-v2756.mjs';
 // One rule is used by the reader and embedded Acrobat/PDF.js actions.
 export const isCorrectionReadingV2736=name=>/^(?:charge_point_\d+_(?:avant|apres)_correction(?:_2)?|excentricite_(?:avant|apres)_.+|B4_.+_(?:Avant|Apres)Correction)$/.test(String(name||'').replace(/^essai_cdq_/,''));
 export function measurementErrorV2736(value,echelon){
@@ -21,12 +22,13 @@ export function isCompleteMeasurementInputV2736(value){
  const v=String(value??'').replace(/[\s\u00a0\u202f]/g,'');
  return v===''||v==='-'||/^o\.l$/i.test(v)||/^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(v);
 }
-export function installMeasurementValidationV2736({surface,getEchelon,status,owner=document}){
+export const isAppliedLoadV2874=name=>/^(?:etendue_verifiee|charge_excentricite|charge_point_\d+_charge_utilisee(?:_2)?)$/.test(String(name||'').replace(/^essai_cdq_/,''));
+export function installMeasurementValidationV2736({surface,getEchelon,getCapacity=()=>'',getUnit=()=>'',status,owner=document}){
  let blocked=null;
- const reading=el=>el?.matches?.('input,textarea')&&!el.readOnly&&!el.disabled&&isCorrectionReadingV2736(el.name);
+ const reading=el=>el?.matches?.('input,textarea')&&!el.readOnly&&!el.disabled&&(isCorrectionReadingV2736(el.name)||isAppliedLoadV2874(el.name));
  function validate(field=owner.activeElement){
   if(!reading(field))return true;
-  const message=measurementErrorV2736(field.value,getEchelon());
+  const message=isAppliedLoadV2874(field.name)?capacityErrorV2874(field.value,getCapacity(),getUnit()):measurementErrorV2736(field.value,getEchelon());
   field.setCustomValidity(message);if(message)field.setAttribute('aria-invalid','true');else field.removeAttribute('aria-invalid');
   if(!message){if(blocked===field)blocked=null;return true;}
   blocked=field;field.focus({preventScroll:true});field.reportValidity();return false;

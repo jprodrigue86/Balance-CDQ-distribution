@@ -38,7 +38,7 @@ export function createBalanceSheetReaderV2788({rpc,identity}){
      // Authenticate even that response before the one permitted legacy fallback.
      validateReportReadV2729(record,{id,revision},{clientId,sheet:true});
      if(Object.prototype.hasOwnProperty.call(record,'balanceSummaryVersion')){
-      balanceSheetSignatureV2788(record,{id,revision},{clientId});if(record.metadataVersion===2866)return record;available=false;
+      balanceSheetSignatureV2788(record,{id,revision},{clientId});if(record.metadataVersion===2866&&typeof record.metadata?.numeroSerie==='string')return record;available=false;
      }
      if(record.kind!=='cdq-conformity-summary-v2775')throw Error('Résumé de balance invalide.');
      available=false;
