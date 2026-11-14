@@ -1,0 +1,16 @@
+function cdqLegacyActiveV20261114_(){return PropertiesService.getScriptProperties().getProperty('CDQ_SYSTEM_LEGACY_V1')==='on';}
+function cdqLegacyCallV20261114_(op,payload){
+ var p=payload||{};p.op=op;var e=cdqReportEngineEnvelopeV2754_('gas-to-engine',{actor:'jp.rodrigue86@gmail.com',action:'systemLegacyAssetV1',payload:p,scope:{store:'legacy-system-v1',role:'internal-storage',intent:'internal-storage'}});
+ var response=UrlFetchApp.fetch(cdqReportEngineConfigV2754_().url+'/v1/rpc',{method:'post',contentType:'application/json',headers:{'x-cdq-system-coordinates':'v1'},payload:JSON.stringify(e),muteHttpExceptions:true,followRedirects:false,validateHttpsCertificates:true}),r;
+ try{r=JSON.parse(response.getContentText('UTF-8'));}catch(_){throw Error('LEGACY_RESPONSE_INVALID');}if(response.getResponseCode()!==200||r.ok!==true||r.kind!=='system-legacy-v1')throw Error('LEGACY_UNCONFIRMED_'+String(r&&r.code||response.getResponseCode()));return r.result;
+}
+function cdqLegacyIndexV20261114_(){var r=cdqLegacyCallV20261114_('index',{});if(r.state!=='active'||!Array.isArray(r.records))throw Error('LEGACY_NOT_ACTIVE');return r.records;}
+function cdqLegacyBlobV20261114_(id){var r=cdqLegacyCallV20261114_('read',{id:id});if(r.state!=='ok'||r.id!==id||!r.base64)throw Error('LEGACY_CONTENT_INVALID');var bytes=Utilities.base64Decode(r.base64);if(bytes.length!==r.bytes||cdqCoordMigrationHashV20261113_(bytes)!==r.sha256)throw Error('LEGACY_INTEGRITY');return Utilities.newBlob(bytes,r.meta.mimeType,r.meta.name);}
+function cdqLegacyTemplateV20261114_(modele){
+ var rows=cdqLegacyIndexV20261114_().filter(function(r){return r.kind==='template';}),match=rows.filter(function(r){return r.id===modele.id;})[0]||rows.filter(function(r){return r.meta.name===modele.nom;})[0];
+ if(!match)throw Error('Le modèle '+modele.nom+' est introuvable dans les modèles historiques. Aucun rapport n’a été créé.');
+ return{cdqCloud:true,getId:function(){return match.id;},getName:function(){return match.meta.name;},getSize:function(){return match.bytes;},getMimeType:function(){return match.meta.mimeType;},getLastUpdated:function(){return new Date(match.meta.modifiedTime);},getBlob:function(){return cdqLegacyBlobV20261114_(match.id);},makeCopy:function(name,folder){return folder.createFile(cdqLegacyBlobV20261114_(match.id).setName(name));}};
+}
+function cdqLegacyNativeForTechnicianV20261114_(identity){var key=cdqInvoiceNormalizeNameV2635_(cdqInvoiceTechnicianV2635_(identity.nom).nom);return cdqLegacyIndexV20261114_().filter(function(r){return r.kind==='native-accounting'&&cdqInvoiceNormalizeNameV2635_(r.technician)===key;});}
+function cdqLegacyNativeRowsV20261114_(identity){return cdqLegacyNativeForTechnicianV20261114_(identity).map(function(r){var f=DriveApp.getFileById(r.id);if(f.isTrashed())return null;if(f.getMimeType()!=='application/vnd.google-apps.spreadsheet')throw Error('LEGACY_NATIVE_IDENTITY');return cdqInvoiceMetaV2590_(f,'');}).filter(Boolean);}
+function cdqLegacyNativeDeleteV20261114_(identity,id){var match=cdqLegacyNativeForTechnicianV20261114_(identity).filter(function(r){return r.id===id;})[0];if(!match)return null;var f=DriveApp.getFileById(id);if(f.getMimeType()!=='application/vnd.google-apps.spreadsheet')throw Error('LEGACY_NATIVE_IDENTITY');f.setTrashed(true);return{ok:true,id:id,nom:f.getName(),technicien:identity.nom};}
