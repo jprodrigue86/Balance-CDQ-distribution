@@ -1,0 +1,90 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "patches": [
+    {
+      "file": "CDQInvoicesV2590.gs",
+      "op": "replace_literal",
+      "search": "if(cdqMediaActiveV20261113_())return cdqMediaInvoice",
+      "replacement": "if(cdqInvoiceCloudActiveV20261114_())return cdqMediaInvoice",
+      "expected": 4
+    },
+    {
+      "file": "CDQInvoicesV2590.gs",
+      "op": "replace_literal",
+      "search": "function cdqInvoiceExistingTechFoldersV2635_(technicien) {",
+      "replacement": "function cdqInvoiceExistingTechFoldersV2635_(technicien) {\n  if(cdqInvoiceDriveActiveV20261114_())return cdqInvoiceDriveLocationsV20261114_(technicien);",
+      "expected": 1
+    },
+    {
+      "file": "CDQInvoicesV2590.gs",
+      "op": "replace_literal",
+      "search": "  var root = cdqInvoiceSystemFolderV2590_();\n  var facture = cdqInvoiceChildFolderV2590_(root, 'Facture');",
+      "replacement": "  var root = cdqInvoiceDriveActiveV20261114_()?cdqInvoiceDriveRootV20261114_():cdqInvoiceSystemFolderV2590_();\n  var facture = cdqInvoiceDriveActiveV20261114_()?root:cdqInvoiceChildFolderV2590_(root, 'Facture');",
+      "expected": 1
+    },
+    {
+      "file": "CDQInvoicesV2590.gs",
+      "op": "replace_literal",
+      "search": "function cdqInvoiceExistingTechAtRootV2615_(rootId, technicien) {",
+      "replacement": "function cdqInvoiceExistingTechAtRootV2615_(rootId, technicien) {\n  if(cdqInvoiceDriveActiveV20261114_())return cdqInvoiceDriveLocationsV20261114_(technicien).filter(function(r){return r.rootId===(rootId===CDQ_INVOICE_LEGACY_ROOT_ID_V2615?CDQ_INVOICE_DRIVE_ARCHIVE_V20261114_:CDQ_INVOICE_DRIVE_FOLDER_V20261114_);})[0]||null;",
+      "expected": 1
+    },
+    {
+      "file": "CDQInvoicesV2590.gs",
+      "op": "replace_literal",
+      "search": "CDQ System / Facture / ",
+      "replacement": "_CDQ_Factures / ",
+      "expected": 3
+    },
+    {
+      "file": "CDQInvoicesV2590.gs",
+      "op": "replace_literal",
+      "search": "storageRevision:2732",
+      "replacement": "storageRevision:2880",
+      "expected": 3
+    },
+    {
+      "file": "CDQInvoicesV2590.gs",
+      "op": "replace_literal",
+      "search": "        add(folder, name);",
+      "replacement": "        add(folder, name);\n        var months=folder.getFolders();\n        while(months.hasNext()){var legacyMonth=months.next();if(cdqInvoiceIsMonthFolderV2615_(legacyMonth.getName()))add(legacyMonth,name);}",
+      "expected": 1
+    },
+    {
+      "file": "CDQInvoicesV2590.gs",
+      "op": "replace_literal",
+      "search": "function cdqEnregistrerFactureV2590(payload) {",
+      "replacement": "function cdqEnregistrerFactureV2590(payload) {\n verifierDroit_('ecriture');",
+      "expected": 1
+    },
+    {
+      "file": "CDQInvoicesV2590.gs",
+      "op": "replace_literal",
+      "search": "function cdqListerFacturesV2590(limit) {",
+      "replacement": "function cdqListerFacturesV2590(limit) {\n verifierDroit_('lecture');",
+      "expected": 1
+    },
+    {
+      "file": "CDQInvoicesV2590.gs",
+      "op": "replace_literal",
+      "search": "function cdqSupprimerFactureV2590(fileId) {",
+      "replacement": "function cdqSupprimerFactureV2590(fileId) {\n verifierDroit_('ecriture');",
+      "expected": 1
+    },
+    {
+      "file": "CDQWorkspaceV2638.gs",
+      "op": "replace_literal",
+      "search": "if(cdqMediaActiveV20261113_())return {ok:true,storage:'cloudflare',foldersCreated:0};",
+      "replacement": "if(cdqInvoiceCloudActiveV20261114_())return {ok:true,storage:'cloudflare',foldersCreated:0};",
+      "expected": 1
+    }
+  ],
+  "extraFiles": [
+    {
+      "name": "CDQInvoiceDriveV20261114.gs",
+      "url": "CDQInvoiceDriveV20261114.gs",
+      "sha256": "7ca4bb848c5610cb314318ccc8bcffbe9aa0927377dab2f57e4e125e7249d385"
+    }
+  ]
+}
