@@ -1,0 +1,56 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "title": "Zoho conservé, intégration mise en veille",
+  "patches": [
+    {
+      "file": "CDQZohoV2642.gs",
+      "op": "insert_before_literal",
+      "before": "/* Zoho -> CDQ only. OAuth secrets remain in Script Properties, never the APK.",
+      "text": "// CDQ_ZOHO_PARKED_20261114\n"
+    },
+    {
+      "file": "CDQZohoV2642.gs",
+      "op": "replace_literal",
+      "search": "function cdqZohoConfigV2642_(){",
+      "replacement": "function cdqZohoConfigV2642_(){\n return {ready:false,parked:true};\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQZohoV2642.gs",
+      "op": "replace_literal",
+      "search": "function cdqZohoStatusV2642_(){",
+      "replacement": "function cdqZohoStatusV2642_(){\n return {ok:true,configured:false,enabled:false,parked:true,revision:'',readOnlyZoho:true};\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQZohoV2642.gs",
+      "op": "replace_literal",
+      "search": "function cdqZohoActiverV2642(){",
+      "replacement": "function cdqZohoActiverV2642(){\n throw Error('ZOHO_INTEGRATION_PAUSED');\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQZohoV2642.gs",
+      "op": "replace_literal",
+      "search": "function cdqZohoActualiserV2642(){",
+      "replacement": "function cdqZohoActualiserV2642(){\n throw Error('ZOHO_INTEGRATION_PAUSED');\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQZohoV2642.gs",
+      "op": "replace_literal",
+      "search": "function cdqZohoWorkerV2642_(){",
+      "replacement": "function cdqZohoWorkerV2642_(){\n return cdqZohoStopSchedule20261114_();\n",
+      "expected": 1
+    },
+    {
+      "file": "CDQZohoV2642.gs",
+      "op": "replace_literal",
+      "search": "(function(r){return r.zohoItemId;}).map(function(r){return {articleId:String(r.articleId),descriptionCourte:String(r.descriptionCourte||''),zohoStock:r.zohoStock,enrichissement:String(r.enrichissement||'')};})};\n\n });\n}\n",
+      "replacement": "(function(r){return r.zohoItemId;}).map(function(r){return {articleId:String(r.articleId),descriptionCourte:String(r.descriptionCourte||''),zohoStock:r.zohoStock,enrichissement:String(r.enrichissement||'')};})};\n\n });\n}\n\n// An existing owner-owned timer retires itself on its next invocation.\nfunction cdqZohoStopSchedule20261114_(){\n var stopped=0;\n ScriptApp.getProjectTriggers().forEach(function(t){\n  if(t.getHandlerFunction()==='cdqZohoWorkerV2642_'){ScriptApp.deleteTrigger(t);stopped++;}\n });\n return {ok:true,enabled:false,parked:true,stopped:stopped};\n}\n",
+      "expected": 1
+    }
+  ],
+  "extraFiles": []
+}
