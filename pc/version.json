@@ -1,12 +1,12 @@
 {
-  "androidSelectorSha256": "32b7c5e296132df6148426b9dbe9994825dca0c09fd14bf5a53c882e9c53b478",
-  "androidSourceBuild": "2026.11.14-v28.81-gmail-durable",
-  "build": "2026.11.14-v28.81-gmail-durable-pc",
+  "androidSelectorSha256": "d968ce3bcb32cf570a45de74e0ab640d15cc491ca20c65e170a3ad09d67fbd3c",
+  "androidSourceBuild": "2026.11.14-v28.82-pdf-v3",
+  "build": "2026.11.14-v28.82-pdf-v3-pc",
   "desktopModel": 3,
   "files": 1102,
-  "generatedFrom": "patches/gmail-offline-2881-20261114/stage.py",
+  "generatedFrom": "patches/pdf-v3-2882-20261114/stage_2882.py",
   "platform": "pc-pwa",
-  "release": "6afc1fb2afafb05f3e6bee7d44a0988ed36bf8582cbafdba66c6146fbb6a6533",
-  "version": "28.81",
+  "release": "8b047a5a06efe5b050689ae41ee58f474f13adcc1426881e1571bc687647047f",
+  "version": "28.82",
   "webBaseCommit": "de1e05294f308cd67502ccc4093422501af56e22"
 }
