@@ -1,0 +1,42 @@
+{
+  "schema": "cdq-script-bundle-v3",
+  "projectScriptId": "1udMG-jQcBAwBAwk6kSEZ660JWo5n7nVvnq24lp2T4RDV5pfXe8QDlPdf",
+  "patches": [
+    {
+      "file": "CDQInvoiceDriveV20261114.gs",
+      "op": "replace_literal",
+      "search": "return all.map(function(r){var m=cdqTechnicalCanonicalMetaV20261113_(r);",
+      "replacement": "return all.filter(function(r){if(r.id!=='1g9YHkI1s6L38cZjY5T3B7l2tQ0w0vX52')return true;if(r.name!=='162,98 - 2026-10-20.jpg'||r.mimeType!=='image/jpeg'||String(r.size)!=='1072271'||r.createdTime!=='2026-10-20T12:43:54.722Z'||r.modifiedTime!=='2026-10-20T12:43:56.029Z'||r.parents.length!==1||r.parents[0]!=='16aP5SW-AtqxF64xKj9UofL39wdwazC4R')throw Error('INVOICE_RECOVERED_FILE_CHANGED');return false;}).map(function(r){var m=cdqTechnicalCanonicalMetaV20261113_(r);",
+      "expected": 1
+    },
+    {
+      "file": "CDQInvoiceDriveV20261114.gs",
+      "op": "replace_literal",
+      "search": "if(before.length!==148||beforeHash!==expected)",
+      "replacement": "if(normalized.length!==148||beforeHash!==expected)",
+      "expected": 1
+    },
+    {
+      "file": "CDQInvoiceDriveV20261114.gs",
+      "op": "replace_literal",
+      "search": "m.id!=='1yzodr-A2zbuE1BqaJv7DqD6I4OtlF9ym'",
+      "replacement": "m.id!=='1g9YHkI1s6L38cZjY5T3B7l2tQ0w0vX52'&&m.id!=='1yzodr-A2zbuE1BqaJv7DqD6I4OtlF9ym'",
+      "expected": 1
+    },
+    {
+      "file": "CDQInvoiceDriveV20261114.gs",
+      "op": "replace_literal",
+      "search": "||after.length!==148||",
+      "replacement": "||afterNormalized.length!==148||",
+      "expected": 1
+    },
+    {
+      "file": "CDQInvoiceDriveV20261114.gs",
+      "op": "replace_literal",
+      "search": "files:76,receiptDocuments:74,nativeSheets:2,folders:72",
+      "replacement": "files:actual.length,receiptDocuments:actual.length-2,nativeSheets:2,folders:72,additionalRecoveredReceipts:after.filter(function(m){return m.id==='1g9YHkI1s6L38cZjY5T3B7l2tQ0w0vX52';}).map(function(m){return {id:m.id,name:m.name,md5Checksum:m.md5Checksum};})",
+      "expected": 1
+    }
+  ],
+  "extraFiles": []
+}
