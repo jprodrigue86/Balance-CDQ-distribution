@@ -32,9 +32,14 @@
   try{
    const s=await call('/v2/status');
    const connect=$('cdqAutonomousConnect'),disconnect=$('cdqAutonomousDisconnect');
-   if(connect)connect.disabled=!s.oauthConfigured||s.connected;
+   const needsProcessConsent=s.connected&&s.processScopeGranted===false;
+   if(connect){
+    connect.disabled=!s.oauthConfigured||(s.connected&&!needsProcessConsent);
+    connect.textContent=needsProcessConsent?'Autoriser la vérification de l’arrêt':'Activer l’accès permanent Google';
+   }
    if(disconnect)disconnect.disabled=!s.connected;
-   if(s.connected)state('Accès permanent autorisé pour '+s.account+' — le Manager peut être fermé.');
+   if(needsProcessConsent)state('Connexion existante conservée pour '+s.account+'. Autorise la vérification de l’arrêt d’Apps Script pour terminer la bascule Cloudflare.');
+   else if(s.connected)state('Accès permanent autorisé pour '+s.account+' — le Manager peut être fermé.');
    else if(!s.oauthConfigured)state('Connexion permanente en préparation : configuration Google Cloud requise.',true);
    else state('Prêt pour l’autorisation Google initiale. Tu n’auras pas besoin de garder Chrome ouvert.');
   }catch(e){state('État du service autonome indisponible : '+String(e.message||e),true);}
@@ -63,7 +68,7 @@
   if($('cdqAutonomousPanel')||!$('quickCard'))return;
   const el=document.createElement('section');el.className='card';el.id='cdqAutonomousPanel';
   el.innerHTML='<div class="section-title"><span>☁</span><h2>Connexion autonome — sans ouvrir Chrome</h2></div>'+
-   '<p class="muted">Une autorisation Google initiale permet au serveur privé CDQ de renouveler la connexion et d’exécuter les commandes autorisées, même lorsque ce Manager est fermé. Aucune modification de Balance CDQ n’est effectuée lors de l’association.</p>'+
+   '<p class="muted">Le Manager conserve la connexion Google utilisée par les opérations autorisées. Pour terminer la migration Cloudflare, il permet de vérifier et fermer l’ancien serveur Apps Script. La publication du moteur Balance CDQ passe par Cloudflare.</p>'+
    '<p id="cdqAutonomousStatus" class="muted" role="status">Vérification de la connexion…</p>'+
    '<div class="actions two"><button type="button" class="primary" id="cdqAutonomousConnect">Activer l’accès permanent Google</button>'+
    '<button type="button" class="secondary" id="cdqAutonomousDisconnect">Désactiver l’accès permanent</button></div>'+
