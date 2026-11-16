@@ -390,6 +390,17 @@ async function previewForFileV2781(fileId){
  if(engineV2754())refreshEngineListV2754(id,{hydrate:true}).then(()=>queuePreview(id)).catch(()=>{});
  return preview;
 }
+async function requireListEngine({getEngine,identity,allowed}){
+ const engine=getEngine(),before=identity();
+ if(!before||!allowed())throw Object.assign(Error('Le compte ou l’accès a changé.'),{code:'LIST_CONTEXT_CHANGED'});
+ if(!engine||typeof engine.capabilities!=='function')throw Object.assign(Error('Le moteur Cloudflare de la liste est indisponible.'),{code:'ENGINE_UNAVAILABLE'});
+ const capability=engine.enabled?{ready:true}:await engine.capabilities();
+ if(identity()!==before||!allowed()||getEngine()!==engine)throw Object.assign(Error('Le compte ou l’accès a changé.'),{code:'LIST_CONTEXT_CHANGED'});
+ if(capability?.ready!==true||engine.enabled!==true)throw Object.assign(Error('Le moteur Cloudflare de la liste n’est pas prêt.'),{code:'ENGINE_UNAVAILABLE'});
+ return engine;
+}
+
+const requireListEngineV2884=()=>requireListEngine({getEngine:()=>window.cdqReportEngineSelectorV2754,identity:()=>calibrationIdentity().email+'|'+epoch,allowed:()=>canRead()&&navigator.onLine!==false});
 async function open(){
   const id=client();if(!id||!canRead())return;restoreClient(id);
   const tree=root(id),file=listFile(id),known=states.get(key(id)),fileId=file?.id||(!tree||tree.charge===false||listFolder(id)?.charge===false?known?.fileId:'');
@@ -397,6 +408,8 @@ async function open(){
     if(engineV2754())refreshEngineListV2754(id,{hydrate:true}).then(()=>queuePreview(id)).catch(()=>{});const preview=await localPreview(id);if(preview&&await window.cdqOpenBalanceListPreviewV2746?.(preview))return true;}
   // Existing PDF is immediately readable, including during an update.
   if(fileId)return window.cdqOpenPdfV2520?.(fileId,{nom:'Liste de balance.pdf'});
+  if(navigator.onLine===false){paint(id,'Aucune liste disponible hors ligne.',true);return;}
+  try{await requireListEngineV2884();if(id!==client())return;}catch(error){paint(id,String(error.message||error),true);return;}
   if(engineV2754()){
      try{const engine=await refreshEngineListV2754(id,{hydrate:true});
        if(id!==client())return;
@@ -407,9 +420,7 @@ async function open(){
      }catch(error){paint(id,'Liste de balance — '+String(error?.message||error),true);return;}
    }
    if(navigator.onLine===false){paint(id,'Aucune liste disponible hors ligne.',true);return;}
-  const r=await call('cdqEtatListeBalanceV2638',id);if(id!==client())return;states.set(key(id),r);
-  if(r.fileId)return window.cdqOpenPdfV2520?.(r.fileId,{nom:'Liste de balance.pdf',forceRefresh:r.status==='ready'});
-  paint(id,r.status==='pending'||r.status==='working'?'Première liste en préparation. Les autres fichiers restent accessibles.':'Aucune liste disponible. Choisissez « Actualiser la liste ».');
+  paint(id,'Aucune liste disponible. Choisissez « Actualiser la liste ».');
 }
 async function refresh(force=false,verify=false,id=client()){
  if(owner!==calibrationIdentity().email)reset();
@@ -436,8 +447,11 @@ async function refreshImplV2789(force=false,verify=false,id=client()){
    // Check backoff BEFORE authority RPCs. Repainting the client must not keep
    // contacting the engine after a paused or exhausted source read.
    const gateStamp=clientFingerprint(id)+'|saved:'+(changes.get(k)||0),failure=failed.get(k);
-   if(force)clearFailure(k);
+   if(force){clearFailure(k);const entry=engineListsV2754.get(k);if(entry)entry.polls=0;}
    else if(failure?.stamp===gateStamp){if(!failure.retryAt)return {status:'retry-manually'};if(failure.retryAt>Date.now()){scheduleClient(id,failure.retryAt-Date.now());return {status:'retry-wait'};}}
+   // A recent complete confirmation avoids both network traffic and a false 4% restart.
+   if(verifiedListFreshV2884(id,force,verify))return {status:'cached'};
+   try{await requireListEngineV2884();}catch(error){if(error.code==='LIST_CONTEXT_CHANGED')return {status:'unavailable',code:error.code};reportListFailureV2872(id,gateStamp,error);return {status:'error',code:error.code,message:error.message};}
    // Progress starts only for real work after the backoff gate, never on paint.
    cdqListProgressStepV2778(id,4,'Vérification du dossier client…','',true);
    paint(id,'Vérification de la liste…');
@@ -525,30 +539,7 @@ async function refreshImplV2789(force=false,verify=false,id=client()){
     if(existingId&&typeof updateBalanceListFastV2729==='function'){
       return await updateConfirmedList(existingId);
     }
-    let result=await call('cdqActualiserListeBalanceV2665',id,force,stamp);states.set(k,result);
-    progress('Actualisation de la liste…');
-    const deadline=Date.now()+180000;
-    while(version===epoch&&canRead()&&Date.now()<deadline){
-      if(result.status==='ready'){
-        const placed=await placeList(id,version);if(placed?.file){result={...result,fileId:String(placed.file.id),folderId:String(placed.folder.id)};fingerprint=clientFingerprint(id);job.fingerprint=fingerprint;stamp=fingerprint+'|saved:'+change;}
-        // Older servers omit PDFs inside Rapports d’étalonnage. Reuse their
-        // idempotently created list ID, then verify all authoritative sources.
-        if(typeof updateBalanceListFastV2729==='function'){
-          if(!result.fileId)throw Error('Identifiant de liste non confirmé.');
-          return await updateConfirmedList(result.fileId);
-        }
-        if(window.cdqEnsureListConformityV2728)result=await window.cdqEnsureListConformityV2728({result,clientId:id,clientName:root(id)?.nom||root(id)?.name||'',files:sources(root(id)||{}),library:async()=>{await window.cdqPreparePdfLibV2684();return window.PDFLib;},loadPdf:file=>window.cdqLoadPdfForCalibrationV2668(file,'',{background:true}),loadSheet:file=>call('obtenirSnapshotGoogleSheetHorsLigne',file,id),rpc:(name,...args)=>call(name,...args),cachedSignature:file=>equipment.confirmedSignature?.(file),stillCurrent:()=>version===epoch&&canWrite()&&change===(changes.get(k)||0)&&fingerprint===clientFingerprint(id)});
-        clearFailure(k);satisfiedNow();ready(id,result,force);return result;
-      }
-      if(result.status==='error')throw Error(result.message||'Actualisation impossible.');
-      if(!['busy','pending','working'].includes(result.status))throw Error('Réponse d’actualisation non confirmée.');
-      await new Promise(resolve=>setTimeout(resolve,1000));
-      if(version!==epoch||!canRead())break;
-      result=result.status==='busy'?await call('cdqActualiserListeBalanceV2665',id,false,stamp):await call('cdqEtatListeBalanceV2638',id);
-      if(result.status==='pending')result=await call('cdqActualiserListeBalanceV2665',id,false,stamp);states.set(k,result);
-    }
-    if(version===epoch){fail(id,stamp,Error('Actualisation toujours en cours sur le serveur.'));progress('Actualisation en cours sur le serveur. La liste existante reste accessible.');}
-    return {status:'pending'};
+    throw Object.assign(Error('La création de la liste Cloudflare n’a pas été confirmée. Actualisez le dossier client avant de réessayer.'),{code:'LIST_CREATION_UNCONFIRMED'});
   }catch(e){
     if(e?.code==='LIST_CONTEXT_CHANGED'){
       if(version===epoch){cdqListProgressStepV2778(id,0,'','cancelled');job.dirty=true;}
@@ -588,6 +579,19 @@ function scheduleScan(id){
   task.then(changed=>{if(changed&&epoch===version&&canWrite()){const k=key(id);changes.set(k,(changes.get(k)||0)+1);persistClient(id);paintRows();scheduleClient(id);}}).catch(()=>{}).finally(()=>{if(pcScan===task){pcScan=null;if(client()!==id)schedule();}});
  },1200);
 }
+// A navigation event is not a data mutation. A confirmation is reusable only
+// while both the local source fingerprint and authoritative publication agree.
+function listConfirmationFresh({now=Date.now(),receipt,fingerprint,state,engine,dirty=false,pending=false,failed=false,force=false,verify=false}) {
+  if(force||verify||dirty||pending||failed||!receipt||receipt.fingerprint!==fingerprint||!Number.isFinite(receipt.requestedAt))return false;
+  const age=now-receipt.requestedAt;
+  if(age<0||age>=60000||state?.status!=='ready'||!state.fileId||state.reconciliationRequired)return false;
+  if(engine)return !engine.invalidated&&!engine.reconciliationRequired&&engine.pdf?.status==='confirmed'&&engine.pdf.fileId===state.fileId&&!!engine.pdf.driveRevision&&engine.pdf.revision===engine.revision;
+  return state.sourceManifestValidated===true&&state.sourceIndexV2751?.exhaustive===true;
+}
+
+function verifiedListFreshV2884(id,force=false,verify=false){
+ const k=key(id);return listConfirmationFresh({receipt:remembered(id),fingerprint:clientFingerprint(id),state:states.get(k),engine:engineListsV2754.get(k),dirty:needsUpdate(k),pending:waiting(id)||!!enginePendingRowsV2754.get(k)?.size,failed:failed.has(k),force,verify});
+}
 function inspect(){
   if(owner!==calibrationIdentity().email)reset();
   const id=client(),entered=id!==visibleClient;if(entered){visibleClient=id;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();}
@@ -600,9 +604,9 @@ function inspect(){
   const receipt=remembered(id);
   // Verify an existing list once before remembering this schema. Identical
   // contents produce no write; subsequent openings reuse the confirmed receipt.
-  // One fresh authority check on each client entry also sees changes made
-  // on another device, even when the cached folder fingerprint is unchanged.
-  if(entered){const k=key(id),entry=engineListsV2754.get(k);if(entry)entry.polls=0;changes.set(k,(changes.get(k)||0)+1);persistClient(id);scheduleClient(id,0);}
+  // Recheck stale confirmations on entry to see other devices, but never mark
+  // navigation as a write or reset the bounded publication retry counter.
+  if(entered){if(!verifiedListFreshV2884(id))scheduleClient(id,0);}
   else if(needsPlacement(id))scheduleClient(id);
   else if(!receipt&&listFile(id)){if(typeof updateBalanceListFastV2729==='function')scheduleClient(id);else remember(id,fingerprint);}
   else if(receipt?.fingerprint!==fingerprint)scheduleClient(id);

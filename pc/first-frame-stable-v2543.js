@@ -51,9 +51,12 @@
         // A missing optional portal must not make all CDQ inaccessible.
         return portal.length<=1&&topActions.length===4+portal.length;
       })();
-    const signature=controls().map(control=>[control,...control.querySelectorAll('*')].map(node=>{
+    // Only command geometry and artwork take part in the stability barrier.
+    // Header clocks, activity text and animated status classes must not restart
+    // it. Readiness above still requires the exact navigation and permissions.
+    const signature=controls().map(control=>[control,...control.querySelectorAll('button,.bottom-nav-item,.bottom-nav-item > small,.bottom-nav-item > span')].map(node=>{
       const r=node.getBoundingClientRect(),s=getComputedStyle(node);
-      return [node.tagName,node.getAttribute('class'),node.getAttribute('src'),node.textContent,r.x,r.y,r.width,r.height,s.font,s.color,s.display,s.visibility,s.backgroundImage].join('|');
+      return [node.tagName,node.id,node.dataset.workspaceRoute,node.getAttribute('src'),...['x','y','width','height'].map(key=>Math.round(r[key]*2)/2),s.font,s.display,s.visibility,s.backgroundImage].join('|');
     }).join('~')).join('##');
     return {ready,signature};
   }
@@ -100,6 +103,7 @@
       const state=snapshot();
       if(!state.ready){if(performance.now()-started>10000)throw Error('Interface incomplète');last='';continue;}
       if(state.signature===last){document.documentElement.dataset.cdqStartupReadyV2652='true';return;}
+      if(performance.now()-started>10000)throw Error('La disposition des commandes ne se stabilise pas.');
       last=state.signature;
     }
   }

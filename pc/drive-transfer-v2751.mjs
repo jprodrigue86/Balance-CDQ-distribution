@@ -26,12 +26,7 @@ export function createDriveTransferV2751({rpc,get,put,owner,guard,context=()=>0,
  function scope(){const email=owner(),epoch=context();const valid=()=>{guard(email);if(epoch!==context()||owner()!==email)throw Error('Le compte ou l’accès a changé.');};valid();return {email,valid};}
  async function capabilities(){
   const {email,valid}=scope(),key=email+'|'+context();
-  if(!caps.has(key))caps.set(key,Promise.resolve().then(()=>rpc('cdqTransportCapabilitiesV2751',[])).catch(error=>{
-   // Only an explicitly absent method means an older server. Authentication,
-   // network and permission failures must retain the original pending action.
-   if(/(?:not found|not a function|introuvable|unknown|does not exist|fonction.*(?:absente|existe pas))/i.test(String(error?.message||error)))return {ok:false,binaryStaging:false,legacyServerV2751:true};
-   caps.delete(key);throw error;
-  }));
+  if(!caps.has(key))caps.set(key,Promise.resolve().then(()=>rpc('cdqTransportCapabilitiesV2751',[])).catch(error=>{caps.delete(key);throw error;}));
   const result=await caps.get(key);valid();return result;
  }
  async function write(action,{legacy}={}){
@@ -39,11 +34,7 @@ export function createDriveTransferV2751({rpc,get,put,owner,guard,context=()=>0,
   const blob=await pdfActionBlobV2751(action);valid();
   if(blob.type!=='application/pdf'||blob.size<8||blob.size>32*1024*1024||await blob.slice(0,5).text()!=='%PDF-')throw Error('PDF invalide.');valid();
   const capability=await capabilities();valid();
-  if(capability?.legacyServerV2751===true||capability?.ok===true&&capability.binaryStaging===false){
-   if(typeof legacy!=='function')throw Error('La sauvegarde sécurisée attend la mise à jour du serveur. Le PDF reste conservé sur cet appareil.');
-   const data=await pdfActionBase64V2751(action);valid();return legacy({...action,data,blob});
-  }
-  if(capability?.ok!==true||capability.binaryStaging!==true||capability.sha256Encoding!=='hex-bytes-v1')throw Error(capability?.message||'La capacité de sauvegarde Drive n’a pas été confirmée.');
+  if(capability?.ok!==true||capability.binaryStaging!==true||capability.provider!=='cloudflare-r2'||capability.sha256Encoding!=='hex-bytes-v1')throw Error(capability?.message||'La capacité de sauvegarde Drive n’a pas été confirmée.');
   if(capability.maxBytes&&blob.size>capability.maxBytes)throw Error('Le PDF dépasse la taille autorisée.');
   const hash=await pdfByteSha256V2751(blob);valid();
   if(action.byteSha256&&action.byteSha256!==hash)throw Error('Les réponses locales ont changé. L’envoi reste en attente.');
@@ -59,33 +50,19 @@ export function createDriveTransferV2751({rpc,get,put,owner,guard,context=()=>0,
    async function persist(value){valid();if(await put('pdf-transfer-v2751',action.id,value)===false)throw Error('Le PDF n’a pas pu être conservé. L’envoi reste en attente.');valid();state=value;}
    if(!state)await persist({...meta,phase:'prepared'});
    async function finalize(){const result=receipt(await rpc('cdqFinalizeUploadV2751',[meta.uploadId]));valid();await persist({...meta,phase:'confirmed',receipt:result});return result;}
-   let migratedJournalV2752=false;
    if(state.phase==='uploaded'||state.phase==='put-started'){
-    try{return await finalize();}catch(error){valid();const message=String(error?.message||error);if(!/(?:UPLOAD_INCOMPLETE|UPLOAD_EXPIRED|CDQ_UPLOAD_PENDING_V2751|staging.*(?:incomplet|absent))/i.test(message))throw error;migratedJournalV2752=/CDQ_UPLOAD_ACCOUNT_MIGRATION_V2752/.test(message);}
+    try{return await finalize();}catch(error){valid();const message=String(error?.message||error);if(!/(?:UPLOAD_INCOMPLETE|UPLOAD_EXPIRED|CDQ_UPLOAD_PENDING_V2751|staging.*(?:incomplet|absent))/i.test(message))throw error;}
    }
-   let begun;try{begun=await rpc('cdqBeginUploadV2751',[meta]);valid();}catch(error){
-    valid();const message=String(error?.message||error),migrationConflict=/UPLOAD_RECEIPT_LEGACY\s*:/.test(message)||migratedJournalV2752&&/CONFLICT_REVISION\s*:/.test(message);
-    if(!migrationConflict)throw error;
-    const unconfirmed=()=>Error('UPLOAD_RECEIPT_LEGACY_UNCONFIRMED : le reçu historique ne peut pas être confirmé. Le PDF local reste en attente.');
-    if(typeof historicalReceipt!=='function')throw unconfirmed();
-    // One bounded read on the fixed historical deployment; never resend bytes
-    // or call its begin/finalize methods to obtain a receipt.
-    let historical;try{historical=await historicalReceipt({...meta});}catch(lookupError){valid();const pending=unconfirmed();pending.cause=lookupError;throw pending;}valid();
-    // Do not leak CONFLICT_REVISION into the ordinary conflict-copy recovery:
-    // an unconfirmed historical commit must remain queued without a new copy.
-    if(historical?.ok!==true||historical.committed!==true)throw unconfirmed();
-    if(historical.actor!==email)throw Error('Le reçu historique appartient à un autre compte.');
-    const result=receipt(historical.receipt);await persist({...meta,phase:'confirmed',receipt:result});return result;
-   }
+   const begun=await rpc('cdqBeginUploadV2751',[meta]);valid();
    if(begun?.receipt||begun?.committed){const result=receipt(begun.receipt||begun);await persist({...meta,phase:'confirmed',receipt:result});return result;}
    if(!begun?.ok||begun.uploadId!==meta.uploadId)throw Error('La préparation de l’envoi Drive n’a pas été confirmée.');
    if(begun.uploaded===true){await persist({...meta,phase:'uploaded'});return finalize();}
    let url;try{url=new URL(begun.uploadUrl);}catch{throw Error('La destination temporaire Drive est invalide.');}
-   if(url.protocol!=='https:'||!['www.googleapis.com','content.googleapis.com'].includes(url.hostname)||!/^\/upload\/drive\/v3\/files(?:\/[^/]+)?$/.test(url.pathname)||!url.searchParams.has('upload_id'))throw Error('La destination temporaire Drive est invalide.');
+   if(url.origin!=='https://cdq-report-engine.balance-cdq.workers.dev'||url.pathname!=='/v2/app/pdf-upload-bytes'||url.username||url.password||url.hash||[...url.searchParams.keys()].length!==2||! /^[a-f0-9]{64}$/.test(url.searchParams.get('key')||'')||! /^[a-f0-9]{64}$/.test(url.searchParams.get('token')||''))throw Error('La destination temporaire Drive est invalide.');
    await persist({...meta,phase:'put-started'});valid();
    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),55000);let response;
    let transportError;
-   try{response=await fetcher(url.href,{method:'PUT',headers:{'Content-Type':'application/pdf'},body:blob,credentials:'omit',referrerPolicy:'no-referrer',signal:controller.signal});}catch(error){transportError=error;}finally{clearTimeout(timer);}valid();
+   try{response=await fetcher(url.href,{method:'PUT',headers:{'Content-Type':'application/pdf'},body:blob,credentials:'omit',referrerPolicy:'no-referrer',redirect:'error',signal:controller.signal});}catch(error){transportError=error;}finally{clearTimeout(timer);}valid();
    if(transportError||!response?.ok){
     // Drive may have committed the bytes even when its PUT response is lost.
     // Reconcile this exact durable upload once; only a validated receipt wins.

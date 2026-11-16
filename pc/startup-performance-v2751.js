@@ -4,7 +4,7 @@
 function createRpcBudgetV2751({limit=3,backgroundLimit=1,context=()=>'',defer=queueMicrotask,trace=()=>{}}={}){
   const queue=[];let running=0,normalRunning=0,backgroundRunning=0,sequence=0,priority='foreground',scheduled=false;
   function pump(){scheduled=false;queue.sort((a,b)=>a.rank-b.rank||a.sequence-b.sequence);
-    while(running<limit){const index=queue.findIndex(job=>(job.interactive||job.write||normalRunning<Math.max(1,limit-1))&&(job.priority!=='background'||backgroundRunning<backgroundLimit));if(index<0)break;
+    while(running<limit){const index=queue.findIndex(job=>(job.interactive||job.write&&!job.maintenance||normalRunning<Math.max(1,limit-1))&&(job.priority!=='background'||backgroundRunning<backgroundLimit));if(index<0)break;
       const job=queue.splice(index,1)[0];job.detachAbort?.();if(job.owner!==context()||!job.valid()||job.signal?.aborted){trace(job.sequence,'settled',job.label);job.reject(Error('Le compte ou l’accès a changé.'));continue;}
       running++;if(!job.interactive)normalRunning++;if(job.priority==='background')backgroundRunning++;trace(job.sequence,'dispatch',job.label);
       Promise.resolve().then(()=>{if(job.owner!==context())throw Error('Le compte ou l’accès a changé.');return job.send();}).then(job.resolve,job.reject).finally(()=>{running--;if(!job.interactive)normalRunning--;if(job.priority==='background')backgroundRunning--;trace(job.sequence,'settled',job.label);schedule();});
@@ -13,9 +13,9 @@ function createRpcBudgetV2751({limit=3,backgroundLimit=1,context=()=>'',defer=qu
   function schedule(){if(!scheduled){scheduled=true;defer(pump);}}
   // Visible list work uses ordinary slots, never the slot reserved for a click
   // or a write, even when its folder RPC is normally classified interactive.
-  function run(send,{kind=priority,write=false,interactive=false,label='rpc',traceId,readKey='',valid=()=>true,signal=null}={}){if(write)kind='foreground';interactive=interactive&&kind==='foreground'&&!write;return new Promise((resolve,reject)=>{
+  function run(send,{kind=priority,write=false,maintenance=false,interactive=false,label='rpc',traceId,readKey='',valid=()=>true,signal=null}={}){if(maintenance)kind='background';else if(write)kind='foreground';interactive=interactive&&kind==='foreground'&&!write;return new Promise((resolve,reject)=>{
     if(signal?.aborted){reject(Object.assign(Error('Lecture annulée.'),{name:'AbortError',code:'READ_CANCELLED'}));return;}
-    const id=traceId??sequence++,job={send,resolve,reject,owner:context(),priority:kind,write,interactive,label,valid,signal,readKey:write?'':readKey,rank:interactive?-1:write?0:kind==='background'?2:1,sequence:id};
+    const id=traceId??sequence++,job={send,resolve,reject,owner:context(),priority:kind,write,maintenance,interactive,label,valid,signal,readKey:write?'':readKey,rank:interactive?-1:maintenance?2:write?0:kind==='background'?2:1,sequence:id};
     if(signal){const abort=()=>{const index=queue.indexOf(job);if(index<0)return;queue.splice(index,1);job.detachAbort();trace(id,'settled',label);reject(Object.assign(Error('Lecture annulée.'),{name:'AbortError',code:'READ_CANCELLED'}));schedule();};job.detachAbort=()=>signal.removeEventListener('abort',abort);signal.addEventListener('abort',abort,{once:true});}
     trace(id,'queued',label);queue.push(job);schedule();});}
   // Promote the already coalesced read in this queue, without a second RPC.
@@ -65,7 +65,7 @@ function wrapRpcRunnerV2751(original,budget,{report=()=>{}}={}){
       if(typeof name!=='string'||name==='then')return undefined;
       return(...args)=>{const ok=success,fail=failure,value=userObject,hasValue=hasUser,onStart=started,traceId=++transportSequence;
         // Only these idempotent reads can be removed before dispatch; never a write.
-        const cancellable=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirPdfLecteurCDQV2520|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ|obtenirMetaFichier|obtenirDossiersClients|cdqLireConformiteRapportV2775|obtenirSnapshotGoogleSheetHorsLigne|cdqEtatListeBalanceV2638)$/.test(name)||name==='cdqReportEngineV2754'&&String(args[0])==='readMany',signal=cancellable?readSignal:null;
+        const cancellable=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirPdfLecteurCDQV2520|cdqReadPdfDirectV20261114|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ|obtenirMetaFichier|obtenirDossiersClients|cdqLireConformiteRapportV2775|obtenirSnapshotGoogleSheetHorsLigne|cdqEtatListeBalanceV2638)$/.test(name)||name==='cdqReportEngineV2754'&&String(args[0])==='readMany',signal=cancellable?readSignal:null;
         const label=name==='cdqReportEngineV2754'?name+':'+String(args[0]||'').replace(/[^a-zA-Z]/g,'').slice(0,20):name;
         const send=()=>new Promise((resolve,reject)=>{
           // A queued read may be cancelled. Once sent, GAS has no cancellation
@@ -80,15 +80,18 @@ function wrapRpcRunnerV2751(original,budget,{report=()=>{}}={}){
         if(name==='cdqReportEngineV2754'){
           const action=String(args[0]||''),payload=args[1]||{};
           options.write=['save','delete','restore','importIndex','editAcquire','editRenew','editRelease'].includes(action)||action==='list'&&payload.repair===true||action==='status'&&payload.restore===true;
+          // Repair remains a mutation (no cancellation or coalescing), but it
+          // must not consume the slot reserved for a technician's next click.
+          options.maintenance=action==='list'&&payload.repair===true;
           if(action==='status'&&!options.write)options.kind='background';
           if(action==='readMany'){options.kind='background';options.readKey=JSON.stringify(['report-read-many',String(payload.clientId||''),String(payload.destinationId||''),(payload.reports||[]).map(item=>[String(item.reportId||''),String(item.fileId||'')])]);}
         }
         if(/^(?:actualiserContenuClient|cdqStartupMaintenanceV2686)$/.test(name))options.kind='background';
         options.traceId=traceId;options.label=label;options.signal=signal;
         if(name==='obtenirContenuDossierParesseux')options.readKey=JSON.stringify(['folder',String(args[0]),String(args[1])]);
-        if(/^(?:obtenirPdfLecteurCDQV2520|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ)$/.test(name))options.readKey=JSON.stringify(['pdf',String(args[0])]);
-        options.interactive=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirDiagnosticApplication|obtenirPdfLecteurCDQV2520|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&String(args[0])==='read';
-        const clientBound=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirChunkDocumentPdfCDQ|obtenirPdfLecteurCDQV2520|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&['read','readMany'].includes(String(args[0]));
+        if(/^(?:obtenirPdfLecteurCDQV2520|cdqReadPdfDirectV20261114|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ)$/.test(name))options.readKey=JSON.stringify(['pdf',String(args[0])]);
+        options.interactive=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirDiagnosticApplication|obtenirPdfLecteurCDQV2520|cdqReadPdfDirectV20261114|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&['read','portalLink'].includes(String(args[0]));
+        const clientBound=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirChunkDocumentPdfCDQ|obtenirPdfLecteurCDQV2520|cdqReadPdfDirectV20261114|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&['read','readMany'].includes(String(args[0]));
         if(clientBound){const selected=typeof compagnieSelectionnee==='undefined'?'':String(compagnieSelectionnee);options.valid=()=>selected===(typeof compagnieSelectionnee==='undefined'?'':String(compagnieSelectionnee));}
         budget.run(send,options).then(values=>{if(typeof ok==='function')ok(...values);},error=>{
           const values=error?.rpcValues||(hasValue?[error,value]:[error]);

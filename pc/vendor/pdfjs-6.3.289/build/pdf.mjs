@@ -1,3 +1,4 @@
+import {replaceWidgetBorder} from '../../../reader-scaled-borders.mjs';
 import {rectangleBounds,paintCrispFrame} from '../../../reader-crisp-rectangles-v2819.mjs';
 const cdqRectanglePathsV28=new WeakMap();
 import {createFirstPaintSchedulerV2731} from "../../../reader-first-paint-scheduler-v2731.mjs";
@@ -18054,6 +18055,7 @@ class AnnotationElement {
     } else {
       this.setRotation(rotation, container);
     }
+    replaceWidgetBorder(container,data);
     return container;
   }
   setRotation(angle, container = this.container) {
@@ -18081,6 +18083,7 @@ class AnnotationElement {
       const colorType = color[0];
       const colorArray = color.slice(1);
       event.target.style[styleName] = ColorConverters[`${colorType}_HTML`](colorArray);
+          if(styleName==='borderColor'){const frame=this.container.querySelector(':scope > .cdq-widget-border-v2884');if(frame){frame.style.color=event.target.style[styleName];event.target.style.borderColor='transparent';}}
       this.annotationStorage.setValue(this.data.id, {
         [styleName]: ColorConverters[`${colorType}_rgb`](colorArray)
       });

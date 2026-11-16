@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.82" data-cdq-pc-release="8b047a5a06efe5b050689ae41ee58f474f13adcc1426881e1571bc687647047f">
+<html data-cdq-pc-version="28.84" data-cdq-pc-release="9615e2d04361f835768b6847870e944ddcddc74a00f66dfef09cc527a931a485">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -932,7 +932,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.11.14-v28.82-pdf-v3-pc">
+<meta name="cdq-package-build" content="2026.11.15-v28.84-runtime-pc">
 
 
 <script id="cdqBridgeV23">
@@ -986,7 +986,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.14-v28.82-pdf-v3-pc'
+    build:'2026.11.15-v28.84-runtime-pc'
   });
 }
 
@@ -999,7 +999,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.14-v28.82-pdf-v3-pc'
+        build:'2026.11.15-v28.84-runtime-pc'
       });
     }
   } catch(e) {}
@@ -5761,26 +5761,7 @@ body.light .file-today-done-badge{
 
 
 
-<style id="cdqV21_21BiometricFallbackFix">
-.access-use-pin-instead{
-  margin-top:10px!important;
-  background:#374151!important;
-  color:#fff!important;
-  border:1px solid #64748b!important;
-}
-.access-use-pin-instead:hover{
-  background:#465364!important;
-}
-#accessPinFallback{
-  margin-top:12px;
-}
-.cdq-biometric-help{
-  margin-top:9px;
-  font-size:13px;
-  line-height:1.35;
-  color:#aebfce;
-}
-</style>
+
 
   <script id="cdqPdfToolsV2684">(function(){
 let pending;
@@ -7671,6 +7652,7 @@ function ajouterDossierRacineAuCache(idCompagnie,dossier){
   const contenu = cacheContenuCompagnies[idCompagnie];
   if(!contenu || !dossier) return false;
   contenu.dossiers = contenu.dossiers || [];
+  if(contenu.dossiers.some(function(item){return item.id===dossier.id;}))return true;
   contenu.dossiers.push({
     id:dossier.id,
     nom:dossier.nom,
@@ -9301,6 +9283,7 @@ function planifierActualisationCompagnie(idCompagnie,verifiedAt){
 }
 
 function actualiserCompagnieEnArrierePlan(idCompagnie){
+  const generationV20261115=cdqFolderGenerationV20261115.get(String(idCompagnie))||0;
   idCompagnie = String(idCompagnie || "");
   if(!idCompagnie || rafraichissementsEnCours[idCompagnie]) return;
 
@@ -9311,6 +9294,7 @@ function actualiserCompagnieEnArrierePlan(idCompagnie){
     .withSuccessHandler(function(resultat){
       delete rafraichissementsEnCours[idCompagnie];
       if(cdqAccessState!=='ready'||owner!==String(utilisateurCourantEmail||''))return;
+      if(generationV20261115!==(cdqFolderGenerationV20261115.get(idCompagnie)||0))return;
 
       let contenu = resultat && resultat.contenu ? resultat.contenu : resultat;
       const verifiedAt = resultat && resultat.genereLe ? Number(resultat.genereLe) : Date.now();
@@ -10706,6 +10690,23 @@ function confirmerCreationDossiersEnLotPrive(){
   traiterLotSuivant();
 }
 
+const cdqFolderGenerationV20261115=new Map();
+function cdqConfirmFolderCacheV20261115(clientId,receipt,owner){
+  cdqApiRun().withSuccessHandler(function(result){
+    if(owner!==String(utilisateurCourantEmail||''))return;
+    const content=result&&result.contenu?result.contenu:result;
+    if(!content||!Array.isArray(content.dossiers)||!content.dossiers.some(function(folder){return folder.id===receipt.id;})){
+      afficherMessage('Dossier créé. La liste reste à confirmer; une reprise avec le même nom ne créera pas de doublon.',false);return;
+    }
+    if(!ajouterDossierRacineAuCache(clientId,receipt)){
+      sauvegarderEtAfficherCacheClient(clientId,content,Number(result.genereLe)||Date.now());
+    }
+    cdqApiRun().withFailureHandler(function(){afficherMessage('Dossier créé. La confirmation locale reste à reprendre avec le même nom.',false);})
+      .cdqAcknowledgeFolderV20261115(receipt.cdqFolderRequestV20261115);
+  }).withFailureHandler(function(){
+    if(owner===String(utilisateurCourantEmail||''))afficherMessage('Dossier créé. La liste reste à confirmer; réessayez avec le même nom.',false);
+  }).actualiserContenuClient(clientId);
+}
 function confirmerCreationDossier(){
   const bulk = document.getElementById("bulkFolderMode");
   if(estProprietairePrincipalInterface() && bulk && bulk.checked){
@@ -10714,6 +10715,8 @@ function confirmerCreationDossier(){
   }
 
   const input = document.getElementById("createFolderInput");
+  if(input.disabled)return;
+  const ownerV20261115=String(utilisateurCourantEmail||'');
   const nomDossier = input.value.trim();
 
   if(!nomDossier){
@@ -10728,13 +10731,14 @@ function confirmerCreationDossier(){
   const appel = cdqApiRun()
     .withSuccessHandler(function(resultat){
       input.disabled = false;
+      if(ownerV20261115!==String(utilisateurCourantEmail||''))return;
       fermerCreationDossier();
 
       if(idCompagnieAuDepart){
-        if(!ajouterDossierRacineAuCache(idCompagnieAuDepart,resultat)){
-          actualiserCompagnieEnArrierePlan(idCompagnieAuDepart);
-        }
+        ajouterDossierRacineAuCache(idCompagnieAuDepart,resultat);
+        cdqFolderGenerationV20261115.set(idCompagnieAuDepart,(cdqFolderGenerationV20261115.get(idCompagnieAuDepart)||0)+1);
         afficherMessage("Dossier créé avec succès.",false);
+        if(resultat.cdqFolderRequestV20261115)cdqConfirmFolderCacheV20261115(idCompagnieAuDepart,resultat,ownerV20261115);
       }else{
         if(resultat && resultat.id){
           toutesLesCompagnies.push({id:resultat.id,nom:resultat.nom});
@@ -10754,7 +10758,7 @@ function confirmerCreationDossier(){
     });
 
   if(idCompagnieAuDepart){
-    appel.creerDossierDansCompagnie(idCompagnieAuDepart,nomDossier);
+    appel.cdqCreateFolderDurableV20261115(idCompagnieAuDepart,nomDossier);
   }else{
     appel.creerDossierClient(nomDossier);
   }
@@ -12292,7 +12296,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.14-v28.82-pdf-v3-pc";
+  const CDQ_BUILD = "2026.11.15-v28.84-runtime-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13633,15 +13637,7 @@ function cdqCompareVersionV2248(a,b){
   return 0;
 }
 
-function cdqCompareVersionV2248(a,b){
-  function parts(v){
-    const m=String(v||'').match(/v(\d+)\.(\d+)(?:\.(\d+))?/i);
-    return m?[Number(m[1]||0),Number(m[2]||0),Number(m[3]||0)]:[0,0,0];
-  }
-  const A=parts(a),B=parts(b);
-  for(let i=0;i<3;i++){if(A[i]!==B[i])return A[i]-B[i];}
-  return 0;
-}
+
 
 function cdqNativeUpdateBridgeV2547(){
   try{return window.BalanceCDQNative || (window.parent&&window.parent.BalanceCDQNative) || null;}catch(_){return window.BalanceCDQNative||null;}
@@ -14904,7 +14900,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.14-v28.82-pdf-v3-pc";
+const CDQ_V19_BUILD = "2026.11.15-v28.84-runtime-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -16732,12 +16728,7 @@ function createDriveTransferV2751({rpc,get,put,owner,guard,context=()=>0,fetch:f
  function scope(){const email=owner(),epoch=context();const valid=()=>{guard(email);if(epoch!==context()||owner()!==email)throw Error('Le compte ou l’accès a changé.');};valid();return {email,valid};}
  async function capabilities(){
   const {email,valid}=scope(),key=email+'|'+context();
-  if(!caps.has(key))caps.set(key,Promise.resolve().then(()=>rpc('cdqTransportCapabilitiesV2751',[])).catch(error=>{
-   // Only an explicitly absent method means an older server. Authentication,
-   // network and permission failures must retain the original pending action.
-   if(/(?:not found|not a function|introuvable|unknown|does not exist|fonction.*(?:absente|existe pas))/i.test(String(error?.message||error)))return {ok:false,binaryStaging:false,legacyServerV2751:true};
-   caps.delete(key);throw error;
-  }));
+  if(!caps.has(key))caps.set(key,Promise.resolve().then(()=>rpc('cdqTransportCapabilitiesV2751',[])).catch(error=>{caps.delete(key);throw error;}));
   const result=await caps.get(key);valid();return result;
  }
  async function write(action,{legacy}={}){
@@ -16745,11 +16736,7 @@ function createDriveTransferV2751({rpc,get,put,owner,guard,context=()=>0,fetch:f
   const blob=await pdfActionBlobV2751(action);valid();
   if(blob.type!=='application/pdf'||blob.size<8||blob.size>32*1024*1024||await blob.slice(0,5).text()!=='%PDF-')throw Error('PDF invalide.');valid();
   const capability=await capabilities();valid();
-  if(capability?.legacyServerV2751===true||capability?.ok===true&&capability.binaryStaging===false){
-   if(typeof legacy!=='function')throw Error('La sauvegarde sécurisée attend la mise à jour du serveur. Le PDF reste conservé sur cet appareil.');
-   const data=await pdfActionBase64V2751(action);valid();return legacy({...action,data,blob});
-  }
-  if(capability?.ok!==true||capability.binaryStaging!==true||capability.sha256Encoding!=='hex-bytes-v1')throw Error(capability?.message||'La capacité de sauvegarde Drive n’a pas été confirmée.');
+  if(capability?.ok!==true||capability.binaryStaging!==true||capability.provider!=='cloudflare-r2'||capability.sha256Encoding!=='hex-bytes-v1')throw Error(capability?.message||'La capacité de sauvegarde Drive n’a pas été confirmée.');
   if(capability.maxBytes&&blob.size>capability.maxBytes)throw Error('Le PDF dépasse la taille autorisée.');
   const hash=await pdfByteSha256V2751(blob);valid();
   if(action.byteSha256&&action.byteSha256!==hash)throw Error('Les réponses locales ont changé. L’envoi reste en attente.');
@@ -16765,33 +16752,19 @@ function createDriveTransferV2751({rpc,get,put,owner,guard,context=()=>0,fetch:f
    async function persist(value){valid();if(await put('pdf-transfer-v2751',action.id,value)===false)throw Error('Le PDF n’a pas pu être conservé. L’envoi reste en attente.');valid();state=value;}
    if(!state)await persist({...meta,phase:'prepared'});
    async function finalize(){const result=receipt(await rpc('cdqFinalizeUploadV2751',[meta.uploadId]));valid();await persist({...meta,phase:'confirmed',receipt:result});return result;}
-   let migratedJournalV2752=false;
    if(state.phase==='uploaded'||state.phase==='put-started'){
-    try{return await finalize();}catch(error){valid();const message=String(error?.message||error);if(!/(?:UPLOAD_INCOMPLETE|UPLOAD_EXPIRED|CDQ_UPLOAD_PENDING_V2751|staging.*(?:incomplet|absent))/i.test(message))throw error;migratedJournalV2752=/CDQ_UPLOAD_ACCOUNT_MIGRATION_V2752/.test(message);}
+    try{return await finalize();}catch(error){valid();const message=String(error?.message||error);if(!/(?:UPLOAD_INCOMPLETE|UPLOAD_EXPIRED|CDQ_UPLOAD_PENDING_V2751|staging.*(?:incomplet|absent))/i.test(message))throw error;}
    }
-   let begun;try{begun=await rpc('cdqBeginUploadV2751',[meta]);valid();}catch(error){
-    valid();const message=String(error?.message||error),migrationConflict=/UPLOAD_RECEIPT_LEGACY\s*:/.test(message)||migratedJournalV2752&&/CONFLICT_REVISION\s*:/.test(message);
-    if(!migrationConflict)throw error;
-    const unconfirmed=()=>Error('UPLOAD_RECEIPT_LEGACY_UNCONFIRMED : le reçu historique ne peut pas être confirmé. Le PDF local reste en attente.');
-    if(typeof historicalReceipt!=='function')throw unconfirmed();
-    // One bounded read on the fixed historical deployment; never resend bytes
-    // or call its begin/finalize methods to obtain a receipt.
-    let historical;try{historical=await historicalReceipt({...meta});}catch(lookupError){valid();const pending=unconfirmed();pending.cause=lookupError;throw pending;}valid();
-    // Do not leak CONFLICT_REVISION into the ordinary conflict-copy recovery:
-    // an unconfirmed historical commit must remain queued without a new copy.
-    if(historical?.ok!==true||historical.committed!==true)throw unconfirmed();
-    if(historical.actor!==email)throw Error('Le reçu historique appartient à un autre compte.');
-    const result=receipt(historical.receipt);await persist({...meta,phase:'confirmed',receipt:result});return result;
-   }
+   const begun=await rpc('cdqBeginUploadV2751',[meta]);valid();
    if(begun?.receipt||begun?.committed){const result=receipt(begun.receipt||begun);await persist({...meta,phase:'confirmed',receipt:result});return result;}
    if(!begun?.ok||begun.uploadId!==meta.uploadId)throw Error('La préparation de l’envoi Drive n’a pas été confirmée.');
    if(begun.uploaded===true){await persist({...meta,phase:'uploaded'});return finalize();}
    let url;try{url=new URL(begun.uploadUrl);}catch{throw Error('La destination temporaire Drive est invalide.');}
-   if(url.protocol!=='https:'||!['www.googleapis.com','content.googleapis.com'].includes(url.hostname)||!/^\/upload\/drive\/v3\/files(?:\/[^/]+)?$/.test(url.pathname)||!url.searchParams.has('upload_id'))throw Error('La destination temporaire Drive est invalide.');
+   if(url.origin!=='https://cdq-report-engine.balance-cdq.workers.dev'||url.pathname!=='/v2/app/pdf-upload-bytes'||url.username||url.password||url.hash||[...url.searchParams.keys()].length!==2||! /^[a-f0-9]{64}$/.test(url.searchParams.get('key')||'')||! /^[a-f0-9]{64}$/.test(url.searchParams.get('token')||''))throw Error('La destination temporaire Drive est invalide.');
    await persist({...meta,phase:'put-started'});valid();
    const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),55000);let response;
    let transportError;
-   try{response=await fetcher(url.href,{method:'PUT',headers:{'Content-Type':'application/pdf'},body:blob,credentials:'omit',referrerPolicy:'no-referrer',signal:controller.signal});}catch(error){transportError=error;}finally{clearTimeout(timer);}valid();
+   try{response=await fetcher(url.href,{method:'PUT',headers:{'Content-Type':'application/pdf'},body:blob,credentials:'omit',referrerPolicy:'no-referrer',redirect:'error',signal:controller.signal});}catch(error){transportError=error;}finally{clearTimeout(timer);}valid();
    if(transportError||!response?.ok){
     // Drive may have committed the bytes even when its PUT response is lost.
     // Reconcile this exact durable upload once; only a validated receipt wins.
@@ -18780,9 +18753,13 @@ async function cdqV19RefreshPhotos(){
       const view=document.createElement('button');view.type='button';view.textContent='Voir';
       view.onclick=function(){const img=document.createElement('img');img.src=p.dataUrl;img.alt='Photo en attente';img.style.cssText='display:block;max-width:100%;max-height:60vh;object-fit:contain';card.append(img);view.disabled=true;};actions.appendChild(view);
     }
-    if(p.url&&!p.pending){
+    if(p.runtimeFileId&&!p.pending){
       const view=document.createElement("button");view.type="button";view.textContent="Voir";
-      view.onclick=function(){window.open(p.url,"_blank","noopener");};actions.appendChild(view);
+      view.onclick=async function(){
+        view.disabled=true;
+        try{const r=await cdqV19Gs("cdqLirePhotoPieceJointeV2884",[p.runtimeFileId]);if(!r||r.ok!==true||!/^data:image\/(?:jpeg|png|webp|gif|heic|heif);base64,/.test(r.dataUrl||""))throw Error("Photo indisponible.");const img=document.createElement("img");img.src=r.dataUrl;img.alt=p.nom||"Photo";img.style.cssText="display:block;max-width:100%;max-height:60vh;object-fit:contain";card.appendChild(img);}
+        catch(e){view.disabled=false;afficherErreur(e);}
+      };actions.appendChild(view);
     }
     if(!p.pending && String(utilisateurCourantRole||"")!=="lecture"){
       const del=document.createElement("button");del.type="button";del.textContent="Supprimer";
@@ -19217,7 +19194,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.14-v28.82-pdf-v3-pc";
+const CDQ_V20_BUILD = "2026.11.15-v28.84-runtime-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -19981,7 +19958,14 @@ async function ouvrirInventaireV20(){
     v20RenderInventory();
   }catch(e){o.querySelector(".cdq-v19-body").textContent=e.message||String(e);}
 }
-window.ouvrirInventaireCDQ=ouvrirInventaireV20;
+function ouvrirInventaireDirectV2884(){
+ const workspace=window.cdqWorkspaceV2638;
+ if(typeof workspace?.navigate==='function')return workspace.navigate('inventory',{userInitiated:true});
+ const modern=window.cdqInventoryModernV2592;
+ if(typeof modern?.open==='function')return modern.open();
+ window.afficherErreur?.(Error('L’inventaire est encore en préparation. Réessayez dans un instant.'));
+}
+window.ouvrirInventaireCDQ=ouvrirInventaireDirectV2884;
 
 // Empêche uniquement le zoom par pincement pendant que l'inventaire est ouvert.
 // Le défilement à un doigt demeure permis.
@@ -20042,19 +20026,18 @@ async function v20RefreshAlerts(){
 function v20RebindInventoryButtons(){
   document.querySelectorAll('.bottom-nav-item[title="Inventaire"], .desktop-sidebar-action').forEach(function(b){
     const txt=String(b.textContent||"").toLowerCase();
-    if(b.title==="Inventaire"||txt.includes("inventaire"))b.onclick=ouvrirInventaireV20;
+    if(b.title==="Inventaire"||txt.includes("inventaire"))b.onclick=ouvrirInventaireDirectV2884;
   });
 }
 
 window.addEventListener("load",function(){
   setTimeout(function(){
     v20RebindInventoryButtons();
-    v20RefreshAlerts();
     if(cdqV20AlertPollTimer)clearInterval(cdqV20AlertPollTimer);
-    cdqV20AlertPollTimer=setInterval(v20RefreshAlerts,120000);
+    cdqV20AlertPollTimer=null;
   },350);
 });
-window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);});
+// Inventory alerts are rendered by the current inventory page.
 
 })();
 </script>
@@ -20064,7 +20047,7 @@ window.addEventListener("online",function(){setTimeout(v20RefreshAlerts,1200);})
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.14-v28.82-pdf-v3-pc";
+const CDQ_V21_BUILD = "2026.11.15-v28.84-runtime-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -23735,8 +23718,10 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     const captionBase=Math.max(9,Math.min(11,cdqViewportWidthNowV2606*.0255));
     root.style.setProperty('--cdq-adaptive-home-label-v2856',px(Math.max(8,captionBase-1.7*preference/100)));
     root.style.setProperty('--cdq-adaptive-home-gap-v2856',px(Math.max(3,(cdqViewportWidthNowV2606<=379?3.2:6)-2*preference/100)));
-    const fittedHomeIconV2859=fitUnifiedArtworkV2856(bottom);
-    root.style.setProperty('--cdq-unified-art-v2856',px(fittedHomeIconV2859));
+    // cdq-home-sizing-v2884: measure only after this pass has applied layout,
+    // caption fonts and palette. Measuring the previous frame caused shrinkage
+    // after opening, theme restoration and delayed action insertion.
+    let fittedHomeIconV2859=bottom;
     root.style.setProperty('--cdq-home-label-v2850', px(homeLabel));
     root.style.setProperty('--cdq-home-tile-v2850', px(bottom + Math.max(39, 2 * homeLabel * 1.2 + 14)));
     const label = 8 * unit * textScale, text = 18.5 * unit * textScale;
@@ -23813,6 +23798,8 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     root.style.setProperty('--cdq-file-action-selection-width-v2655',px(Math.max(64,82*unit*textScale)));
     window.cdqFitButtonWordsV2534({unit,topLabel,label});
     applyPalette();
+    fittedHomeIconV2859=fitUnifiedArtworkV2856(bottom);
+    root.style.setProperty('--cdq-unified-art-v2856',px(fittedHomeIconV2859));
     layoutCompanyMenu(unit, textScale);
     window.cdqFitFullNamesV2536?.();
     measureNavigation();
@@ -23844,6 +23831,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     queued = true;
     requestAnimationFrame(() => { queued = false; apply(); });
   }
+  document.fonts?.ready.then(schedule);
   window.cdqMobileLayout = {apply, schedule, keyboard(){layoutCompanyMenu(lastMenuMetrics.unit,lastMenuMetrics.textScale);measureNavigation();}};
   function viewportChangedV2627() {
     const width = Math.max(240, Math.round(window.innerWidth || root.clientWidth || 384));
@@ -24561,7 +24549,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.14-v28.82-pdf-v3-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.15-v28.84-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -24742,8 +24730,9 @@ async function open(){
  }
  if(!dialog.open)dialog.showModal();await poll();
 }
-function mount(){}
-let scheduled=false;new MutationObserver(()=>{if(!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;mount();});}}).observe(document.body,{childList:true,subtree:true});window.addEventListener('cdq:access-ready',mount);window.cdqFloorMigration25={open};mount();
+
+// Empty migration observer retired 20261114.
+window.cdqFloorMigration25={open};
 })();
 
 </script>
@@ -25918,7 +25907,6 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
 <script type="module" src="./client-portal-ui-v2793.mjs"></script>
 <script type="module" src="./background-v2793.mjs"></script>
 
-<script type="module" src="./inventory-zoho-v2642.mjs"></script>
 <style id="cdq-nav-current-v2647">
 html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route][data-cdq-current]::after{content:''!important;display:block!important;position:absolute!important;bottom:0!important;left:20%!important;right:20%!important;height:3px!important;border-radius:3px!important;background:transparent!important;box-shadow:none!important}
 html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route][data-cdq-current="true"]::after{background:var(--cdq-nav-accent,var(--cdq-accent))!important;box-shadow:0 0 5px var(--cdq-nav-accent,var(--cdq-accent))!important}
@@ -26746,9 +26734,9 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
     try{
       const x=await rpc('cdqGererEnvoiEnAttenteV20261112',[clientId,task.jobId,action,confirmation]);
       if(!x?.ok)throw Error(x?.message||x?.state||'Le serveur a refusé cette action.');
-      outcome=action==='clore_apres_verification'?'Tâche clôturée après votre vérification. Un nouvel envoi devra être lancé manuellement.':
+      outcome=x.message||(action==='clore_apres_verification'?'Tâche clôturée après votre vérification. Un nouvel envoi devra être lancé manuellement.':
            action==='verifier'?(x.evidenceFound?'Une preuve Gmail exacte a été confirmée. Aucun nouvel email envoyé.':'Aucun reçu Gmail confirmé. La tâche demeure à vérifier.'):
-           action==='annuler'?'Préparation annulée sans email.':'Reprise demandée. Cette tâche peut ensuite poursuivre automatiquement son traitement.';
+           action==='annuler'?'Préparation annulée sans email.':'Reprise demandée. Cette tâche peut ensuite poursuivre automatiquement son traitement.');
     }catch(e){outcome='Action refusée : '+String(e?.message||e);}
     finally{busy=false;await load();note(outcome);}
   }

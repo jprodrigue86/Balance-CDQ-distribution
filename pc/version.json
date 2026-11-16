@@ -1,12 +1,14 @@
 {
-  "androidSelectorSha256": "d968ce3bcb32cf570a45de74e0ab640d15cc491ca20c65e170a3ad09d67fbd3c",
-  "androidSourceBuild": "2026.11.14-v28.82-pdf-v3",
-  "build": "2026.11.14-v28.82-pdf-v3-pc",
+  "androidSourceBuild": "2026.11.15-v28.84-runtime",
+  "build": "2026.11.15-v28.84-runtime-pc",
   "desktopModel": 3,
-  "files": 1102,
-  "generatedFrom": "patches/pdf-v3-2882-20261114/stage_2882.py",
+  "files": 1129,
+  "generatedFrom": "patches/cloudflare-final-20261115/tools/stage-final-ui.mjs",
   "platform": "pc-pwa",
-  "release": "8b047a5a06efe5b050689ae41ee58f474f13adcc1426881e1571bc687647047f",
-  "version": "28.82",
-  "webBaseCommit": "de1e05294f308cd67502ccc4093422501af56e22"
+  "release": "9615e2d04361f835768b6847870e944ddcddc74a00f66dfef09cc527a931a485",
+  "version": "28.84",
+  "webBaseCommit": "de1e05294f308cd67502ccc4093422501af56e22",
+  "candidateOnly": true,
+  "sourceCommit": "9ef7fd5cae663f5f2e4ddd2e0b87a2017a7cbf8d",
+  "pdfQualification": "pending-native"
 }
