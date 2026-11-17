@@ -1,3 +1,4 @@
+import {reportSourceScopeV2895,readReportSourceTreeV2895} from './report-source-tree-v2895.mjs';
 import {validHistoricalMetadata,readHistoricalPdf,readHistoricalSheet} from './historical-metadata-v2866.mjs';
 import {balanceSheetSignatureV2788} from './balance-sheet-summary-v2788.mjs';
 import {balanceDisplayRowsV2751,validBalanceSourceIndexV2751} from './balance-list-index-v2751.mjs';
@@ -109,28 +110,24 @@ async function prepareBalanceListFastV2792({clientId,fileId,rpc,loadPdf,loadShee
   const lists=root.fichiers.filter(f=>norm(f.nom||f.name)==='liste de balance.pdf'&&pdf(f)).map(file=>({file,folderId:String(clientId)}));
   const listFolders=root.dossiers.filter(f=>norm(f.nom||f.name)==='liste de balance').sort((a,b)=>String(a.id).localeCompare(String(b.id)));
   if(listFolders.some(f=>!f.id)||new Set(listFolders.map(f=>String(f.id))).size!==listFolders.length)throw Error('Dossier de liste incomplet.');
-  const folders=root.dossiers.filter(f=>/^rapports? (?:d ?)?etalonnages?$/.test(norm(f.nom||f.name))).sort((a,b)=>String(a.id).localeCompare(String(b.id)));
-  if(folders.some(f=>!f.id)||new Set(folders.map(f=>String(f.id))).size!==folders.length)throw Error('Dossier de rapports incomplet.');
-  // Fetch independent list/report folders in one bounded batch. Both full
-  // snapshots still authenticate membership before any import or write.
-  const folderRows=await groups([...listFolders,...folders],async folder=>{const r=await rpc('obtenirContenuDossierParesseux',folder.id,clientId);guard();return folderContent(r,folder.id);},{stillCurrent,concurrency:1});
+  // The list destination is distinct from report sources. Re-read every eligible
+  // report subtree, including RE, while keeping PDF discovery's historical scope.
+  const folderRows=await groups(listFolders,async folder=>{const r=await rpc('obtenirContenuDossierParesseux',folder.id,clientId);guard();return folderContent(r,folder.id);},{stillCurrent,concurrency:1});
   for(let i=0;i<listFolders.length;i++)for(const file of folderRows[i].fichiers)if(norm(file.nom||file.name)==='liste de balance.pdf'&&pdf(file))lists.push({file,folderId:String(listFolders[i].id)});
-  const children=folderRows.slice(listFolders.length);
   const selected=lists.filter(row=>String(row.file.id)===String(fileId));
   if(bootstrap){
    // Even a list that another technician created in the meantime prohibits
    // this path; never publish a second canonical list.
    if(!listDestinationId||listFolders.length!==1||String(listFolders[0].id)!==String(listDestinationId)||lists.length)throw Error('CONFLICT_LIST_FILE : la première liste ne peut pas être créée sans destination unique et vide.');
   }else if(selected.length!==1)throw Error('La liste a été déplacée, remplacée ou supprimée.');
-  const files=new Map(),take=f=>{if(!f.id)throw Error('Identifiant du rapport absent.');const id=String(f.id),prior=files.get(id);if(prior&&JSON.stringify(fileKey(prior))!==JSON.stringify(fileKey(f)))throw Error('Révisions des rapports non confirmées.');files.set(id,{...f});};
-  for(const f of root.fichiers)if(!excluded(f)&&(sheet(f)||pdf(f)))take(f);for(const child of children)for(const f of child.fichiers)if(!excluded(f)&&(sheet(f)||pdf(f)))take(f);
-  const sorted=[...files.values()].sort((a,b)=>String(a.id).localeCompare(String(b.id)));
+  const tree=await readReportSourceTreeV2895(root,{stillCurrent,readFolder:async id=>{const response=await rpc('obtenirContenuDossierParesseux',id,clientId);guard();return folderContent(response,id);}});
+  const sorted=tree.files;
   if(sorted.length>500||sorted.some(f=>!sourceRev(f)||f._cdqPendingSaveV2660||String(f.id).startsWith('cdq-local-')))throw Error('Révisions des rapports non confirmées.');
-  return {name:root.nom||root.name||'',files:sorted,folders:folders.map(f=>String(f.id)),
+  return {name:root.nom||root.name||'',files:sorted,folders:tree.folders,
    listFolderId:bootstrap?String(listDestinationId):selected[0].folderId,
    list:bootstrap?{id:'',name:'',mimeType:'',modifiedTime:'',revision:''}:{...selected[0].file}};
  }
- const indexed=guardedSave===true&&validBalanceSourceIndexV2751(sourceIndex,clientId,fileId);
+ const indexed=guardedSave===true&&sourceIndex?.sourceScopeV2895===reportSourceScopeV2895&&validBalanceSourceIndexV2751(sourceIndex,clientId,fileId);
  const before=indexed?{name:sourceIndex.name||'',files:sourceIndex.sources.map(source=>({...source.file,id:source.id,revision:source.revision,modifiedTime:source.revision,dateModification:source.revision})),folders:sourceIndex.folders,listFolderId:sourceIndex.listFolderId,list:{...sourceIndex.list,revision:sourceIndex.listRevision,modifiedTime:sourceIndex.listRevision,dateModification:sourceIndex.listRevision}}:await snapshot(),beforeKey=snapshotKey(before),records=[],signatures=new Map(),metadataBySource=new Map();let L,existing,old,libraryPromise;
  const pdfLibrary=async()=>{libraryPromise??=Promise.resolve().then(library);L=await libraryPromise;guard();return L;};
  await groups(before.files,async(file,guard)=>{
@@ -175,7 +172,7 @@ async function prepareBalanceListFastV2792({clientId,fileId,rpc,loadPdf,loadShee
  // Validate membership and every source revision after rendering, immediately
  // before saving, even when the existing list needs no PDF write.
  const after=indexed?before:await snapshot();guard();if(beforeKey!==snapshotKey(after))throw snapshotChangedV2792(before,after);
- const exhaustiveIndex={version:1,exhaustive:true,clientId:String(clientId),fileId:String(fileId),listRevision:sourceRev(before.list),list:{...before.list},name:before.name,author:old?.getAuthor?.()||sourceIndex?.author||previousState?.sourceIndexV2751?.author||'',authorKnown:!!old||sourceIndex?.authorKnown===true||previousState?.sourceIndexV2751?.authorKnown===true,folders:before.folders,listFolderId:before.listFolderId,sources:before.files.map(file=>({id:String(file.id),revision:sourceRev(file),name:file.nom||file.name||'',file:{...file},signature:signatures.get(String(file.id)),metadataVersion:2866,metadata:metadataBySource.get(String(file.id))}))};
+ const exhaustiveIndex={version:1,sourceScopeV2895:reportSourceScopeV2895,exhaustive:true,clientId:String(clientId),fileId:String(fileId),listRevision:sourceRev(before.list),list:{...before.list},name:before.name,author:old?.getAuthor?.()||sourceIndex?.author||previousState?.sourceIndexV2751?.author||'',authorKnown:!!old||sourceIndex?.authorKnown===true||previousState?.sourceIndexV2751?.authorKnown===true,folders:before.folders,listFolderId:before.listFolderId,sources:before.files.map(file=>({id:String(file.id),revision:sourceRev(file),name:file.nom||file.name||'',file:{...file},signature:signatures.get(String(file.id)),metadataVersion:2866,metadata:metadataBySource.get(String(file.id))}))};
  const result={sourceIndexV2751:exhaustiveIndex,status:'ready',fileId:String(fileId),clientId:String(clientId),folderId:after.listFolderId,count:rows.length,listRevision:'v2728-client',listStamp:JSON.stringify(fileKey(after.list)),digest,rows,checkedAt:new Date().toISOString(),updatedAt:sourceRev(before.list),clientSnapshot:after};
  if(indexOnly)return {...result,indexOnly:true};
  if(unchanged)return {...result,unchanged:true,fastV2729:true};

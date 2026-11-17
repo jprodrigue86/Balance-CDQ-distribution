@@ -1,5 +1,6 @@
+import {createReportInspectionPlanV2895,readInteractiveReportMetadataV2895} from './report-refresh-v2895.mjs';
 import {calibrationIdentity,calibrationRpc} from './calibration-feedback-v2566.mjs';
-import {createReportConformityTrackerV2727,reportConformitySourcesV2727} from './report-conformity-cache-v2727.mjs';
+import {createReportConformityTrackerV2727,reportConformitySourcesV2727,reportConformityStampV2727} from './report-conformity-cache-v2727.mjs';
 import './field-work-v2729.mjs';
 
 const canRead=()=>!!window.cdqDriveEntryV2632?.canRead()&&!!calibrationIdentity().email;
@@ -7,6 +8,7 @@ const client=()=>{try{return String(compagnieSelectionnee||'');}catch{return '';
 const root=id=>{try{return cacheContenuCompagnies[id]||null;}catch{return null;}};
 function readerBusy(){try{return !!window.parent.document.getElementById('legacy-pdf-reader')||document.documentElement.classList.contains('cdq-workspace-reader-open');}catch{return document.documentElement.classList.contains('cdq-workspace-reader-open');}}
 let timer=0,scan=null,scanTimer=0,scope='',pendingRescan=false,retryTimer=0,retryScope='';
+const planInspectionV2895=createReportInspectionPlanV2895();
 let backgroundTimerV2774=0,backgroundScopeV2774='',backgroundSeenV2774=new Map();
 const BACKGROUND_INSPECT_TTL_V2774=12*60*60*1000;
 const BACKGROUND_INSPECT_LIMIT_V2774=500;
@@ -41,6 +43,20 @@ const tracker=createReportConformityTrackerV2727({
   if(!canRead()||owner!==calibrationIdentity().email)throw Error('Le compte a changé.');
   return snapshot;
  },
+ loadSheetMetadata:(id,clientId,revision,stillCurrent)=>{
+  const owner=calibrationIdentity().email;
+  return readInteractiveReportMetadataV2895(id,{api:window.cdqApiRun,stillCurrent:()=>stillCurrent()&&canRead()&&client()===String(clientId)&&calibrationIdentity().email===owner});
+ },
+ onSourceMetadata:(source,fresh,context)=>{
+  if(!canRead()||calibrationIdentity().email!==context.owner||client()!==context.clientId||typeof trouverFichierDansArbre!=='function')return false;
+  const found=trouverFichierDansArbre(root(context.clientId),source.id);
+  if(!found||found.fichier._cdqPendingSaveV2660||reportConformityStampV2727(found.fichier)!==context.expectedStamp)return false;
+  // The tracker invokes this only after the fresh scoped summary validates the
+  // selected client and exact revision. Metadata by itself never paints a check.
+  const confirmed=window.cdqInstantFiles2530?.confirm?.({...fresh,_cdqSheetConfirmedRevisionV2893:fresh.revision},context.clientId,found.noeud.id)===true;
+  if(confirmed)window.dispatchEvent(new CustomEvent('cdq:client-content-ready-v2745',{detail:{clientId:context.clientId,fileId:source.id}}));
+  return confirmed;
+ },
  cachedState:(file,id)=>{
   const list=window.cdqBalanceListV2638;
   const signature=list?.confirmedSignature?.(file,id);
@@ -50,7 +66,9 @@ const tracker=createReportConformityTrackerV2727({
  onChange:()=>paintRows()
 });
 function paintRows(){
- const id=client(),files=new Map(reportConformitySourcesV2727(root(id)).map(file=>[String(file.id),file]));
+ // Existing exact-revision PDF/Engine receipts may still paint their badges.
+ // This wider paint-only view never schedules a PDF read in a new subtree.
+ const id=client(),files=new Map(reportConformitySourcesV2727(root(id),{includeConfirmedPdf:()=>true,includePending:true}).map(file=>[String(file.id),file]));
  for(const row of document.querySelectorAll('#filesContainer .file-row')){
   const fileId=row.querySelector('.file-checkbox[data-file-id]')?.dataset.fileId||row.querySelector('[data-file-id]')?.dataset.fileId;
   const file=files.get(String(fileId||'')),name=row.querySelector('.file-name'),show=canRead()&&!!file&&tracker.state(file,id)==='nonconforming';
@@ -78,15 +96,12 @@ function displayedFiles(){
  }
  return result;
 }
-function orderedSources(id){
- const visible=displayedFiles();
- // Only inspect rendered file rows, starting in the actual viewport. Avoid
- // bulk background downloads for unopened folders or the rest of a long list.
- return reportConformitySourcesV2727(root(id))
-  .filter(file=>visible.has(String(file.id)))
-  .map((file,index)=>({file,index,rank:visible.get(String(file.id))}))
-  .sort((a,b)=>a.rank-b.rank||a.index-b.index).slice(0,24).map(item=>item.file);
+function inspectionPlanV2895(id){
+ let targetId='';try{if(typeof recupererFichierModification==='function')targetId=String(recupererFichierModification()||'');}catch{}
+ return planInspectionV2895({owner:calibrationIdentity().email,clientId:id,files:reportConformitySourcesV2727(root(id)),visible:displayedFiles(),targetId});
 }
+function orderedSources(id){return inspectionPlanV2895(id).files;}
+
 function allowedScan(){return canRead()&&!readerBusy()&&!document.hidden&&navigator.onLine!==false&&window.cdqFieldWorkV2729?.available()!==false;}
 // Only one low-priority non-visible check at a time. Never ask Drive for a
 // report while an editable reader or a foreground operation is active.
@@ -140,7 +155,7 @@ function armRetry(id,owner,expectedScope){
  },Math.max(50,delay));
 }
 function inspect(){
- paintRows();const id=client(),owner=calibrationIdentity().email,currentScope=JSON.stringify([owner,id,[...displayedFiles()]]);scope=currentScope;
+ paintRows();const id=client(),owner=calibrationIdentity().email,plan=inspectionPlanV2895(id),currentScope=plan.scope;scope=currentScope;
  if(retryTimer&&retryScope!==currentScope){clearTimeout(retryTimer);retryTimer=0;}
  // A folder may finish loading during this scan without adding any red dot.
  // Coalesce every new inspection request and visit its current files once more.
@@ -148,7 +163,7 @@ function inspect(){
  if(!id||!root(id)||!allowedScan()||scanTimer)return;
  scanTimer=setTimeout(()=>{scanTimer=0;if(scope!==currentScope||client()!==id||calibrationIdentity().email!==owner||!allowedScan())return;
   pendingRescan=false;
-  const task=tracker.inspect(orderedSources(id),()=>scope===currentScope&&client()===id&&calibrationIdentity().email===owner&&allowedScan(),id);scan=task;
+  const task=tracker.inspect(plan.files,()=>scope===currentScope&&client()===id&&calibrationIdentity().email===owner&&allowedScan(),id);scan=task;
   task.catch(()=>{}).finally(()=>{if(scan===task)scan=null;paintRows();const requested=scope!==currentScope||pendingRescan;pendingRescan=false;if(requested)schedule();else {armRetry(id,owner,currentScope);scheduleBackgroundV2774();}});
  },0);
 }
@@ -180,4 +195,5 @@ document.addEventListener('click',event=>{
 // Paint verified badges in the same DOM microtask as the client files render.
 const files=document.getElementById('filesContainer');if(files)new MutationObserver(()=>{paintRows();schedule();}).observe(files,{childList:true,subtree:true});
 window.addEventListener('cdq:client-content-ready-v2745',()=>{paintRows();schedule();});
+window.addEventListener('cdq:sheet-returned-v2756',schedule);
 schedule();

@@ -8,7 +8,7 @@ export function assertTicket(ticket,selected,visit){
  if(selected.publish&&(ticket.capabilities.visitProtocol!==2866||!visit||!ticket.plan.visitV2866||Object.keys(ticket.plan.visitV2866).length!==5||!['mode','visitId','date','expectedHeadId','expectedHeadRevision'].every(k=>ticket.plan.visitV2866[k]===visit[k]))||!selected.publish&&Object.prototype.hasOwnProperty.call(ticket.plan,'visitV2866'))throw Object.assign(Error('La visite choisie n’est pas confirmée par le serveur.'),{code:'VISIT_UNCONFIRMED'});
 }
 export function complete(result){
- if(!result||result.status!=='complete')return false;
+ if(!result||result.status!=='complete'||result.deliveryStatus==='rejected'||result.errorCode==='MAIL_DELIVERY_REJECTED')return false;
  if(!own(result,'actionsV2866'))return result.mailSent===true&&result.portalDone===true;
  const actions=result.actionsV2866;
  return result.actionsProtocol===2866&&validActions(actions)&&result.archiveDone===true&&(!actions.email||result.mailSent===true)&&(!actions.publish||result.portalDone===true&&result.visitDone===true&&typeof result.visitId==='string'&&result.visitId.length>=8);

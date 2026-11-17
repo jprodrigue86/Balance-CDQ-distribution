@@ -9,21 +9,23 @@
     if(!result||typeof result!=='object')return null;
     const known=Object.prototype.hasOwnProperty.call(result,'termine')&&integer(result.termine)&&integer(result.total)&&Number(result.total)>0;
     const total=integer(result.total)?Number(result.total):0,prepared=known?Math.min(total,Number(result.termine)):0;
-    const completed=typeof complete==='function'&&complete(result)===true;
-    const outcome=completed?'completed':['cancelled','closed'].includes(result.status)?result.status:result.status==='blocked'?'blocked':'running';
+    const rejected=result.deliveryStatus==='rejected'||result.errorCode==='MAIL_DELIVERY_REJECTED';
+    const completed=!rejected&&typeof complete==='function'&&complete(result)===true;
+    const outcome=completed?'completed':['cancelled','closed'].includes(result.status)?result.status:rejected||result.status==='blocked'?'blocked':'running';
     const actions=result.actionsV2866,modern=!!actions&&typeof actions.publish==='boolean'&&typeof actions.email==='boolean';
     const publish=modern?actions.publish:true,email=modern?actions.email:true;
     const units=total+(modern?1:0)+(publish?1:0)+(email?1:0);
-    const confirmed=prepared+(modern&&result.archiveDone===true?1:0)+(publish&&result.portalDone===true&&(!modern||result.visitDone===true)?1:0)+(email&&result.mailSent===true?1:0);
+    const confirmed=prepared+(modern&&result.archiveDone===true?1:0)+(publish&&result.portalDone===true&&(!modern||result.visitDone===true)?1:0)+(email&&result.mailSent===true&&!rejected?1:0);
     const globalPercent=completed?100:known&&units>0?Math.min(99,Math.floor(100*confirmed/units)):null;
     let phase=String(result.phase||'preparation');
     if(!Object.prototype.hasOwnProperty.call(phaseLabels,phase))phase='preparation';
     let detail=phaseLabels[phase];
-    if(completed){phase='termine';detail=publish?(email?'PDF archivés et publiés; courriel envoyé.':'PDF archivés et publiés. Aucun courriel demandé.'):'PDF archivés; courriel envoyé.';}
+    if(completed){phase='termine';detail=publish?(email?'PDF archivés et publiés; courriel accepté par Gmail, livraison non confirmée.':'PDF archivés et publiés. Aucun courriel demandé.'):'PDF archivés; courriel accepté par Gmail, livraison non confirmée.';}
     else if(outcome==='cancelled'){phase='annule';detail='Tâche annulée avant le courriel; fichiers conservés.';}
     else if(outcome==='closed'){phase='cloture';detail='Suivi clôturé; aucun renvoi automatique.';}
     else if(outcome==='blocked'){
-      if(result.error==='MAIL_UNCONFIRMED'||result.errorCode==='MAIL_UNCONFIRMED')detail=phaseLabels.verification;
+      if(rejected){phase='verification';detail='Courriel accepté par Gmail puis rejeté'+(result.deliveryErrorCode==='SMTP_550_5_7_26'?' (550 5.7.26)':'')+'. Fichiers conservés; aucun renvoi automatique.';}
+      else if(result.error==='MAIL_UNCONFIRMED'||result.errorCode==='MAIL_UNCONFIRMED')detail=phaseLabels.verification;
       else if(['CDQ_ENVOI_A_VERIFIER','CDQ_REPEAT_CONFIRMATION_REQUIRED','ALREADY_SENT_REQUIRES_CONFIRMATION','SEND_ALREADY_SENT'].includes(result.errorCode))detail='Courriel non envoyé — vérifier l’envoi précédent.';
       else detail='Traitement arrêté — voir les tâches en attente.';
     }

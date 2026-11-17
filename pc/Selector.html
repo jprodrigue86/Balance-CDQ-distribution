@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.93" data-cdq-pc-release="7796b500a0e441ad2f74451c0fe75bf0252e23eca5a51affff5293e2d10010eb">
+<html data-cdq-pc-version="28.95" data-cdq-pc-release="c39b89a0e365ff5333bfc3679ea42045de4d9323056c0308ff664e5e263ca541">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -938,7 +938,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
 <script src="./send-progress-v2893.js"></script>
-<meta name="cdq-package-build" content="2026.11.17-v28.93-runtime-pc">
+<meta name="cdq-package-build" content="2026.11.17-v28.95-runtime-pc">
 
 
 <script id="cdqBridgeV23">
@@ -992,7 +992,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.17-v28.93-runtime-pc'
+    build:'2026.11.17-v28.95-runtime-pc'
   });
 }
 
@@ -1005,7 +1005,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.17-v28.93-runtime-pc'
+        build:'2026.11.17-v28.95-runtime-pc'
       });
     }
   } catch(e) {}
@@ -12335,7 +12335,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.17-v28.93-runtime-pc";
+  const CDQ_BUILD = "2026.11.17-v28.95-runtime-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13291,7 +13291,7 @@ function cdqInstallSwipeGesture(row){
       cdqTrackingSaveV2828(job.context,null,job.id);cdqTrackingClearSelectionV2828(job);
       cdqTrackingDisposeV2828(job);cdqStopProgress(true);
       const send=document.getElementById('sendButton');if(send)send.disabled=String(utilisateurCourantRole||'')==='lecture';
-      afficherMessage(result.message||(result.actionsV2866?(result.actionsV2866.publish?(result.actionsV2866.email?'PDF archivés et publiés; courriel envoyé.':'PDF archivés et publiés. Aucun courriel demandé.'):'PDF archivés; courriel envoyé. Aucune publication demandée.'):'Courriel envoyé et page client mise à jour.'),true);
+      afficherMessage(result.message||(result.actionsV2866?(result.actionsV2866.publish?(result.actionsV2866.email?'PDF archivés et publiés; courriel accepté par Gmail, livraison non confirmée.':'PDF archivés et publiés. Aucun courriel demandé.'):'PDF archivés; courriel accepté par Gmail, livraison non confirmée. Aucune publication demandée.'):'Courriel accepté par Gmail; livraison non confirmée. Page client mise à jour.'),true);
       return;
     }
     if(result.status==='blocked'){
@@ -14943,7 +14943,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.17-v28.93-runtime-pc";
+const CDQ_V19_BUILD = "2026.11.17-v28.95-runtime-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -19257,7 +19257,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.17-v28.93-runtime-pc";
+const CDQ_V20_BUILD = "2026.11.17-v28.95-runtime-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20110,7 +20110,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.17-v28.93-runtime-pc";
+const CDQ_V21_BUILD = "2026.11.17-v28.95-runtime-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24637,7 +24637,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.17-v28.93-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.17-v28.95-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;

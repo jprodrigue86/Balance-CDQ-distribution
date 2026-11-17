@@ -1,3 +1,4 @@
+import {reportSourceScopeV2895,loadedReportSourcesV2895} from './report-source-tree-v2895.mjs';
 import {recoverableListReadV2878} from './list-reconciliation-v2878.mjs';
 import {createBalanceSheetReaderV2788} from './balance-sheet-summary-v2788.mjs';
 import {balanceListMessagesV2782} from './file-operation-state-v2782.mjs';
@@ -417,11 +418,12 @@ async function placeList(id,version,create=true){
 export function sourceFingerprint(tree,confirmed=null){
   if(!tree)return '';
   const known=typeof balanceListLocationV2731==='function'?balanceListLocationV2731(tree).file:(tree.fichiers||[]).find(f=>norm(f.nom||f.name)==='liste de balance.pdf');
-  const seen=new Set(),rows=[['schema','v2885-equipment-serial'],['client',String(tree.id||''),tree.nom||tree.name||''],['list',String(known?.id||rehydratingListId(tree,confirmed))]],take=(node,pdf)=>{for(const f of node.fichiers||[]){if(excluded(f.nom||f.name)||f._cdqPendingSaveV2660)continue;const type=f.mimeType||f.type,id=String(f.id||'');if(id&&!seen.has(id)&&(type==='application/vnd.google-apps.spreadsheet'||type==='GOOGLE_SHEETS'||pdf&&(type==='application/pdf'||type==='PDF'))){seen.add(id);rows.push([id,type==='application/pdf'?'PDF':type==='application/vnd.google-apps.spreadsheet'?'GOOGLE_SHEETS':type,String(f.modifiedTime||f.dateModification||f.revision||''),String(f.version||''),String(f.md5Checksum||f.sha256Checksum||'')]);}}};
-  take(tree,true);
-  for(const d of tree.dossiers||[])if(/^rapports? (?:d ?)?etalonnages?$/.test(norm(d.nom||d.name))){rows.push(['folder',String(d.id)]);take(d,true);}
-  return JSON.stringify(rows.sort((a,b)=>a[0].localeCompare(b[0])));
+  const inventory=loadedReportSourcesV2895(tree),rows=[['schema',reportSourceScopeV2895],['client',String(tree.id||''),tree.nom||tree.name||''],['list',String(known?.id||rehydratingListId(tree,confirmed))]];
+  for(const file of inventory.files){const type=file.mimeType||file.type;rows.push([String(file.id),type==='application/pdf'?'PDF':type==='application/vnd.google-apps.spreadsheet'?'GOOGLE_SHEETS':type,String(file.modifiedTime||file.dateModification||file.revision||''),String(file.version||''),String(file.md5Checksum||file.sha256Checksum||'')]);}
+  for(const folder of inventory.folders)rows.push(['folder',String(folder.id)]);
+  return JSON.stringify(rows.sort((a,b)=>a[0].localeCompare(b[0])||String(a[1]).localeCompare(String(b[1]))));
 }
+
 const receiptPrefix=()=> 'cdqBalanceListV2703:';
 function remembered(id){const k=key(id);if(receipts.has(k))return receipts.get(k);try{const r=JSON.parse(localStorage.getItem(receiptPrefix()+k)||'null');if(r){receipts.set(k,r);return r;}}catch{}return null;}
 function remember(id,fingerprint,absent=false){const r={fingerprint,requestedAt:Date.now(),...(absent?{absent:true}:{})};receipts.set(key(id),r);try{localStorage.setItem(receiptPrefix()+key(id),JSON.stringify(r));}catch{}}
@@ -644,7 +646,7 @@ function menu(){
   actions.append(p);actions.querySelector('[data-client-list]')?.setAttribute('aria-expanded','true');
 }
 function reset(){epoch++;refreshFlightsV2792.clear();engineReconcileFlightsV2792.clear();owner=calibrationIdentity().email;visibleClient='';listNoticeV2892=null;cdqListProgressV2778.clear();journalErrorsV20261028.clear();receipts.clear();states.clear();jobs.clear();failed.clear();saveWaits.clear();changes.clear();satisfied.clear();hydrated.clear();reviews.clear();reviewReceipts.clear();pausedClients.clear();projection.reset();previews.clear();previewJobs.clear();waitChecks.clear();warmIndexes.clear();engineListsV2754.clear();engineImportsV2754.clear();engineListFlightsV2754.clear();enginePendingRowsV2754.clear();engineDataAcksV2754.clear();engineRetiredRequestsV2754.clear();pcScan=null;for(const t of clientTimers.values())clearTimeout(t);clientTimers.clear();clientTimerDeadlinesV2770.clear();clearTimeout(timer);clearTimeout(scanTimer);timer=scanTimer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();paintRows();publishBackground();}
-function sources(tree){const files=[],seen=new Set(),take=(node,pdf)=>{for(const f of node.fichiers||[]){const id=String(f.id||'');if(id&&!seen.has(id)&&!excluded(f.nom||f.name)&&!f._cdqPendingSaveV2660&&(['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].includes(f.mimeType||f.type)||pdf&&['PDF','application/pdf'].includes(f.mimeType||f.type))){seen.add(id);files.push(f);}}};take(tree,true);for(const d of tree.dossiers||[])if(/^rapports? (?:d ?)?etalonnages?$/.test(norm(d.nom||d.name)))take(d,true);return files;}
+function sources(tree){return loadedReportSourcesV2895(tree).files;}
 function listOwnsSourceScanV2810(id){
  const k=key(id);return clientTimers.has(k)||refreshFlightsV2792.has(k)||jobs.has(k)||engineReconcileFlightsV2792.has(k)||engineImportsV2754.has(k)||engineListFlightsV2754.has(k)||failed.has(k);
 }

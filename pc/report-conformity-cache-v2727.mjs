@@ -1,3 +1,5 @@
+import {reportReadCodeV2895,permanentReportReadFailureV2895,refreshedSheetSourceV2895} from './report-refresh-v2895.mjs';
+import {loadedReportSourcesV2895} from './report-source-tree-v2895.mjs';
 import {pdfReportConformitySnapshotV2727,reportConformityFieldsV2770} from './report-conformity-v2727.mjs';
 import {sheetReportConformityV2727} from './sheet-report-conformity-v2727.mjs';
 
@@ -46,13 +48,11 @@ export function validateReportReadV2729(record,file,{owner='',clientId='',sheet=
 }
 
 // Only visit folder contents already supplied by the authorised Drive listing.
-export function reportConformitySourcesV2727(tree){
- const files=new Map(),seen=new Set();
- function visit(node){if(!node||typeof node!=='object'||seen.has(node))return;seen.add(node);for(const file of node.fichiers||[])if(text(file?.id)&&kind(file))files.set(text(file.id),file);for(const child of node.dossiers||[])visit(child);}
- visit(tree);return [...files.values()];
+export function reportConformitySourcesV2727(tree,options){
+ return loadedReportSourcesV2895(tree,options).files;
 }
 
-export function createReportConformityTrackerV2727({identity,library,loadPdf,loadSheet,storage=globalThis.localStorage,now=Date.now,onChange=()=>{},snapshotPdf=pdfReportConformitySnapshotV2727,snapshotSheet=sheetReportConformityV2727,maxReports=2000,retryMs=30000,cachedState=()=>null,concurrency=2}){
+export function createReportConformityTrackerV2727({identity,library,loadPdf,loadSheet,loadSheetMetadata=null,onSourceMetadata=()=>false,storage=globalThis.localStorage,now=Date.now,onChange=()=>{},snapshotPdf=pdfReportConformitySnapshotV2727,snapshotSheet=sheetReportConformityV2727,maxReports=2000,retryMs=30000,cachedState=()=>null,concurrency=2}){
  let owner='',epoch=0,data={reports:{},saves:{},sequence:0},scan=null;
  const analyses=new Map(),failures=new Map(),diagnostics=[];
  const diagnostic=(kind,state,error='')=>{diagnostics.push({at:now(),kind,state,error:/revision|révision/i.test(error)?'revision':/session|accès|compte|permission/i.test(error)?'access':/expir|délai|ne répond pas|timeout/i.test(error)?'timeout':/tronqu|incomplet/i.test(error)?'incomplete':error?'read-failed':''});if(diagnostics.length>32)diagnostics.shift();};
@@ -152,22 +152,55 @@ export function createReportConformityTrackerV2727({identity,library,loadPdf,loa
   const worker=async()=>{while(cursor<list.length&&current()){
    const file=list[cursor++],k=key(client,file.id),old=data.reports[k],version=reportConformityStampV2727(file),failed=failures.get(k);
    const verifiedKnown=currentRecord(old,file)&&old?.state!=='unknown';
-    const localUnconfirmed=old?.local&&currentRecord(old,file);
-    const knownFromList=sharedState(file,client);
-    // Legacy 27.70-27.74 unknown entries have no compact-reader marker.
-    // Re-inspect each once after upgrading instead of silencing its red dot
-    // for another 15 minutes. Keep the bounded interval after this version.
-    const recentUnknown=currentRecord(old,file)&&old?.state==='unknown'&&old.checkedByCompactV2775===true&&knownFromList===null&&now()-Number(old.at||0)<UNKNOWN_RECHECK_MS_V2774;
-    if(file._cdqPendingSaveV2660||verifiedKnown||localUnconfirmed||recentUnknown||failed?.stamp===version&&(!failed.retryAt||now()<failed.retryAt))continue;
-   diagnostic(kind(file),'start');try{let result=knownFromList;const expected=text(file.modifiedTime||file.dateModification||file.revision);if(result!==null){/* exact-version summary already verified by the list tracker */}else if(kind(file)==='sheet'){const sheet=await loadSheet(file.id,client,expected);if(!current())break;validateReportReadV2729(sheet,file,{owner:account,clientId:client,sheet:true});result=sheet.kind==='cdq-conformity-summary-v2775'?sheet.conformity:await snapshotSheet(sheet);}else{const rec=await loadPdf(file.id,client,expected);if(!current())break;validateReportReadV2729(rec,file,{owner:account,clientId:client});result=await snapshotPdf(rec?.blob||rec,await library());}
-    if(!current())break;if(version!==reportConformityStampV2727(file)||data.reports[k]!==old)continue;
-    diagnostic(kind(file),result);failures.delete(k);data.reports[k]={state:statuses.has(result)?result:'unknown',stamp:version,metadata:metadata(file),verifiedReadV2729:true,checkedByCompactV2775:true,at:now()};count++;changed();
-   }catch(error){diagnostic(kind(file),'failed',String(error?.message||''));if(current()&&version===reportConformityStampV2727(file)&&data.reports[k]===old){
+   const localUnconfirmed=old?.local&&currentRecord(old,file);
+   const knownFromList=sharedState(file,client);
+   // Old unknown entries get one compact read; unchanged verified unknown
+   // results retain their bounded recheck interval.
+   const recentUnknown=currentRecord(old,file)&&old?.state==='unknown'&&old.checkedByCompactV2775===true&&knownFromList===null&&now()-Number(old.at||0)<UNKNOWN_RECHECK_MS_V2774;
+   if(file._cdqPendingSaveV2660||verifiedKnown||localUnconfirmed||recentUnknown||failed?.stamp===version&&(!failed.retryAt||now()<failed.retryAt))continue;
+   let readFile=file,recovered=false;
+   diagnostic(kind(file),'start');try{
+    let result=knownFromList;const expected=text(file.modifiedTime||file.dateModification||file.revision);
+    if(result!==null){/* exact-version summary already verified by the list tracker */}
+    else if(kind(file)==='sheet'){
+     let sheet;
+     try{sheet=await loadSheet(file.id,client,expected);}
+     catch(error){
+      if(reportReadCodeV2895(error)!=='SHEET_REVISION_CHANGED'||typeof loadSheetMetadata!=='function')throw error;
+      if(!current()||version!==reportConformityStampV2727(file)||data.reports[k]!==old||file._cdqPendingSaveV2660)break;
+      recovered=true;
+      // A global metadata read cannot prove this client. Keep it private until
+      // one exact-revision scoped summary validates membership and contents.
+      const meta=await loadSheetMetadata(file.id,client,expected,current);
+      if(!current()||version!==reportConformityStampV2727(file)||data.reports[k]!==old||file._cdqPendingSaveV2660)break;
+      readFile=refreshedSheetSourceV2895(file,meta);
+      sheet=await loadSheet(file.id,client,text(readFile.modifiedTime));
+     }
+     if(!current())break;
+     validateReportReadV2729(sheet,readFile,{owner:account,clientId:client,sheet:true});
+     result=sheet.kind==='cdq-conformity-summary-v2775'?sheet.conformity:await snapshotSheet(sheet);
+    }else{
+     const rec=await loadPdf(file.id,client,expected);if(!current())break;
+     validateReportReadV2729(rec,file,{owner:account,clientId:client});result=await snapshotPdf(rec?.blob||rec,await library());
+    }
+    if(!current())break;
+    if(version!==reportConformityStampV2727(file)||data.reports[k]!==old||file._cdqPendingSaveV2660)continue;
+    if(recovered&&onSourceMetadata(file,readFile,{owner:account,clientId:client,expectedStamp:version})!==true)continue;
+    diagnostic(kind(file),result);failures.delete(k);
+    data.reports[k]={state:statuses.has(result)?result:'unknown',stamp:reportConformityStampV2727(readFile),metadata:metadata(readFile),verifiedReadV2729:true,checkedByCompactV2775:true,at:now()};count++;changed();
+   }catch(error){
+    diagnostic(kind(file),'failed',String(error?.message||''));
+    if(current()&&version===reportConformityStampV2727(file)&&data.reports[k]===old&&!file._cdqPendingSaveV2660){
      const previous=failures.get(k),attempts=previous?.stamp===version?previous.attempts+1:1;
-     failures.set(k,{stamp:version,at:now(),attempts,retryAt:attempts<3?now()+Math.min(60000,retryMs*(attempts===1?1:4)):0});
-    }}
+     // Never retry the obsolete revision after recovery failed. Access/scope
+     // refusals likewise need an explicit change, not two identical requests.
+     const permanent=recovered||permanentReportReadFailureV2895(error);
+     failures.set(k,{stamp:version,at:now(),attempts,retryAt:!permanent&&attempts<3?now()+Math.min(60000,retryMs*(attempts===1?1:4)):0});
+    }
+   }
   }};
   const task=Promise.all(Array.from({length:Math.max(1,Math.min(2,Math.floor(concurrency)||1))},()=>worker())).then(()=>count);scan=task;try{return await task;}finally{if(scan===task)scan=null;}
  }
+
  return {diagnostics:()=>diagnostics.slice(),engineLocal,engineConfirmed,noteSave,acknowledge,localSaved,retire,awaitSave,inspect,state,failedState,retryFailed,nextRetryDelay,owner:()=>sync(),busy:()=>!!scan};
 }
