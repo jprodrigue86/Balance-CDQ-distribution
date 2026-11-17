@@ -243,7 +243,7 @@ function persistClient(id){
  try{localStorage.setItem(journalKey(id),JSON.stringify({version:1,owner:calibrationIdentity().email,clientId:String(id),changes:changes.get(k)||0,satisfied:satisfied.get(k)||0,pending:[...(saveWaits.get(k)||[])],reviews:[...(reviews.get(k)||[])],acknowledgements:[...(reviewReceipts.get(k)||[])].filter(([token])=>reviews.get(k)?.has(token)),enginePendingRowsV2754:[...(enginePendingRowsV2754.get(k)||new Map()).values()],engineDataAcksV2754:[...(engineDataAcksV2754.get(k)||[])],engineRetiredRequestsV2754:[...(engineRetiredRequestsV2754.get(k)||[])],ready}));journalErrorsV20261028.delete(k);}catch(error){journalErrorsV20261028.set(k,'La reprise locale de cette liste ne peut pas être enregistrée. Gardez cette fenêtre ouverte et libérez de l’espace sur cet appareil, puis réessayez.');paint(id,'',true);publishBackground();return false;}
  publishBackground();return true;
 }
-function publishBackground(){const current=calibrationIdentity().email,prefix=current+'|',keys=new Set([...saveWaits.keys(),...changes.keys(),...reviews.keys(),...jobs.keys(),...clientTimers.keys(),...engineImportsV2754.keys(),...engineListFlightsV2754.keys(),...engineListsV2754.keys(),...journalErrorsV20261028.keys()]);let count=0;for(const k of keys)if(k.startsWith(prefix)&&(journalErrorsV20261028.has(k)||jobs.has(k)||clientTimers.has(k)||engineImportsV2754.has(k)||engineListFlightsV2754.has(k)||(saveWaits.get(k)?.size||0)>0||needsUpdate(k)||engineV2754()&&listPublicationPendingV2885(engineListsV2754.get(k))))count++;window.cdqDriveBackgroundV2746?.setPending?.('balance-list',count,current);}
+function publishBackground(){const current=calibrationIdentity().email,prefix=current+'|',keys=new Set([...saveWaits.keys(),...changes.keys(),...reviews.keys(),...jobs.keys(),...clientTimers.keys(),...engineImportsV2754.keys(),...engineListFlightsV2754.keys(),...engineListsV2754.keys(),...journalErrorsV20261028.keys()]);let count=0;for(const k of keys)if(k.startsWith(prefix)&&(journalErrorsV20261028.has(k)||jobs.has(k)||clientTimers.has(k)||engineImportsV2754.has(k)||engineListFlightsV2754.has(k)||(saveWaits.get(k)?.size||0)>0||needsUpdate(k)&&shouldRefreshListAutomaticallyV2887(k.slice(prefix.length))||engineV2754()&&listPublicationPendingV2885(engineListsV2754.get(k))))count++;window.cdqDriveBackgroundV2746?.setPending?.('balance-list',count,current);}
 const waiting=id=>{restoreClient(id);return (saveWaits.get(key(id))?.size||0)>0;};
 const needsUpdate=k=>(changes.get(k)||0)>(satisfied.get(k)||0)||(reviews.get(k)?.size||0)>0;
 async function reconcileWaits(id){
@@ -285,7 +285,7 @@ function queuePreview(id){
 }
 async function localPreview(id=client()){if(!id||!canRead())return null;let result=await queuePreview(id);const view=projected(id),cached=previews.get(key(id));if(cached?.stamp===view.projectionStamp)return cached.record;if(view.localPending&&view.complete)result=await queuePreview(id);return result;}
 function scheduleClient(id,delay=150){
-  restoreClient(id);
+  restoreClient(id);if(!shouldRefreshListAutomaticallyV2887(id))return;
   const k=key(id);
   const failure=failed.get(k),stamp=clientFingerprint(id)+'|saved:'+(changes.get(k)||0);
   if(failure?.stamp===stamp){if(!failure.retryAt)return;delay=Math.max(delay,failure.retryAt-Date.now());}
@@ -355,6 +355,14 @@ async function saved(event,local=false){
 function root(id){try{return cacheContenuCompagnies[id]||null;}catch{return null;}}
 function listFile(id){const tree=root(id);return typeof balanceListLocationV2731==='function'?balanceListLocationV2731(tree,states.get(key(id))?.fileId).file:(tree?.fichiers||[]).find(f=>norm(f.nom||f.name)==='liste de balance.pdf');}
 function listFolder(id){return typeof balanceListLocationV2731==='function'?balanceListLocationV2731(root(id),states.get(key(id))?.fileId).folder:null;}
+// The engine may own a list that is absent from the local folder view. Keep
+// that authority lookup; reuse only a fresh absence verified against Drive.
+function shouldRefreshListAutomaticallyV2887(id){
+ const k=key(id);if(listFile(id)||engineListsV2754.has(k))return true;
+ const receipt=remembered(id),age=Date.now()-Number(receipt?.requestedAt);
+ if(receipt?.absent===true&&receipt.fingerprint===clientFingerprint(id)&&Number.isFinite(age)&&age>=0&&age<60000)return false;
+ return true;
+}
 function needsPlacement(id){return typeof balanceListNeedsPlacementV2731==='function'&&balanceListNeedsPlacementV2731(root(id));}
 function rehydratingListId(tree,confirmed){
  if(!tree||confirmed?.status!=='ready'||String(confirmed.clientId)!==String(tree.id)||!confirmed.fileId||!confirmed.folderId||String(confirmed.folderId)===String(tree.id))return '';
@@ -389,7 +397,7 @@ export function sourceFingerprint(tree,confirmed=null){
 }
 const receiptPrefix=()=> 'cdqBalanceListV2703:';
 function remembered(id){const k=key(id);if(receipts.has(k))return receipts.get(k);try{const r=JSON.parse(localStorage.getItem(receiptPrefix()+k)||'null');if(r){receipts.set(k,r);return r;}}catch{}return null;}
-function remember(id,fingerprint){const r={fingerprint,requestedAt:Date.now()};receipts.set(key(id),r);try{localStorage.setItem(receiptPrefix()+key(id),JSON.stringify(r));}catch{}}
+function remember(id,fingerprint,absent=false){const r={fingerprint,requestedAt:Date.now(),...(absent?{absent:true}:{})};receipts.set(key(id),r);try{localStorage.setItem(receiptPrefix()+key(id),JSON.stringify(r));}catch{}}
 function paint(id,text,error=false){if(id!==client())return;const localError=journalErrorsV20261028.get(key(id));if(localError){text=(text?text+' — ':'')+localError;error=true;}const p=document.getElementById('cdqClientActionsV2640');if(!p||p.hidden)return;let el=p.querySelector('[data-balance-list-status]');text=text.replace(/^Liste à jour · \d+ balance\(s\)(?: · | — )?/,'');if(!text&&!error){el?.remove();return;}if(!el){el=document.createElement('p');el.dataset.balanceListStatus='';el.className='cdq-workspace-status';el.setAttribute('role','status');p.append(el);}if(el.textContent!==text)el.textContent=text;el.classList.toggle('cdq-workspace-error',error);}
 function ready(id,r,notify=false){if(r?.status==='ready'&&r.fileId&&r.updatedAt)cdqListProgressStepV2778(id,100,'Confirmée','ready');const folderId=listFolder(id)?.id||r.listFolderId||r.folderId||id;states.set(key(id),{...r,clientId:String(id),folderId});projection.confirmed(id,r.rows,r.sourceIndexV2751);if(r.sourceIndexV2751?.exhaustive)warmIndexes.add(key(id));persistClient(id);queuePreview(id);if(r.fileId&&r.updatedAt)window.cdqInstantFiles2530?.confirm?.({id:r.fileId,nom:'Liste de balance.pdf',type:'PDF',dateModification:r.updatedAt},id,folderId);if(notify)paint(id,'Liste à jour · '+(r.count||0)+' balance(s)'+(r.warnings?.length?' · '+r.warnings.length+' fichier(s) à vérifier':''));if(r.sourceIndexV2751?.exhaustive)importEngineIndexV2754(id,states.get(key(id))).catch(()=>{});}
 async function call(name,id,...args){const account=calibrationIdentity().email,version=epoch;if(!canRead())throw Error('Accès Drive requis.');if(/^(?:enregistrerPdfLecteur|cdqSaveBalanceListV2751|cdqActualiserListeBalance|cdqAssurerDossierListeBalance|deplacerElementCDQ|creerDossierDansCompagnie)/.test(name)&&!queueOwner())throw Error('La synchronisation a changé de contexte.');const read=/^(?:obtenirContenuDossierParesseux|obtenirMetaFichier|obtenirSnapshotGoogleSheetHorsLigne|cdqLireConformiteRapportV2775|cdqEtatListeBalanceV2638)$/.test(name),send=()=>calibrationRpc(name,id,...args);const readClient=/^(?:obtenirContenuDossierParesseux|obtenirSnapshotGoogleSheetHorsLigne|cdqLireConformiteRapportV2775)$/.test(name)?String(args[0]||''):String(id),priority=visibleListReadV2872(readClient)?'list':'background';const r=await(read&&window.cdqRpcBudgetV2751?window.cdqRpcBudgetV2751.withPriority(priority,send):send());if(version!==epoch||account!==calibrationIdentity().email||!canRead())throw Error('Le compte a changé.');return r;}
@@ -459,6 +467,7 @@ async function refreshImplV2789(force=false,verify=false,id=client()){
   if(owner!==calibrationIdentity().email)reset();
   restoreClient(id);
    const k=key(id);
+   if(!force&&!shouldRefreshListAutomaticallyV2887(id)){if(waiting(id))await reconcileWaits(id);return {status:'absent'};}
    if(!persistClient(id))return {status:'error',code:'LOCAL_JOURNAL_FAILED',message:journalErrorsV20261028.get(k)};
    // Check backoff BEFORE authority RPCs. Repainting the client must not keep
    // contacting the engine after a paused or exhausted source read.
@@ -520,12 +529,13 @@ async function refreshImplV2789(force=false,verify=false,id=client()){
     // Existing or ambiguous list files retain the old guarded path.
     if(engineV2754()&&!engineListsV2754.has(k)&&!listFile(id)){
       cdqListProgressStepV2778(id,10,'Vérification du dossier Liste de balance…');
-      const located=await placeList(id,version,true);
+      const located=await placeList(id,version,force);
       cdqListProgressStepV2778(id,18,'Dossier de la liste confirmé.');
       if(version!==epoch||!canWrite()||!queueOwner())throw Error('Le compte a changé.');
       fingerprint=clientFingerprint(id);job.fingerprint=fingerprint;stamp=fingerprint+'|saved:'+change;
+      if(!force&&!listFile(id)){clearFailure(k);remember(id,fingerprint,true);cdqListProgressStepV2778(id,0,'','cancelled');paint(id,'');return {status:'absent'};}
       const destination=String(located?.folder?.id||listFolder(id)?.id||'');
-      if(!located?.root||!destination)throw Error('Le dossier Liste de Balance n’a pas été confirmé.');
+      if(!located?.root||!destination&&!listFile(id))throw Error('Le dossier Liste de Balance n’a pas été confirmé.');
       // Another technician may have created the list while the folder was read.
       if(!listFile(id)){
         const current=()=>version===epoch&&canWrite()&&queueOwner()&&change===(changes.get(k)||0)&&fingerprint===clientFingerprint(id);
@@ -614,6 +624,7 @@ function inspect(){
   paintRows();if(!canWrite()||document.hidden)return;
   const tree=root(id);if(!id||!tree)return;
   if(waiting(id))reconcileWaits(id);
+  if(!shouldRefreshListAutomaticallyV2887(id))return;
   const fingerprint=clientFingerprint(id),job=jobs.get(key(id));
   if(remembered(id)?.fingerprint&&remembered(id).fingerprint!==fingerprint)warmIndexes.delete(key(id));
   if(job){if(fingerprint!==job.fingerprint)job.dirty=true;return;}
@@ -635,7 +646,7 @@ function schedule(){if(timer)return;timer=setTimeout(()=>{timer=0;inspect();},15
 // start. Consumers can show these rows while a separate cloud update resumes.
 function snapshot(id=client()){if(!id||!canRead())return null;restoreClient(id);const k=key(id),ready=states.get(k),tree=root(id),view=projected(id);return ready?.status==='ready'||view.localPending?{...view,localPersistenceError:journalErrorsV20261028.get(k)||null,pending:view.localPending||waiting(id)||needsUpdate(k)||jobs.has(k)||!!tree&&remembered(id)?.fingerprint!==clientFingerprint(id)}:null;}
 async function flushBackground(){if(!canWrite()||!queueOwner())return [];const current=calibrationIdentity().email,prefix='cdqBalanceListJournalV2730:'+current+'|';try{for(let i=0;i<localStorage.length;i++){const name=localStorage.key(i);if(name?.startsWith(prefix))restoreClient(name.slice(prefix.length));}}catch{}
- const ids=[...new Set([...changes.keys(),...reviews.keys(),...saveWaits.keys(),...clientTimers.keys(),...engineListsV2754.keys()].filter(k=>k.startsWith(current+'|')&&(clientTimers.has(k)||needsUpdate(k)||(saveWaits.get(k)?.size||0)>0||listPublicationPendingV2885(engineListsV2754.get(k)))).map(k=>k.slice(current.length+1)))];return Promise.all(ids.slice(0,2).map(id=>refresh(false,true,id)));
+ const ids=[...new Set([...changes.keys(),...reviews.keys(),...saveWaits.keys(),...clientTimers.keys(),...engineListsV2754.keys()].filter(k=>k.startsWith(current+'|')&&(clientTimers.has(k)||needsUpdate(k)||(saveWaits.get(k)?.size||0)>0||listPublicationPendingV2885(engineListsV2754.get(k)))).map(k=>k.slice(current.length+1)))];return Promise.all(ids.filter(id=>waiting(id)||shouldRefreshListAutomaticallyV2887(id)).slice(0,2).map(id=>refresh(false,true,id)));
 }
 function sendState(id=client()){
  if(!id||!canRead())return {ready:false,stamp:''};restoreClient(id);const k=key(id),accepted=[...(engineDataAcksV2754.get(k)||new Map()).values()].flatMap(token=>[token,'fields_'+token]),tokens=new Set(accepted),view=projection.project(id,states.get(k));

@@ -1,14 +1,14 @@
 {
-  "androidSourceBuild": "2026.11.16-v28.85-runtime",
-  "build": "2026.11.16-v28.85-runtime-pc",
+  "androidSourceBuild": "2026.11.16-v28.87-runtime",
+  "build": "2026.11.16-v28.87-runtime-pc",
   "desktopModel": 3,
   "files": 1129,
-  "generatedFrom": "patches/cloudflare-final-20261115/tools/stage-list-series-ui-2885.mjs",
+  "generatedFrom": "patches/list-folder-identity-2887-20261116/tools/prepare-list-folder-2887.py",
   "platform": "pc-pwa",
-  "release": "a933dcf87c71187bf60ee6c748c8c90e2f7963b58ce557bab63d9605d39be582",
-  "version": "28.85",
+  "release": "32a74147986afd5941b7cf209dc8e25f202cb211fde9300932601a04c15f30aa",
+  "version": "28.87",
   "webBaseCommit": "de1e05294f308cd67502ccc4093422501af56e22",
   "candidateOnly": true,
-  "sourceCommit": "4d3d924549a4538ff4a13779c28fde141845ee0e",
+  "sourceCommit": "3f1a2b3acb6ab04c422a14664cb7d1f944e1b8b7",
   "pdfQualification": "pending-native"
 }
