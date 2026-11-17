@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.90" data-cdq-pc-release="72ee8019e0bfcb87f5131038e1d3b9467f7185dc18c4f4cb0adda93d85c78070">
+<html data-cdq-pc-version="28.91" data-cdq-pc-release="54165dc62783880a3b9cfb24a6e44135839d4d8930c9edae9694b3a1f1a8cccf">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -937,7 +937,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.11.16-v28.90-runtime-pc">
+<meta name="cdq-package-build" content="2026.11.17-v28.91-runtime-pc">
 
 
 <script id="cdqBridgeV23">
@@ -991,7 +991,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.16-v28.90-runtime-pc'
+    build:'2026.11.17-v28.91-runtime-pc'
   });
 }
 
@@ -1004,7 +1004,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.16-v28.90-runtime-pc'
+        build:'2026.11.17-v28.91-runtime-pc'
       });
     }
   } catch(e) {}
@@ -6397,12 +6397,39 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
  html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028) > span:last-child:not(:first-child),
  html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report]) > span:last-child:not(:first-child) {
   box-sizing:border-box!important;display:block!important;grid-column:2!important;grid-row:1!important;
-  align-self:center!important;width:100%!important;min-width:0!important;max-width:100%!important;
-  margin:0!important;padding:0!important;font:inherit!important;line-height:1.14!important;
-  white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important;hyphens:none!important;text-align:left!important;
+  /* 28.91: the caption spans from the painted icon edge to the inner
+     right border. Keep the existing button padding, gap and icon sizing owner. */
+  align-self:center!important;min-width:0!important;max-width:none!important;
+  width:calc(100% + var(--cdq-adaptive-home-gap-v2856,4px) + 2px + var(--cdq-caption-art-tail-v2891,0px))!important;
+  margin:0 0 0 calc(0px - var(--cdq-adaptive-home-gap-v2856,4px) - var(--cdq-caption-art-tail-v2891,0px))!important;
+  padding:0!important;font:inherit!important;line-height:1.14!important;
+  white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important;hyphens:none!important;text-align:center!important;
  }
  html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body :is(#cdqTopActionsV2204,#cdqClientActionsV2640) .cdq-home-label-line-v2890 {
-  display:block!important;white-space:nowrap!important;font:inherit!important;line-height:inherit!important;
+  display:block!important;white-space:nowrap!important;font:inherit!important;line-height:inherit!important;text-align:center!important;
+ }
+ /* Only the unchanged material2799 drawings have measured transparent tails.
+    Other icon families keep the caption centered after their existing SVG frame. */
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > #cdqV19OfflineStatus:has(svg[data-icon-theme="metal-music"][data-artwork-version="2799"]) {
+  --cdq-caption-art-tail-v2891:calc(var(--cdq-compact-art-v2853) * 0.08133971);
+ }
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > #clientNoteButton:has(svg[data-icon-theme="metal-music"][data-artwork-version="2799"]) {
+  --cdq-caption-art-tail-v2891:calc(var(--cdq-compact-art-v2853) * 0.17862839);
+ }
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > #clientPhotoButton:has(svg[data-icon-theme="metal-music"][data-artwork-version="2799"]) {
+  --cdq-caption-art-tail-v2891:calc(var(--cdq-compact-art-v2853) * 0.12280702);
+ }
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > #cdqClientPortalButton20261028:has(svg[data-icon-theme="metal-music"][data-artwork-version="2799"]) {
+  --cdq-caption-art-tail-v2891:calc(var(--cdq-compact-art-v2853) * 0.13078150);
+ }
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > [data-client-folder]:has(svg[data-icon-theme="metal-music"][data-artwork-version="2799"]) {
+  --cdq-caption-art-tail-v2891:calc(var(--cdq-compact-art-v2853) * 0.07496013);
+ }
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > [data-client-list]:has(svg[data-icon-theme="metal-music"][data-artwork-version="2799"]) {
+  --cdq-caption-art-tail-v2891:calc(var(--cdq-compact-art-v2853) * 0.07655502);
+ }
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > [data-client-report]:has(svg[data-icon-theme="metal-music"][data-artwork-version="2799"]) {
+  --cdq-caption-art-tail-v2891:calc(var(--cdq-compact-art-v2853) * 0.17065391);
  }
  /* Keep the entire SELECTED dock visible after enlarging its artwork.
     V28.47's height:100% child used a 49px minimum for ~78px buttons and
@@ -12294,7 +12321,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.16-v28.90-runtime-pc";
+  const CDQ_BUILD = "2026.11.17-v28.91-runtime-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14898,7 +14925,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.16-v28.90-runtime-pc";
+const CDQ_V19_BUILD = "2026.11.17-v28.91-runtime-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -19192,7 +19219,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.16-v28.90-runtime-pc";
+const CDQ_V20_BUILD = "2026.11.17-v28.91-runtime-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20045,7 +20072,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.16-v28.90-runtime-pc";
+const CDQ_V21_BUILD = "2026.11.17-v28.91-runtime-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24572,7 +24599,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.16-v28.90-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.17-v28.91-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;

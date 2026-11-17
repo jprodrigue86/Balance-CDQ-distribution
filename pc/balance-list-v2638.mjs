@@ -102,7 +102,16 @@ async function refreshEngineListV2754(id,{repair=false,hydrate=false,deferReady=
   flight.promise=api.call('list',{clientId:String(id),...(repair?{repair:true,prepareExternalImport:true}:{})}).catch(async error=>{
   // A verified ownership conflict must keep the engine authoritative while
   // leaving the current Drive PDF readable. Never use the legacy writer.
-  if(repair&&/CONFLICT_LIST_PROOF/.test(String(error?.code||'')+' '+String(error?.message||''))&&stamp===epoch&&account===calibrationIdentity().email&&canRead()){const latest=await api.call('list',{clientId:String(id)});if(recoverableListReadV2878(latest,id))return latest;}if(!repair||!(/CONFLICT_EXTERNAL_DRIVE/.test(String(error?.code||'')+' '+String(error?.message||'')))||stamp!==epoch||account!==calibrationIdentity().email||!canRead())throw error;
+  const lockBusyV2891=/\bPUBLICATION_BUSY\b/.test(String(error?.code||'')+' '+String(error?.message||''));
+  if(repair&&(/CONFLICT_LIST_PROOF/.test(String(error?.code||'')+' '+String(error?.message||''))||lockBusyV2891)&&stamp===epoch&&account===calibrationIdentity().email&&canRead()){
+   const latest=await api.call('list',{clientId:String(id)});
+   // A busy publisher keeps its error code while pending/running. Validate
+   // that non-conflicting wait as before, but retain the original authority.
+   const busyPendingV2891=lockBusyV2891&&latest?.pdf?.errorCode==='PUBLICATION_BUSY'&&['pending','running'].includes(latest.pdf.status);
+   const readableV2891=busyPendingV2891?{...latest,pdf:{...latest.pdf,errorCode:''}}:latest;
+   if(recoverableListReadV2878(readableV2891,id))return latest;
+  }
+  if(!repair||!(/CONFLICT_EXTERNAL_DRIVE/.test(String(error?.code||'')+' '+String(error?.message||'')))||stamp!==epoch||account!==calibrationIdentity().email||!canRead())throw error;
   const result=await api.call('list',{clientId:String(id)});
   if(!result?.baselineComplete||!Array.isArray(result.items))throw error;
   return {...result,reconciliationRequired:true,pdf:{...result.pdf,status:'conflict',errorCode:'CONFLICT_EXTERNAL_DRIVE'}};
@@ -314,6 +323,10 @@ function sheetRetryAfterV2889(error){
  }
  return 0;
 }
+function listAccessFailureNoticeV2891(error){
+ const detail=String(error?.code||'')+' '+String(error?.message||error||'');
+ return /(?:^|[^A-Z0-9_])(?:EDIT_NOT_AUTHORIZED|DRIVE_WRITE_FORBIDDEN|DRIVE_CREATE_FORBIDDEN)(?:$|[^A-Z0-9_])/.test(detail)?'Liste de balance bloquée : ce compte n’a pas l’autorisation d’écrire dans son dossier Drive. L’accès au dossier doit être corrigé avant de réessayer.':'';
+}
 function fail(id,stamp,error){
  const k=key(id),prior=failed.get(k),retryAfterMs=sheetRetryAfterV2889(error),transient=retryAfterMs!==null&&(retryAfterMs>0||temporaryFailure(error));
  // A long scan may meet unrelated temporary failures after making progress.
@@ -323,11 +336,11 @@ function fail(id,stamp,error){
  const attemptsByScope=prior?.stamp===stamp?prior.attemptsByScope||new Map():new Map(),attempts=(attemptsByScope.get(scope)||0)+1;
  attemptsByScope.set(scope,attempts);
  const retryAt=transient&&attempts<3?Date.now()+Math.max(attempts===1?2000:8000,retryAfterMs||0):0;
- const failure={stamp,attempts,transient,retryAt,attemptsByScope};failed.set(k,failure);if(retryAt)scheduleClient(id,retryAt-Date.now());return failure;
+ const failure={stamp,attempts,transient,retryAt,attemptsByScope,accessNotice:listAccessFailureNoticeV2891(error)};failed.set(k,failure);if(retryAt)scheduleClient(id,retryAt-Date.now());return failure;
 }
 function reportListFailureV2872(id,stamp,error){
  const failure=fail(id,stamp,error),detail=String(error?.message||error),label=sheetRetryAfterV2889(error)>0?detail.replace(/SHEET_UNAVAILABLE_RETRY_AFTER_\d+$/,'Google demande une pause.'):detail;
- const message=label+(failure.retryAt?' Analyse en pause; reprise automatique dans '+Math.ceil((failure.retryAt-Date.now())/1000)+' s.':' Choisissez « Actualiser la liste » pour reprendre.');
+ const message=failure.accessNotice||label+(failure.retryAt?' Analyse en pause; reprise automatique dans '+Math.ceil((failure.retryAt-Date.now())/1000)+' s.':' Choisissez « Actualiser la liste » pour reprendre.');
  cdqListProgressStepV2778(id,95,message,'error');paint(id,message,true);return failure;
 }
 function clearFailure(k){failed.delete(k);if(clientTimers.has(k)){clearTimeout(clientTimers.get(k));clientTimers.delete(k);}}
@@ -388,7 +401,7 @@ function rehydratingListId(tree,confirmed){
 const clientFingerprint=id=>sourceFingerprint(root(id),states.get(key(id)));
 async function placeList(id,version,create=true){
  if(typeof ensureBalanceListFolderV2731!=='function')return null;
- return ensureBalanceListFolderV2731({clientId:id,owner:calibrationIdentity().email,preferredFileId:states.get(key(id))?.fileId||listFile(id)?.id||'',create,rpc:(name,...args)=>call(name,...args),stillCurrent:()=>version===epoch&&canWrite(),onLocated:located=>{
+ return ensureBalanceListFolderV2731({clientId:id,owner:calibrationIdentity().email,preferredFileId:states.get(key(id))?.fileId||listFile(id)?.id||'',create,verifyWritable:create&&!listFile(id),rpc:(name,...args)=>call(name,...args),stillCurrent:()=>version===epoch&&canWrite(),onLocated:located=>{
   const old=root(id)||{dossiers:[]};
   const listIds=located.root.dossiers.filter(d=>norm(d.nom||d.name)==='liste de balance').flatMap(d=>(d.fichiers||[]).filter(f=>norm(f.nom||f.name)==='liste de balance.pdf').map(f=>String(f.id)));
   window.cdqInstantFiles2530?.forget?.(id,listIds);
@@ -439,7 +452,22 @@ async function requireListEngine({getEngine,identity,allowed}){
 }
 
 const requireListEngineV2884=()=>requireListEngine({getEngine:()=>window.cdqReportEngineSelectorV2754,identity:()=>calibrationIdentity().email+'|'+epoch,allowed:()=>canRead()&&navigator.onLine!==false});
+let listOpenNoticeV2891=0;
 async function open(){
+ const id=client();if(!id||!canRead())return;
+ const version=epoch,account=calibrationIdentity().email,notice=++listOpenNoticeV2891,label='Ouverture de la liste…';
+ const current=()=>notice===listOpenNoticeV2891&&version===epoch&&account===calibrationIdentity().email&&id===client()&&canRead();
+ const previous=document.getElementById('cdqClientActionsV2640')?.querySelector('[data-balance-list-status]');
+ const previousError=previous?.classList.contains('cdq-workspace-error')?previous.textContent:'';
+ let result;paint(id,label);
+ try{result=await openImplV2891();return result;}
+ catch(error){if(current())paint(id,'Liste de balance — '+String(error?.message||error),true);}
+ finally{
+  const status=current()?document.getElementById('cdqClientActionsV2640')?.querySelector('[data-balance-list-status]'):null;
+  if(status?.textContent===label)paint(id,result?.status==='retry-manually'?'Aucun PDF de liste n’a encore été confirmé.'+(previousError?' '+previousError:' La création est interrompue.'): '',result?.status==='retry-manually');
+ }
+}
+async function openImplV2891(){
   const id=client();if(!id||!canRead())return;restoreClient(id);
   const tree=root(id),file=listFile(id),known=states.get(key(id)),fileId=file?.id||(!tree||tree.charge===false||listFolder(id)?.charge===false?known?.fileId:'');
   if(!known?.reconciliationRequired&&projected(id).complete){
@@ -447,6 +475,7 @@ async function open(){
   // Existing PDF is immediately readable, including during an update.
   if(fileId)return window.cdqOpenPdfV2520?.(fileId,{nom:'Liste de balance.pdf'});
   if(navigator.onLine===false){paint(id,'Aucune liste disponible hors ligne.',true);return;}
+  const blocked=failed.get(key(id));if(blocked?.accessNotice&&blocked.stamp===clientFingerprint(id)+'|saved:'+(changes.get(key(id))||0)){paint(id,blocked.accessNotice,true);return;}
   try{await requireListEngineV2884();if(id!==client())return;}catch(error){paint(id,String(error.message||error),true);return;}
   if(engineV2754()){
      try{const engine=await refreshEngineListV2754(id,{hydrate:true});

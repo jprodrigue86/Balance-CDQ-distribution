@@ -24,7 +24,7 @@ export function balanceListLocationV2731(root,preferredId=''){
  return {folder:folders[0]||null,file:file||null};
 }
 export function balanceListNeedsPlacementV2731(root){return (root?.fichiers||[]).some(list)||(root?.dossiers||[]).filter(folder).some(d=>d.charge===false||!Array.isArray(d.fichiers));}
-export async function ensureBalanceListFolderV2731({clientId,owner='',rpc,stillCurrent=()=>true,preferredFileId='',create=true,onLocated=()=>{},storage=globalThis.localStorage}){
+export async function ensureBalanceListFolderV2731({clientId,owner='',rpc,stillCurrent=()=>true,preferredFileId='',create=true,verifyWritable=false,onLocated=()=>{},storage=globalThis.localStorage}){
  const key=String(owner)+'|'+String(clientId),guard=()=>{if(!stillCurrent())throw Error('Le compte ou l’accès Drive a changé.');};guard();
  if(pending.has(key)){const result=await pending.get(key);guard();return result;}
  const work=async()=>{
@@ -56,6 +56,13 @@ export async function ensureBalanceListFolderV2731({clientId,owner='',rpc,stillC
   }
   if(!candidates.length){const result={clientId:String(clientId),root,folder:null,file:null};onLocated(result);return result;}
   const children=await Promise.all(candidates.map(d=>read(d.id))),preferred=children.find(d=>d.fichiers.some(f=>list(f)&&String(f.id)===String(preferredFileId))),target=preferred||children[0],direct=root.fichiers.filter(list);let moved=false;
+  // Verify the exact existing destination before reading any report for
+  // its first list. Existing PDFs and the atomic create/move path retain
+  // their existing behavior. This RPC mode performs metadata reads only.
+  if(verifyWritable&&!direct.length&&!children.some(d=>d.fichiers.some(list))){
+   guard();const ack=await rpc(atomicMethod,String(clientId),String(preferredFileId),String(target.id));guard();
+   if(ack?.ok!==true||ack.writeVerified!==true||String(ack.clientId)!==String(clientId)||String(ack.folderId)!==String(target.id))throw Object.assign(Error('L’autorisation du dossier de la liste n’a pas été confirmée.'),{code:'LIST_WRITE_PREFLIGHT_UNCONFIRMED'});
+  }
   for(const file of direct){
    if(!file.id)throw Error('Identifiant de liste absent.');guard();
    const requestKey='cdqBalanceListMoveV2731:'+key+'|'+file.id+'|'+target.id;let request=requests.get(requestKey);try{request||=storage?.getItem(requestKey);}catch{}
