@@ -127,8 +127,8 @@ async function refreshEngineListV2754(id,{repair=false,hydrate=false,deferReady=
   if(pdf?.status==='confirmed'&&pdf.fileId)window.cdqInstantFiles2530?.confirm?.({id:pdf.fileId,nom:'Liste de balance.pdf',type:'PDF',revision:pdf.driveRevision,dateModification:pdf.driveRevision},id,old.folderId);
   // Clear retry history only when the composed refresh has also reconciled sources.
    if(!flight.deferReady&&!reconciliationRequired&&confirmedListFormatV2885(baseline))cdqListProgressStepV2778(id,100,'Confirmée','ready');
+   else if(publishing)cdqListProgressStepV2778(id,result.pdf.status==='running'?94:88,result.pdf.status==='running'?'Publication Drive en cours…':'PDF en attente de publication…');
    else if(pdf?.status==='conflict')cdqListProgressStepV2778(id,95, 'Erreur de publication : '+String(pdf.errorCode||'conflit Drive'),'error');
-   else if(['pending','running'].includes(pdf?.status))cdqListProgressStepV2778(id,pdf.status==='running'?94:88,pdf.status==='running'?'Publication Drive en cours…':'PDF en attente de publication…');
    if(reconciliationRequired)paint(id,result.repairQueued||externalImportPendingV2885?'La copie Drive reste consultable. La nouvelle liste est en préparation.':listConflictNoticeV2755);else if(!flight.deferReady&&confirmedListFormatV2885(baseline))paint(id,'Liste à jour · '+rows.length+' balance(s)');
   if(publishing&&baseline.polls<12&&canWrite()){baseline.polls++;scheduleClient(id,Math.min(30000,1500*2**Math.min(5,baseline.polls-1)));}
   return record;
@@ -305,13 +305,29 @@ function temporaryFailure(error){
  if(/compte|permission|autorise|interdit|acces|conflict|revision|a change|ont change|incomplet|non confirme|non confirmee/.test(message))return false;
  return /network|failed to fetch|fetch failed|err_(?:network|connection)|timeout|timed? out|delai.*(?:depasse|expire)|temporair|indisponib|unavailable|reessayez plus tard|try again later|too many requests|\b(?:502|503|504|429)\b/.test(message)||['NetworkError','TimeoutError'].includes(error?.name);
 }
+function sheetRetryAfterV2889(error){
+ // The existing RPC bridge keeps the terminal code in its message. Accept
+ // only the server's bounded seconds suffix; malformed bounds must not retry.
+ for(const value of [String(error?.code||''),String(error?.message||'')]){
+  const match=/(?:^|\s)SHEET_UNAVAILABLE_RETRY_AFTER_(\d+)$/.exec(value);if(!match)continue;
+  const seconds=Number(match[1]);return Number.isSafeInteger(seconds)&&seconds>=1&&seconds<=3600?seconds*1000:null;
+ }
+ return 0;
+}
 function fail(id,stamp,error){
- const k=key(id),prior=failed.get(k),attempts=prior?.stamp===stamp?prior.attempts+1:1,transient=temporaryFailure(error);
- const retryAt=transient&&attempts<3?Date.now()+(attempts===1?2000:8000):0;
- const failure={stamp,attempts,transient,retryAt};failed.set(k,failure);if(retryAt)scheduleClient(id,retryAt-Date.now());return failure;
+ const k=key(id),prior=failed.get(k),retryAfterMs=sheetRetryAfterV2889(error),transient=retryAfterMs!==null&&(retryAfterMs>0||temporaryFailure(error));
+ // A long scan may meet unrelated temporary failures after making progress.
+ // Bound retries per exact source revision, not across the entire client list.
+ // Retain every source's count so alternating failures cannot reset the limit.
+ const scope=error?.readOnly===true&&error?.sourceId?JSON.stringify([String(error.sourceId),String(error.sourceRevision||'')]):'operation';
+ const attemptsByScope=prior?.stamp===stamp?prior.attemptsByScope||new Map():new Map(),attempts=(attemptsByScope.get(scope)||0)+1;
+ attemptsByScope.set(scope,attempts);
+ const retryAt=transient&&attempts<3?Date.now()+Math.max(attempts===1?2000:8000,retryAfterMs||0):0;
+ const failure={stamp,attempts,transient,retryAt,attemptsByScope};failed.set(k,failure);if(retryAt)scheduleClient(id,retryAt-Date.now());return failure;
 }
 function reportListFailureV2872(id,stamp,error){
- const failure=fail(id,stamp,error),message=String(error?.message||error)+(failure.retryAt?' Analyse en pause; reprise automatique dans '+Math.ceil((failure.retryAt-Date.now())/1000)+' s.':' Choisissez « Actualiser la liste » pour reprendre.');
+ const failure=fail(id,stamp,error),detail=String(error?.message||error),label=sheetRetryAfterV2889(error)>0?detail.replace(/SHEET_UNAVAILABLE_RETRY_AFTER_\d+$/,'Google demande une pause.'):detail;
+ const message=label+(failure.retryAt?' Analyse en pause; reprise automatique dans '+Math.ceil((failure.retryAt-Date.now())/1000)+' s.':' Choisissez « Actualiser la liste » pour reprendre.');
  cdqListProgressStepV2778(id,95,message,'error');paint(id,message,true);return failure;
 }
 function clearFailure(k){failed.delete(k);if(clientTimers.has(k)){clearTimeout(clientTimers.get(k));clientTimers.delete(k);}}

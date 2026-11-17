@@ -59,7 +59,7 @@ export async function readBalanceListGroupV20261028(items,read,{stillCurrent=()=
     }catch(cause){
      if(stopped)throw stopped;
      const error=Error('Lecture interrompue : « '+String(file.nom||file.name||file.id)+' » ('+done+' / '+items.length+' analysés). '+String(cause?.message||cause));
-     error.code=cause?.code||'LIST_SOURCE_READ_FAILED';error.sourceId=String(file.id);error.completed=done;error.total=items.length;error.readOnly=true;
+     error.code=cause?.code||'LIST_SOURCE_READ_FAILED';error.sourceId=String(file.id);error.sourceRevision=sourceRev(file);error.completed=done;error.total=items.length;error.readOnly=true;
      if(cause?.phase)error.phase=cause.phase;if(cause?.method)error.method=cause.method;
      throw stop(error);
     }finally{clearTimeout(timer);controller.signal.removeEventListener('abort',onAbort);active.delete(i);announce();}
