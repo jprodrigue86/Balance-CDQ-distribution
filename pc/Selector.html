@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.95" data-cdq-pc-release="c39b89a0e365ff5333bfc3679ea42045de4d9323056c0308ff664e5e263ca541">
+<html data-cdq-pc-version="28.96" data-cdq-pc-release="1b41f6e9c14b1402970b0b894cc6ac47973a622d27d18917e5c06b199ad969ed">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -938,7 +938,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
 <script src="./send-progress-v2893.js"></script>
-<meta name="cdq-package-build" content="2026.11.17-v28.95-runtime-pc">
+<meta name="cdq-package-build" content="2026.11.17-v28.96-runtime-pc">
 
 
 <script id="cdqBridgeV23">
@@ -992,7 +992,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.17-v28.95-runtime-pc'
+    build:'2026.11.17-v28.96-runtime-pc'
   });
 }
 
@@ -1005,7 +1005,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.17-v28.95-runtime-pc'
+        build:'2026.11.17-v28.96-runtime-pc'
       });
     }
   } catch(e) {}
@@ -12335,7 +12335,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.17-v28.95-runtime-pc";
+  const CDQ_BUILD = "2026.11.17-v28.96-runtime-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13291,7 +13291,7 @@ function cdqInstallSwipeGesture(row){
       cdqTrackingSaveV2828(job.context,null,job.id);cdqTrackingClearSelectionV2828(job);
       cdqTrackingDisposeV2828(job);cdqStopProgress(true);
       const send=document.getElementById('sendButton');if(send)send.disabled=String(utilisateurCourantRole||'')==='lecture';
-      afficherMessage(result.message||(result.actionsV2866?(result.actionsV2866.publish?(result.actionsV2866.email?'PDF archivés et publiés; courriel accepté par Gmail, livraison non confirmée.':'PDF archivés et publiés. Aucun courriel demandé.'):'PDF archivés; courriel accepté par Gmail, livraison non confirmée. Aucune publication demandée.'):'Courriel accepté par Gmail; livraison non confirmée. Page client mise à jour.'),true);
+      afficherMessage(result.message||(result.actionsV2866?(result.actionsV2866.publish?(result.actionsV2866.email?'PDF archivés et publiés; courriel accepté par le service d’envoi, livraison non confirmée.':'PDF archivés et publiés. Aucun courriel demandé.'):'PDF archivés; courriel accepté par le service d’envoi, livraison non confirmée. Aucune publication demandée.'):'Courriel accepté par le service d’envoi; livraison non confirmée. Page client mise à jour.'),true);
       return;
     }
     if(result.status==='blocked'){
@@ -13634,7 +13634,7 @@ function cdqSendPreflightV2780(args,timeoutMs=CDQ_SEND_PREFLIGHT_TIMEOUT_MS_V278
    fermerConfirmation();
    cdqStartProgress('check-'+crypto.randomUUID(),total);cdqSetProgress({total,message:'Vérification de l’envoi…'});
    try{
-    const check=await (async()=>{if(actions.email)await window.cdqGmailTechnicienV20261112.ensure(context);cdqSendGuardV2750(context);return cdqSendPreflightV2780([files,folders,actions.email?email:'',context.clientId,24,actions,visit,actions.email?'gmail-server-oauth-v2':null]);})();cdqSendGuardV2750(context);
+    const check=await (async()=>{const mailMode=actions.email?await window.cdqMailTechnicienV20261117.ensure(context):null;cdqSendGuardV2750(context);return cdqSendPreflightV2780([files,folders,actions.email?email:'',context.clientId,24,actions,visit,mailMode]);})();cdqSendGuardV2750(context);
     window.cdqDeliveryActionsV2866.assertTicket(check?.sendV20261103,actions,visit);
     const decision=window.cdqSendProgressV2893.confirmRepeat(check,message=>confirm(message));if(!decision.accepted){cdqStopProgress(false);cdqRestoreSendOptionsV2759(context);return}const force=decision.force;
     await cdqRunSendSelection(files,folders,mode,actions.email?email:'',actions.email?message:'',context.clientId,force,flatten,check?.sendV20261103);
@@ -14943,7 +14943,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.17-v28.95-runtime-pc";
+const CDQ_V19_BUILD = "2026.11.17-v28.96-runtime-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -19257,7 +19257,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.17-v28.95-runtime-pc";
+const CDQ_V20_BUILD = "2026.11.17-v28.96-runtime-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20110,7 +20110,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.17-v28.95-runtime-pc";
+const CDQ_V21_BUILD = "2026.11.17-v28.96-runtime-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24637,7 +24637,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.17-v28.95-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.17-v28.96-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -26915,8 +26915,8 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
     }else if(action==='reprendre'){
       if(!window.confirm('Reprendre cette tâche seulement si aucun courriel n’a été tenté ? Le traitement pourra poursuivre son envoi.'))return;
     }else if(action==='clore_apres_verification'){
-      if(!window.confirm('ATTENTION : le courriel a peut-être déjà été envoyé. Vérifiez les messages envoyés dans Gmail avant de clore la tâche. Libérer le blocage permettra un nouvel envoi MANUEL qui pourrait créer un doublon. Continuer ?'))return;
-      const typed=window.prompt('Pour confirmer après vérification de Gmail, écrivez : VERIFIE');
+      if(!window.confirm('ATTENTION : le courriel a peut-être déjà été envoyé. Vérifiez les éléments envoyés de la boîte qui a effectué l’envoi (Outlook ou Gmail) avant de clore la tâche. Libérer le blocage permettra un nouvel envoi MANUEL qui pourrait créer un doublon. Continuer ?'))return;
+      const typed=window.prompt('Pour confirmer après vérification des éléments envoyés, écrivez : VERIFIE');
       if(String(typed||'').trim().toUpperCase()!=='VERIFIE'){note('Clôture annulée : confirmation manquante.');return;}
       confirmation='JE_CONFIRME_VERIFICATION_ET_RISQUE_DE_DOUBLON';
     }
@@ -26926,7 +26926,7 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
       const x=await rpc('cdqGererEnvoiEnAttenteV20261112',[clientId,task.jobId,action,confirmation]);
       if(!x?.ok||x.jobId!==task.jobId)throw Error(x?.message||x?.state||'Le serveur a refusé cette action.');
       outcome=x.message||(action==='clore_apres_verification'?'Tâche clôturée après votre vérification. Un nouvel envoi devra être lancé manuellement.':
-           action==='verifier'?(x.evidenceFound?'Une preuve Gmail exacte a été confirmée. Aucun nouvel email envoyé.':'Aucun reçu Gmail confirmé. La tâche demeure à vérifier.'):
+           action==='verifier'?(x.evidenceFound?'Une preuve d’envoi exacte a été confirmée. Aucun nouvel email envoyé.':'Aucun reçu d’envoi confirmé. La tâche demeure à vérifier.'):
            action==='annuler'?'Préparation annulée sans email.':'Reprise demandée. Cette tâche continue automatiquement en arrière-plan.');
       if(action==='reprendre'){try{await window.cdqOpenPendingSendTrackingV2892(task);close();}catch(error){outcome+=' '+String(error?.message||error);}}
     }catch(e){outcome='Action refusée : '+String(e?.message||e);}
@@ -27072,6 +27072,7 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
 })();
 
 </script>
+<script type="module" src="mail-provider-v20261117.mjs"></script>
 </body>
 </html>
 
