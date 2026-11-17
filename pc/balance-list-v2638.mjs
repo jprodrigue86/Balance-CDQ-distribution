@@ -371,13 +371,11 @@ async function saved(event,local=false){
 function root(id){try{return cacheContenuCompagnies[id]||null;}catch{return null;}}
 function listFile(id){const tree=root(id);return typeof balanceListLocationV2731==='function'?balanceListLocationV2731(tree,states.get(key(id))?.fileId).file:(tree?.fichiers||[]).find(f=>norm(f.nom||f.name)==='liste de balance.pdf');}
 function listFolder(id){return typeof balanceListLocationV2731==='function'?balanceListLocationV2731(root(id),states.get(key(id))?.fileId).folder:null;}
-// The engine may own a list that is absent from the local folder view. Keep
-// that authority lookup; reuse only a fresh absence verified against Drive.
+// Entering a client authorizes its first list as well as later updates. A
+// cached absence must not suppress creation or a paused initial scan. The
+// refresh still verifies engine ownership and the complete Drive membership.
 function shouldRefreshListAutomaticallyV2887(id){
- const k=key(id);if(listFile(id)||engineListsV2754.has(k))return true;
- const receipt=remembered(id),age=Date.now()-Number(receipt?.requestedAt);
- if(receipt?.absent===true&&receipt.fingerprint===clientFingerprint(id)&&Number.isFinite(age)&&age>=0&&age<60000)return false;
- return true;
+ return !!id;
 }
 function needsPlacement(id){return typeof balanceListNeedsPlacementV2731==='function'&&balanceListNeedsPlacementV2731(root(id));}
 function rehydratingListId(tree,confirmed){
@@ -460,7 +458,8 @@ async function open(){
      }catch(error){paint(id,'Liste de balance — '+String(error?.message||error),true);return;}
    }
    if(navigator.onLine===false){paint(id,'Aucune liste disponible hors ligne.',true);return;}
-  paint(id,'Aucune liste disponible. Choisissez « Actualiser la liste ».');
+  if(canWrite()&&queueOwner())return refresh(false,true,id);
+  paint(id,'Aucune liste disponible pour ce client.');
 }
 async function refresh(force=false,verify=false,id=client()){
  if(owner!==calibrationIdentity().email)reset();
@@ -524,7 +523,7 @@ async function refreshImplV2789(force=false,verify=false,id=client()){
   }
   if(waiting(id))reconcileWaits(id);
   fingerprint=clientFingerprint(id);stamp=fingerprint+'|saved:'+(changes.get(k)||0);
-  if(!force&&!verify&&remembered(id)?.fingerprint===fingerprint&&!needsUpdate(k)&&!needsPlacement(id)){cdqListProgressStepV2778(id,100,'Confirmée','ready');paint(id,'Liste à jour');return {status:'cached'};}
+  if(!force&&!verify&&remembered(id)?.absent!==true&&remembered(id)?.fingerprint===fingerprint&&!needsUpdate(k)&&!needsPlacement(id)){cdqListProgressStepV2778(id,100,'Confirmée','ready');paint(id,'Liste à jour');return {status:'cached'};}
   // Automatic checks are silent; only an explicit refresh reports progress.
   const progress=(text,error=false)=>{if(force)paint(id,text,error);};
   const version=epoch,change=changes.get(k)||0,pendingReviews=[...(reviews.get(k)||[])],job={fingerprint,version,dirty:false,promise:null};jobs.set(k,job);paintRows();
@@ -545,11 +544,10 @@ async function refreshImplV2789(force=false,verify=false,id=client()){
     // Existing or ambiguous list files retain the old guarded path.
     if(engineV2754()&&!engineListsV2754.has(k)&&!listFile(id)){
       cdqListProgressStepV2778(id,10,'Vérification du dossier Liste de balance…');
-      const located=await placeList(id,version,force);
+      const located=await placeList(id,version,true);
       cdqListProgressStepV2778(id,18,'Dossier de la liste confirmé.');
       if(version!==epoch||!canWrite()||!queueOwner())throw Error('Le compte a changé.');
       fingerprint=clientFingerprint(id);job.fingerprint=fingerprint;stamp=fingerprint+'|saved:'+change;
-      if(!force&&!listFile(id)){clearFailure(k);remember(id,fingerprint,true);cdqListProgressStepV2778(id,0,'','cancelled');paint(id,'');return {status:'absent'};}
       const destination=String(located?.folder?.id||listFolder(id)?.id||'');
       if(!located?.root||!destination&&!listFile(id))throw Error('Le dossier Liste de Balance n’a pas été confirmé.');
       // Another technician may have created the list while the folder was read.
@@ -651,6 +649,9 @@ function inspect(){
   // navigation as a write or reset the bounded publication retry counter.
   if(entered){if(!verifiedListFreshV2884(id))scheduleClient(id,0);}
   else if(needsPlacement(id))scheduleClient(id);
+  // The folder can arrive after navigation. An older absence receipt must
+  // still start creation when that deferred client snapshot becomes usable.
+  else if(receipt?.absent===true)scheduleClient(id);
   else if(!receipt&&listFile(id)){if(typeof updateBalanceListFastV2729==='function')scheduleClient(id);else remember(id,fingerprint);}
   else if(receipt?.fingerprint!==fingerprint)scheduleClient(id);
   if(needsUpdate(key(id)))scheduleClient(id);

@@ -1,14 +1,14 @@
 {
-  "androidSourceBuild": "2026.11.16-v28.89-runtime",
-  "build": "2026.11.16-v28.89-runtime-pc",
+  "androidSourceBuild": "2026.11.16-v28.90-runtime",
+  "build": "2026.11.16-v28.90-runtime-pc",
   "desktopModel": 3,
   "files": 1129,
-  "generatedFrom": "patches/list-long-retry-2889-20261116/tools/prepare-list-long-2889.py",
+  "generatedFrom": "patches/icons-auto-list-2890-20261116/tools/prepare-icons-auto-list-2890.py",
   "platform": "pc-pwa",
-  "release": "fceb6eac80bb90aa2f38ff641a26834347e81a26b982086218fdea88b6fdd0e3",
-  "version": "28.89",
+  "release": "72ee8019e0bfcb87f5131038e1d3b9467f7185dc18c4f4cb0adda93d85c78070",
+  "version": "28.90",
   "webBaseCommit": "de1e05294f308cd67502ccc4093422501af56e22",
   "candidateOnly": true,
-  "sourceCommit": "c37a2832877b733587e8f7b3b2f43db37a8d795c",
+  "sourceCommit": "69e8f6cff5f3bf83dcdfd81a0d4bff7298fc4e9e",
   "pdfQualification": "pending-native"
 }

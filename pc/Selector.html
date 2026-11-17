@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.89" data-cdq-pc-release="fceb6eac80bb90aa2f38ff641a26834347e81a26b982086218fdea88b6fdd0e3">
+<html data-cdq-pc-version="28.90" data-cdq-pc-release="72ee8019e0bfcb87f5131038e1d3b9467f7185dc18c4f4cb0adda93d85c78070">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -324,6 +324,11 @@ try{var root=document.documentElement,p=root.dataset.cdqPalette||localStorage.ge
 // and background. All consumers receive the same alpha PNG and crop geometry.
 window.cdqMaterialIconV2799=function(key,theme='current'){
  if(theme!=='metal-music')return '';
+ // Restore the approved calibration weight from the previous local atlas.
+ if(key==='calibration'){
+  const source=new URL('./assets/navigation-v2701/icons.png',document.baseURI).href;
+  return '<svg data-action-icon="calibration" data-commercial-icon="calibration" data-icon-theme="metal-music" data-artwork-version="2701" viewBox="0 0 311 311" overflow="hidden" aria-hidden="true" focusable="false"><image x="-748" y="-131" width="1448" height="1086" filter="url(#cdq-icon-no-matte-v2697)" href="'+source+'"/></svg>';
+ }
  const tiles={offline:0,note:1,photo:2,photos:2,portal:3,newfolder:4,list:5,report:6,rename:7,home:8,folder:9,dossier:9,calibration:10,calcul:11,inventory:12,catalog:13};
  const n=tiles[key];if(n===undefined)return '';
  const size=313.5,x=n%4*size,y=Math.floor(n/4)*size;
@@ -932,7 +937,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.11.16-v28.89-runtime-pc">
+<meta name="cdq-package-build" content="2026.11.16-v28.90-runtime-pc">
 
 
 <script id="cdqBridgeV23">
@@ -986,7 +991,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.16-v28.89-runtime-pc'
+    build:'2026.11.16-v28.90-runtime-pc'
   });
 }
 
@@ -999,7 +1004,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.16-v28.89-runtime-pc'
+        build:'2026.11.16-v28.90-runtime-pc'
       });
     }
   } catch(e) {}
@@ -6355,56 +6360,49 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
  html.android.cdq-mobile-layout:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 {
   box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;
  }
- /* Identical compact height and icon/text gap for all seven actions. */
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028),
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report]) {
-  display:flex!important;flex-direction:row!important;
-  align-items:center!important;justify-content:flex-start!important;
+ /* 28.90: one icon column and one caption column in every mobile palette.
+    The icon family is independent of the color palette. Use the actual SVG
+    owner, with the same bounded dimensions as the navigation artwork. */
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028),
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report]) {
+  display:grid!important;grid-template-columns:var(--cdq-compact-art-v2853) minmax(0,1fr)!important;
+  grid-auto-flow:column!important;align-items:center!important;justify-content:stretch!important;
   box-sizing:border-box!important;min-width:0!important;
-  height:auto!important;
-  min-height:var(--cdq-compact-height-v2853)!important;
+  height:var(--cdq-home-action-height-v2798,49px)!important;
+  min-height:max(var(--cdq-home-action-height-v2798,49px),var(--cdq-compact-height-v2853))!important;
   max-height:none!important;
-  gap:var(--cdq-adaptive-home-gap-v2856,5px)!important;padding:3px 1px!important;
-  white-space:normal!important;overflow:hidden!important;text-align:center!important;
+  gap:var(--cdq-adaptive-home-gap-v2856,4px)!important;padding:3px 2px!important;
+  white-space:normal!important;overflow:hidden!important;text-align:left!important;
   font:600 var(--cdq-adaptive-home-label-v2856,10px)/1.14 Arial,Helvetica,sans-serif!important;
  }
- /* Hide only the old double-drawn markup. One approved high-res PNG icon is visible. */
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028) > :is(svg,.cdq-action-art-v2655,span:first-child:not(:last-child)),
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report]) > .cdq-material-client-icon {
-  display:none!important;visibility:hidden!important;flex:none!important;
-  width:0!important;height:0!important;min-width:0!important;min-height:0!important;
-  margin:0!important;padding:0!important;
+ /* The same live artwork is visible for all palettes. No duplicate pseudo image. */
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028)::before,
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report])::before {
+  content:none!important;display:none!important;
  }
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028)::before,
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report])::before {
-  content:""!important;display:block!important;box-sizing:border-box!important;
-  flex:0 0 var(--cdq-compact-art-v2853)!important;
-  width:var(--cdq-compact-art-v2853)!important;
-  min-width:var(--cdq-compact-art-v2853)!important;
-  max-width:var(--cdq-compact-art-v2853)!important;
-  height:var(--cdq-compact-art-v2853)!important;
-  min-height:var(--cdq-compact-art-v2853)!important;
-  max-height:var(--cdq-compact-art-v2853)!important;
-  background-image:url("./assets/material-v2799/icons.png")!important;
-  background-size:calc(var(--cdq-compact-art-v2853) * 4) calc(var(--cdq-compact-art-v2853) * 4)!important;
-  background-repeat:no-repeat!important;background-origin:border-box!important;
-  align-self:center!important;pointer-events:none!important;padding:0!important;margin:0!important;
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028) > :is(svg,.cdq-action-art-v2655,span:first-child:not(:last-child)),
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report]) > .cdq-material-client-icon {
+  box-sizing:border-box!important;display:block!important;visibility:visible!important;
+  grid-column:1!important;grid-row:1!important;place-self:center!important;
+  width:var(--cdq-compact-art-v2853)!important;height:var(--cdq-compact-art-v2853)!important;
+  min-width:var(--cdq-compact-art-v2853)!important;min-height:var(--cdq-compact-art-v2853)!important;
+  max-width:var(--cdq-compact-art-v2853)!important;max-height:var(--cdq-compact-art-v2853)!important;
+  flex:none!important;margin:0!important;padding:0!important;line-height:0!important;
  }
- /* The original lossless 1254x1254 atlas has four columns, 313.5px/cell. */
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqV19OfflineStatus::before{background-position:0 0!important}
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #clientNoteButton::before{background-position:calc(var(--cdq-compact-art-v2853) * -1) 0!important}
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #clientPhotoButton::before{background-position:calc(var(--cdq-compact-art-v2853) * -2) 0!important}
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientPortalButton20261028::before{background-position:calc(var(--cdq-compact-art-v2853) * -3) 0!important}
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body [data-client-folder]::before{background-position:0 calc(var(--cdq-compact-art-v2853) * -1)!important}
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body [data-client-list]::before{background-position:calc(var(--cdq-compact-art-v2853) * -1) calc(var(--cdq-compact-art-v2853) * -1)!important}
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body [data-client-report]::before{background-position:calc(var(--cdq-compact-art-v2853) * -2) calc(var(--cdq-compact-art-v2853) * -1)!important}
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028) > span:last-child:not(:first-child),
- html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report]) > span:last-child:not(:first-child){
-  box-sizing:border-box!important;display:block!important;flex:1 1 auto!important;
-  width:auto!important;min-width:0!important;max-width:100%!important;
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > .cdq-top-action > span:first-child > svg,
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > button > .cdq-material-client-icon > svg {
+  display:block!important;visibility:visible!important;width:100%!important;height:100%!important;
+  min-width:0!important;min-height:0!important;max-width:100%!important;max-height:100%!important;
+ }
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028) > span:last-child:not(:first-child),
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body #cdqClientActionsV2640 > :is([data-client-folder],[data-client-list],[data-client-report]) > span:last-child:not(:first-child) {
+  box-sizing:border-box!important;display:block!important;grid-column:2!important;grid-row:1!important;
+  align-self:center!important;width:100%!important;min-width:0!important;max-width:100%!important;
   margin:0!important;padding:0!important;font:inherit!important;line-height:1.14!important;
-  white-space:normal!important;word-break:normal!important;
-  overflow-wrap:normal!important;hyphens:none!important;text-align:left!important;
+  white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important;hyphens:none!important;text-align:left!important;
+ }
+ html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676) body :is(#cdqTopActionsV2204,#cdqClientActionsV2640) .cdq-home-label-line-v2890 {
+  display:block!important;white-space:nowrap!important;font:inherit!important;line-height:inherit!important;
  }
  /* Keep the entire SELECTED dock visible after enlarging its artwork.
     V28.47's height:100% child used a 49px minimum for ~78px buttons and
@@ -12296,7 +12294,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.16-v28.89-runtime-pc";
+  const CDQ_BUILD = "2026.11.16-v28.90-runtime-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14900,7 +14898,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.16-v28.89-runtime-pc";
+const CDQ_V19_BUILD = "2026.11.16-v28.90-runtime-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -19194,7 +19192,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.16-v28.89-runtime-pc";
+const CDQ_V20_BUILD = "2026.11.16-v28.90-runtime-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20047,7 +20045,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.16-v28.89-runtime-pc";
+const CDQ_V21_BUILD = "2026.11.16-v28.90-runtime-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -23616,11 +23614,11 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
     if (el.id === 'cdqClientPortalButton20261028' && key === 'display') return true;
     if(el.matches('#cdqCreateClientV2640[data-company-action="rename"] svg')&&['width','height','min-width','max-width','min-height','max-height','font-size'].includes(key))return true;
     if (el.matches('#cdqTopActionsV2204 > .cdq-top-action > svg,#cdqTopActionsV2204 > .cdq-top-action > span:first-child:not(:last-child),#cdqTopActionsV2204 > .cdq-top-action > span:first-child > svg') && ['width','height','min-width','max-width','min-height','max-height','flex','font-size'].includes(key)) return true;
-    if (root.matches('html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]') &&
+    if (root.matches('html.android.cdq-mobile-layout[data-cdq-background-v2793]') &&
         el.matches('#cdqTopActionsV2204 > .cdq-top-action:not(#cdqTopDisplayButtonV2204)') &&
-        ['flex-direction','align-items','justify-content','height','min-height','max-height',
+        ['display','flex-direction','align-items','justify-content','height','min-height','max-height',
          'gap','padding','white-space','line-height'].includes(key)) return true;
-    if (root.matches('html.android.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793]') &&
+    if (root.matches('html.android.cdq-mobile-layout[data-cdq-background-v2793]') &&
         el.matches('#cdqTopActionsV2204 > .cdq-top-action > span:last-child:not(:first-child)') &&
         ['font-size','line-height','white-space','overflow-wrap','word-break','min-width',
          'width','flex','max-width','text-overflow','text-align'].includes(key)) return true;
@@ -23654,7 +23652,31 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
   // V28.55: one geometric icon owner for the seven home tiles and selection.
   // Use the actual 0..100 navigation size; only limit it if the longest word
   // could not fit beside the image inside the narrowest real tile.
+  // Split only known home captions; retain their exact text for existing writers.
+  function normalizeHomeLabelsV2890() {
+    if(!root.matches('html.android.cdq-mobile-layout[data-cdq-background-v2793]:not(.cdq-desktop-v2676)'))return;
+    const entries=[
+      ['#cdqV19OfflineStatus',['Hors','ligne']],
+      ['#cdqClientPortalButton20261028',['Page','client']],
+      ['#cdqClientActionsV2640 > [data-client-folder]',['Nouveau','dossier']],
+      ['#cdqClientActionsV2640 > [data-client-list]',['Liste de','balance']],
+      ['#cdqClientActionsV2640 > [data-client-report]',['Nouveau','rapport']]
+    ];
+    for(const [selector,normal] of entries){
+      const caption=document.querySelector(selector)?.querySelector(':scope > span:last-child:not(:first-child)');
+      if(!caption)continue;
+      const raw=caption.textContent.replace(/\s+/g,' ').trim();
+      const progress=selector==='#cdqV19OfflineStatus'&&raw.match(/^Hors ligne (\d+\s*%)$/);
+      const lines=raw===normal.join(' ')?normal:progress?['Hors','ligne',progress[1]]:null;
+      if(!lines)continue;
+      const signature=lines.join('|');
+      if(caption.dataset.cdqHomeLabelLinesV2890===signature&&caption.children.length===lines.length&&[...caption.children].every((line,i)=>line.classList.contains('cdq-home-label-line-v2890')&&line.textContent===lines[i]+(i<lines.length-1?' ':'')))continue;
+      caption.replaceChildren(...lines.map((text,i)=>{const line=document.createElement('span');line.className='cdq-home-label-line-v2890';line.textContent=text+(i<lines.length-1?' ':'');return line;}));
+      caption.dataset.cdqHomeLabelLinesV2890=signature;
+    }
+  }
   function fitUnifiedArtworkV2856(target) {
+    normalizeHomeLabelsV2890();
     if(!Number.isFinite(target))return 30;
     const buttons=[...document.querySelectorAll(
       '#cdqTopActionsV2204 > :is(#cdqV19OfflineStatus,#clientNoteButton,#clientPhotoButton,#cdqClientPortalButton20261028),'+
@@ -23668,7 +23690,8 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
       if(!caption||!caption.textContent.trim())continue;
       const style=getComputedStyle(button),label=getComputedStyle(caption);
       pen.font=label.fontWeight+' '+label.fontSize+' '+label.fontFamily;
-      const words=caption.textContent.trim().split(/\s+/).filter(Boolean);
+      const declared=[...caption.querySelectorAll(':scope > .cdq-home-label-line-v2890')];
+      const words=declared.length?declared.map(line=>line.textContent.trim()):caption.textContent.trim().split(/\s+/).filter(Boolean);
       const longest=Math.max(0,...words.map(word=>pen.measureText(word).width));
       const padding=(parseFloat(style.paddingLeft)||0)+(parseFloat(style.paddingRight)||0);
       // The space after the icon grows naturally; words never need to break.
@@ -24549,7 +24572,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.16-v28.89-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.16-v28.90-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
