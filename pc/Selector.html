@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.92" data-cdq-pc-release="65e3d9d492ebcf14146e4a8aa18d75a3061c0429a77b48cfbf2dbc2af2c7acb5">
+<html data-cdq-pc-version="28.93" data-cdq-pc-release="7796b500a0e441ad2f74451c0fe75bf0252e23eca5a51affff5293e2d10010eb">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -937,7 +937,8 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.11.17-v28.92-runtime-pc">
+<script src="./send-progress-v2893.js"></script>
+<meta name="cdq-package-build" content="2026.11.17-v28.93-runtime-pc">
 
 
 <script id="cdqBridgeV23">
@@ -991,7 +992,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.17-v28.92-runtime-pc'
+    build:'2026.11.17-v28.93-runtime-pc'
   });
 }
 
@@ -1004,7 +1005,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.17-v28.92-runtime-pc'
+        build:'2026.11.17-v28.93-runtime-pc'
       });
     }
   } catch(e) {}
@@ -6099,7 +6100,8 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
 #cdqProgressModal[data-indeterminate="true"] .cdq-progress-fill::after,#cdqProgressModal[data-busy="true"] .cdq-progress-fill::after{content:"";position:absolute;top:0;bottom:0;left:-30%;width:30%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),rgba(255,255,255,.94),rgba(255,255,255,.16),transparent);animation:cdq-shimmer-v2778 1.6s linear infinite}
 #cdqProgressModal .cdq-send-progress-detail-v2759{display:flex;align-items:flex-start;gap:12px;margin-top:12px;font:14px/1.4 Arial,sans-serif}
 #cdqProgressModal .cdq-progress-label{flex:1;min-width:0;margin:0!important;white-space:normal!important;overflow-wrap:anywhere;color:inherit!important}
-#cdqProgressCountV2759{flex:none;font-variant-numeric:tabular-nums;white-space:nowrap;color:inherit}
+#cdqProgressCountV2759{flex:none;font-variant-numeric:tabular-nums;white-space:normal;max-width:100%;color:inherit}
+#cdqProgressModal .cdq-send-progress-detail-v2759{flex-direction:column;gap:6px}
 #cdqSendFailureV2759{color:var(--cdq-danger,#ff7373);font:14px/1.4 Arial,sans-serif;white-space:normal;overflow-wrap:anywhere}
 @media(prefers-reduced-motion:reduce){#cdqProgressModal[data-indeterminate="true"] .cdq-progress-fill::after,#cdqProgressModal[data-busy="true"] .cdq-progress-fill::after{animation:none;opacity:0}}
 </style>
@@ -9380,46 +9382,58 @@ function recupererFichierModification(){
 
 function actualiserApresModification(){
   if(document.hidden||cdqAccessState!=='ready'||navigator.onLine===false)return;
-  const id=String(recupererFichierModification()||''),client=String(compagnieSelectionnee||''),owner=String(utilisateurCourantEmail||'');
+  const id=String(recupererFichierModification()||''),client=String(compagnieSelectionnee||''),owner=String(utilisateurCourantEmail||''),token=String(cdqSessionRpcV58||''),session=String(window.cdqAppSessionV2661?.id||'');
   if(!id||!client||!owner)return;
-  const key=JSON.stringify([owner,client,id]),previous=actualiserApresModification.active;
-  if(previous?.key===key&&!previous.done)return;
-  const job={key,done:false};actualiserApresModification.active=job;actualisationEnCours=true;
+  const key=JSON.stringify([owner,client,id,token,session]),previous=actualiserApresModification.active;
+  if(previous?.key===key&&!previous.done)return previous.promise;
+  previous?.cancel?.();
+  const job={key,done:false,timer:null,reading:false};actualiserApresModification.active=job;actualisationEnCours=true;
   const baseline=Date.parse(sessionStorage.getItem('ancienneDateModification')||'')||0;
-  let attempts=0;
-  const current=()=>actualiserApresModification.active===job&&cdqAccessState==='ready'&&owner===String(utilisateurCourantEmail||'')&&client===String(compagnieSelectionnee||'')&&id===String(recupererFichierModification()||'');
-  // Only a confirmed changed Drive modifiedTime can rearrange a Sheet.
-  function stop(){job.done=true;if(actualiserApresModification.active===job)actualisationEnCours=false;}
-  function finish(meta,changed){
-    if(!current()){stop();return;}
-    if(changed&&meta&&String(meta.id)===id)mettreAJourFichierDansCache(client,meta);
-    stop();
-    if(!changed){
-      fichierOuvertPourModification=null;
-      for(const name of ['fichierEnModification','ancienneDateModification','momentModification'])sessionStorage.removeItem(name);
-      return;
-    }
-    fichierOuvertPourModification=null;
+  const current=()=>actualiserApresModification.active===job&&cdqAccessState==='ready'&&owner===String(utilisateurCourantEmail||'')&&client===String(compagnieSelectionnee||'')&&token===String(cdqSessionRpcV58||'')&&session===String(window.cdqAppSessionV2661?.id||'')&&id===String(recupererFichierModification()||'');
+  let attempts=0,resolve;job.promise=new Promise(done=>{resolve=done;});
+  function stop(reason){if(job.done)return;job.done=true;clearTimeout(job.timer);job.abort?.abort();if(actualiserApresModification.active===job)actualisationEnCours=false;resolve({reason});}
+  job.cancel=()=>stop('context-changed');
+  function finish(meta){
+    if(!current()||String(meta?.id)!==id){stop('context-changed');return;}
+    const revision=String(meta.dateModification||''),root=cacheContenuCompagnies[client],found=trouverFichierDansArbre(root,id);
+    if(!found||found.fichier._cdqPendingSaveV2660){stop('unconfirmed');return;}
+    const before=Date.parse(found.fichier.dateModification||'')||0,after=Date.parse(revision)||0;
+    if(after<before){stop('older-receipt');return;}
+    // Apply only the fresh Drive metadata. Observation never invents an edit date
+    // and does not mark the complete client listing as freshly verified.
+    const confirmed=window.cdqInstantFiles2530.confirm({...meta,revision,modifiedTime:revision,...(meta.type==='GOOGLE_SHEETS'?{_cdqSheetConfirmedRevisionV2893:revision}:{})},client,found.noeud.id);
+    if(!confirmed){stop('unconfirmed');return;}
+    stop('confirmed');fichierOuvertPourModification=null;
     for(const name of ['fichierEnModification','ancienneDateModification','momentModification'])sessionStorage.removeItem(name);
-    const message=document.getElementById('message');if(message)message.textContent='';
-    setTimeout(function(){try{cdqLiveSyncFolderV2200(true);}catch(_){}},350);
+    window.dispatchEvent(new CustomEvent('cdq:client-content-ready-v2745',{detail:{clientId:client}}));
   }
   function retry(){
-    if(attempts>=12){finish(null,false);return;}
-    const delays=[120,180,250,350,500,700,900,1100,1400,1800,2200,2600];
-    setTimeout(check,delays[Math.min(attempts,delays.length-1)]);
+    // Keep the departure marker after an unconfirmed read; a real return,
+    // reconnection or next foreground entry may continue this one-file check.
+    if(attempts>=6){stop('unconfirmed');return;}
+    job.timer=setTimeout(check,[0,1000,2000,4000,8000,15000][attempts]);
   }
   function check(){
-    if(!current()||document.hidden||navigator.onLine===false){stop();return;}
-    attempts++;
-    cdqApiRun().withSuccessHandler(meta=>{
-      if(!current()){stop();return;}
-      const date=Date.parse(meta?.dateModification||'')||0;
-      if(String(meta?.id)===id&&date>baseline){finish(meta,true);return;}
-      retry();
-    }).withFailureHandler(()=>{if(current())retry();else stop();}).obtenirMetaFichier(id);
+    if(!current()||document.hidden||navigator.onLine===false){stop('inactive');return;}
+    if(job.reading)return;job.reading=true;attempts++;job.abort=new AbortController();
+    let settled=false,timeout;
+    const settle=()=>{if(settled)return false;settled=true;clearTimeout(timeout);job.reading=false;return true;};
+    const fail=()=>{if(!settle())return;if(current())retry();else stop('context-changed');};
+    timeout=setTimeout(()=>{if(!settle())return;job.abort.abort();stop('timeout');},25000);
+    try{
+      let runner=cdqApiRun().withSuccessHandler(meta=>{
+        if(!settle())return;
+        if(!current()){stop('context-changed');return;}
+        const date=Date.parse(meta?.dateModification||'')||0;
+        if(String(meta?.id)===id&&date>baseline){finish(meta);return;}
+        retry();
+      }).withFailureHandler(fail);
+      if(window.cdqApiRun.cdqInteractiveReadV2893)runner=runner.withInteractiveReadV2893();
+      if(window.cdqApiRun.cdqReadQueueCancellationV2792)runner=runner.withQueuedReadSignalV2792(job.abort.signal);
+      runner.obtenirMetaFichier(id);
+    }catch(_){fail();}
   }
-  check();
+  check();return job.promise;
 }
 
 
@@ -12321,7 +12335,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.17-v28.92-runtime-pc";
+  const CDQ_BUILD = "2026.11.17-v28.93-runtime-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -12547,6 +12561,7 @@ function cdqCreateFolderLoaderV2527(options) {
   function attached(node,current=root){return !!current&&(current===node||(current.dossiers||[]).some(child=>attached(node,child)));}
   function merge(node, loaded){
     loaded=window.cdqInstantFiles2530.overlay(client,loaded);
+    loaded.fichiers=window.cdqSendProgressV2893.retainSheetDates(node.fichiers||[],loaded.fichiers||[]);
     const previous=new Map((node.dossiers||[]).map(d=>[String(d.id),d]));
     const children=(loaded.dossiers||[]).map(meta=>{
       const old=previous.get(String(meta.id));
@@ -13194,18 +13209,20 @@ function cdqInstallSwipeGesture(row){
   function cdqSetProgress(p){
     const state=cdqSendProgressV2759;if(!state.active)return;p=p||{};
     const modal=cdqEnsureSendProgressV2759(),fill=document.getElementById('cdqProgressFill'),label=document.getElementById('cdqProgressLabel'),track=document.getElementById('cdqProgressTrackV2759');
-    const total=Number(p.total);if(Number.isFinite(total)&&total>0)state.total=Math.max(1,Math.floor(total));
-    const done=Number(p.termine);if(Number.isFinite(done)&&done>=0){state.done=Math.min(state.total,Math.max(state.done,Math.floor(done)));state.preparedKnown=true;}
-    const complete=p.phase==='termine';if(complete){state.done=state.total;state.preparedKnown=true;}
-    state.current=state.done;state.percent=Math.round(state.done/state.total*100);
+    if(Number.isSafeInteger(p.total)&&p.total>0)state.total=p.total;
+    if(Number.isSafeInteger(p.termine)&&p.termine>=0){state.done=Math.min(state.total,Math.max(state.done,p.termine));state.preparedKnown=true;}
+    state.lastResult={...(state.lastResult||{}),...p,total:state.total,...(state.preparedKnown?{termine:state.done}:{})};
+    const progress=window.cdqSendProgressV2893.snapshot(state.lastResult),complete=progress?.outcome==='completed';
+    if(complete){state.done=state.total;state.preparedKnown=true;}
+    state.current=state.done;state.percent=progress?.globalPercent??0;
     const text=String(p.message||'');
-    const preparing=/^Préparation des PDF\s*:\s*\d+ sur \d+\.$/.test(text);
-    label.textContent=preparing?'Préparation des PDF…':text||(p.phase==='envoi'?'Envoi du courriel…':'Préparation des rapports…');
-    modal.dataset.indeterminate=String(!state.preparedKnown);modal.dataset.busy=String(!complete);
-    fill.style.width=(state.preparedKnown?state.percent:0)+'%';
-    document.getElementById('cdqProgressCountV2759').textContent=state.preparedKnown?state.done+' sur '+state.total+' préparé(s) · '+state.percent+' %':'Confirmation du serveur en attente';
-    track.setAttribute('aria-valuemax','100');if(state.preparedKnown)track.setAttribute('aria-valuenow',String(state.percent));else track.removeAttribute('aria-valuenow');
-    track.setAttribute('aria-valuetext',label.textContent+' — '+(state.preparedKnown?state.done+' sur '+state.total+' préparé(s)':'Confirmation du serveur en attente'));
+    label.textContent=p.status?progress.detail:text||progress?.detail||'Confirmation du serveur en attente…';
+    modal.dataset.indeterminate=String(progress?.globalPercent==null);modal.dataset.busy=String(!complete&&!['blocked','cancelled','closed'].includes(progress?.outcome));
+    fill.style.width=(progress?.globalPercent??0)+'%';
+    document.getElementById('cdqProgressCountV2759').textContent=state.preparedKnown?state.done+' sur '+state.total+' PDF préparés · '+state.percent+' % du traitement':'Confirmation du serveur en attente';
+    track.setAttribute('aria-label','Traitement complet des rapports');track.setAttribute('aria-valuemax','100');
+    if(progress?.globalPercent!=null)track.setAttribute('aria-valuenow',String(state.percent));else track.removeAttribute('aria-valuenow');
+    track.setAttribute('aria-valuetext',label.textContent+' — '+(state.preparedKnown?state.done+' sur '+state.total+' PDF préparés, '+state.percent+' % du traitement':'Confirmation du serveur en attente'));
   }
   // V28.28: a queue receipt accepts work; only durable server state completes it.
   let cdqQueuedSendV2828=null,cdqRecoveryBusyV2828=false,cdqRecoveryKeyV2828='';
@@ -13228,7 +13245,7 @@ function cdqInstallSwipeGesture(row){
       return result;
     }).finally(()=>clearTimeout(timeout));
   }
-  window.cdqSendWatchTransportV2874={read:job=>cdqReadTrackingV2828(job.session,{jobId:job.id,clientId:job.clientId}),foreground:()=>cdqQueuedSendV2828&&!cdqQueuedSendV2828.blocked?cdqQueuedSendV2828.context.clientId+'|'+cdqQueuedSendV2828.id:''};
+  window.cdqSendWatchTransportV2874={read:job=>cdqReadTrackingV2828(job.session,{jobId:job.id,clientId:job.clientId}),foreground:()=>cdqQueuedSendV2828&&!cdqQueuedSendV2828.blocked&&(!cdqQueuedSendV2828.background||cdqQueuedSendV2828.reading)?cdqQueuedSendV2828.context.clientId+'|'+cdqQueuedSendV2828.id:'',backgroundResult:(job,result)=>{const tracked=cdqQueuedSendV2828;if(!tracked?.background||tracked.id!==job.id||tracked.context.clientId!==job.clientId||tracked.context.clientId!==String(compagnieSelectionnee||''))return false;try{cdqTrackingApplyV2828(tracked,result,true);return true;}catch(_){cdqTrackingDisposeV2828(tracked);cdqStopProgress(false);return false;}}};
   function cdqTrackingControlsV2828(job){
     const modal=cdqEnsureSendProgressV2759();
     let actions=document.getElementById('cdqSendTrackingActionsV2828');
@@ -13236,7 +13253,7 @@ function cdqInstallSwipeGesture(row){
     actions.replaceChildren();
     const close=document.createElement('button');close.type='button';
     close.textContent=job.blocked?'Fermer':'Continuer en arrière-plan';
-    close.onclick=()=>{modal.style.display='none';job.background=true;afficherMessage(job.blocked?'Traitement arrêté; voir les tâches en attente.':'Envoi en cours — suivi dans les tâches en attente.',false);};actions.appendChild(close);
+    close.onclick=()=>{modal.style.display='none';job.background=true;clearTimeout(job.timer);if(!job.blocked&&!job.reading)void window.cdqSendBackgroundV2874?.flush();afficherMessage(job.blocked?'Traitement arrêté; voir les tâches en attente.':'Envoi en cours — suivi dans les tâches en attente.',false);};actions.appendChild(close);
     if(job.blocked){const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Vérifier l’état';refresh.onclick=()=>{void cdqTrackingPollV2828(job);};actions.appendChild(refresh);}
     if(job.blocked&&job.canDismiss){
       const acknowledge=document.createElement('button');acknowledge.type='button';acknowledge.textContent='Fermer le suivi';
@@ -13257,11 +13274,11 @@ function cdqInstallSwipeGesture(row){
     if(!obtenirFichiersSelectionnes().length&&!dossiersSelectionnes.size)modeSelectionFichiers=false;
     mettreAJourInterface();
   }
-  function cdqTrackingApplyV2828(job,result){
+  function cdqTrackingApplyV2828(job,result,observed=false){
     if(cdqQueuedSendV2828!==job)return;
     cdqSendGuardV2750(job.context);
     if(result.jobId!==job.id||result.status==='none')throw Error('Le résultat de cet envoi ne peut pas encore être vérifié.');
-    window.cdqSendBackgroundV2874?.observe(job.id,job.context.clientId,result);
+    if(!observed)window.cdqSendBackgroundV2874?.observe(job.id,job.context.clientId,result);
     if(['cancelled','closed'].includes(result.status)){cdqTrackingSaveV2828(job.context,null,job.id);cdqTrackingDisposeV2828(job);cdqStopProgress(false);window.cdqPendingTasksV20261112?.observe?.(result,job.context.owner);afficherMessage(result.message||'Cette tâche a été clôturée.',false);return;}
     const completed=window.cdqDeliveryActionsV2866.complete(result);
     const wasBlocked=job.blocked;job.blocked=result.status==='blocked';
@@ -13286,19 +13303,20 @@ function cdqInstallSwipeGesture(row){
   async function cdqTrackingPollV2828(job){
     if(cdqQueuedSendV2828!==job||job.reading)return;
     try{cdqSendGuardV2750(job.context);}catch(_){cdqTrackingDisposeV2828(job);cdqStopProgress(false);return;}
-    job.reading=true;
+    job.reading=true;const finish=window.cdqDriveBackgroundV2746?.begin('server-send-status:'+job.id,job.context.owner)||(()=>{});
     try{
       const result=await cdqReadTrackingV2828(job.session,{jobId:job.id,clientId:job.context.clientId});
       if(cdqQueuedSendV2828!==job)return;
-      cdqTrackingApplyV2828(job,result);
+      job.failures=0;cdqTrackingApplyV2828(job,result);
     }catch(error){
       if(cdqQueuedSendV2828!==job)return;
       try{cdqSendGuardV2750(job.context);}catch(_){cdqTrackingDisposeV2828(job);cdqStopProgress(false);return;}
+      job.failures=(job.failures||0)+1;
       cdqSetProgress({message:'Suivi temporairement indisponible. Le traitement peut continuer; aucun renvoi automatique. '+String(error.message||error)});
       if(job.background)document.getElementById('cdqProgressModal').style.display='none';
     }finally{
-      job.reading=false;
-      if(cdqQueuedSendV2828===job&&!job.blocked)job.timer=setTimeout(()=>cdqTrackingPollV2828(job),5000);
+      finish();job.reading=false;
+      if(cdqQueuedSendV2828===job&&!job.blocked){if(job.background)void window.cdqSendBackgroundV2874?.flush();else job.timer=setTimeout(()=>cdqTrackingPollV2828(job),Math.min(120000,15000*2**Math.min(3,Math.max(0,(job.failures||0)-1))));}
     }
   }
   function cdqTrackSendV2828(receipt,context,selection){
@@ -13422,7 +13440,7 @@ function cdqInstallSwipeGesture(row){
   }
   window.addEventListener('cdq:client-content-ready-v2745',()=>{void cdqRecoverSendV2828();});
   window.addEventListener('cdq:access-ready',()=>{void cdqRecoverSendV2828();});
-  window.addEventListener('online',()=>{cdqRecoveryKeyV2828='';if(cdqQueuedSendV2828&&!cdqQueuedSendV2828.reading){clearTimeout(cdqQueuedSendV2828.timer);void cdqTrackingPollV2828(cdqQueuedSendV2828);}else void cdqRecoverSendV2828();});
+  window.addEventListener('online',()=>{cdqRecoveryKeyV2828='';if(cdqQueuedSendV2828&&!cdqQueuedSendV2828.background&&!cdqQueuedSendV2828.reading){clearTimeout(cdqQueuedSendV2828.timer);void cdqTrackingPollV2828(cdqQueuedSendV2828);}else void cdqRecoverSendV2828();});
   window.addEventListener('cdq:access-state-v2527',event=>{if(event.detail!=='ready'){cdqRecoveryKeyV2828='';if(cdqQueuedSendV2828){cdqTrackingDisposeV2828(cdqQueuedSendV2828);cdqStopProgress(false);}}});
 
   function cdqStartProgress(sessionId,total){
@@ -13430,7 +13448,7 @@ function cdqInstallSwipeGesture(row){
     if(previous.hideTimer)clearTimeout(previous.hideTimer);
     if(cdqProgressTimer)clearInterval(cdqProgressTimer);
     cdqProgressTimer=null;
-    const state=cdqSendProgressV2759={session:String(sessionId),generation:previous.generation+1,total:Math.max(1,Number(total)||1),done:0,current:1,percent:0,active:true,preparedKnown:false,hideTimer:null};
+    const state=cdqSendProgressV2759={session:String(sessionId),generation:previous.generation+1,total:Math.max(1,Number(total)||1),done:0,current:1,percent:0,active:true,preparedKnown:false,lastResult:{},hideTimer:null};
     const modal=cdqEnsureSendProgressV2759();modal.style.display='flex';modal.setAttribute('aria-busy','true');
     cdqSetProgress({total:state.total,message:'Préparation des rapports…'});
     modal.querySelector('.modal')?.focus({preventScroll:true});
@@ -13573,6 +13591,8 @@ function cdqInstallSwipeGesture(row){
         })
         .withFailureHandler(function(e){
           if(cdqSendProgressV2759.session!==session||!cdqSendProgressV2759.active)return;
+          const refused=window.cdqSendProgressV2893.repeatRejection(e);
+          if(refused){cdqStopProgress(false);if(send)send.disabled=String(utilisateurCourantRole||'')==='lecture';const detail=Error(refused);cdqRestoreSendOptionsV2759(context,detail);afficherErreur(detail);return;}
           // A lost response is not proof of failure. Discover; never resend.
           void cdqUncertainSendV2828(context,session,e);
         })
@@ -13616,7 +13636,7 @@ function cdqSendPreflightV2780(args,timeoutMs=CDQ_SEND_PREFLIGHT_TIMEOUT_MS_V278
    try{
     const check=await (async()=>{if(actions.email)await window.cdqGmailTechnicienV20261112.ensure(context);cdqSendGuardV2750(context);return cdqSendPreflightV2780([files,folders,actions.email?email:'',context.clientId,24,actions,visit,actions.email?'gmail-server-oauth-v2':null]);})();cdqSendGuardV2750(context);
     window.cdqDeliveryActionsV2866.assertTicket(check?.sendV20261103,actions,visit);
-    let force=false;if(check?.doublon){force=confirm('Cette sélection a déjà été envoyée récemment. Voulez-vous l’envoyer de nouveau ?');if(!force){cdqStopProgress(false);cdqRestoreSendOptionsV2759(context);return}}
+    const decision=window.cdqSendProgressV2893.confirmRepeat(check,message=>confirm(message));if(!decision.accepted){cdqStopProgress(false);cdqRestoreSendOptionsV2759(context);return}const force=decision.force;
     await cdqRunSendSelection(files,folders,mode,actions.email?email:'',actions.email?message:'',context.clientId,force,flatten,check?.sendV20261103);
    }catch(error){cdqStopProgress(false);cdqRestoreSendOptionsV2759(context,error);afficherErreur(error)}finally{cdqSendCheckingV2708=false}
   };
@@ -14923,7 +14943,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.17-v28.92-runtime-pc";
+const CDQ_V19_BUILD = "2026.11.17-v28.93-runtime-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -16109,6 +16129,7 @@ const cdqDriveBackgroundV2746=createDriveBackgroundV2746({owner:()=>String(utili
   await Promise.allSettled(tasks);}});
 window.cdqDriveBackgroundV2746=cdqDriveBackgroundV2746;
 window.cdqDriveWritesPendingV2746=()=>cdqDriveBackgroundV2746.busy();
+window.cdqSendProgressV2893.configure({identity:()=>({owner:utilisateurCourantEmail,authorized:cdqAccessState==='ready'&&['admin','technicien'].includes(utilisateurCourantRole)}),native:()=>window.BalanceCDQBackgroundV2746,storage:localStorage,complete:result=>window.cdqDeliveryActionsV2866.complete(result)});
 window.cdqSendBackgroundV2874=createSendBackgroundV2874({
  identity:()=>({owner:utilisateurCourantEmail,authorized:cdqAccessState==='ready'&&['admin','technicien'].includes(utilisateurCourantRole)}),
  read:async job=>{const owner=String(utilisateurCourantEmail||'').trim().toLowerCase(),finish=cdqDriveBackgroundV2746.begin('server-send-status:'+job.id,owner);try{return await window.cdqSendWatchTransportV2874.read(job);}finally{finish();}},
@@ -16116,11 +16137,13 @@ window.cdqSendBackgroundV2874=createSendBackgroundV2874({
  foreground:()=>window.cdqSendWatchTransportV2874.foreground(),
  publish:(owner,count)=>{if(owner)cdqDriveBackgroundV2746.setPending('server-sends',count,owner);window.cdqPendingTasksV20261112?.refreshPresence?.();},
  onResult:(owner,job,result)=>{
-  window.cdqPendingTasksV20261112?.observe?.(result,owner);
   if(owner!==String(utilisateurCourantEmail||'').trim().toLowerCase())return;
   const completed=window.cdqDeliveryActionsV2866.complete(result),blocked=result.status==='blocked';
   const cancelled=['cancelled','closed'].includes(result.status)||['CANCELLED_BEFORE_EMAIL_V20261112','CANCEL_REQUESTED_BEFORE_EMAIL_V20261117','MAIL_UNCONFIRMED_MANUALLY_CLOSED_V20261112'].includes(result.error)||['cancelled_before_send','closed_unconfirmed'].includes(result.review);
-  if((completed||blocked)&&!cancelled)try{window.BalanceCDQBackgroundV2746?.notifyTaskResultV2892?.(owner,job.id,completed?'completed':'blocked',Number(result.total)||0);}catch(_){}
+  if(typeof window.BalanceCDQBackgroundV2746?.reportTaskProgressV2893==='function')window.cdqSendProgressV2893.report(owner,job,result);
+  else if((completed||blocked)&&!cancelled)try{window.BalanceCDQBackgroundV2746?.notifyTaskResultV2892?.(owner,job.id,completed?'completed':'blocked',Number(result.total)||0);}catch(_){}
+  window.cdqPendingTasksV20261112?.observe?.(result,owner);
+  if(window.cdqSendWatchTransportV2874.backgroundResult(job,result))return;
   if(job.clientId!==String(compagnieSelectionnee||'')||window.cdqSendWatchTransportV2874.foreground()===job.clientId+'|'+job.id)return;
   if((completed||blocked)&&!cancelled)afficherMessage(result.message||(completed?'Traitement terminé et confirmé.':'Traitement arrêté; voir les tâches en attente.'),completed);
  },
@@ -19234,7 +19257,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.17-v28.92-runtime-pc";
+const CDQ_V20_BUILD = "2026.11.17-v28.93-runtime-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20087,7 +20110,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.17-v28.92-runtime-pc";
+const CDQ_V21_BUILD = "2026.11.17-v28.93-runtime-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24614,7 +24637,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.17-v28.92-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.17-v28.93-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;

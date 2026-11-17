@@ -55,9 +55,10 @@ function createLazyPageV2751({load,current,owner=()=>'',report=()=>{}}){
 // original runner still owns session routing and all access checks.
 function wrapRpcRunnerV2751(original,budget,{report=()=>{}}={}){
   let transportSequence=0;
-  function wrapped(){let success,failure,userObject,started,readSignal=null,hasUser=false,proxy;
+  function wrapped(){let success,failure,userObject,started,readSignal=null,interactiveRead=false,hasUser=false,proxy;
     proxy=new Proxy({}, {get(_,name){
       if(name==='withStartHandler')return fn=>(started=fn,proxy);
+      if(name==='withInteractiveReadV2893')return ()=>{interactiveRead=true;return proxy;};
       if(name==='withQueuedReadSignalV2792')return signal=>(readSignal=signal,proxy);
       if(name==='withSuccessHandler')return fn=>(success=fn,proxy);
       if(name==='withFailureHandler')return fn=>(failure=fn,proxy);
@@ -65,7 +66,7 @@ function wrapRpcRunnerV2751(original,budget,{report=()=>{}}={}){
       if(typeof name!=='string'||name==='then')return undefined;
       return(...args)=>{const ok=success,fail=failure,value=userObject,hasValue=hasUser,onStart=started,traceId=++transportSequence;
         // Only these idempotent reads can be removed before dispatch; never a write.
-        const cancellable=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirPdfLecteurCDQV2520|cdqReadPdfDirectV20261114|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ|obtenirMetaFichier|obtenirDossiersClients|cdqLireConformiteRapportV2775|obtenirSnapshotGoogleSheetHorsLigne|cdqEtatListeBalanceV2638)$/.test(name)||name==='cdqReportEngineV2754'&&String(args[0])==='readMany',signal=cancellable?readSignal:null;
+        const cancellable=/^(?:obtenirMetaFichier|obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirPdfLecteurCDQV2520|cdqReadPdfDirectV20261114|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ|obtenirMetaFichier|obtenirDossiersClients|cdqLireConformiteRapportV2775|obtenirSnapshotGoogleSheetHorsLigne|cdqEtatListeBalanceV2638)$/.test(name)||name==='cdqReportEngineV2754'&&String(args[0])==='readMany',signal=cancellable?readSignal:null;
         const label=name==='cdqReportEngineV2754'?name+':'+String(args[0]||'').replace(/[^a-zA-Z]/g,'').slice(0,20):name;
         const send=()=>new Promise((resolve,reject)=>{
           // A queued read may be cancelled. Once sent, GAS has no cancellation
@@ -90,8 +91,8 @@ function wrapRpcRunnerV2751(original,budget,{report=()=>{}}={}){
         options.traceId=traceId;options.label=label;options.signal=signal;
         if(name==='obtenirContenuDossierParesseux')options.readKey=JSON.stringify(['folder',String(args[0]),String(args[1])]);
         if(/^(?:obtenirPdfLecteurCDQV2520|cdqReadPdfDirectV20261114|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ)$/.test(name))options.readKey=JSON.stringify(['pdf',String(args[0])]);
-        options.interactive=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirDiagnosticApplication|obtenirPdfLecteurCDQV2520|cdqReadPdfDirectV20261114|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&['read','portalLink'].includes(String(args[0]));
-        const clientBound=/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirChunkDocumentPdfCDQ|obtenirPdfLecteurCDQV2520|cdqReadPdfDirectV20261114|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&['read','readMany'].includes(String(args[0]));
+        options.interactive=interactiveRead&&name==='obtenirMetaFichier'||/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirDiagnosticApplication|obtenirPdfLecteurCDQV2520|cdqReadPdfDirectV20261114|obtenirChunkDocumentPdfCDQ|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&['read','portalLink'].includes(String(args[0]));
+        const clientBound=interactiveRead&&name==='obtenirMetaFichier'||/^(?:obtenirContenuClientOptimise|obtenirContenuDossierParesseux|obtenirChunkDocumentPdfCDQ|obtenirPdfLecteurCDQV2520|cdqReadPdfDirectV20261114|obtenirMetaDocumentPdfCDQ|obtenirDestinataireClientV2553|verifierEnvoiSelectionRecentV2553)$/.test(name)||name==='cdqReportEngineV2754'&&['read','readMany'].includes(String(args[0]));
         if(clientBound){const selected=typeof compagnieSelectionnee==='undefined'?'':String(compagnieSelectionnee);options.valid=()=>selected===(typeof compagnieSelectionnee==='undefined'?'':String(compagnieSelectionnee));}
         budget.run(send,options).then(values=>{if(typeof ok==='function')ok(...values);},error=>{
           const values=error?.rpcValues||(hasValue?[error,value]:[error]);
@@ -100,7 +101,7 @@ function wrapRpcRunnerV2751(original,budget,{report=()=>{}}={}){
       };
     }});return proxy;
   }
-  Object.assign(wrapped,original);wrapped.cdqBudgetV2751=true;wrapped.cdqReadQueueCancellationV2792=true;wrapped.cdqReadTransportTimeoutV2792=90000;return wrapped;
+  Object.assign(wrapped,original);wrapped.cdqBudgetV2751=true;wrapped.cdqInteractiveReadV2893=true;wrapped.cdqReadQueueCancellationV2792=true;wrapped.cdqReadTransportTimeoutV2792=90000;return wrapped;
 }
 
 function installStartupPerformanceV2751(window,document){
