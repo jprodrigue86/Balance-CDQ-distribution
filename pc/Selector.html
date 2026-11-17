@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.91" data-cdq-pc-release="54165dc62783880a3b9cfb24a6e44135839d4d8930c9edae9694b3a1f1a8cccf">
+<html data-cdq-pc-version="28.92" data-cdq-pc-release="65e3d9d492ebcf14146e4a8aa18d75a3061c0429a77b48cfbf2dbc2af2c7acb5">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -937,7 +937,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
-<meta name="cdq-package-build" content="2026.11.17-v28.91-runtime-pc">
+<meta name="cdq-package-build" content="2026.11.17-v28.92-runtime-pc">
 
 
 <script id="cdqBridgeV23">
@@ -991,7 +991,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.17-v28.91-runtime-pc'
+    build:'2026.11.17-v28.92-runtime-pc'
   });
 }
 
@@ -1004,7 +1004,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.17-v28.91-runtime-pc'
+        build:'2026.11.17-v28.92-runtime-pc'
       });
     }
   } catch(e) {}
@@ -12321,7 +12321,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.17-v28.91-runtime-pc";
+  const CDQ_BUILD = "2026.11.17-v28.92-runtime-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13192,28 +13192,20 @@ function cdqInstallSwipeGesture(row){
     }
   }
   function cdqSetProgress(p){
-    const state=cdqSendProgressV2759;
-    if(!state.active)return;
-    p=p||{};
+    const state=cdqSendProgressV2759;if(!state.active)return;p=p||{};
     const modal=cdqEnsureSendProgressV2759(),fill=document.getElementById('cdqProgressFill'),label=document.getElementById('cdqProgressLabel'),track=document.getElementById('cdqProgressTrackV2759');
     const total=Number(p.total);if(Number.isFinite(total)&&total>0)state.total=Math.max(1,Math.floor(total));
-    const done=Number(p.termine);if(Number.isFinite(done)&&done>=0)state.done=Math.min(state.total,Math.max(state.done,Math.floor(done)));
-    const prepared=String(p.message||'').match(/Préparation du PDF\s+(\d+)\s*\/\s*(\d+)/);
-    if(prepared){state.current=Math.min(state.total,Number(prepared[1]));state.done=Math.max(state.done,state.current-1);}
-    else state.current=Math.min(state.total,state.done+1);
-    const complete=p.phase==='termine';
-    if(complete){state.done=state.total;state.current=state.total;}
-    const sending=p.phase==='envoi';
-    const partial=/\b(?:erreur|échec|partiel|non préparé)s?\b/i.test(String(p.message||''));
-    const verifiedComplete=complete&&!partial;
-    const raw=verifiedComplete?100:sending?94:Math.min(88,Math.round(state.done/state.total*88));
-    state.percent=Math.max(state.percent||0,Math.min(verifiedComplete?100:99,raw));
-    modal.dataset.indeterminate=String(!verifiedComplete);modal.dataset.busy=String(!verifiedComplete);
-    fill.style.width=state.percent+'%';
-    label.textContent=String(p.message||(sending?'Envoi du courriel avec '+state.total+' élément(s)…':'Préparation des rapports…'));
-    document.getElementById('cdqProgressCountV2759').textContent=state.current+' sur '+state.total+' · '+state.percent+' %';
-    track.setAttribute('aria-valuemax','100');track.setAttribute('aria-valuenow',String(state.percent));
-    track.setAttribute('aria-valuetext',label.textContent+' — '+state.current+' sur '+state.total+' — '+state.percent+' %');
+    const done=Number(p.termine);if(Number.isFinite(done)&&done>=0){state.done=Math.min(state.total,Math.max(state.done,Math.floor(done)));state.preparedKnown=true;}
+    const complete=p.phase==='termine';if(complete){state.done=state.total;state.preparedKnown=true;}
+    state.current=state.done;state.percent=Math.round(state.done/state.total*100);
+    const text=String(p.message||'');
+    const preparing=/^Préparation des PDF\s*:\s*\d+ sur \d+\.$/.test(text);
+    label.textContent=preparing?'Préparation des PDF…':text||(p.phase==='envoi'?'Envoi du courriel…':'Préparation des rapports…');
+    modal.dataset.indeterminate=String(!state.preparedKnown);modal.dataset.busy=String(!complete);
+    fill.style.width=(state.preparedKnown?state.percent:0)+'%';
+    document.getElementById('cdqProgressCountV2759').textContent=state.preparedKnown?state.done+' sur '+state.total+' préparé(s) · '+state.percent+' %':'Confirmation du serveur en attente';
+    track.setAttribute('aria-valuemax','100');if(state.preparedKnown)track.setAttribute('aria-valuenow',String(state.percent));else track.removeAttribute('aria-valuenow');
+    track.setAttribute('aria-valuetext',label.textContent+' — '+(state.preparedKnown?state.done+' sur '+state.total+' préparé(s)':'Confirmation du serveur en attente'));
   }
   // V28.28: a queue receipt accepts work; only durable server state completes it.
   let cdqQueuedSendV2828=null,cdqRecoveryBusyV2828=false,cdqRecoveryKeyV2828='';
@@ -13244,16 +13236,14 @@ function cdqInstallSwipeGesture(row){
     actions.replaceChildren();
     const close=document.createElement('button');close.type='button';
     close.textContent=job.blocked?'Fermer':'Continuer en arrière-plan';
-    close.onclick=()=>{modal.style.display='none';job.background=true;};actions.appendChild(close);
+    close.onclick=()=>{modal.style.display='none';job.background=true;afficherMessage(job.blocked?'Traitement arrêté; voir les tâches en attente.':'Envoi en cours — suivi dans les tâches en attente.',false);};actions.appendChild(close);
     if(job.blocked){const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Vérifier l’état';refresh.onclick=()=>{void cdqTrackingPollV2828(job);};actions.appendChild(refresh);}
     if(job.blocked&&job.canDismiss){
       const acknowledge=document.createElement('button');acknowledge.type='button';acknowledge.textContent='Fermer le suivi';
       acknowledge.onclick=()=>{cdqTrackingSaveV2828(job.context,null,job.id);cdqTrackingDisposeV2828(job);cdqStopProgress(false);const send=document.getElementById('sendButton');if(send)send.disabled=String(utilisateurCourantRole||'')==='lecture';};actions.appendChild(acknowledge);
     }
-    let banner=document.getElementById('cdqSendTrackingBannerV2828');
-    if(!banner){banner=document.createElement('button');banner.id='cdqSendTrackingBannerV2828';banner.type='button';banner.style.cssText='position:fixed;left:5%;right:5%;bottom:calc(105px + env(safe-area-inset-bottom));z-index:1800;padding:12px;border-radius:12px;background:#12314a;color:white;border:1px solid #32b7ec;';document.body.appendChild(banner);}
-    banner.textContent=job.blocked?'Envoi à vérifier — voir le détail':'Envoi en cours — voir la progression';
-    banner.onclick=()=>{job.background=false;modal.style.display='flex';modal.querySelector('.modal')?.focus();};
+    document.getElementById('cdqSendTrackingBannerV2828')?.remove();
+    window.cdqPendingTasksV20261112?.refreshPresence?.();
   }
   function cdqTrackingDisposeV2828(job){
     if(job.timer)clearTimeout(job.timer);
@@ -13272,6 +13262,7 @@ function cdqInstallSwipeGesture(row){
     cdqSendGuardV2750(job.context);
     if(result.jobId!==job.id||result.status==='none')throw Error('Le résultat de cet envoi ne peut pas encore être vérifié.');
     window.cdqSendBackgroundV2874?.observe(job.id,job.context.clientId,result);
+    if(['cancelled','closed'].includes(result.status)){cdqTrackingSaveV2828(job.context,null,job.id);cdqTrackingDisposeV2828(job);cdqStopProgress(false);window.cdqPendingTasksV20261112?.observe?.(result,job.context.owner);afficherMessage(result.message||'Cette tâche a été clôturée.',false);return;}
     const completed=window.cdqDeliveryActionsV2866.complete(result);
     const wasBlocked=job.blocked;job.blocked=result.status==='blocked';
     job.canDismiss=result.mailSent===true||result.error==='PREPARATION_PENDING';
@@ -13314,15 +13305,24 @@ function cdqInstallSwipeGesture(row){
     cdqSendGuardV2750(context);
     if(!receipt?.jobId)throw Error('Identifiant de suivi manquant. Ne renvoyez pas cette sélection avant vérification.');
     if(cdqQueuedSendV2828)cdqTrackingDisposeV2828(cdqQueuedSendV2828);
-    if(!cdqSendProgressV2759.active)cdqStartProgress('track-'+receipt.jobId,receipt.total||1);
+    cdqStartProgress('track-'+receipt.jobId,receipt.total||1);
     if(cdqProgressTimer){clearInterval(cdqProgressTimer);cdqProgressTimer=null;}
-    const job=cdqQueuedSendV2828={id:receipt.jobId,session:receipt.sessionId||cdqSendProgressV2759.session,context,total:receipt.total||cdqSendProgressV2759.total,files:selection?.files||[],folders:selection?.folders||[],reading:false,blocked:false,background:false};
+    const job=cdqQueuedSendV2828={id:receipt.jobId,session:String(receipt.sessionId||''),context,total:receipt.total||cdqSendProgressV2759.total,files:selection?.files||[],folders:selection?.folders||[],reading:false,blocked:false,background:false};
     cdqTrackingSaveV2828(context,{id:job.id,session:job.session,total:job.total,createdAt:Date.now()});
     window.cdqSendBackgroundV2874?.watch({...receipt,sessionId:job.session},context);
+    if(selection&&!window.cdqDurableResumeV2751?.headless)try{window.BalanceCDQNative?.requestTaskNotificationsV2892?.();}catch(_){}
     cdqSetProgress({total:job.total,message:receipt.message||'Envoi enregistré. Préparation en cours…'});
     cdqTrackingControlsV2828(job);
-    void cdqTrackingPollV2828(job);
+    if(receipt.trackingVersion===2828&&receipt.status)cdqTrackingApplyV2828(job,receipt);
+    if(cdqQueuedSendV2828===job&&!job.blocked)void cdqTrackingPollV2828(job);
   }
+  window.cdqOpenPendingSendTrackingV2892=async function(task){
+    const context=cdqSendContextV2750(String(compagnieSelectionnee||''));
+    if(!task?.jobId||task.clientId!==context.clientId||String(task.owner||'').trim().toLowerCase()!==context.owner.trim().toLowerCase())throw Error('Le suivi détaillé appartient au compte qui a lancé cette tâche.');
+    const result=await cdqReadTrackingV2828('',{jobId:String(task.jobId),clientId:context.clientId});cdqSendGuardV2750(context);
+    if(result?.jobId!==task.jobId||result.clientId!==context.clientId||Number(result.total)!==Number(task.count))throw Error('Le suivi reçu ne correspond pas à cette tâche.');
+    cdqTrackSendV2828(result,context);return result;
+  };
   async function cdqFindSendV2828(context,session){
     const saved=cdqTrackingSavedV2828(context);
     const result=await cdqReadTrackingV2828(session||'',{clientId:context.clientId,...(session?{sessionId:session}:saved.job?.id?{jobId:saved.job.id}:{})});
@@ -13364,15 +13364,12 @@ function cdqInstallSwipeGesture(row){
     try{localStorage.setItem(key,JSON.stringify(saved.slice(-15)));}catch(_){}
   }
   function cdqRecentSendBannerV2860(context,saved,result){
-    const started=Number(saved.job?.createdAt||0);
-    if(!started||Date.now()-started>2*60*60*1000)return;
-    let banner=document.getElementById('cdqSendTrackingBannerV2828');
-    if(!banner){banner=document.createElement('button');banner.id='cdqSendTrackingBannerV2828';banner.type='button';
-      banner.style.cssText='position:fixed;left:5%;right:5%;bottom:calc(105px + env(safe-area-inset-bottom));z-index:1800;padding:9px;border-radius:12px;background:#12314a;color:white;border:1px solid #32b7ec;';document.body.append(banner);}
-    banner.textContent='Envoi récent en cours — vérifier le suivi';
-    // This click reads the existing server job. It never calls the send RPC.
-    banner.onclick=()=>{if(!cdqSendProgressV2759.active)cdqTrackSendV2828(result,context);};
+    window.cdqSendBackgroundV2874?.watch({...result,sessionId:saved.job?.session||''},context);
+    window.cdqSendBackgroundV2874?.observe(result.jobId,context.clientId,result);
+    window.cdqPendingTasksV20261112?.refreshPresence?.();
+    document.getElementById('cdqSendTrackingBannerV2828')?.remove();
   }
+
   async function cdqRecoverSendV2828(){
     if(cdqRecoveryBusyV2828||cdqSendProgressV2759.active||cdqSendCheckingV2708)return;
     let context;try{context=cdqSendContextV2750(String(compagnieSelectionnee||''));}catch(_){return;}
@@ -13392,20 +13389,21 @@ function cdqInstallSwipeGesture(row){
       const blocked=result.status==='blocked';
       if(complete||blocked){
         cdqStoreSilentReceiptV2860(context,result);
+        window.cdqPendingTasksV20261112?.observe?.(result,context.owner);
+        afficherMessage(result.message||(complete?'Traitement terminé et confirmé.':'Traitement arrêté; voir les tâches en attente.'),complete);
         // Keep receipt evidence in read-only history. Clear ONLY the old
         // auto-popup handle; do not modify any remote send or offline queue.
         cdqTrackingSaveV2828(context,null,complete?result.jobId:null);
         document.getElementById('cdqSendTrackingBannerV2828')?.remove();
         return;
       }
-      if(result.status==='none'||result.error==='NOT_FOUND'){
+      if(['none','cancelled','closed'].includes(result.status)||result.error==='NOT_FOUND'){
+        window.cdqSendBackgroundV2874?.forget?.(result.jobId,context.clientId,context.owner);
+        window.cdqPendingTasksV20261112?.observe?.(result,context.owner);
         cdqStoreSilentReceiptV2860(context,{jobId:saved.job.id,status:'introuvable',error:result.error});
         cdqTrackingSaveV2828(context,null);return;
       }
       if(['queued','running','processing','pending','en_cours'].includes(String(result.status||''))){
-        const retries=cdqSilentReadCountV2860.get(key)||0;
-        if(retries<3){cdqSilentReadCountV2860.set(key,retries+1);
-          setTimeout(()=>{try{cdqSendGuardV2750(context);cdqRecoveryKeyV2828='';void cdqRecoverSendV2828();}catch(_){}},12000);}
         cdqRecentSendBannerV2860(context,saved,result);
       }
     }catch(_){/* Read-only verification unavailable: preserve receipt, do not resend. */}
@@ -13432,9 +13430,9 @@ function cdqInstallSwipeGesture(row){
     if(previous.hideTimer)clearTimeout(previous.hideTimer);
     if(cdqProgressTimer)clearInterval(cdqProgressTimer);
     cdqProgressTimer=null;
-    const state=cdqSendProgressV2759={session:String(sessionId),generation:previous.generation+1,total:Math.max(1,Number(total)||1),done:0,current:1,percent:0,active:true,hideTimer:null};
+    const state=cdqSendProgressV2759={session:String(sessionId),generation:previous.generation+1,total:Math.max(1,Number(total)||1),done:0,current:1,percent:0,active:true,preparedKnown:false,hideTimer:null};
     const modal=cdqEnsureSendProgressV2759();modal.style.display='flex';modal.setAttribute('aria-busy','true');
-    cdqSetProgress({total:state.total,termine:0,message:'Préparation des rapports…'});
+    cdqSetProgress({total:state.total,message:'Préparation des rapports…'});
     modal.querySelector('.modal')?.focus({preventScroll:true});
     // The duplicate check has no server-side progress session to poll.
     if(state.session.startsWith('check-'))return;
@@ -14925,7 +14923,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.17-v28.91-runtime-pc";
+const CDQ_V19_BUILD = "2026.11.17-v28.92-runtime-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15853,9 +15851,9 @@ window.addEventListener('online',function(){
   cdqRafraichirTechniciensRapports(true).catch(function(){});
 });
 // Observe existing server jobs only. This component cannot enqueue or resend.
-function createSendBackgroundV2874({identity,read,complete,publish,storage,foreground=()=>'',now=Date.now,schedule=setTimeout,cancel=clearTimeout}){
+function createSendBackgroundV2874({identity,read,complete,publish,storage,foreground=()=>'',onResult=()=>{},now=Date.now,schedule=setTimeout,cancel=clearTimeout}){
   let owner='',generation=0,timer=null,flight=null;
-  const jobs=new Map(),prefix='cdqServerSendWatchV2874|';
+  const jobs=new Map(),prefix='cdqServerSendWatchV2874|',interval=15000;
   const validText=x=>typeof x==='string'&&x.length>0&&x.length<=200&&!/[\u0000-\u001f]/.test(x);
   const key=j=>j.clientId+'|'+j.id;
   const persist=()=>{if(owner)try{storage.setItem(prefix+owner,JSON.stringify([...jobs.values()].map(({id,clientId,session,started})=>({id,clientId,session,started}))));}catch(_){}};
@@ -15867,32 +15865,40 @@ function createSendBackgroundV2874({identity,read,complete,publish,storage,foreg
     generation++;clearTimer();jobs.clear();owner=next;
     if(owner)try{
       const saved=JSON.parse(storage.getItem(prefix+owner)||'[]');
-      if(Array.isArray(saved))for(const j of saved.slice(0,100))if(validText(j?.id)&&validText(j?.clientId)){
-        jobs.set(key(j),{id:j.id,clientId:j.clientId,session:typeof j.session==='string'?j.session.slice(0,200):'',started:Number(j.started)||now(),failures:0,paused:false});
-      }
+      if(Array.isArray(saved))for(const j of saved.slice(0,100))if(validText(j?.id)&&validText(j?.clientId))
+        jobs.set(key(j),{id:j.id,clientId:j.clientId,session:typeof j.session==='string'?j.session.slice(0,200):'',started:Number(j.started)||now(),failures:0,nextReadAt:0,paused:false});
     }catch(_){}
     emit();return !!owner;
   }
   function later(){
-    clearTimer();if(owner&&[...jobs.values()].some(j=>!j.paused))timer=schedule(()=>{timer=null;void flush();},15000);
+    clearTimer();if(!owner||!jobs.size)return;
+    if(![...jobs.values()].some(j=>!j.paused))return;
+    const candidates=[...jobs.values()].filter(j=>!j.paused&&foreground()!==key(j));
+    const delay=candidates.length?Math.max(1000,Math.min(...candidates.map(j=>j.nextReadAt-now()))):interval;
+    timer=schedule(()=>{timer=null;void flush();},delay);
+  }
+  function forget(id,clientId,expectedOwner){
+    if(!account()||String(expectedOwner||'').trim().toLowerCase()!==owner||!jobs.delete(clientId+'|'+id))return false;
+    persist();emit();later();return true;
   }
   function observe(id,clientId,result){
     if(!account())return false;
     const j=jobs.get(clientId+'|'+id);
-    if(!j||result?.jobId!==id||result.clientId&&result.clientId!==clientId)return false;
-    // A blocked/unknown job stops the ongoing notification without claiming
-    // successful delivery. Server history and its anti-duplicate receipt stay.
-    if(complete(result)||result.status==='blocked'||result.status==='none'||result.error==='NOT_FOUND'){
+    if(!j||result?.jobId!==id||result.clientId!==clientId)return false;
+    try{onResult(owner,{...j},result);}catch(_){}
+    // Read-only observation never re-enqueues a blocked, cancelled or uncertain send.
+    if(complete(result)||['blocked','cancelled','closed','none'].includes(result.status)||result.error==='NOT_FOUND'){
       jobs.delete(key(j));persist();emit();later();return true;
     }
-    j.failures=0;return false;
+    j.failures=0;j.nextReadAt=now()+interval;return false;
   }
   function watch(receipt,context){
-    if(!account()||String(context?.owner||'').trim().toLowerCase()!==owner||!validText(receipt?.jobId)||!validText(context?.clientId))return false;
-    const j={id:receipt.jobId,clientId:context.clientId,session:String(receipt.sessionId||'').slice(0,200),started:now(),failures:0,paused:false};
-    const prior=jobs.get(key(j));if(prior)j.started=prior.started;
-    if(!prior&&jobs.size>=100)return false;
-    jobs.set(key(j),j);persist();emit();later();return true;
+    if(!account()||String(context?.owner||'').trim().toLowerCase()!==owner||!validText(receipt?.jobId)||!validText(context?.clientId)||receipt.clientId&&receipt.clientId!==context.clientId)return false;
+    const k=context.clientId+'|'+receipt.jobId,prior=jobs.get(k);
+    if(prior){if(prior.paused){prior.paused=false;prior.nextReadAt=0;emit();later();}return true;}
+    if(jobs.size>=100)return false;
+    jobs.set(k,{id:receipt.jobId,clientId:context.clientId,session:String(receipt.sessionId||'').slice(0,200),started:now(),failures:0,nextReadAt:0,paused:false});
+    persist();emit();later();return true;
   }
   async function flush(){
     if(!account())return;
@@ -15901,24 +15907,29 @@ function createSendBackgroundV2874({identity,read,complete,publish,storage,foreg
     flight=(async()=>{
       for(const j of [...jobs.values()]){
         if(!account()||stamp!==generation||owner!==email)break;
-        if(j.paused||foreground()===key(j))continue;
-        // A notification is bounded; the durable server job itself is not.
-        if(now()-j.started>2*60*60*1000){j.paused=true;emit();continue;}
+        // Native keep-alive ticks may arrive every two seconds. They must not
+        // turn the existing status read into a new high-frequency poller.
+        if(j.paused||foreground()===key(j)||now()<j.nextReadAt)continue;
         try{
           const result=await read(j);
           if(!account()||stamp!==generation||owner!==email)break;
+          if(jobs.get(key(j))!==j)continue;
+          if(result?.jobId!==j.id||result.clientId!==j.clientId)throw Error('Le suivi reçu appartient à une autre tâche.');
           observe(j.id,j.clientId,result);
-        }catch(_){
+        }catch(error){
           if(stamp!==generation||owner!==email)break;
-          if(++j.failures>=3)j.paused=true;
+          if(jobs.get(key(j))!==j)continue;
+          const detail=String(error?.code||'')+' '+String(error?.message||error);
+          j.paused=[401,403,404].includes(Number(error?.status))||/\b(?:SEND_JOB_NOT_FOUND|SESSION_INVALID|SESSION_EXPIRED|ACCESS_DENIED|FORBIDDEN)\b/.test(detail);
+          j.failures++;j.nextReadAt=now()+Math.min(120000,interval*2**Math.min(3,j.failures-1));
           emit();
         }
       }
     })();
     try{await flight;}finally{flight=null;if(account()){emit();later();}}
   }
-  function resume(){if(!account())return;for(const j of jobs.values()){j.paused=false;j.failures=0;}emit();void flush();}
-  return {watch,observe,flush,resume,reset(){generation++;clearTimer();jobs.clear();const previous=owner;owner='';publish(previous,0);},size(){account();return jobs.size;}};
+  function resume(){if(!account())return;for(const j of jobs.values()){j.nextReadAt=0;j.failures=0;j.paused=false;}emit();void flush();}
+  return {watch,observe,forget,flush,resume,entries(clientId){const current=identity();return current?.authorized&&String(current.owner||'').trim().toLowerCase()===owner?[...jobs.values()].filter(j=>j.clientId===String(clientId)).map(j=>({...j})):[];},reset(){generation++;clearTimer();jobs.clear();const previous=owner;owner='';publish(previous,0);},size(){account();return jobs.size;}};
 }
 
 function createDriveBackgroundV2746({owner,authorized,native=null,onIdle=()=>{},onNativeStatus=()=>{},flush=()=>{}}){
@@ -15946,7 +15957,7 @@ function createDriveBackgroundV2746({owner,authorized,native=null,onIdle=()=>{},
   try{native?.updateState?.(state.owner,state.pendingCount,state.running,state.authorized);}catch{}
   const stamp=JSON.stringify([state.owner,state.nativeQueuedCount,state.nativeActiveCount,state.nativeError,state.nativeBlockedCount]);
   if(stamp!==nativeStamp){nativeStamp=stamp;try{onNativeStatus(state);}catch{}}
-  if(wasBusy&&!busy)onIdle();wasBusy=busy;return state;
+  if(wasBusy&&!busy)onIdle();wasBusy=busy;try{window.cdqPendingTasksV20261112?.refreshPresence?.();}catch{}return state;
  }
  function setPending(scope,count,email=current()){
   status();if(String(email).trim().toLowerCase()!==account||!authorized())return false;
@@ -15960,17 +15971,12 @@ function createDriveBackgroundV2746({owner,authorized,native=null,onIdle=()=>{},
  return {status,setPending,begin,publish,isQueueOwner:queueOwner,pendingFor:scope=>{status();return pending.get(String(scope))||0;},busy:()=>{const s=status();return s.pendingCount>0||s.nativeActiveCount>0||s.running;},reset:()=>{pending.clear();running.clear();publish();},async flush(){const s=publish();if(s.authorized&&s.queueOwner)await flush();return publish();}};
 }
 function renderNativeDrivePendingV2746(state,{doc=document}={}){
- let node=doc.getElementById('cdqNativeDrivePendingV2746');
- if(!state.authorized||!state.nativeQueuedCount&&!state.nativeError){if(node)node.hidden=true;return;}
- if(!node){
-  node=doc.createElement('div');node.id='cdqNativeDrivePendingV2746';node.setAttribute('role','status');node.setAttribute('aria-live','polite');
-  node.style.cssText='padding:8px 5px;white-space:normal;overflow-wrap:anywhere;font:14px/1.4 Arial,sans-serif';
-  const files=doc.getElementById('filesContainer');if(files?.parentNode)files.parentNode.insertBefore(node,files);else doc.body.append(node);
- }
+ doc.getElementById('cdqNativeDrivePendingV2746')?.remove();
+ const activity=window.cdqActivityStatusV2745,scope='native-drive-pending-v2746';
+ if(!state.authorized||!state.nativeQueuedCount&&!state.nativeError){if(activity?.matches?.(scope))activity.reset();return;}
  const errors={authorization:'Connexion Drive à reprendre.',conflict:'La version Drive a changé; une vérification est nécessaire.',denied:'Drive a refusé cet envoi.',network:'Drive est momentanément indisponible.',interrupted:'L’envoi reprendra à la prochaine ouverture.',local_read:'La file locale doit être vérifiée.'};
- node.hidden=false;node.dataset.activityKind=state.nativeBlockedCount||state.nativeError?'pending':state.nativeActiveCount?'working':'pending';
- node.setAttribute('aria-busy',String(state.nativeActiveCount>0));
- node.textContent=(state.nativeQueuedCount?state.nativeQueuedCount+' sauvegarde'+(state.nativeQueuedCount>1?'s':'')+' PDF en attente sur cet appareil. ':'État des sauvegardes PDF à vérifier sur cet appareil. ')+(errors[state.nativeError]|| (state.nativeActiveCount?'Envoi Drive en cours.':'Envoi Drive non confirmé.'));
+ const text=(state.nativeQueuedCount?state.nativeQueuedCount+' sauvegarde'+(state.nativeQueuedCount>1?'s':'')+' PDF en attente sur cet appareil. ':'État des sauvegardes PDF à vérifier sur cet appareil. ')+(errors[state.nativeError]||(state.nativeActiveCount?'Envoi Drive en cours.':'Envoi Drive non confirmé.'));
+ activity?.detail?.(text,{scope,error:!!state.nativeBlockedCount||['authorization','conflict','denied','local_read'].includes(state.nativeError)});
 }
 function createDriveWriteFlightsV2746({clock=globalThis,onSlow=()=>{},begin=()=>()=>{}}={}){
  const flights=new Map();
@@ -16105,10 +16111,19 @@ window.cdqDriveBackgroundV2746=cdqDriveBackgroundV2746;
 window.cdqDriveWritesPendingV2746=()=>cdqDriveBackgroundV2746.busy();
 window.cdqSendBackgroundV2874=createSendBackgroundV2874({
  identity:()=>({owner:utilisateurCourantEmail,authorized:cdqAccessState==='ready'&&['admin','technicien'].includes(utilisateurCourantRole)}),
- read:job=>window.cdqSendWatchTransportV2874.read(job),
+ read:async job=>{const owner=String(utilisateurCourantEmail||'').trim().toLowerCase(),finish=cdqDriveBackgroundV2746.begin('server-send-status:'+job.id,owner);try{return await window.cdqSendWatchTransportV2874.read(job);}finally{finish();}},
  complete:result=>window.cdqDeliveryActionsV2866.complete(result),
  foreground:()=>window.cdqSendWatchTransportV2874.foreground(),
- publish:(owner,count)=>{if(owner)cdqDriveBackgroundV2746.setPending('server-sends',count,owner);},
+ publish:(owner,count)=>{if(owner)cdqDriveBackgroundV2746.setPending('server-sends',count,owner);window.cdqPendingTasksV20261112?.refreshPresence?.();},
+ onResult:(owner,job,result)=>{
+  window.cdqPendingTasksV20261112?.observe?.(result,owner);
+  if(owner!==String(utilisateurCourantEmail||'').trim().toLowerCase())return;
+  const completed=window.cdqDeliveryActionsV2866.complete(result),blocked=result.status==='blocked';
+  const cancelled=['cancelled','closed'].includes(result.status)||['CANCELLED_BEFORE_EMAIL_V20261112','CANCEL_REQUESTED_BEFORE_EMAIL_V20261117','MAIL_UNCONFIRMED_MANUALLY_CLOSED_V20261112'].includes(result.error)||['cancelled_before_send','closed_unconfirmed'].includes(result.review);
+  if((completed||blocked)&&!cancelled)try{window.BalanceCDQBackgroundV2746?.notifyTaskResultV2892?.(owner,job.id,completed?'completed':'blocked',Number(result.total)||0);}catch(_){}
+  if(job.clientId!==String(compagnieSelectionnee||'')||window.cdqSendWatchTransportV2874.foreground()===job.clientId+'|'+job.id)return;
+  if((completed||blocked)&&!cancelled)afficherMessage(result.message||(completed?'Traitement terminé et confirmé.':'Traitement arrêté; voir les tâches en attente.'),completed);
+ },
  storage:{getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)}
 });
 window.addEventListener('cdq:access-ready',()=>window.cdqSendBackgroundV2874.resume());
@@ -19219,7 +19234,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.17-v28.91-runtime-pc";
+const CDQ_V20_BUILD = "2026.11.17-v28.92-runtime-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20072,7 +20087,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.17-v28.91-runtime-pc";
+const CDQ_V21_BUILD = "2026.11.17-v28.92-runtime-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24599,7 +24614,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.17-v28.91-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.17-v28.92-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -26345,10 +26360,11 @@ function installActivityStatusV2745({host=window,doc=document,clock=host,confirm
  function done(label,reference,{confirmed=false}={}){if(!current(reference)||!confirmed&&(P.failed||!P.active&&!P.waiting))return false;P.value=100;message(label||'Terminé','success');return true;}
  function fail(label,reference){if(!current(reference))return false;message(label||'Erreur','error');return true;}
  function announce(text,success=false,scope){if(scoped(scope)&&!matches(scope))return false;const entry=activityMessageV2745(text,success);if(!scoped(scope)){if(entry.kind==='working')return start(entry.text);P.seq++;P.scope=null;}message(entry.text,entry.kind);return P.seq;}
+ function detail(label,{scope,error=false}={}){if(scoped(scope)&&!matches(scope)){P.seq++;P.scope=scope;P.value=0;P.active=P.waiting=P.failed=false;}const kind=error?'error':P.active||P.waiting?'working':activityMessageV2745(String(label||'').replace(/^Liste de balance — /,'')).kind;message(label,kind);return P.seq;}
  function completeScope(scope,label){if(!matches(scope))return false;return done(label,P.seq,{confirmed:true});}
  function reset(){clearHide();P.seq++;P.scope=null;P.value=0;P.label='';P.kind='idle';P.active=P.failed=P.waiting=P.visible=false;paint();}
  Object.assign(host,{cdqProgressStartV2293:start,cdqProgressSetV2293:set,cdqProgressDoneV2293:done,cdqProgressFailV2293:fail,cdqProgressStateV2293:P});
- const api={start,set,done,fail,announce,matches,completeScope,reset,state:P};host.cdqActivityStatusV2745=api;return api;
+ const api={start,set,done,fail,announce,detail,matches,completeScope,reset,state:P};host.cdqActivityStatusV2745=api;return api;
 }
 
  (()=>{
@@ -26674,7 +26690,11 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
 
 <!-- CDQ - Menu Tâches en attente v20261112 : injection autonome dans Selector -->
 <style id="cdqSendPendingStyleV20261112">
-#cdqSendPendingOpenV20261112{display:inline-flex;align-items:center;justify-content:center;padding:9px 15px;min-height:42px;margin:10px 0;border:1px solid #448fba;border-radius:10px;background:#142a3b;color:#eff8ff;font:700 14px system-ui;cursor:pointer}
+#cdqClientActionsV2640 > .cdq-pending-client-row-v2892{grid-column:1/-1;flex:1 0 100%;min-width:0}
+#cdqClientActionsV2640 > .cdq-pending-client-row-v2892[hidden]{display:none!important}
+#cdqClientActionsV2640 .cdq-pending-client-row-v2892 > #cdqSendPendingOpenV20261112{display:flex;width:100%;box-sizing:border-box;position:static;min-height:42px}
+
+#cdqSendPendingOpenV20261112{display:inline-flex;align-items:center;justify-content:center;padding:9px 15px;min-height:42px;margin:0;border:1px solid #448fba;border-radius:10px;background:#142a3b;color:#eff8ff;font:700 14px system-ui;cursor:pointer}
 #cdqSendPendingOverlayV20261112{position:fixed;inset:0;z-index:2147482800;background:rgba(0,0,0,.83);display:flex;align-items:center;justify-content:center;padding:12px;box-sizing:border-box}
 #cdqSendPendingOverlayV20261112 .cdq-pending-card{width:min(640px,100%);max-height:94dvh;display:flex;flex-direction:column;overflow:hidden;color:#f6f8fd;background:#101216;border:1px solid #536074;border-radius:20px;box-shadow:0 20px 70px rgba(0,0,0,.8);font:14px/1.5 system-ui}
 #cdqSendPendingOverlayV20261112 .cdq-pending-title{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border-bottom:1px solid #36404d;font-size:18px;font-weight:800}
@@ -26723,25 +26743,123 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
     return epoch?new Date(epoch).toLocaleString('fr-CA',{dateStyle:'medium',timeStyle:'short'}):'Date inconnue';
   }
   function stateName(v){return labels[v]||v||'État inconnu';}
-  let busy=false,clientId='';
+  let busy=false,clientId='',presenceKey='',presenceTimer=null,presenceFailures=0,presenceFlight=null;
+  const listed=new Map(),reads=new Map();
+  const normalized=value=>String(value||'').trim().toLowerCase();
+  const terminal=task=>['annule','clos_apres_verification','termine','complete','cancelled','closed','cancelled_before_send','closed_unconfirmed'].includes(String(task?.status||''))||task?.status==='envoye_confirme'&&task.phase==='complete';
+  const contextKey=context=>normalized(context.owner)+'|'+context.clientId;
+  const discoveryKey=context=>JSON.stringify([contextKey(context),context.role,context.token,context.appSession]);
+  function guardOwner(context){
+    if(!context?.owner||normalized(context.owner)!==normalized(utilisateurCourantEmail)||cdqAccessState!=='ready'||!['admin','technicien'].includes(utilisateurCourantRole)||context.role!==String(utilisateurCourantRole)||context.token!==String(typeof cdqSessionRpcV58!=='undefined'&&cdqSessionRpcV58||'')||context.appSession!==String(window.cdqAppSessionV2661?.id||''))throw Error('Le compte a changé.');
+  }
+  function rememberTasks(k,tasks){listed.delete(k);listed.set(k,tasks);while(listed.size>100)listed.delete(listed.keys().next().value);}
+  function localTasks(){
+    const background=window.cdqDriveBackgroundV2746,state=background?.status?.();
+    if(!state?.authorized||normalized(state.owner)!==normalized(utilisateurCourantEmail))return [];
+    const items=[],labels={'balance-list':'Liste de balance','deletion':'Suppressions demandées','copies':'Copies demandées','outbox':'Sauvegardes demandées'};
+    for(const [scope,label]of Object.entries(labels)){const count=Number(background.pendingFor?.(scope)||0);if(count>0)items.push({scope,count,text:label+' — '+count+' traitement(s) en attente.'});}
+    if(state.nativeQueuedCount>0){const detail={authorization:'Connexion Drive à reprendre.',conflict:'La version Drive a changé; une vérification est nécessaire.',denied:'Drive a refusé cet envoi.',network:'Drive est momentanément indisponible.',interrupted:'Reprise automatique à la prochaine ouverture.',local_read:'La file locale doit être vérifiée.'};items.push({scope:'native',count:state.nativeQueuedCount,text:state.nativeQueuedCount+' sauvegarde(s) PDF en attente sur cet appareil. '+(detail[state.nativeError]||(state.nativeActiveCount?'Envoi Drive en cours.':'Confirmation Drive en attente.'))});}
+    return items;
+  }
+  function renderLocalTasks(){
+    const body=document.querySelector('#'+overlayId+' .cdq-pending-tasks');if(!body)return;
+    const items=localTasks();let section=body.querySelector('[data-local-pending-v2892]');
+    if(!items.length){section?.remove();return;}
+    body.querySelector('[data-pending-empty-v2892]')?.remove();
+    const stamp=JSON.stringify(items);if(section?.dataset.localPendingV2892===stamp)return;
+    if(!section){section=document.createElement('div');section.className='cdq-pending-task';body.prepend(section);}section.dataset.localPendingV2892=stamp;section.replaceChildren();
+    const title=document.createElement('strong');title.textContent='Opérations déjà demandées sur cet appareil';section.append(title);
+    for(const item of items){const line=document.createElement('div');line.className='cdq-pending-meta';line.textContent=item.text;section.append(line);}
+  }
+  function pendingCount(){
+    let context;try{context=current();}catch(_){return 0;}
+    const tasks=listed.get(contextKey(context))||[],closed=new Set(tasks.filter(terminal).map(task=>task.jobId)),ids=new Set(tasks.filter(task=>!terminal(task)).map(task=>task.jobId));
+    for(const job of window.cdqSendBackgroundV2874?.entries?.(context.clientId)||[])if(!closed.has(job.id))ids.add(job.id);
+    return ids.size;
+  }
+  function refreshPresence(){
+    const row=document.getElementById('cdqSendPendingRowV2892'),trigger=document.getElementById(buttonId);if(!row||!trigger)return;
+    const count=pendingCount(),local=localTasks(),hidden=count===0&&!local.length,label='Tâches en attente'+(count&&!local.length?' ('+count+')':'');
+    if(row.hidden!==hidden)row.hidden=hidden;if(trigger.textContent!==label)trigger.textContent=label;
+    renderLocalTasks();
+  }
+  function observe(result,owner){
+    if(normalized(owner)!==normalized(utilisateurCourantEmail)||cdqAccessState!=='ready'||!result?.clientId||!result.jobId)return;
+    const k=normalized(owner)+'|'+result.clientId,tasks=[...(listed.get(k)||[])],i=tasks.findIndex(task=>task.jobId===result.jobId);
+    const cancelled=['cancelled','closed'].includes(result.status)||['CANCELLED_BEFORE_EMAIL_V20261112','CANCEL_REQUESTED_BEFORE_EMAIL_V20261117','MAIL_UNCONFIRMED_MANUALLY_CLOSED_V20261112'].includes(result.error)||['cancelled_before_send','closed_unconfirmed'].includes(result.review);
+    const done=window.cdqDeliveryActionsV2866.complete(result)||result.status==='none'||result.error==='NOT_FOUND'||cancelled;
+    if(done){if(i>=0)tasks.splice(i,1);}
+    else if(i<0||!terminal(tasks[i])){
+      const task={...(i>=0?tasks[i]:{}),jobId:result.jobId,clientId:result.clientId,owner:normalized(owner),count:result.total,phase:result.phase,status:result.status==='blocked'?'bloque':'en_cours'};
+      if(i>=0)tasks[i]=task;else tasks.push(task);
+    }
+    rememberTasks(k,tasks);refreshPresence();
+  }
+  function reconcile(tasks,context){
+    const watcher=window.cdqSendBackgroundV2874;if(!watcher)return;
+    for(const task of tasks){
+      if(!task?.jobId||task.clientId!==context.clientId||normalized(task.owner)!==normalized(context.owner))continue;
+      if(terminal(task)){watcher.forget?.(task.jobId,task.clientId,context.owner);continue;}
+      // The server owns execution. Reattach only its existing runtime jobs;
+      // an uncertain email, cancellation or old historical job is never resumed.
+      if(task.protocol===20261103&&['en_cours','envoye_confirme'].includes(task.status))
+        watcher.watch({jobId:task.jobId,clientId:task.clientId},context);
+      else if(['bloque','a_verifier'].includes(task.status))watcher.forget?.(task.jobId,task.clientId,context.owner);
+    }
+    void watcher.flush();
+  }
+  async function fetchTasks(context){
+    const k=contextKey(context),requestKey=discoveryKey(context);if(reads.has(requestKey))return reads.get(requestKey);
+    const finish=window.cdqDriveBackgroundV2746?.begin?.('pending-send-discovery:'+context.clientId,context.owner)||(()=>{});
+    const pending=rpc('cdqEnvoisEnAttenteV20261112',[context.clientId]).then(result=>{
+      guardOwner(context);
+      if(!result?.ok||result.clientId!==context.clientId||!Array.isArray(result.tasks)||result.tasks.some(task=>!task?.jobId||task.clientId!==context.clientId))throw Error('Liste des tâches non confirmée par le serveur.');
+      const tasks=result.tasks.filter(task=>normalized(task.owner)===normalized(context.owner)||context.role==='admin');
+      rememberTasks(k,tasks);reconcile(tasks,context);refreshPresence();return {...result,tasks};
+    }).finally(()=>{reads.delete(requestKey);finish();});
+    reads.set(requestKey,pending);return pending;
+  }
+  function clearPresenceRetry(){if(presenceTimer!==null)clearTimeout(presenceTimer);presenceTimer=null;}
+  function syncPresence(force=false){
+    let context;try{context=current();}catch(_){presenceKey='';clearPresenceRetry();presenceFailures=0;refreshPresence();return;}
+    const k=discoveryKey(context);refreshPresence();if(presenceFlight?.key===k||!force&&k===presenceKey)return;
+    if(k!==presenceKey){clearPresenceRetry();presenceFailures=0;}presenceKey=k;
+    const attempt={key:k};presenceFlight=attempt;
+    void fetchTasks(context).then(()=>{if(presenceKey===k){clearPresenceRetry();presenceFailures=0;}}).catch(error=>{
+      refreshPresence();let latest;try{latest=current();}catch(_){return;}
+      if(presenceKey!==k||discoveryKey(latest)!==k)return;
+      const detail=String(error?.code||'')+' '+String(error?.message||error),status=Number(error?.status);
+      const transient=status===429||status>=500&&status<=599||/network|failed to fetch|fetch failed|timeout|timed out|temporair|indisponib|too many requests|(?:^|[^0-9])(?:429|5[0-9]{2})(?:[^0-9]|$)/i.test(detail);
+      if(!transient)return;
+      clearPresenceRetry();const delay=Math.min(120000,15000*2**Math.min(3,presenceFailures++));
+      presenceTimer=setTimeout(()=>{presenceTimer=null;let active;try{active=current();}catch(_){return;}if(discoveryKey(active)===k)syncPresence(true);},delay);
+    }).finally(()=>{if(presenceFlight===attempt)presenceFlight=null;});
+  }
+
   async function load(){
     if(busy)return;busy=true;note('Vérification des tâches enregistrées…');
     try{
-      const result=await rpc('cdqEnvoisEnAttenteV20261112',[clientId]);
+      const context=current();if(context.clientId!==clientId)throw Error('Le client a changé. Rouvrez les tâches.');
+      const result=await fetchTasks(context);
+      cdqSendGuardV2750(context);
       if(!result?.ok||result.clientId!==clientId||!Array.isArray(result.tasks))
         throw Error('Liste des tâches non confirmée par le serveur.');
       const body=document.querySelector('#'+overlayId+' .cdq-pending-tasks');
       if(!body)return;body.replaceChildren();
-      if(!result.tasks.length){const p=document.createElement('p');p.textContent='Aucune tâche enregistrée pour ce client.';body.append(p);}
+      renderLocalTasks();
+      if(!result.tasks.length&&!localTasks().length){const p=document.createElement('p');p.dataset.pendingEmptyV2892='';p.textContent='Aucune tâche enregistrée pour ce client.';body.append(p);}
       for(const task of result.tasks){
         if(!task?.jobId||task.clientId!==clientId)continue;
         const item=document.createElement('div');item.className='cdq-pending-task';
         const name=document.createElement('strong');name.textContent=stateName(task.status);
         const meta=document.createElement('div');meta.className='cdq-pending-meta';
-        meta.textContent=dateOf(task.createdAt)+' · '+(task.count||0)+' document(s) · '+(task.recipient||'Destinataire inconnu')+
+        meta.textContent=dateOf(task.createdAt)+' · '+(task.count||0)+' document(s) · Destinataire : '+(task.recipient||'non identifiable')+
           ' · '+(task.protocol===20261103?'Nouvelle tâche':'Tâche historique');
         const acts=document.createElement('div');acts.className='cdq-pending-actions';
-        if(task.status==='a_verifier'||task.status==='bloque'||task.status==='en_cours'){
+        if(!terminal(task)&&normalized(task.owner)===normalized(context.owner)){
+          acts.append(button('Voir la progression',async()=>{try{await window.cdqOpenPendingSendTrackingV2892(task);close();}catch(error){note(String(error?.message||error));}},'refresh'));
+        }
+        if(task.status==='a_verifier'||task.status==='bloque'){
           acts.append(button('Vérifier',()=>manage(task,'verifier'),'refresh'));
         }
         if(task.canResume)acts.append(button('Reprendre',()=>manage(task,'reprendre')));
@@ -26783,10 +26901,11 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
     let outcome='';
     try{
       const x=await rpc('cdqGererEnvoiEnAttenteV20261112',[clientId,task.jobId,action,confirmation]);
-      if(!x?.ok)throw Error(x?.message||x?.state||'Le serveur a refusé cette action.');
+      if(!x?.ok||x.jobId!==task.jobId)throw Error(x?.message||x?.state||'Le serveur a refusé cette action.');
       outcome=x.message||(action==='clore_apres_verification'?'Tâche clôturée après votre vérification. Un nouvel envoi devra être lancé manuellement.':
            action==='verifier'?(x.evidenceFound?'Une preuve Gmail exacte a été confirmée. Aucun nouvel email envoyé.':'Aucun reçu Gmail confirmé. La tâche demeure à vérifier.'):
-           action==='annuler'?'Préparation annulée sans email.':'Reprise demandée. Cette tâche peut ensuite poursuivre automatiquement son traitement.');
+           action==='annuler'?'Préparation annulée sans email.':'Reprise demandée. Cette tâche continue automatiquement en arrière-plan.');
+      if(action==='reprendre'){try{await window.cdqOpenPendingSendTrackingV2892(task);close();}catch(error){outcome+=' '+String(error?.message||error);}}
     }catch(e){outcome='Action refusée : '+String(e?.message||e);}
     finally{busy=false;await load();note(outcome);}
   }
@@ -26796,6 +26915,7 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
   function open(){
     if(document.getElementById(overlayId))return;
     try{clientId=current().clientId;}catch(e){window.alert(String(e.message||e));return;}
+    if(!window.cdqDurableResumeV2751?.headless)try{window.BalanceCDQNative?.requestTaskNotificationsV2892?.();}catch(_){}
     const overlay=document.createElement('div');overlay.id=overlayId;overlay.setAttribute('role','dialog');
     overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Tâches en attente');
     const card=document.createElement('div');card.className='cdq-pending-card';
@@ -26803,7 +26923,7 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
     header.append(button('Fermer',close,'close'));
     const scroll=document.createElement('div');scroll.className='cdq-pending-scroll';
     const intro=document.createElement('div');intro.className='cdq-pending-intro';
-    intro.textContent='Consultez les envois du client. Une tentative d’email sans reçu ne sera jamais renvoyée automatiquement.';
+    intro.textContent='Les tâches déjà demandées se poursuivent automatiquement en arrière-plan. Une tentative d’email sans reçu reste à vérifier.';
     const message=document.createElement('div');message.className='cdq-pending-message';
     const actions=document.createElement('div');actions.className='cdq-pending-actions';
     actions.append(button('Actualiser',load,'refresh'),button('Effacer l’historique terminé',clearHistory,'caution'));
@@ -26814,20 +26934,20 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
     void load();
   }
   function attach(){
-    const send=document.getElementById('sendButton');
-    if(!send||document.getElementById(buttonId))return;
-    const trigger=button('Tâches en attente',open,'refresh');trigger.id=buttonId;
-    const modal=send.closest('.modal')||send.parentElement;
-    const textbox=modal?.querySelector('textarea');
-    if(textbox)textbox.insertAdjacentElement('afterend',trigger);
-    else send.parentElement?.insertBefore(trigger,send);
+    const actions=document.getElementById('cdqClientActionsV2640');if(!actions)return;
+    let row=document.getElementById('cdqSendPendingRowV2892');if(!row){row=document.createElement('div');row.id='cdqSendPendingRowV2892';row.className='cdq-pending-client-row-v2892';row.hidden=true;actions.append(row);}else if(row.parentElement!==actions)actions.append(row);
+    let trigger=document.getElementById(buttonId);if(!trigger){trigger=button('Tâches en attente',open,'refresh');trigger.id=buttonId;}if(trigger.parentElement!==row)row.append(trigger);
+    syncPresence();
   }
-  window.cdqPendingTasksV20261112={open,refresh:load};
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',attach,{once:true});
-  else attach();
+  window.cdqPendingTasksV20261112={open,refresh:load,refreshPresence,observe};
+  window.addEventListener('online',()=>syncPresence(true));
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncPresence(true);});
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',attach,{once:true});else attach();
   window.addEventListener('cdq:client-content-ready-v2745',attach);
   window.addEventListener('cdq:access-ready',attach);
-  const observer=new MutationObserver(()=>{if(!document.getElementById(buttonId))attach();});
+  window.addEventListener('cdq:access-state-v2527',attach);
+  window.addEventListener('cdq:drive-cleared-v2632',attach);
+  const observer=new MutationObserver(()=>{const actions=document.getElementById('cdqClientActionsV2640'),row=document.getElementById('cdqSendPendingRowV2892');if(actions&&(!row||row.parentElement!==actions))attach();else syncPresence();});
   observer.observe(document.documentElement,{childList:true,subtree:true});
 })();
 </script>

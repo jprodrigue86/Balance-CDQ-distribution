@@ -107,7 +107,7 @@ async function refreshEngineListV2754(id,{repair=false,hydrate=false,deferReady=
    const latest=await api.call('list',{clientId:String(id)});
    // A busy publisher keeps its error code while pending/running. Validate
    // that non-conflicting wait as before, but retain the original authority.
-   const busyPendingV2891=lockBusyV2891&&latest?.pdf?.errorCode==='PUBLICATION_BUSY'&&['pending','running'].includes(latest.pdf.status);
+   const busyPendingV2891=latest?.pdf?.errorCode==='PUBLICATION_BUSY'&&['pending','running'].includes(latest.pdf.status);
    const readableV2891=busyPendingV2891?{...latest,pdf:{...latest.pdf,errorCode:''}}:latest;
    if(recoverableListReadV2878(readableV2891,id))return latest;
   }
@@ -425,7 +425,17 @@ export function sourceFingerprint(tree,confirmed=null){
 const receiptPrefix=()=> 'cdqBalanceListV2703:';
 function remembered(id){const k=key(id);if(receipts.has(k))return receipts.get(k);try{const r=JSON.parse(localStorage.getItem(receiptPrefix()+k)||'null');if(r){receipts.set(k,r);return r;}}catch{}return null;}
 function remember(id,fingerprint,absent=false){const r={fingerprint,requestedAt:Date.now(),...(absent?{absent:true}:{})};receipts.set(key(id),r);try{localStorage.setItem(receiptPrefix()+key(id),JSON.stringify(r));}catch{}}
-function paint(id,text,error=false){if(id!==client())return;const localError=journalErrorsV20261028.get(key(id));if(localError){text=(text?text+' — ':'')+localError;error=true;}const p=document.getElementById('cdqClientActionsV2640');if(!p||p.hidden)return;let el=p.querySelector('[data-balance-list-status]');text=text.replace(/^Liste à jour · \d+ balance\(s\)(?: · | — )?/,'');if(!text&&!error){el?.remove();return;}if(!el){el=document.createElement('p');el.dataset.balanceListStatus='';el.className='cdq-workspace-status';el.setAttribute('role','status');p.append(el);}if(el.textContent!==text)el.textContent=text;el.classList.toggle('cdq-workspace-error',error);}
+let listNoticeV2892=null;
+function paint(id,text,error=false){
+ if(id!==client())return;const localError=journalErrorsV20261028.get(key(id));if(localError){text=(text?text+' — ':'')+localError;error=true;}
+ const actions=document.getElementById('cdqClientActionsV2640');actions?.querySelector('[data-balance-list-status]')?.remove();if(!actions||actions.hidden)return;
+ text=String(text||'').replace(/^Liste à jour · \d+ balance\(s\)(?: · | — )?/,'');
+ const activity=window.cdqActivityStatusV2745,previous=listNoticeV2892;
+ if(!text&&!error){if(previous&&activity?.state.seq===previous.seq&&activity.state.label===previous.label)activity.reset();listNoticeV2892=null;return;}
+ const label=/^Liste de balance(?:\s|$)/.test(text)?text:'Liste de balance — '+text;
+ const seq=activity?.detail?.(label,{scope:key(id),error});listNoticeV2892={clientId:id,text,error,label,seq};
+ const entry=cdqListProgressV2778.get(key(id));if(entry&&seq)entry.seq=seq;
+}
 function ready(id,r,notify=false){if(r?.status==='ready'&&r.fileId&&r.updatedAt)cdqListProgressStepV2778(id,100,'Confirmée','ready');const folderId=listFolder(id)?.id||r.listFolderId||r.folderId||id;states.set(key(id),{...r,clientId:String(id),folderId});projection.confirmed(id,r.rows,r.sourceIndexV2751);if(r.sourceIndexV2751?.exhaustive)warmIndexes.add(key(id));persistClient(id);queuePreview(id);if(r.fileId&&r.updatedAt)window.cdqInstantFiles2530?.confirm?.({id:r.fileId,nom:'Liste de balance.pdf',type:'PDF',dateModification:r.updatedAt},id,folderId);if(notify)paint(id,'Liste à jour · '+(r.count||0)+' balance(s)'+(r.warnings?.length?' · '+r.warnings.length+' fichier(s) à vérifier':''));if(r.sourceIndexV2751?.exhaustive)importEngineIndexV2754(id,states.get(key(id))).catch(()=>{});}
 async function call(name,id,...args){const account=calibrationIdentity().email,version=epoch;if(!canRead())throw Error('Accès Drive requis.');if(/^(?:enregistrerPdfLecteur|cdqSaveBalanceListV2751|cdqActualiserListeBalance|cdqAssurerDossierListeBalance|deplacerElementCDQ|creerDossierDansCompagnie)/.test(name)&&!queueOwner())throw Error('La synchronisation a changé de contexte.');const read=/^(?:obtenirContenuDossierParesseux|obtenirMetaFichier|obtenirSnapshotGoogleSheetHorsLigne|cdqLireConformiteRapportV2775|cdqEtatListeBalanceV2638)$/.test(name),send=()=>calibrationRpc(name,id,...args);const readClient=/^(?:obtenirContenuDossierParesseux|obtenirSnapshotGoogleSheetHorsLigne|cdqLireConformiteRapportV2775)$/.test(name)?String(args[0]||''):String(id),priority=visibleListReadV2872(readClient)?'list':'background';const r=await(read&&window.cdqRpcBudgetV2751?window.cdqRpcBudgetV2751.withPriority(priority,send):send());if(version!==epoch||account!==calibrationIdentity().email||!canRead())throw Error('Le compte a changé.');return r;}
 function queueOwner(){let native=window.BalanceCDQBackgroundV2746;try{if(window.cdqDriveBackgroundV2746?.isQueueOwner)return window.cdqDriveBackgroundV2746.isQueueOwner(calibrationIdentity().email)!==false;if(!native)try{native=window.parent.BalanceCDQBackgroundV2746;}catch{}return native?.isQueueOwner?.(calibrationIdentity().email)!==false;}catch{return false;}}
@@ -457,14 +467,14 @@ async function open(){
  const id=client();if(!id||!canRead())return;
  const version=epoch,account=calibrationIdentity().email,notice=++listOpenNoticeV2891,label='Ouverture de la liste…';
  const current=()=>notice===listOpenNoticeV2891&&version===epoch&&account===calibrationIdentity().email&&id===client()&&canRead();
- const previous=document.getElementById('cdqClientActionsV2640')?.querySelector('[data-balance-list-status]');
- const previousError=previous?.classList.contains('cdq-workspace-error')?previous.textContent:'';
+ const previous=listNoticeV2892?.clientId===id?listNoticeV2892:null;
+ const previousError=previous?.error?previous.text:'';
  let result;paint(id,label);
  try{result=await openImplV2891();return result;}
  catch(error){if(current())paint(id,'Liste de balance — '+String(error?.message||error),true);}
  finally{
-  const status=current()?document.getElementById('cdqClientActionsV2640')?.querySelector('[data-balance-list-status]'):null;
-  if(status?.textContent===label)paint(id,result?.status==='retry-manually'?'Aucun PDF de liste n’a encore été confirmé.'+(previousError?' '+previousError:' La création est interrompue.'): '',result?.status==='retry-manually');
+  const status=current()&&listNoticeV2892?.clientId===id?listNoticeV2892:null;
+  if(status?.text===label)paint(id,result?.status==='retry-manually'?'Aucun PDF de liste n’a encore été confirmé.'+(previousError?' '+previousError:' La création est interrompue.'): '',result?.status==='retry-manually');
  }
 }
 async function openImplV2891(){
@@ -633,7 +643,7 @@ function menu(){
   for(const [label,action,write] of [['Ouvrir la liste',open,false],['Actualiser la liste',()=>refresh(true),true]]){const b=document.createElement('button');b.type='button';b.textContent=label;b.disabled=write&&!canWrite();b.onclick=()=>{closeMenu();if(id===client())Promise.resolve(action()).catch(e=>paint(id,e.message,true));};p.append(b);}
   actions.append(p);actions.querySelector('[data-client-list]')?.setAttribute('aria-expanded','true');
 }
-function reset(){epoch++;refreshFlightsV2792.clear();engineReconcileFlightsV2792.clear();owner=calibrationIdentity().email;visibleClient='';cdqListProgressV2778.clear();journalErrorsV20261028.clear();receipts.clear();states.clear();jobs.clear();failed.clear();saveWaits.clear();changes.clear();satisfied.clear();hydrated.clear();reviews.clear();reviewReceipts.clear();pausedClients.clear();projection.reset();previews.clear();previewJobs.clear();waitChecks.clear();warmIndexes.clear();engineListsV2754.clear();engineImportsV2754.clear();engineListFlightsV2754.clear();enginePendingRowsV2754.clear();engineDataAcksV2754.clear();engineRetiredRequestsV2754.clear();pcScan=null;for(const t of clientTimers.values())clearTimeout(t);clientTimers.clear();clientTimerDeadlinesV2770.clear();clearTimeout(timer);clearTimeout(scanTimer);timer=scanTimer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();paintRows();publishBackground();}
+function reset(){epoch++;refreshFlightsV2792.clear();engineReconcileFlightsV2792.clear();owner=calibrationIdentity().email;visibleClient='';listNoticeV2892=null;cdqListProgressV2778.clear();journalErrorsV20261028.clear();receipts.clear();states.clear();jobs.clear();failed.clear();saveWaits.clear();changes.clear();satisfied.clear();hydrated.clear();reviews.clear();reviewReceipts.clear();pausedClients.clear();projection.reset();previews.clear();previewJobs.clear();waitChecks.clear();warmIndexes.clear();engineListsV2754.clear();engineImportsV2754.clear();engineListFlightsV2754.clear();enginePendingRowsV2754.clear();engineDataAcksV2754.clear();engineRetiredRequestsV2754.clear();pcScan=null;for(const t of clientTimers.values())clearTimeout(t);clientTimers.clear();clientTimerDeadlinesV2770.clear();clearTimeout(timer);clearTimeout(scanTimer);timer=scanTimer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();paintRows();publishBackground();}
 function sources(tree){const files=[],seen=new Set(),take=(node,pdf)=>{for(const f of node.fichiers||[]){const id=String(f.id||'');if(id&&!seen.has(id)&&!excluded(f.nom||f.name)&&!f._cdqPendingSaveV2660&&(['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].includes(f.mimeType||f.type)||pdf&&['PDF','application/pdf'].includes(f.mimeType||f.type))){seen.add(id);files.push(f);}}};take(tree,true);for(const d of tree.dossiers||[])if(/^rapports? (?:d ?)?etalonnages?$/.test(norm(d.nom||d.name)))take(d,true);return files;}
 function listOwnsSourceScanV2810(id){
  const k=key(id);return clientTimers.has(k)||refreshFlightsV2792.has(k)||jobs.has(k)||engineReconcileFlightsV2792.has(k)||engineImportsV2754.has(k)||engineListFlightsV2754.has(k)||failed.has(k);
@@ -663,7 +673,7 @@ function verifiedListFreshV2884(id,force=false,verify=false){
 }
 function inspect(){
   if(owner!==calibrationIdentity().email)reset();
-  const id=client(),entered=id!==visibleClient;if(entered){visibleClient=id;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();}
+  const id=client(),entered=id!==visibleClient;if(entered){visibleClient=id;closeMenu();if(listNoticeV2892&&window.cdqActivityStatusV2745?.state.seq===listNoticeV2892.seq)window.cdqActivityStatusV2745.reset();listNoticeV2892=null;document.querySelector('[data-balance-list-status]')?.remove();}
   paintRows();if(!canWrite()||document.hidden)return;
   const tree=root(id);if(!id||!tree)return;
   if(waiting(id))reconcileWaits(id);

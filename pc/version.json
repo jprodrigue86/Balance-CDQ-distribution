@@ -1,14 +1,14 @@
 {
-  "androidSourceBuild": "2026.11.17-v28.91-runtime",
-  "build": "2026.11.17-v28.91-runtime-pc",
+  "androidSourceBuild": "2026.11.17-v28.92-runtime",
+  "build": "2026.11.17-v28.92-runtime-pc",
   "desktopModel": 3,
   "files": 1129,
-  "generatedFrom": "patches/text-list-2891-20261117/tools/prepare-text-list-2891.py",
+  "generatedFrom": "patches/send-list-2892-20261117/tools/prepare-send-list-2892.py",
   "platform": "pc-pwa",
-  "release": "54165dc62783880a3b9cfb24a6e44135839d4d8930c9edae9694b3a1f1a8cccf",
-  "version": "28.91",
+  "release": "65e3d9d492ebcf14146e4a8aa18d75a3061c0429a77b48cfbf2dbc2af2c7acb5",
+  "version": "28.92",
   "webBaseCommit": "de1e05294f308cd67502ccc4093422501af56e22",
   "candidateOnly": true,
-  "sourceCommit": "a188c53e40b1e527319dfd9afc56d29dbcd2876c",
+  "sourceCommit": "b9d7f9defe9aefa7cb385aed8677918e32b459ff",
   "pdfQualification": "pending-native"
 }
