@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="28.96" data-cdq-pc-release="1b41f6e9c14b1402970b0b894cc6ac47973a622d27d18917e5c06b199ad969ed">
+<html data-cdq-pc-version="28.98" data-cdq-pc-release="9faf595813bd6225ce1013cf4e5477ac08d325704e738a4df20cf6fc9adcacd0">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -938,7 +938,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
 <script src="./send-progress-v2893.js"></script>
-<meta name="cdq-package-build" content="2026.11.17-v28.96-runtime-pc">
+<meta name="cdq-package-build" content="2026.11.17-v28.98-runtime-pc">
 
 
 <script id="cdqBridgeV23">
@@ -992,7 +992,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.17-v28.96-runtime-pc'
+    build:'2026.11.17-v28.98-runtime-pc'
   });
 }
 
@@ -1005,7 +1005,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.17-v28.96-runtime-pc'
+        build:'2026.11.17-v28.98-runtime-pc'
       });
     }
   } catch(e) {}
@@ -8267,7 +8267,7 @@ window.addEventListener("message",function(e){
 
 const cdqSession24 = (() => {
   const key='cdqResumeSessionV2524', grace=18*60*60*1000;
-  let touched=0, restoring=false;
+  let touched=0;
   const mobile=()=>/Android|iPhone|iPad|BalanceCDQAndroid\//i.test(navigator.userAgent||'');
   function clear(){try{localStorage.removeItem(key);}catch(_){}}
   function remember(){
@@ -8275,25 +8275,12 @@ const cdqSession24 = (() => {
     touched=Date.now();
     try{localStorage.setItem(key,JSON.stringify({token:cdqSessionRpcV58,email:utilisateurCourantEmail,sessionId:window.cdqAppSessionV2661?.id||'',serverExpiresAtV2686:Number(window.cdqSessionExpiryV2686)||0,until:Number(window.cdqSessionExpiryV2686)||touched+grace}));}catch(_){}
   }
-  function resume(fallback){
-    if(!mobile()||restoring)return false;
-    let saved;try{saved=JSON.parse(localStorage.getItem(key)||'null');}catch(_){}
-    if(!saved?.token||saved.until<=Date.now()||!cdqObtenirJetonAppareil()){clear();return false;}
-    restoring=true;cdqSetAccessState('pending');
-    cdqApiRun().withSuccessHandler(state=>{
-      restoring=false;
-      if(state?.autorise&&state.email===saved.email)appliquerAccesAutorise(state);
-      else{clear();fallback();}
-    }).withFailureHandler(()=>{restoring=false;clear();fallback();})
-      .reprendreSessionCourteCDQV2524(saved.token,cdqObtenirJetonAppareil());
-    return true;
-  }
   window.addEventListener('cdq:access-ready',remember);
   for(const event of ['pointerdown','keydown'])document.addEventListener(event,()=>{if(Date.now()-touched>60000)remember();},{passive:true});
   
   document.addEventListener('visibilitychange',()=>{if(document.hidden)remember();});
   window.cdqSessionResumeV2686={remember};
-  return {resume,clear,remember};
+  return {clear,remember};
 })();
 
 let cdqDirectAttemptV2645=0;
@@ -12335,7 +12322,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.17-v28.96-runtime-pc";
+  const CDQ_BUILD = "2026.11.17-v28.98-runtime-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13245,7 +13232,44 @@ function cdqInstallSwipeGesture(row){
       return result;
     }).finally(()=>clearTimeout(timeout));
   }
-  window.cdqSendWatchTransportV2874={read:job=>cdqReadTrackingV2828(job.session,{jobId:job.id,clientId:job.clientId}),foreground:()=>cdqQueuedSendV2828&&!cdqQueuedSendV2828.blocked&&(!cdqQueuedSendV2828.background||cdqQueuedSendV2828.reading)?cdqQueuedSendV2828.context.clientId+'|'+cdqQueuedSendV2828.id:'',backgroundResult:(job,result)=>{const tracked=cdqQueuedSendV2828;if(!tracked?.background||tracked.id!==job.id||tracked.context.clientId!==job.clientId||tracked.context.clientId!==String(compagnieSelectionnee||''))return false;try{cdqTrackingApplyV2828(tracked,result,true);return true;}catch(_){cdqTrackingDisposeV2828(tracked);cdqStopProgress(false);return false;}}};
+  function cdqTrackingDelayV2898(failures=0){return failures>0?Math.min(120000,15000*2**Math.min(3,failures-1)):5000;}
+  // Android pause transfers only observation, never execution or a send command.
+  function cdqTrackingPauseV2898(){
+    const job=cdqQueuedSendV2828;if(!job||job.blocked)return false;
+    if(job.background){if(job.nativeReturnV2898){job.nativeReturnV2898=false;return true;}return false;}
+    job.nativeBackgroundV2898=true;job.background=true;
+    if(job.timer)clearTimeout(job.timer);job.timer=null;
+    if(!job.reading)void window.cdqSendBackgroundV2874?.flush();
+    return true;
+  }
+  function cdqTrackingResumeV2898(){
+    const job=cdqQueuedSendV2828;if(!job?.nativeBackgroundV2898||job.blocked)return false;
+    const modal=document.getElementById('cdqProgressModal');if(modal)modal.style.display='flex';
+    // A background request already in flight keeps ownership until its reply.
+    // On error the same observer keeps its existing retry/backoff, not a new poll.
+    if(window.cdqSendBackgroundV2874?.isReading(job.id,job.context.clientId)){
+      job.nativeReturnV2898=true;return true;
+    }
+    job.nativeReturnV2898=false;job.nativeBackgroundV2898=false;job.background=false;
+    if(!job.reading)void cdqTrackingPollV2828(job);
+    return true;
+  }
+  function cdqTrackingBackgroundResultV2898(job,result){
+    const tracked=cdqQueuedSendV2828;
+    if(!tracked?.background||tracked.reading||tracked.id!==job.id||tracked.context.clientId!==job.clientId||tracked.context.clientId!==String(compagnieSelectionnee||''))return false;
+    try{
+      if(tracked.nativeReturnV2898){tracked.nativeReturnV2898=false;tracked.nativeBackgroundV2898=false;tracked.background=false;}
+      cdqTrackingApplyV2828(tracked,result,true);
+      if(cdqQueuedSendV2828===tracked&&!tracked.background&&!tracked.blocked&&!tracked.reading)
+        tracked.timer=setTimeout(()=>cdqTrackingPollV2828(tracked),cdqTrackingDelayV2898());
+      return true;
+    }catch(_){cdqTrackingDisposeV2828(tracked);cdqStopProgress(false);return false;}
+  }
+  window.cdqSendWatchTransportV2874={
+    read:job=>cdqReadTrackingV2828(job.session,{jobId:job.id,clientId:job.clientId}),
+    foreground:()=>cdqQueuedSendV2828&&!cdqQueuedSendV2828.blocked&&(!cdqQueuedSendV2828.background||cdqQueuedSendV2828.reading)?cdqQueuedSendV2828.context.clientId+'|'+cdqQueuedSendV2828.id:'',
+    backgroundResult:cdqTrackingBackgroundResultV2898,pauseV2898:cdqTrackingPauseV2898,resumeV2898:cdqTrackingResumeV2898
+  };
   function cdqTrackingControlsV2828(job){
     const modal=cdqEnsureSendProgressV2759();
     let actions=document.getElementById('cdqSendTrackingActionsV2828');
@@ -13253,7 +13277,7 @@ function cdqInstallSwipeGesture(row){
     actions.replaceChildren();
     const close=document.createElement('button');close.type='button';
     close.textContent=job.blocked?'Fermer':'Continuer en arrière-plan';
-    close.onclick=()=>{modal.style.display='none';job.background=true;clearTimeout(job.timer);if(!job.blocked&&!job.reading)void window.cdqSendBackgroundV2874?.flush();afficherMessage(job.blocked?'Traitement arrêté; voir les tâches en attente.':'Envoi en cours — suivi dans les tâches en attente.',false);};actions.appendChild(close);
+    close.onclick=()=>{modal.style.display='none';job.nativeBackgroundV2898=false;job.nativeReturnV2898=false;job.background=true;clearTimeout(job.timer);if(!job.blocked&&!job.reading)void window.cdqSendBackgroundV2874?.flush();afficherMessage(job.blocked?'Traitement arrêté; voir les tâches en attente.':'Envoi en cours — suivi dans les tâches en attente.',false);};actions.appendChild(close);
     if(job.blocked){const refresh=document.createElement('button');refresh.type='button';refresh.textContent='Vérifier l’état';refresh.onclick=()=>{void cdqTrackingPollV2828(job);};actions.appendChild(refresh);}
     if(job.blocked&&job.canDismiss){
       const acknowledge=document.createElement('button');acknowledge.type='button';acknowledge.textContent='Fermer le suivi';
@@ -13316,7 +13340,7 @@ function cdqInstallSwipeGesture(row){
       if(job.background)document.getElementById('cdqProgressModal').style.display='none';
     }finally{
       finish();job.reading=false;
-      if(cdqQueuedSendV2828===job&&!job.blocked){if(job.background)void window.cdqSendBackgroundV2874?.flush();else job.timer=setTimeout(()=>cdqTrackingPollV2828(job),Math.min(120000,15000*2**Math.min(3,Math.max(0,(job.failures||0)-1))));}
+      if(cdqQueuedSendV2828===job&&!job.blocked){if(job.background)void window.cdqSendBackgroundV2874?.flush();else job.timer=setTimeout(()=>cdqTrackingPollV2828(job),cdqTrackingDelayV2898(job.failures||0));}
     }
   }
   function cdqTrackSendV2828(receipt,context,selection){
@@ -14943,7 +14967,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.17-v28.96-runtime-pc";
+const CDQ_V19_BUILD = "2026.11.17-v28.98-runtime-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15872,8 +15896,8 @@ window.addEventListener('online',function(){
 });
 // Observe existing server jobs only. This component cannot enqueue or resend.
 function createSendBackgroundV2874({identity,read,complete,publish,storage,foreground=()=>'',onResult=()=>{},now=Date.now,schedule=setTimeout,cancel=clearTimeout}){
-  let owner='',generation=0,timer=null,flight=null;
-  const jobs=new Map(),prefix='cdqServerSendWatchV2874|',interval=15000;
+  let owner='',generation=0,timer=null,flight=null,readingKey='';
+  const jobs=new Map(),prefix='cdqServerSendWatchV2874|',interval=5000,errorInterval=15000;
   const validText=x=>typeof x==='string'&&x.length>0&&x.length<=200&&!/[\u0000-\u001f]/.test(x);
   const key=j=>j.clientId+'|'+j.id;
   const persist=()=>{if(owner)try{storage.setItem(prefix+owner,JSON.stringify([...jobs.values()].map(({id,clientId,session,started})=>({id,clientId,session,started}))));}catch(_){}};
@@ -15930,6 +15954,7 @@ function createSendBackgroundV2874({identity,read,complete,publish,storage,foreg
         // Native keep-alive ticks may arrive every two seconds. They must not
         // turn the existing status read into a new high-frequency poller.
         if(j.paused||foreground()===key(j)||now()<j.nextReadAt)continue;
+        const readKey=email+'|'+key(j);readingKey=readKey;
         try{
           const result=await read(j);
           if(!account()||stamp!==generation||owner!==email)break;
@@ -15941,15 +15966,15 @@ function createSendBackgroundV2874({identity,read,complete,publish,storage,foreg
           if(jobs.get(key(j))!==j)continue;
           const detail=String(error?.code||'')+' '+String(error?.message||error);
           j.paused=[401,403,404].includes(Number(error?.status))||/\b(?:SEND_JOB_NOT_FOUND|SESSION_INVALID|SESSION_EXPIRED|ACCESS_DENIED|FORBIDDEN)\b/.test(detail);
-          j.failures++;j.nextReadAt=now()+Math.min(120000,interval*2**Math.min(3,j.failures-1));
+          j.failures++;j.nextReadAt=now()+Math.min(120000,errorInterval*2**Math.min(3,j.failures-1));
           emit();
-        }
+        }finally{if(readingKey===readKey)readingKey='';}
       }
     })();
     try{await flight;}finally{flight=null;if(account()){emit();later();}}
   }
   function resume(){if(!account())return;for(const j of jobs.values()){j.nextReadAt=0;j.failures=0;j.paused=false;}emit();void flush();}
-  return {watch,observe,forget,flush,resume,entries(clientId){const current=identity();return current?.authorized&&String(current.owner||'').trim().toLowerCase()===owner?[...jobs.values()].filter(j=>j.clientId===String(clientId)).map(j=>({...j})):[];},reset(){generation++;clearTimer();jobs.clear();const previous=owner;owner='';publish(previous,0);},size(){account();return jobs.size;}};
+  return {watch,observe,forget,flush,resume,isReading(id,clientId){const current=identity();return !!current?.authorized&&String(current.owner||'').trim().toLowerCase()===owner&&readingKey===owner+'|'+clientId+'|'+id;},entries(clientId){const current=identity();return current?.authorized&&String(current.owner||'').trim().toLowerCase()===owner?[...jobs.values()].filter(j=>j.clientId===String(clientId)).map(j=>({...j})):[];},reset(){generation++;clearTimer();jobs.clear();const previous=owner;owner='';publish(previous,0);},size(){account();return jobs.size;}};
 }
 
 function createDriveBackgroundV2746({owner,authorized,native=null,onIdle=()=>{},onNativeStatus=()=>{},flush=()=>{}}){
@@ -15974,10 +15999,11 @@ function createDriveBackgroundV2746({owner,authorized,native=null,onIdle=()=>{},
  }
  function publish(){
   const state=status(),busy=state.pendingCount>0||state.nativeActiveCount>0||state.running;
+  const becameIdle=wasBusy&&!busy;wasBusy=busy;
   try{native?.updateState?.(state.owner,state.pendingCount,state.running,state.authorized);}catch{}
   const stamp=JSON.stringify([state.owner,state.nativeQueuedCount,state.nativeActiveCount,state.nativeError,state.nativeBlockedCount]);
   if(stamp!==nativeStamp){nativeStamp=stamp;try{onNativeStatus(state);}catch{}}
-  if(wasBusy&&!busy)onIdle();wasBusy=busy;try{window.cdqPendingTasksV20261112?.refreshPresence?.();}catch{}return state;
+  if(becameIdle&&!wasBusy)onIdle();try{window.cdqPendingTasksV20261112?.refreshPresence?.();}catch{}return state;
  }
  function setPending(scope,count,email=current()){
   status();if(String(email).trim().toLowerCase()!==account||!authorized())return false;
@@ -19257,7 +19283,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.17-v28.96-runtime-pc";
+const CDQ_V20_BUILD = "2026.11.17-v28.98-runtime-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20110,7 +20136,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.17-v28.96-runtime-pc";
+const CDQ_V21_BUILD = "2026.11.17-v28.98-runtime-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24637,7 +24663,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.17-v28.96-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.17-v28.98-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -25532,132 +25558,6 @@ window.cdqAuthDriveSeparationV2619=Object.freeze({
 </script>
 
 
-<style id="cdq-drive-access-gate-v2620">
-#cdqDriveGateV2620{position:fixed;inset:0;z-index:49000;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(3,8,13,.86);backdrop-filter:blur(6px)}
-#cdqDriveGateV2620.show{display:flex}
-#cdqDriveGateV2620 .card{width:min(520px,100%);padding:22px;border:1px solid #2b6a88;border-radius:18px;background:#081720;color:#effaff;box-shadow:0 20px 70px #0009;text-align:center}
-#cdqDriveGateV2620 h3{margin:0 0 8px;font-size:22px}
-#cdqDriveGateV2620 p{margin:7px 0;color:#b7ccd8;line-height:1.4}
-#cdqDriveGateV2620 .account{margin:12px 0;padding:10px;border:1px solid #28526a;border-radius:10px;background:#07121a;font-weight:850;overflow-wrap:anywhere}
-#cdqDriveGateV2620 .error{color:#ff8f98;font-weight:800}
-#cdqDriveGateV2620 .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
-#cdqDriveGateV2620 button{min-height:48px;border:1px solid #39708d;border-radius:10px;background:#0d2a3a;color:#fff;font-weight:900}
-#cdqDriveGateV2620 button.primary{border-color:#168dbb;background:#07557a}
-@media(max-width:520px){#cdqDriveGateV2620 .actions{grid-template-columns:1fr}}
-</style>
-<script id="cdq-drive-access-gate-v2620">
-(function(){
-'use strict';
-let initialCompanies=null,busy=false,approvedEmail="",requestSeq=0,lastMessage="";
-window.__cdqDriveGateGooglePendingV2620=false;
-
-function nativeBridge(){
-  try{return window.BalanceCDQNative||(window.parent&&window.parent.BalanceCDQNative)||null;}catch(_){return window.BalanceCDQNative||null;}
-}
-function defaultEmail(){
-  // V26.26: use the exported Files setting, not a private function in another IIFE.
-  // PDF and Sheets read this same key. Blank/reset must remain an explicit choice.
-  try{
-    const value=typeof window.cdqGoogleDefaultAccountV2294==="function"
-      ? window.cdqGoogleDefaultAccountV2294()
-      : localStorage.getItem("cdqDefaultGoogleAccountV2294");
-    return String(value||"").trim().toLowerCase();
-  }catch(_){return "";}
-}
-function overlay(){
-  let o=document.getElementById("cdqDriveGateV2620");
-  if(o)return o;
-  o=document.createElement("div");o.id="cdqDriveGateV2620";
-  o.innerHTML='<div class="card"><h3>Accès Google Drive</h3><p class="status">Vérification du compte Google…</p><div class="account" hidden></div><p class="error" hidden></p><div class="actions"><button type="button" data-drive-retry>Réessayer</button><button type="button" class="primary" data-drive-other>Choisir un autre compte</button></div></div>';
-  document.body.appendChild(o);
-  o.querySelector("[data-drive-retry]").onclick=function(){begin(false)};
-  o.querySelector("[data-drive-other]").onclick=function(){begin(true)};
-  return o;
-}
-function paint(status,email,error,show){
-  const o=overlay();o.classList.toggle("show",show!==false);
-  o.querySelector(".status").textContent=status||"Vérification du compte Google…";
-  const a=o.querySelector(".account");a.hidden=!email;a.textContent=email||"";
-  const e=o.querySelector(".error");e.hidden=!error;e.textContent=error||"";
-}
-function allow(email){
-  approvedEmail=String(email||"").trim().toLowerCase();
-  busy=false;lastMessage="";
-  paint("",approvedEmail,"",false);
-  try{sessionStorage.setItem("cdq_drive_gate_email_v2620",approvedEmail);}catch(_){}
-  if(typeof chargerClients==="function")chargerClients(false,initialCompanies);
-}
-function deny(email,message){
-  busy=false;lastMessage=String(message||"Ce compte Google n’est pas autorisé pour Drive.");
-  paint("Accès Drive non autorisé",email,lastMessage,true);
-}
-function nativeRequest(forceAsk){
-  const b=nativeBridge();
-  if(!b||typeof b.authorizeDriveBrowse!=="function")return false;
-  const email=forceAsk?"":defaultEmail();
-  const id="drive-"+Date.now()+"-"+(++requestSeq);
-  busy=true;
-  // A native chooser or required Google consent owns the screen. No second CDQ dialog.
-  // With a default account, keep the normal CDQ screen while Drive is verified.
-  paint("Vérification du compte Drive…",email,"",false);
-  window.__cdqDriveGateNativeRequestV2620=id;
-  try{b.authorizeDriveBrowse(id,email,!!forceAsk||!email);}
-  catch(e){window.__cdqDriveGateNativeRequestV2620="";deny(email,e&&e.message||"Connexion Google indisponible.");}
-  return true;
-}
-function webDefault(email){
-  busy=true;paint("Vérification du compte Drive par défaut…",email,"",false);
-  cdqApiRun()
-    .withSuccessHandler(function(r){if(r&&r.ok)allow(r.email||email);else deny(email,r&&r.message||"Compte Google Drive refusé.");})
-    .withFailureHandler(function(e){deny(email,e&&e.message?e.message:String(e));})
-    .verifierAccesDriveEmailCDQV2620(email);
-}
-function webPicker(){
-  busy=true;
-  window.__cdqDriveGateGooglePendingV2620=true;
-  paint("Choisissez le compte Google autorisé pour Drive.","","",false);
-  cdqDemanderConnexionGoogleV42("Choisissez le compte Google autorisé pour afficher les dossiers Drive.");
-}
-function begin(forceAsk){
-  if(busy)return;
-  if(nativeRequest(!!forceAsk))return;
-  const email=forceAsk?"":defaultEmail();
-  if(email)webDefault(email);else webPicker();
-}
-function afterLogin(companies){
-  initialCompanies=Array.isArray(companies)?companies:null;
-  if(approvedEmail){if(typeof chargerClients==="function")chargerClients(false,initialCompanies);return;}
-  begin(false);
-}
-function googleResult(ok,email,message){
-  if(ok)allow(email);else deny(email,message);
-}
-window.cdqNativeDriveGateV2620=function(id,ok,email,message,rememberDefault){
-  if(String(id)!==String(window.__cdqDriveGateNativeRequestV2620||""))return;
-  window.__cdqDriveGateNativeRequestV2620="";
-  // Remember only an explicitly requested choice AFTER Google and Drive validation.
-  if(ok&&rememberDefault===true){
-    try{
-      if(typeof window.cdqSetGoogleDefaultAccountV2294==="function")window.cdqSetGoogleDefaultAccountV2294(email);
-      else localStorage.setItem("cdqDefaultGoogleAccountV2294",String(email||"").trim().toLowerCase());
-    }catch(_){}
-  }
-  if(ok)allow(email);else deny(email,message);
-};
-window.cdqDriveAccessGateV2620=Object.freeze({
-  version:"26.20",
-  afterLogin:afterLogin,
-  googleResult:googleResult,
-  retry:function(){begin(false)},
-  chooseOther:function(){begin(true)},
-  approvedEmail:function(){return approvedEmail},
-  applicationLogin:"email-code-pin",
-  driveAccount:"verified-separately",
-  defaultDriveAccountPreserved:true,
-  ignoresAnyonePermission:true
-});
-})();
-</script>
 
 
 <style id="cdq-creator-style-v2628">.cdq-creator-recovery-v2628{margin-top:12px;text-align:left}.cdq-creator-recovery-v2628 p{overflow-wrap:anywhere;line-height:1.45}.cdq-creator-recovery-v2628 label{display:block;margin:12px 0 6px}.cdq-creator-recovery-v2628 input:not([type=checkbox]){box-sizing:border-box;width:100%;padding:14px;border-radius:14px;border:1px solid #657180;background:#101318;color:#fff;font-size:22px}.cdq-creator-recovery-v2628 button,.cdq-creator-entry-v2628{box-sizing:border-box;width:100%;min-height:48px;margin-top:10px;padding:12px;border:1px solid #4389ad;border-radius:12px;background:#123b53;color:#fff;font-weight:bold}.cdq-creator-recovery-v2628 .secondary,.cdq-creator-entry-v2628{background:#242b33;border-color:#68737f}.cdq-creator-recovery-v2628 .recovery-error{color:#ffb5b5}.cdq-creator-recovery-v2628 .reset-confirm{font-size:14px}.cdq-creator-recovery-v2628 .reset-confirm input{width:auto;margin-right:6px}.cdq-creator-recovery-v2628 a{color:#8ad4ff}.cdq-creator-recovery-v2628 button:disabled{opacity:.6}</style>

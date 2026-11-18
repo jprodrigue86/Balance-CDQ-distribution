@@ -23,7 +23,7 @@ export function installDeliveryActions(doc=document){
   const visits=doc.defaultView?.cdqDeliveryVisitsV2866;visits?.show(p);button.disabled=!p&&!e||p&&!visits?.ready;button.textContent=p?(e?'Convertir, publier et envoyer':'Convertir et publier'):'Convertir et envoyer';
   for(const id of ['emailDestinataire','messageEmail']){const field=doc.getElementById(id);if(field){field.disabled=!e;field.closest('.modal-section').hidden=!e;}}
   for(const id of ['cdqSendSaveRecipientV2553','cdqSendRecipientStatusV2553']){const field=doc.getElementById(id);if(field)field.hidden=!e;}
-  const help=doc.getElementById('sendModeHelp');if(help)help.textContent=e?'Les PDF non modifiables sélectionnés seront archivés et joints en ZIP au courriel (24 Mio maximum).'+(p?' Ils seront aussi publiés.':' Aucune publication.'):'Les PDF non modifiables sélectionnés seront archivés et publiés. Aucun courriel.';
+  const help=doc.getElementById('sendModeHelp');if(help)help.textContent=e?'Les PDF non modifiables sélectionnés seront archivés et joints en ZIP au courriel (18 Mio maximum).'+(p?' Ils seront aussi publiés.':' Aucune publication.'):'Les PDF non modifiables sélectionnés seront archivés et publiés. Aucun courriel.';
   const extra=doc.getElementById('cdqSendPdfHelpV2750');if(extra)extra.textContent='Les sources restent modifiables. Les mêmes copies finales sont utilisées pour les actions choisies.';
   const section=modal.querySelector('.send-mode-section');
   if(section){const label=section.querySelector(':scope > label');if(label)label.textContent='Copies finales';const strong=section.querySelector('strong'),small=section.querySelector('small');if(strong)strong.textContent='PDF non modifiables';if(small)small.textContent='Seulement les documents de votre sélection.';}

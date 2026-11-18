@@ -1,14 +1,14 @@
 {
-  "androidSourceBuild": "2026.11.17-v28.96-runtime",
-  "build": "2026.11.17-v28.96-runtime-pc",
+  "androidSourceBuild": "2026.11.17-v28.98-runtime",
+  "build": "2026.11.17-v28.98-runtime-pc",
   "desktopModel": 3,
   "files": 1133,
-  "generatedFrom": "patches/microsoft-mail-20261117/packaging/tools/stage_assets_v2896.py",
+  "generatedFrom": "patches/send-list-lifecycle-2898-20261117/packaging/recipe.py",
   "platform": "pc-pwa",
-  "release": "1b41f6e9c14b1402970b0b894cc6ac47973a622d27d18917e5c06b199ad969ed",
-  "version": "28.96",
+  "release": "9faf595813bd6225ce1013cf4e5477ac08d325704e738a4df20cf6fc9adcacd0",
+  "version": "28.98",
   "webBaseCommit": "de1e05294f308cd67502ccc4093422501af56e22",
   "candidateOnly": true,
-  "sourceCommit": "291658ab53f486e9b4d18a01806bf0848e1723cf",
+  "sourceCommit": "011bf5897e5aab60c676a69b3af4bab8f1b54e94",
   "pdfQualification": "pending-native"
 }

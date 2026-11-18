@@ -142,7 +142,7 @@ async function refreshEngineListV2754(id,{repair=false,hydrate=false,deferReady=
    if(reconciliationRequired)paint(id,result.repairQueued||externalImportPendingV2885?'La copie Drive reste consultable. La nouvelle liste est en préparation.':listConflictNoticeV2755);else if(!flight.deferReady&&confirmedListFormatV2885(baseline))paint(id,'Liste à jour · '+rows.length+' balance(s)');
   if(publishing&&baseline.polls<12&&canWrite()){baseline.polls++;scheduleClient(id,Math.min(30000,1500*2**Math.min(5,baseline.polls-1)));}
   return record;
- }).finally(()=>{if(engineListFlightsV2754.get(k)===flight)engineListFlightsV2754.delete(k);if(flight.change!==(changes.get(k)||0)&&stamp===epoch&&account===calibrationIdentity().email&&canRead())refreshEngineListV2754(id,{deferReady:flight.deferReady}).catch(()=>{});});
+ }).finally(()=>{if(engineListFlightsV2754.get(k)===flight)engineListFlightsV2754.delete(k);if(flight.change!==(changes.get(k)||0)&&stamp===epoch&&account===calibrationIdentity().email&&canRead())refreshEngineListV2754(id,{deferReady:flight.deferReady}).catch(()=>{});publishBackground();});
  engineListFlightsV2754.set(k,flight);return flight.promise;
 }
 async function importEngineIndexV2754(id,state,{externalRevision=null}={}){
@@ -165,7 +165,7 @@ async function importEngineIndexV2754(id,state,{externalRevision=null}={}){
   engineListsV2754.set(k,{...prior,clientId:String(id),hash,fingerprint,invalidated:false,polls:0,revision:result.revision,indexFormatVersion:result.indexFormatVersion,managed:prior?.managed||[],pdf,reconciliationRequired,externalImportPrepared:false,externalRevision:null,externalImportPendingV2885,publicationStatusV2885:result.pdf?.status||''});
   states.set(k,{...current,reconciliationRequired,enginePdfV2754:pdf,engineBaselineV2754:engineListsV2754.get(k)});persistClient(id);
   return refreshEngineListV2754(id);
- }).finally(()=>{if(engineImportsV2754.get(k)===promise)engineImportsV2754.delete(k);});
+ }).finally(()=>{if(engineImportsV2754.get(k)===promise)engineImportsV2754.delete(k);publishBackground();});
  engineImportsV2754.set(k,promise);return promise;
 }
 async function reconcileEngineSourcesV2754(id,options={}){
@@ -514,7 +514,10 @@ async function refresh(force=false,verify=false,id=client()){
  const finish=canWrite()&&queueOwner()?window.cdqDriveBackgroundV2746?.begin?.('list-refresh:'+id,calibrationIdentity().email):null;
  flight.promise=Promise.resolve().then(()=>refreshImplV2789(force,verify,id)).finally(()=>{
   if(refreshFlightsV2792.get(k)===flight)refreshFlightsV2792.delete(k);
-  if(!flight.followup&&flight.epoch===epoch&&k===key(id)&&canWrite()&&(flight.change!==(changes.get(k)||0)||flight.fingerprint!==clientFingerprint(id)))scheduleClient(id,0);
+  // A completed, authoritative source reconciliation may itself change the
+  // loaded fingerprint. Reuse that exact confirmation; a later source or
+  // account change still schedules a new check. Explicit forced follow-ups remain.
+  if(!flight.followup&&flight.epoch===epoch&&k===key(id)&&canWrite()&&(flight.change!==(changes.get(k)||0)||flight.fingerprint!==clientFingerprint(id))&&!(engineCurrentV2754(id)&&verifiedListFreshV2884(id)))scheduleClient(id,0);
   publishBackground();finish?.();
  });return flight.promise;
 }
