@@ -930,7 +930,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
         const d={clientId:String(data.clientId||''),folderId:String(data.folderId||''),name:String(data.destinationName||data.name||'Dossier client')};
         if(!validDestination(d))throw new Error('Dossier client invalide.');
         const weights=data.modeleId==='poids'?{weightRowsV2871:weightRowsV2871(data.weightRowsV2871),weightSelectionV2872:normalizeWeightSelectionV2872(data.weightSelectionV2872,weightRowsV2871(data.weightRowsV2871))}:null;
-        const t=await loadTemplate(current.email,data.modeleId,{weightRowsV2871:data.weightRowsV2871});if(!validTemplate(t))throw new Error('Le modèle embarqué est indisponible. Rouvrez CDQ après sa mise à jour.');
+        const t=await loadTemplate(current.email,data.modeleId,{weightRowsV2871:data.weightRowsV2871,forNewReport:true});if(!validTemplate(t))throw new Error('Le modèle embarqué est indisponible. Rouvrez CDQ après sa mise à jour.');
         let c=await get('copies',id);
         if(c?.removed)throw Error('Cette création a été annulée. Créez un nouveau rapport.');
         if(c&&(c.email!==current.email||c.modeleId!==data.modeleId||c.destination.clientId!==d.clientId||c.destination.folderId!==d.folderId||(weights&&(weightRowsV2871(c.weightRowsV2871)!==weights.weightRowsV2871||weightSelectionKeyV2872(c.weightSelectionV2872,c.weightRowsV2871)!==weightSelectionKeyV2872(weights.weightSelectionV2872,weights.weightRowsV2871)))))throw new Error('Identifiant déjà utilisé pour une autre copie.');
