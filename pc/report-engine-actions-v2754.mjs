@@ -67,15 +67,34 @@ export function createReportEngineActionsV2754({engine,owner,canWrite,guard=()=>
       }
       for(const record of targets.values()){const restoredFolderId=folders.get(record.context.destinationId);if(restoredFolderId)record.context={...record.context,restoredFolderId};}
     }
-    await parallelV2789([...targets.values()],async record=>{
+    const removeReports=()=>parallelV2789([...targets.values()],async record=>{
       check(email,clientId);if(record.deleted&&record.deleteAck&&!record.pending)return;
       if(record.context.template){const result=await remove(record.context);record.context={...result.context,...(record.context.restoredFolderId?{restoredFolderId:record.context.restoredFolderId}:{})};}
       else {const result=await engine.call('status',{reportId:record.context.reportId,clientId});check(email,clientId);if(!result.deleted||result.drivePending!==false)throw failure('La suppression du rapport reste à confirmer.','CDQ_DELETE_UNCONFIRMED');}
     });
     check(email,clientId);const remainder={fileIds:selection.fileIds.filter(id=>!managedFiles.has(String(id))),folderIds:selection.folderIds};
-    const result=remainder.fileIds.length||remainder.folderIds.length?await legacy(remainder):{ok:true,fichiers:[],dossiers:[]};check(email,clientId);
+    const removeRemainder=()=>remainder.fileIds.length||remainder.folderIds.length?legacy(remainder):{ok:true,fichiers:[],dossiers:[]};
+    let result;
+    if(!selection.folderIds.length && targets.size && remainder.fileIds.length){
+      // These file IDs are disjoint. Parent-folder deletion must remain ordered.
+      const [reports,drive]=await Promise.allSettled([removeReports(),Promise.resolve().then(removeRemainder)]);
+      check(email,clientId);
+      if(reports.status==='fulfilled' && drive.status==='rejected' && drive.reason?.code==='CDQ_DRIVE_PERMISSION'){
+        result={ok:false,fichiers:[],dossiers:[],erreurs:remainder.fileIds.map(id=>({id,kind:'file',code:'CDQ_DRIVE_PERMISSION',message:drive.reason.message}))};
+      }else if(reports.status==='rejected'||drive.status==='rejected'){
+        const cause=reports.status==='rejected'?reports.reason:drive.reason;
+        throw Object.assign(failure(cause?.message||'Suppression partiellement confirmée.','CDQ_DELETE_UNCONFIRMED'),{cause});
+      }else result=drive.value;
+    }else{
+      await removeReports();
+      check(email,clientId);
+      result=await removeRemainder();
+    }
+    check(email,clientId);
+    // The Drive transport may reject its whole subset after the reports succeeded.
+    const verifiedReportFiles=selection.fileIds.filter(id=>managedFiles.has(String(id)));
     const confirmed=new Set([...(result.fichiers||result.ids||[]),...(result.dossiers||[])]),folders=folderScope(clientId,selection),confirmedLists=[...lists.values()].filter(list=>confirmed.has(list.fileId)||confirmed.has(folders.get(list.destinationId))).map(list=>({...list,...(folders.get(list.destinationId)?{restoredFolderId:folders.get(list.destinationId)}:{})}));
-    return {...result,fichiers:[...new Set([...(result.fichiers||result.ids||[]),...selection.fileIds.filter(id=>managedFiles.has(String(id)))])],dossiers:result.dossiers||[],engineDeletionV2754:targets.size>0||confirmedLists.length>0,engineReportsV2754:[...targets.values()].map(record=>record.context),engineListsV2754:confirmedLists};
+    return {...result,verifiedReportFiles,fichiers:[...new Set([...(result.fichiers||result.ids||[]),...verifiedReportFiles])],dossiers:result.dossiers||[],engineDeletionV2754:targets.size>0||confirmedLists.length>0,engineReportsV2754:[...targets.values()].map(record=>record.context),engineListsV2754:confirmedLists};
   }
   async function restoreSelection(receipt,legacy){
     const email=owner(),clientId=String(receipt.clientId||'');check(email,clientId);if(receipt.owner!==email)throw failure('Le compte de cette restauration a changé.','CDQ_DELETE_ACCOUNT_CHANGED');
