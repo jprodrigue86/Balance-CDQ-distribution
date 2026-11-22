@@ -1,3 +1,4 @@
+import {displayImage,mountImages} from './personal-images.mjs';
 // CDQ 27.93 — background choices and existing navigation integration.
 // No remote requests, Drive operations, PDF changes, timers or publication actions.
 export const CDQ_BACKGROUND_CHOICES_V2793=Object.freeze([
@@ -7,7 +8,7 @@ export const CDQ_BACKGROUND_CHOICES_V2793=Object.freeze([
 export const CDQ_BACKGROUND_IDS_V2793=Object.freeze(CDQ_BACKGROUND_CHOICES_V2793.map(x=>x[0]));
 export function cdqBackgroundChoiceV2793(value){
  if(value==='letter')value='leather';
- return CDQ_BACKGROUND_IDS_V2793.includes(value)?value:'current';
+ return value==='personal'||CDQ_BACKGROUND_IDS_V2793.includes(value)?value:'current';
 }
 export function cdqEffectiveBackgroundV2793(choice,palette){
  const normalized=cdqBackgroundChoiceV2793(choice);
@@ -37,6 +38,7 @@ function selected(){
  const fallback='current';
  const name=owner();
  let saved=read(name?storageKey+':'+name:storageKey+':device',read(storageKey+':device',fallback));
+ if(saved==='personal'&&(!name||!read('cdq-personal-images:background:'+name)))saved=fallback;
  if(saved==='letter'){saved='leather';write(name?storageKey+':'+name:storageKey+':device',saved);}
  return cdqEffectiveBackgroundV2793(saved,palette);
 }
@@ -48,7 +50,10 @@ function reflect(value){
 function select(value,save=true){
  value=cdqEffectiveBackgroundV2793(value,d?.documentElement?.dataset?.cdqPalette||read('cdqTheme','dark'));
  if(save){write(storageKey+':device',value);const name=owner();if(name)write(storageKey+':'+name,value)}
- reflect(value);return value;
+ reflect(value);
+ if(value==='personal')void displayImage(owner(),'background');
+ else void displayImage('','background');
+ return value;
 }
 function css(){
  if(!d||d.getElementById('cdqBackgroundStylesV2793'))return;
@@ -97,6 +102,7 @@ function picker(){
   }
   group.append(title,help,grid);panel.append(group);
  }
+ mountImages(group,owner,select);
  reflect(d.documentElement.getAttribute('data-cdq-background-v2793')||selected());
 }
 function sync(){css();settingsNav();select(selected(),false);picker();}
@@ -105,6 +111,7 @@ if(d&&w){
  css();select(selected(),false);
  d.addEventListener('DOMContentLoaded',sync,{once:true});
  w.addEventListener('cdq:access-ready',sync);
+ w.addEventListener('cdq:access-state-v2527',e=>{if(e.detail!=='ready')void displayImage('','background');});
  w.addEventListener('cdq:settings-opened',sync);
  // Palette transitions change the automatic backdrop without overriding preferences.
  new MutationObserver(records=>{if(records.some(r=>r.attributeName==='data-cdq-palette'))select(selected(),false)})

@@ -27,7 +27,7 @@
   function mountFrame(){
     const style=document.createElement('style');style.textContent='#cdqAndroidUpdaterBoxV2313,#cdqAndroidUpdaterButtonV2316{display:none!important}';document.head.append(style);
     new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true});
-    schedule();parentRequest('CDQ_PC_CHECK');
+    schedule();parentRequest('CDQ_PC_GET_STATUS');
     window.cdqMajApkV2502=()=>parentRequest('CDQ_PC_CHECK');
     window.cdqReinstallerApkV2502=()=>window.open(new URL('installer.html',base).href,'_blank','noopener');
   }
@@ -172,7 +172,8 @@
     const frame=document.getElementById('app');
     if(e.origin!==origin||!frame||e.source!==frame.contentWindow)return;
     const type=e.data?.type;
-    if(['CDQ_PC_CHECK','CDQ_CHECK_UPDATE'].includes(type)){e.stopImmediatePropagation();void check(true);}
+    if(type==='CDQ_PC_GET_STATUS'){e.stopImmediatePropagation();post();}
+    else if(['CDQ_PC_CHECK','CDQ_CHECK_UPDATE'].includes(type)){e.stopImmediatePropagation();void check(true);}
     else if(['CDQ_PC_APPLY','CDQ_FORCE_UPDATE','CDQ_OPEN_SCRIPT_MANAGER'].includes(type)){e.stopImmediatePropagation();void apply();}
     else if(type==='CDQ_SELECTOR_READY'){trackFrame();post();if(!startupPending)void check();}
   },true);

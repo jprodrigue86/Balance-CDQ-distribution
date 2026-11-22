@@ -1,3 +1,4 @@
+import {V2819_REPORT_ENGINE_TEMPLATES_V2754,V2822_REPORT_ENGINE_TEMPLATES_V2754} from './report-engine-templates-v2754.mjs';
 import {REPORT_TEMPLATES} from './report-templates-v2636.mjs';
 import {REPORT_ENGINE_TEMPLATES_V2754,V2881_REPORT_ENGINE_TEMPLATES_V2754,V2872_REPORT_ENGINE_TEMPLATES_V2754,V2871_REPORT_ENGINE_TEMPLATES_V2754,V2870_REPORT_ENGINE_TEMPLATES_V2754,V2868_REPORT_ENGINE_TEMPLATES_V2754,PRE_BACKLOG_REPORT_ENGINE_TEMPLATES_V2754,V2864_LOCAL_REPORT_ENGINE_TEMPLATES_V2754,LEGACY_REPORT_ENGINE_TEMPLATES_V2754,CYAN30_REPORT_ENGINE_TEMPLATES_V2754,T05_R1_REPORT_ENGINE_TEMPLATES_V2754,VISUAL2787_REPORT_ENGINE_TEMPLATES_V2754} from './report-engine-templates-v2754.mjs';
 
@@ -33,6 +34,10 @@ export function pinnedReportTemplateV2788(expected,{family=expected?.modeleId}={
   if(matches(delivered2868))return Object.freeze({...delivered2868,url:new URL('./'+delivered2868.path,import.meta.url).href});
   const prior=V2864_LOCAL_REPORT_ENGINE_TEMPLATES_V2754[key];
   if(matches(prior))return Object.freeze({...prior,url:new URL('./'+prior.path,import.meta.url).href});
+  for(const catalog of [V2822_REPORT_ENGINE_TEMPLATES_V2754,V2819_REPORT_ENGINE_TEMPLATES_V2754]){
+    const meta=catalog[key];
+    if(matches(meta))return Object.freeze({...meta,url:new URL('./'+meta.path,import.meta.url).href});
+  }
   for(const [catalog,commit,source]of archives){
     const meta=catalog[key];
     if(matches(meta))return Object.freeze({...meta,url:archiveRoot+commit+'/'+source(meta)});

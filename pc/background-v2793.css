@@ -1,8 +1,8 @@
+html[data-cdq-background-v2793="personal"]{--cdq-bg-v2793:var(--cdq-personal-image,none);--cdq-bg-base-v2793:#121212;}
 /* 27.99 real material images, shared by app views and their picker previews. */
-html[data-cdq-background-v2793="brushed"],#cdqSettingsModalV2294 [data-cdq-background-option-v2793="brushed"]{--cdq-bg-v2793:url("./assets/material-v2799/brushed.png");--cdq-bg-base-v2793:#0a0b0c;}
-html[data-cdq-background-v2793="smoke"],#cdqSettingsModalV2294 [data-cdq-background-option-v2793="smoke"]{--cdq-bg-v2793:url("./assets/material-v2799/smoke.png");--cdq-bg-base-v2793:#0a0b0c;}
+html[data-cdq-background-v2793="brushed"],#cdqSettingsModalV2294 [data-cdq-background-option-v2793="brushed"]{--cdq-bg-v2793:url("./assets/material-v3/brushed.webp");--cdq-bg-base-v2793:#0a0b0c;}
+html[data-cdq-background-v2793="smoke"],#cdqSettingsModalV2294 [data-cdq-background-option-v2793="smoke"]{--cdq-bg-v2793:url("./assets/material-v3/smoke.webp");--cdq-bg-base-v2793:#0a0b0c;}
 html[data-cdq-background-v2793="lava"],#cdqSettingsModalV2294 [data-cdq-background-option-v2793="lava"]{--cdq-bg-v2793:url("./assets/material-v2799/lava.png");--cdq-bg-base-v2793:#0a0b0c;}
-html[data-cdq-background-v2793="leather"],#cdqSettingsModalV2294 [data-cdq-background-option-v2793="leather"]{--cdq-bg-v2793:url("./assets/material-v2799/leather.png");--cdq-bg-base-v2793:#0a0b0c;}
 html[data-cdq-background-v2793="rock"],#cdqSettingsModalV2294 [data-cdq-background-option-v2793="rock"]{--cdq-bg-v2793:url("./assets/material-v2799/rock.png");--cdq-bg-base-v2793:#0a0b0c;}
 /* A background is not a palette. Preserve all legacy colors, spacing and icons. */
 html[data-cdq-background-v2793] body,
@@ -12,7 +12,7 @@ html.cdq-desktop-v2676[data-cdq-background-v2793] body{
  background-color:var(--cdq-bg-base-v2793)!important;
  background-position:center center!important;
  background-repeat:no-repeat!important;
- background-size:cover!important;
+ background-size:var(--cdq-personal-fit,cover)!important;
 }
 html[data-cdq-background-v2793] :is(
  .cdq-workspace-page,#cdqDrivePageV2638,#cdqCalculPageV2638,#cdqOpportunitiesPageV2638,
@@ -23,7 +23,7 @@ html[data-cdq-background-v2793] :is(
  background-color:var(--cdq-bg-base-v2793)!important;
  background-position:center center!important;
  background-repeat:no-repeat!important;
- background-size:cover!important;
+ background-size:var(--cdq-personal-fit,cover)!important;
 }
 /* The central app shell must let the selected backing show through.
    Do not change the file cards or control panels. */
@@ -94,3 +94,14 @@ html:is(.android,.ios,.mobile-device) #cdqClientActionsV2640 > #cdqClientPortalB
 html[data-cdq-background-v2793] #cdqCalibrationDialogV2565 :is(.cdq-cal-shell,.cdq-cal-body){background:transparent!important}
 /* Its original decorative SVG is retired by the existing heading owner. */
 #cdqCalibrationDialogV2565 .cdq-cal-head > .cdq-calibration-indicator[hidden]{display:none!important}
+
+#cdq-settings-panel-appearance [data-personal-images]{display:grid;gap:14px;margin-top:18px;color:var(--cdq-ink)}
+#cdq-settings-panel-appearance [data-personal-images] fieldset{display:grid;min-width:0;gap:10px;padding:14px;margin:0;border-radius:12px;border:1px solid var(--cdq-line);background:var(--cdq-surface)}
+#cdq-settings-panel-appearance [data-personal-images] legend{padding-inline:5px;font-weight:700}
+#cdq-settings-panel-appearance [data-personal-images] :is(select,button){box-sizing:border-box;max-width:100%;min-width:0;min-height:42px;padding:8px 12px;border:1px solid var(--cdq-line);border-radius:8px;font:inherit;background:var(--cdq-raised);color:var(--cdq-ink)}
+#cdq-settings-panel-appearance [data-personal-images] [hidden]{display:none!important}
+#cdq-settings-panel-appearance [data-personal-images] label{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:8px}
+#cdq-settings-panel-appearance [data-personal-images] [role=status]{overflow-wrap:anywhere;color:var(--cdq-muted);font-size:.88em}
+#cdq-settings-panel-appearance [data-personal-images] img{width:100%;height:120px;border-radius:6px;background:var(--cdq-page)}
+#cdq-settings-panel-appearance .personal-actions{display:flex;gap:8px;flex-wrap:wrap}
+#cdq-settings-panel-appearance .personal-actions button:disabled{opacity:.5}

@@ -1,5 +1,17 @@
 /* PDF.js 6 on installed Android WebViews and earlier Chromium releases. */
 (()=>{
+  if (typeof Promise.try !== 'function') {
+    Object.defineProperty(Promise, 'try', {
+      configurable: true,
+      writable: true,
+      value: function (callback, ...args) {
+        return new this(resolve => resolve(callback(...args)));
+      }
+    });
+  }
+  if(typeof URL.parse!=='function')Object.defineProperty(URL,'parse',{configurable:true,writable:true,value:function(url,base){
+    try{return new URL(url,base);}catch{return null;}
+  }});
   // PDF.js reads each document's fingerprint inside its dedicated worker.
   // Older installed WebViews support the reader but predate this byte helper.
   if(typeof Uint8Array.prototype.toHex!=='function')Object.defineProperty(Uint8Array.prototype,'toHex',{configurable:true,writable:true,value:function(){

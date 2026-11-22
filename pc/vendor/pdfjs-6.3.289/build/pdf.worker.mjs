@@ -1,3 +1,4 @@
+import '../../../runtime-compat-v2658.js';
 /* PDF.js 6 on installed Android WebViews and earlier Chromium releases. */
 (()=>{
   // PDF.js reads each document's fingerprint inside its dedicated worker.

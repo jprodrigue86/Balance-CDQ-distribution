@@ -27,7 +27,7 @@
    busy=true;save.disabled=cancel.disabled=true;entries.forEach(e=>e.input.disabled=true);
    for(const entry of entries){
     if(entry.done)continue;const name=entry.input.value.trim();if(name===entry.item.nom){entry.done=true;continue;}
-    try{guard();entry.state.textContent='Enregistrement…';const result=await rpc(entry.item.kind==='folder'?'renommerDossier':'renommerFichier',[String(entry.item.id),name,place]);guard();if(!result||result.ok===false||result.id&&String(result.id)!==String(entry.item.id))throw Error(result?.message||'Renommage non confirmé.');entry.done=true;entry.state.textContent='Enregistré';entry.item.nom=result?.nom||name;if(entry.item.kind==='file'&&result?.id)window.mettreAJourFichierDansCache?.(place,result);}
+    try{guard();entry.state.textContent='Enregistrement…';const result=await rpc(entry.item.kind==='folder'?'renommerDossier':'renommerFichier',[String(entry.item.id),name,place]);guard();if(!result||result.ok===false||String(result.id||'')!==String(entry.item.id)||result.nom!==name)throw Error(result?.message||'Renommage non confirmé.');entry.done=true;entry.state.textContent='Enregistré';entry.item.nom=result?.nom||name;if(entry.item.kind==='file'&&result?.id)window.mettreAJourFichierDansCache?.(place,result);}
     catch(e){entry.state.textContent=e.message||String(e);if(owner()!==email||client()!==place)break;}
    }
    busy=false;save.disabled=cancel.disabled=false;entries.forEach(e=>e.input.disabled=e.done);save.textContent='Réessayer les éléments restants';
@@ -193,13 +193,9 @@
    navActions=document.createElement('div');navActions.className='cdq-selection-actions-v2783';navActions.setAttribute('role','group');navActions.setAttribute('aria-label','Actions de la sélection');
    for(const [action,label]of [['select-all','Tout sélectionner'],['copy','Copier'],['duplicate','Dupliquer'],['move','Déplacer'],['rename','Renommer'],['delete','Supprimer'],['cancel','Annuler']]){
     const b=document.createElement('button');b.type='button';b.dataset.selectionAction=action;b.className='cdq-selection-action-v2783';b.title=label;b.setAttribute('aria-label',label);
-    window.cdqFileActionsV2655?.paint(b,action==='cancel'?'finish':action);
-    if(action==='select-all'){
-     const badge=document.createElement('span');badge.className='cdq-select-all-badge-v2827';badge.setAttribute('aria-hidden','true');badge.textContent='✓';
-     b.querySelector('.cdq-action-art-v2655')?.append(badge);
-    }
-    b.title=label;b.setAttribute('aria-label',label);
-    b.querySelector(':scope > .cdq-action-label-v2655')?.remove();
+    const artwork=document.createElement('img');
+    artwork.className='cdq-selection-symbol';artwork.alt='';artwork.draggable=false;
+    artwork.src='./assets/selection/'+action+'.svg';b.append(artwork);
     const labelNode=document.createElement('small');labelNode.textContent=label;b.append(labelNode);b.onclick=e=>{e.preventDefault();e.stopPropagation();invoke(action);};navActions.append(b);
    }
    nav.append(navActions);
@@ -213,28 +209,4 @@
  }
  window.cdqMobileSelectionV2783={refresh,selected,rename};
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh,{once:true});else refresh();
- // The icon-theme painter also emits cdq:icons-changed for DOM changes.
- // Recreating this strip on every event causes an unbounded feedback loop:
- // repaint -> event -> remove/append strip -> repaint (60+ times/second),
- // detaching pointer listeners and resetting the horizontal position.
- // Change ONLY the existing icon drawings when the selected theme truly changes.
- let selectionIconThemeV2858=window.cdqIconThemesV2514?.getStyle?.() || 'current';
- document.addEventListener('cdq:icons-changed',event=>{
-  const style=window.cdqIconThemesV2514?.getStyle?.() || event.detail?.style || 'current';
-  if(style===selectionIconThemeV2858)return;
-  selectionIconThemeV2858=style;
-  if(!navActions?.isConnected)return;
-  for(const button of navActions.querySelectorAll(':scope > button[data-selection-action]')){
-   const action=button.dataset.selectionAction;
-   const artwork=button.querySelector(':scope > .cdq-action-art-v2655');
-   if(!artwork)continue;
-   const key=action==='cancel'?'finish':action;
-   const drawing=window.cdqActionArtworkV2657?.(key,style,document.documentElement.dataset.cdqPalette||'dark');
-   if(typeof drawing==='string' && artwork.innerHTML!==drawing){
-    artwork.innerHTML=drawing;
-    button.dataset.actionStyle=style;
-   }
-  }
- });
 })();
-

@@ -1,14 +1,14 @@
 {
-  "androidSourceBuild": "2026.11.21-v29.12-runtime",
-  "build": "2026.11.21-v29.12-runtime-pc",
+  "androidSourceBuild": "2026.11.21-v29.14-runtime",
+  "build": "2026.11.21-v29.14-runtime-pc",
   "desktopModel": 3,
-  "files": 1147,
-  "generatedFrom": "patches/release-2912/prepare.py",
+  "files": 1157,
+  "generatedFrom": "patches/fiabilite-2914/prepare_pc.py",
   "platform": "pc-pwa",
-  "release": "4c2d18480e076a0bb62066531b6a6a2b2b21dff21640d1fdc36fa2f2438a9650",
-  "version": "29.12",
+  "release": "9879eca1713092286ad87431810944aaf90f508474eaefc1b73e1d8d5e19743b",
+  "version": "29.14",
   "webBaseCommit": "de1e05294f308cd67502ccc4093422501af56e22",
   "candidateOnly": false,
-  "sourceCommit": "3501f1feeb9f56725a84fdb178de07e1d5e27c54",
+  "sourceCommit": "c7a75a41ee7ec92c20db18c0e045d97993c6903c",
   "pdfQualification": "modeles-2911"
 }

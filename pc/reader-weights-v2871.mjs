@@ -16,6 +16,10 @@ export function weightNextDate(date,frequency){
  const d=Math.min(parts.d,new Date(Date.UTC(y,m,0)).getUTCDate());
  return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
 }
+export function weightDateSegments(name,value){
+ const p=weightsDateParts(value);
+ return Object.fromEntries([['jour',p?String(p.d).padStart(2,'0'):''],['mois',p?String(p.m).padStart(2,'0'):''],['annee',p?String(p.y):'']].map(([key,v])=>[name+'_'+key,v]));
+}
 function iso(value){const p=weightsDateParts(value);return p?`${p.y}-${String(p.m).padStart(2,'0')}-${String(p.d).padStart(2,'0')}`:'';}
 export function weightsToday(now=new Date()){return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;}
 export function installWeightsControlsV2871({surface,doc,fields}){
@@ -25,16 +29,29 @@ export function installWeightsControlsV2871({surface,doc,fields}){
  const live=name=>surface.querySelector(`[name="${name}"]`);
  const read=name=>{const el=live(name);if(el)return el.value;const d=definitions(name)[0];return d?String(doc.annotationStorage.getValue(d.id,d)?.value??''):'';};
  let automatic=!read('date_prochain')||iso(read('date_prochain'))===weightNextDate(read('date_etalonnage'),read('frequence'));
+ const segmented=name=>definitions(name+'_jour').length>0;
+ function writeOne(name,value){
+   for(const def of definitions(name)){def.value=value;def.formattedValue=value;doc.annotationStorage.setValue(def.id,{value,formattedValue:value});}
+   const el=live(name);if(el){el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));el.dispatchEvent(new Event('blur'));}
+ }
  function write(name,value){
   writing=true;
   try{
-   for(const def of definitions(name)){def.value=value;def.formattedValue=value;doc.annotationStorage.setValue(def.id,{value,formattedValue:value});}
-   const el=live(name);if(el){el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));el.dispatchEvent(new Event('blur'));}
+   writeOne(name,value);
+   if(segmented(name))for(const [part,text] of Object.entries(weightDateSegments(name,value)))writeOne(part,text);
   }finally{writing=false;}
  }
  function calculate(force=false){const due=weightNextDate(read('date_etalonnage'),read('frequence'));if(due&&(automatic||force)){automatic=true;write('date_prochain',due);}return due;}
  surface.addEventListener('change',event=>{
   if(writing)return;
+  const part=/^(date_etalonnage|date_prochain)_(jour|mois|annee)$/.exec(event.target.name);
+  if(part){
+   const name=part[1],value=iso(read(name+'_jour')+'/'+read(name+'_mois')+'/'+read(name+'_annee'));
+   writing=true;
+   try{writeOne(name,value);}finally{writing=false;}
+   if(name==='date_prochain')automatic=!value;else if(value)calculate();
+   return;
+  }
   if(event.target.name==='date_prochain')automatic=!event.target.value;
   if(['date_etalonnage','frequence'].includes(event.target.name))calculate();
  },{signal});
@@ -67,11 +84,15 @@ export function installWeightsControlsV2871({surface,doc,fields}){
     if(field.style.getPropertyValue(key)!==value||field.style.getPropertyPriority(key)!=='important')field.style.setProperty(key,value,'important');
   }
   for(const name of ['date_etalonnage','date_prochain','date_approbation']){
-   const field=live(name),section=field?.closest('section');if(!section)continue;
+   const outside=segmented(name),field=live(outside?name+'_annee':name),section=field?.closest('section');if(!section)continue;
    field.style.setProperty('box-sizing','border-box','important');
-   field.style.setProperty('padding-inline-end','calc(20px * var(--total-scale-factor))','important');
+   if(!outside)field.style.setProperty('padding-inline-end','calc(20px * var(--total-scale-factor))','important');
    if(section.querySelector('[data-cdq-weight-calendar]'))continue;
    const b=document.createElement('button');b.type='button';b.dataset.cdqWeightCalendar=name;b.setAttribute('aria-label','Calendrier : '+name.replaceAll('_',' '));b.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6M17 2v6M3 11h18M7 15h3M14 15h3M7 18h3M14 18h3"/></svg>';b.style.cssText='position:absolute;box-sizing:border-box;right:calc(.6px * var(--total-scale-factor));top:calc(.6px * var(--total-scale-factor));height:calc(100% - 1.2px * var(--total-scale-factor));width:min(25%,calc(18px * var(--total-scale-factor)));min-height:0;min-width:0;line-height:1;padding:0;border:0;background:white;color:#102951;z-index:2';
+   if(outside){
+    section.style.overflow='visible';
+    Object.assign(b.style,{left:'calc(100% + 1px * var(--total-scale-factor))',right:'auto',width:'calc(15px * var(--total-scale-factor))',color:'#1769a7'});
+   }
    b.addEventListener('click',()=>open(name),{signal});section.append(b);buttons.add(b);
   }
  }

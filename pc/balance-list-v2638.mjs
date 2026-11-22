@@ -388,6 +388,7 @@ async function saved(event,local=false){
   const d=event.detail||{},id=String(d.clientId||'');if(!id){schedule();return;}
   if(!canWrite()||excluded(d.name||d.nom))return;
   if(d.owner&&String(d.owner.email||d.owner).trim().toLowerCase()!==String(calibrationIdentity().email).trim().toLowerCase())return;
+  if(event.type==='cdq:copied'&&!/\.pdf$/i.test(d.name||d.nom||'')&&!['PDF','GOOGLE_SHEETS','application/pdf','application/vnd.google-apps.spreadsheet'].includes(d.type||d.mimeType)){schedule();return;}
   restoreClient(id);const k=key(id),file=String(d.sourceId||d.id||d.fileId||''),token=String(d.saveId||'');
   const localDetail={...d,owner:calibrationIdentity().email,clientId:id,sourceId:file};
   if(local&&d.pending!==false){let pending=saveWaits.get(k);if(!pending)saveWaits.set(k,pending=new Map());if(token)for(const [source,savedToken]of pending)if(savedToken===token&&source!==file)pending.delete(source);pending.set(file,token);projection.saved({...localDetail,numeroSerie:equipment.serialForSave?.(token,id),equipmentSignature:equipment.signatureForSave?.(token,id)||d.equipmentSignature});persistClient(id);paintRows();}
@@ -696,7 +697,7 @@ function scheduleScan(id){
 function listConfirmationFresh({now=Date.now(),receipt,fingerprint,state,engine,dirty=false,pending=false,failed=false,force=false,verify=false}) {
   if(force||verify||dirty||pending||failed||!receipt||receipt.fingerprint!==fingerprint||!Number.isFinite(receipt.requestedAt))return false;
   const age=now-receipt.requestedAt;
-  if(age<0||age>=60000||state?.status!=='ready'||!state.fileId||state.reconciliationRequired)return false;
+  if(age<0||state?.status!=='ready'||!state.fileId||state.reconciliationRequired)return false;
   if(engine)return !engine.invalidated&&!engine.reconciliationRequired&&engine.indexFormatVersion===2885&&engine.pdf?.formatVersion===2885&&engine.pdf.status==='confirmed'&&engine.pdf.fileId===state.fileId&&!!engine.pdf.driveRevision&&Number.isSafeInteger(engine.revision)&&engine.revision>0&&engine.pdf.revision===engine.revision;
   return state.sourceManifestValidated===true&&state.sourceIndexV2751?.exhaustive===true;
 }

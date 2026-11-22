@@ -13,6 +13,7 @@ import {equipmentValuesV2697} from './equipment-list-v2697.mjs';
 import {nameFromReport,nextNumberedReportNameV2731,identificationReportName} from './report-name-v2648.mjs';
 import {pdfWorkV2729,validatedPdfSaveInfoV2753} from './pdf-work-v2729.mjs';
 import {openSheet} from './sheet-launcher-v2526.mjs';
+import {loadPinnedReportTemplateV2788} from './report-template-pins-v2788.mjs';
 import {REPORT_NAMES,bundledTemplate,bundledCreationTemplate} from './report-templates-v2636.mjs';
 import {fillInFrame} from './pdf-fill-client-v2523.mjs';
 import {sessionCopyStorageV2664,confirmedLocalCopyV2755} from './pdf-session-storage-v2664.mjs';
@@ -445,7 +446,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
      for(const draft of draftsV2816){const record=draft.record;if(!record)continue;const row=document.createElement('div');group.append(row);text(row,record.name+' — '+new Date(draft.at).toLocaleString('fr-CA'));if(draft.message)text(row,draft.message);
       const checked=()=>{if(stamp!==epoch||access!==readAccessVersion||!allowed(email)||record.account!==email)throw Error('Déverrouillez le compte de cette copie.');};
       const recovery={id:draft.key,email,reportEngineV2754:record.context,reportPayloadV2754:record.payload,reportSnapshotV2754:record.fields,uploadId:'fields_'+record.payload.requestId,name:record.name};
-      button(row,'Voir mes réponses',async()=>{checked();let blob;try{blob=await recoveryCopyPdfV2792(recovery,email);}catch(error){if(error.code!=='RECOVERY_READER_REQUIRED')throw error;const template=await loadTemplate(email,record.context.template.modeleId);if(!template?.blob||template.sha256!==record.context.template.sha256)throw Error('Le modèle exact de ce rapport doit être disponible pour revoir ses réponses.');blob=template.blob;}checked();return openPdf({blob,name:record.name,fileId:'draft-'+draft.key,readOnly:true,reportEngineV2754:record.context,reportSnapshotV2754:record.fields});});
+      button(row,'Voir mes réponses',async()=>{checked();let blob;try{blob=await recoveryCopyPdfV2792(recovery,email);}catch(error){if(error.code!=='RECOVERY_READER_REQUIRED')throw error;const template=await loadPinnedReportTemplateV2788(record.context.template,{family:record.context.family,checkCurrent:checked});if(!template?.blob||template.sha256!==record.context.template.sha256)throw Error('Le modèle exact de ce rapport doit être disponible pour revoir ses réponses.');blob=template.blob;}checked();return openPdf({blob,name:record.name,fileId:'draft-'+draft.key,readOnly:true,reportEngineV2754:record.context,reportSnapshotV2754:record.fields});});
       button(row,'Télécharger ma copie',async()=>{checked();const blob=await recoveryCopyPdfV2792(recovery,email);checked();return download(blob,record.name);});
      }
     }
