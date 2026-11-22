@@ -108,6 +108,14 @@ function applyFieldTypography(){
   refreshReaderCamionDisplayV2741({surface:$('viewer'),document:doc,fields:fieldDefinitions,typography:fieldTypography});
   refreshReportVisualV2736({surface:$('viewer'),fields:fieldDefinitions});
   if(trialReportMetadataFamilyV2743(fieldDefinitions))refreshResultGeometryV2743($('viewer'));
+  const host=$('viewer');
+  if(host.dataset.cdqFamily || trialReportMetadataFamilyV2743(fieldDefinitions) || cdqFieldDefinitionsV2581('poids_01_01').length || cdqFieldDefinitionsV2581('essai_cdq__recalcul').length){
+    for(const field of host.querySelectorAll('input[name],textarea[name],select[name],button.cdq-choice-field[name]')){
+      if(field.matches('input[type=checkbox],input[type=radio],input[type=button]'))continue;
+      if(field.style.fontFamily!=='CDQForm2918, sans-serif')field.style.setProperty('font-family','CDQForm2918, sans-serif','important');
+      if(field.style.fontWeight!=='700')field.style.setProperty('font-weight','700','important');
+    }
+  }
 }
 function refreshResults(){if(!doc)return;if(trialReportMetadataFamilyV2743(fieldDefinitions)){restoreBlankResultConclusionV2743($('viewer'));refreshResultGeometryV2743($('viewer'));}else paintReaderResults($('viewer'));alignResultCanvasesV2767($('viewer'),fieldDefinitions);alignHeaderCanvasesV2788R4($('viewer'),fieldDefinitions);}
 // Input, change and sandbox updates share the same cancellable frame.

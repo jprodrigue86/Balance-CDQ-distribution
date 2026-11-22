@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="29.14" data-cdq-pc-release="9879eca1713092286ad87431810944aaf90f508474eaefc1b73e1d8d5e19743b">
+<html data-cdq-pc-version="29.18" data-cdq-pc-release="234eb5e47d01304a0b62b7ee75a14467375e805c4fd0f4fc262b4c7147e3321b">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -947,7 +947,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
 <script src="./send-progress-v2893.js"></script>
-<meta name="cdq-package-build" content="2026.11.21-v29.14-runtime-pc">
+<meta name="cdq-package-build" content="2026.11.22-v29.18-runtime-pc">
 
 
 <script id="cdqBridgeV23">
@@ -1001,7 +1001,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.21-v29.14-runtime-pc'
+    build:'2026.11.22-v29.18-runtime-pc'
   });
 }
 
@@ -1014,7 +1014,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.21-v29.14-runtime-pc'
+        build:'2026.11.22-v29.18-runtime-pc'
       });
     }
   } catch(e) {}
@@ -12340,7 +12340,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.21-v29.14-runtime-pc";
+  const CDQ_BUILD = "2026.11.22-v29.18-runtime-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14985,7 +14985,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.21-v29.14-runtime-pc";
+const CDQ_V19_BUILD = "2026.11.22-v29.18-runtime-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -19303,7 +19303,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.21-v29.14-runtime-pc";
+const CDQ_V20_BUILD = "2026.11.22-v29.18-runtime-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20156,7 +20156,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.21-v29.14-runtime-pc";
+const CDQ_V21_BUILD = "2026.11.22-v29.18-runtime-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24655,7 +24655,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.21-v29.14-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.22-v29.18-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -26333,7 +26333,7 @@ function createFileDeletionFenceV2746({owner,allowed,scope=()=>'',getTree=()=>nu
    const t=rowTarget(el);if(!t)continue;const e=entries.get(key(client,t.kind,t.id))||entries.get(key('',t.kind,t.id));if(!e||e.at<=now()-ttl)continue;
    if(e.status==='confirmed'){t.row.remove();continue;}
    if(!e.rows.has(t.row)){const box=t.row.querySelector('.file-checkbox,.folder-checkbox');e.rows.set(t.row,{display:t.row.style.getPropertyValue('display'),priority:t.row.style.getPropertyPriority('display'),aria:t.row.getAttribute('aria-hidden'),box,checked:box?.checked,token:e.token});}
-   t.row.dataset.cdqPendingDeleteV2746=e.token;t.row.style.setProperty('display','none','important');t.row.setAttribute('aria-hidden','true');const box=t.row.querySelector('.file-checkbox,.folder-checkbox');if(box)box.checked=false;
+   t.row.dataset.cdqPendingDeleteV2746=e.token;
   }
  }
  function filterTree(client,node,retainIdentity=false){
@@ -26346,7 +26346,7 @@ function createFileDeletionFenceV2746({owner,allowed,scope=()=>'',getTree=()=>nu
    for(const child of node.dossiers)filterTree(client,child,true);
    return node;
   }
-  return {...node,fichiers:(node.fichiers||[]).filter(f=>!stateFor(client,f.id)),dossiers:(node.dossiers||[]).filter(d=>!stateFor(client,d.id,'folder')).map(d=>filterTree(client,d))};
+  return {...node,fichiers:(node.fichiers||[]).filter(f=>stateFor(client,f.id)!=='confirmed'),dossiers:(node.dossiers||[]).filter(d=>stateFor(client,d.id,'folder')!=='confirmed').map(d=>filterTree(client,d))};
  }
  function begin(selection,client='',requestId='',metadata={}){
   if(!load())throw Error('Accès Drive requis.');selection=normalized(selection);if(!selection.fileIds.length&&!selection.folderIds.length)throw Error('Aucun élément sélectionné.');
@@ -26404,6 +26404,15 @@ function deletionFailureMessageV2752(result,selection,names={}){
   const error=failures.find(error=>(error?.kind==='folder'?'folder':'file')===kind&&String(error?.id||'')===id);
   const name=String(names[kind+':'+id]||result?.noms?.[id]||id).slice(0,180);
   reasons.push('« '+name+' » : '+(String(error?.message||'Drive n’a pas confirmé cette suppression.').trim().slice(0,600)));
+ }
+ const missing=[...files].filter(id=>!acknowledgedFiles.has(id));
+ const repairOnly=folders.size===0&&missing.length>0&&missing.every(id=>{
+   const failure=failures.find(e=>e.kind!=='folder'&&String(e.id)===id);
+   return failure?.code==='CDQ_DRIVE_PERMISSION'&&/^Liste de balance - copie avant réparation [a-f0-9]{16}\.pdf$/i.test(String(names['file:'+id]||result?.noms?.[id]||''));
+ });
+ if(repairOnly){
+   const owners=[...new Set(failures.filter(e=>missing.includes(String(e.id))).map(e=>String(e.ownerEmail||e.owner||e.message?.match(/Propriétaire\s*:\s*([^\s<>]+@[^\s<>]+)\s*$/i)?.[1]||'').replace(/[.]+$/,'')).filter(Boolean))];
+   return missing.length+' copie(s) de réparation conservée(s). Drive refuse la mise à la corbeille pour '+(result.googleAccount||'le compte sélectionné')+'. '+(owners.length===1?'Ouvrez Drive avec le compte propriétaire '+owners[0]+' pour retirer ces copies.':'Le propriétaire peut retirer ces copies dans Drive.');
  }
  const detail=reasons.join(' ');
  const permission=failures.some(error=>error?.code==='CDQ_DRIVE_PERMISSION'&&(error.kind==='folder'?folders:files).has(String(error.id||'')));

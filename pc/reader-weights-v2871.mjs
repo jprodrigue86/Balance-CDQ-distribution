@@ -80,20 +80,32 @@ export function installWeightsControlsV2871({surface,doc,fields}){
   // keep their authored regular Roboto Condensed typeface in live controls.
   if(definitions('classe').length)for(const field of surface.querySelectorAll('input,textarea,select,button.cdq-choice-field')){
    if(!field.name||!definitions(field.name).length)continue;
-   for(const [key,value] of Object.entries({'font-family':'CDQSummary,Arial,sans-serif','font-weight':'400','color':'#092952','-webkit-text-fill-color':'#092952'}))
+   for(const [key,value] of Object.entries({'font-family':'CDQForm2918, sans-serif','font-weight':'700','color':'#092952','-webkit-text-fill-color':'#092952'}))
     if(field.style.getPropertyValue(key)!==value||field.style.getPropertyPriority(key)!=='important')field.style.setProperty(key,value,'important');
   }
   for(const name of ['date_etalonnage','date_prochain','date_approbation']){
    const outside=segmented(name),field=live(outside?name+'_annee':name),section=field?.closest('section');if(!section)continue;
    field.style.setProperty('box-sizing','border-box','important');
    if(!outside)field.style.setProperty('padding-inline-end','calc(20px * var(--total-scale-factor))','important');
-   if(section.querySelector('[data-cdq-weight-calendar]'))continue;
+   const year=definitions('date_etalonnage_annee')[0]?.rect, next=definitions('date_prochain_jour')[0]?.rect;
+   const printed=outside && year && next && Math.abs(year[2]-270)<.12 && Math.abs(next[0]-423)<.12;
+   const printedX=name==='date_etalonnage'?279:name==='date_prochain'?398:null;
+   const hitField=printed && printedX!==null ? live(name==="date_etalonnage"?name+"_annee":name+"_jour") : field;
+   const hit=hitField?.closest('section')||section;
+   if(hit.querySelector('[data-cdq-weight-calendar]'))continue;
    const b=document.createElement('button');b.type='button';b.dataset.cdqWeightCalendar=name;b.setAttribute('aria-label','Calendrier : '+name.replaceAll('_',' '));b.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="100%" height="100%" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6M17 2v6M3 11h18M7 15h3M14 15h3M7 18h3M14 18h3"/></svg>';b.style.cssText='position:absolute;box-sizing:border-box;right:calc(.6px * var(--total-scale-factor));top:calc(.6px * var(--total-scale-factor));height:calc(100% - 1.2px * var(--total-scale-factor));width:min(25%,calc(18px * var(--total-scale-factor)));min-height:0;min-width:0;line-height:1;padding:0;border:0;background:white;color:#102951;z-index:2';
    if(outside){
     section.style.overflow='visible';
     Object.assign(b.style,{left:'calc(100% + 1px * var(--total-scale-factor))',right:'auto',width:'calc(15px * var(--total-scale-factor))',color:'#1769a7'});
    }
-   b.addEventListener('click',()=>open(name),{signal});section.append(b);buttons.add(b);
+   if(printed && printedX!==null){
+    // Use the existing PDF icon as the button face at every zoom.
+    const group=definitions(hitField.name)[0].rect;
+    hit.style.overflow='visible';
+    b.replaceChildren();b.dataset.cdqPrintedCalendar='2918';
+    Object.assign(b.style,{background:'transparent',color:'inherit',left:'calc('+(printedX-group[0])+'px * var(--total-scale-factor))',right:'auto',top:'calc(-1.6px * var(--total-scale-factor))',height:'calc(16.3px * var(--total-scale-factor))',width:'calc(15px * var(--total-scale-factor))',pointerEvents:'auto'});
+   }
+   b.addEventListener('click',()=>open(name),{signal});hit.append(b);buttons.add(b);
   }
  }
  const observer=new MutationObserver(refresh);observer.observe(surface,{subtree:true,childList:true});refresh();

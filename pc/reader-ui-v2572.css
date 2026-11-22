@@ -203,3 +203,5 @@ body.cdq-reader-pc #readerTop #back{grid-area:back}
 body.cdq-reader-pc #readerTop #name{grid-area:name;position:static!important;left:auto!important;transform:none!important;width:auto!important;min-width:0;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 body.cdq-reader-pc #readerTop #zoomControls{grid-area:zoom;display:flex!important;margin-left:0!important}
 body.cdq-reader-pc #readerTop #menu{grid-area:menu}
+
+@font-face{font-family:CDQForm2918;src:url('./assets/fonts/cdq-form-2918.ttf') format('truetype');font-weight:700;font-display:swap}

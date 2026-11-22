@@ -1,3 +1,4 @@
+import {LAYOUT2918} from './working-layout-2918.mjs';
 import {weightCreationValuesV2872,weightRowsV2871} from './weights-creation-v2871.mjs';
 import {normalizeWeightSelectionV2872,weightSelectionKeyV2872} from './weights-catalog-v2872.mjs';
 import {ownReceiptAdvanceV20261103,captureUnresolvedAncestorV20261103,validUnresolvedAncestorV20261103,copyReceiptRecordV20261103} from './report-receipt-continuity-v20261103.mjs';
@@ -311,7 +312,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
   }
   async function attachEngineV2754(copy,template,current){
     if(current.reportEngineV2754!==true||!template.bundled||copy.modeleId==='poids'&&template.storageProtocol==='editable-pdf')return copy;
-    const {REPORT_ENGINE_TEMPLATES_V2754}=await import('./report-engine-templates-v2754.mjs'),meta=REPORT_ENGINE_TEMPLATES_V2754[engineFamilyAliasV2754[copy.modeleId]||copy.modeleId];
+    const {REPORT_ENGINE_TEMPLATES_V2754}=await import('./report-engine-templates-v2754.mjs'),familyKey=engineFamilyAliasV2754[copy.modeleId]||copy.modeleId,layout=LAYOUT2918[familyKey],meta=layout&&template.sha256===layout.sha256?layout:REPORT_ENGINE_TEMPLATES_V2754[familyKey];
     if(!meta)throw Error('Le modèle de ce rapport n’est pas disponible dans le nouveau moteur.');
     const context=reportContextV2754({reportId:crypto.randomUUID(),clientId:copy.destination.clientId,destinationId:copy.destination.folderId,family:copy.modeleId,template:{modeleId:meta.modeleId,sha256:meta.sha256,version:2754},baseRevision:0});
     if(!context)throw Error('Le nouveau rapport n’a pas pu être préparé.');
