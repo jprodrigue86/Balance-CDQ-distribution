@@ -38,7 +38,7 @@ async function browse(id,clientId,name){
 function forgetMoved(result){
  const id=String(result.id||''),clients=[...new Set([result.sourceClientId,result.clientId].filter(Boolean))];
  function remove(tree){if(!tree)return;tree.fichiers=(tree.fichiers||[]).filter(f=>String(f.id)!==id);tree.dossiers=(tree.dossiers||[]).filter(f=>String(f.id)!==id);for(const child of tree.dossiers)remove(child);}
- for(const clientId of clients){try{const tree=cacheContenuCompagnies[clientId];if(tree){remove(tree);cacheDerniereVerificationCompagnies[clientId]=0;sauvegarderCachePersistantClient(clientId,tree,0);}}catch{}}
+ for(const clientId of clients){window.cdqInstantFiles2530?.forget?.(clientId,[id]);try{const tree=cacheContenuCompagnies[clientId];if(tree){remove(tree);cacheDerniereVerificationCompagnies[clientId]=0;sauvegarderCachePersistantClient(clientId,tree,0);}}catch{}}
  for(const el of document.querySelectorAll('.file-checkbox,.folder[data-folder-id]'))if(String(el.dataset.fileId||el.dataset.folderId||'')===id)(el.closest('.file-row')||el.closest('.folder'))?.remove();
 }
 
