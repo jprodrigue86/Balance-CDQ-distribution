@@ -7,7 +7,15 @@ export const excludedReportSourceV2895=value=>/^(?:liste (?:de|des) balances?|ar
 const reportFolder=name=>/^rapports? (?:d ?)?etalonnages?$/.test(normalizeReportSourceV2895(name));
 const sheet=file=>['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].includes(file?.mimeType||file?.type);
 const pdf=file=>['PDF','application/pdf'].includes(file?.mimeType||file?.type);
-export const reportSourceCandidateV2895=(file,includePdf=false)=>!!file&&!excludedReportSourceV2895(file.nom||file.name)&&(sheet(file)||includePdf&&pdf(file));
+export function weightCertificateSource(file) {
+  if (!file) return false;
+  const family = file.family || file.modeleId || file.template?.family || file.appProperties?.cdqTemplateModel;
+  if (family) return family === 'poids';
+  const name = String(file.nom || file.name || '').normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, ' ').toLowerCase();
+  return /^(?:certificats?|certficats?) (?:de )?poids? etalons?(?:[ ._-].*)?\.pdf$/.test(name);
+}
+export const reportSourceCandidateV2895=(file,includePdf=false)=>!!file&&!weightCertificateSource(file)&&!excludedReportSourceV2895(file.nom||file.name)&&(sheet(file)||includePdf&&pdf(file));
 const id=value=>String(value?.id||'');
 const incomplete=node=>node?.charge===false||node?.complete===false||node?.incomplete===true||node?.tronque===true||node?.truncated===true||node?.partial===true||!!node?.nextPageToken;
 const fail=message=>{throw Object.assign(Error(message),{code:'LIST_SOURCE_TREE_INCOMPLETE'});};

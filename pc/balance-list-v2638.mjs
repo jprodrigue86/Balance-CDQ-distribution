@@ -1,4 +1,4 @@
-import {reportSourceScopeV2895,loadedReportSourcesV2895} from './report-source-tree-v2895.mjs';
+import {reportSourceScopeV2895,loadedReportSourcesV2895,weightCertificateSource} from './report-source-tree-v2895.mjs';
 import {recoverableListReadV2878} from './list-reconciliation-v2878.mjs';
 import {createBalanceSheetReaderV2788} from './balance-sheet-summary-v2788.mjs';
 import {balanceListMessagesV2782} from './file-operation-state-v2782.mjs';
@@ -218,6 +218,7 @@ async function reconcileEngineSourcesImplV2792(id,{force=false}={}){
  states.set(k,{...state,...result,engineBaselineV2754:engineListsV2754.get(k)});return importEngineIndexV2754(id,states.get(k),{externalRevision});
 }
 function engineDataSavedV2754(event){
+ if(weightCertificateSource(event.detail))return;
  const d=event.detail||{},id=String(d.clientId||'');if(!id||d.owner!==calibrationIdentity().email||!canRead())return;
  restoreClient(id);const k=key(id),state=states.get(k);if(d.saveId&&engineRetiredRequestsV2754.get(k)?.has(String(d.saveId)))return;
  const pendingBefore=enginePendingRowsV2754.get(k)?.get(d.reportId),acceptedBefore=engineDataAcksV2754.get(k)?.get(d.reportId);
@@ -242,6 +243,7 @@ function engineDataSavedV2754(event){
 window.addEventListener('cdq:report-data-saved-v2754',engineDataSavedV2754);
 const confirmedReportRevisionsV2767=new Map();
 window.addEventListener('cdq:report-pdf-confirmed-v2754',event=>{
+ if(weightCertificateSource(event.detail))return;
  const d=event.detail||{},id=String(d.clientId||'');if(d.owner!==calibrationIdentity().email||!id||!canRead())return;
  const pdf=d.pdf,reportKey=key(id),pending=enginePendingRowsV2754.get(reportKey)?.get(d.reportId),accepted=engineDataAcksV2754.get(reportKey)?.get(d.reportId),receiptSave=String(d.saveId||'');
  // A late ACK for A cannot replace pending or already-acknowledged B. Require
@@ -421,7 +423,7 @@ function updateConfirmedRows(id,detail,sourceId){
 async function saved(event,local=false){
   if(owner!==calibrationIdentity().email)reset();
   const d=event.detail||{},id=String(d.clientId||'');if(!id){schedule();return;}
-  if(!canWrite()||excluded(d.name||d.nom))return;
+  if(!canWrite()||weightCertificateSource(d)||excluded(d.name||d.nom))return;
   if(d.owner&&String(d.owner.email||d.owner).trim().toLowerCase()!==String(calibrationIdentity().email).trim().toLowerCase())return;
   if(event.type==='cdq:copied'&&!/\.pdf$/i.test(d.name||d.nom||'')&&!['PDF','GOOGLE_SHEETS','application/pdf','application/vnd.google-apps.spreadsheet'].includes(d.type||d.mimeType)){schedule();return;}
   restoreClient(id);const k=key(id),file=String(d.sourceId||d.id||d.fileId||''),token=String(d.saveId||'');
