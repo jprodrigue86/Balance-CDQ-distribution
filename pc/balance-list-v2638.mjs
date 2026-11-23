@@ -87,7 +87,8 @@ function engineCurrentV2754(id){
   if(!managed.size)return false;
   // Only exact engine-confirmed file revisions may bypass a source scan. An
   // external edit of one of those files still invalidates the imported index.
-  for(const row of before)if(managed.has(row[0])&&!after.some(next=>next[0]===row[0]))return false;
+  const currentIds = new Set(after.map(row => row[0]));
+  for (const [id] of before) if (managed.has(id) && !currentIds.has(id)) return false;
   for(const row of after)if(managed.has(row[0])&&(row[1]!=='PDF'||row[2]!==managed.get(row[0])))return false;
   const external=rows=>rows.filter(row=>!managed.has(row[0]));
   return JSON.stringify(external(before))===JSON.stringify(external(after));
@@ -261,7 +262,7 @@ window.addEventListener('cdq:report-pdf-confirmed-v2754',event=>{
    updateConfirmedRows(id,{...d,id:pdf.fileId,fileId:pdf.fileId,revision:pdf.driveRevision,modifiedTime:pdf.driveRevision,equipmentSignature:signature},sourceId);
    projection.acknowledge({...d,sourceId,id:pdf.fileId,modifiedTime:pdf.driveRevision});
  }
- const k=key(id);changes.set(k,(changes.get(k)||0)+1);clearFailure(k);persistClient(id);scheduleClient(id,0);
+ if(firstListReceipt(reportKey,pdf.fileId,receiptSave,pdf.driveRevision,d.name||d.nom)){const k=key(id);changes.set(k,(changes.get(k)||0)+1);clearFailure(k);persistClient(id);scheduleClient(id,0);}
  const entry=engineListsV2754.get(key(id));if(entry&&d.pdf?.fileId&&d.pdf?.driveRevision){const managed=new Map(entry.managed||[]);managed.set(String(d.pdf.fileId),String(d.pdf.driveRevision));entry.managed=[...managed];const state=states.get(key(id));if(state)states.set(key(id),{...state,engineBaselineV2754:entry});persistClient(id);}
 });
 const projection=createBalanceListProjectionV2746({identity:calibrationIdentity,onChange:id=>{paintRows();if(!engineListsV2754.has(key(id)))queuePreview(id);window.dispatchEvent(new CustomEvent('cdq:balance-list-rows-v2730',{detail:{clientId:id,local:true}}));}});
@@ -420,6 +421,25 @@ function updateConfirmedRows(id,detail,sourceId){
  equipment.rememberRead?.({...detail,id:fileId},signature,id);
  window.dispatchEvent(new CustomEvent('cdq:balance-list-rows-v2730',{detail:{clientId:String(id)}}));
 }
+// Remember only successfully scheduled, identifiable Drive acknowledgements.
+const scheduledSaveReceipts = new Map();
+function firstListReceipt(k, file, token, revision, name) {
+  if (!file || revision == null || revision === '') return true;
+  const receipt = JSON.stringify([k, String(file), String(revision), name || '']);
+  const save = String(token || '');
+  if (scheduledSaveReceipts.has(receipt)) {
+    const previous = scheduledSaveReceipts.get(receipt);
+    // Older copy confirmations sometimes omit saveId. A precise Drive
+    // revision can match that notification to its named save in either order.
+    if (!save || save === previous) return false;
+    scheduledSaveReceipts.delete(receipt);
+    scheduledSaveReceipts.set(receipt, save);
+    return previous !== '';
+  }
+  scheduledSaveReceipts.set(receipt, save);
+  if (scheduledSaveReceipts.size > 256) scheduledSaveReceipts.delete(scheduledSaveReceipts.keys().next().value);
+  return true;
+}
 async function saved(event,local=false){
   if(owner!==calibrationIdentity().email)reset();
   const d=event.detail||{},id=String(d.clientId||'');if(!id){schedule();return;}
@@ -445,7 +465,15 @@ async function saved(event,local=false){
   if(local&&d.pending!==false){if(saveWaits.get(k)?.get(file)===token)projection.saved({...localDetail,numeroSerie:equipment.serialForSave?.(token,id),equipmentSignature:equipment.signatureForSave?.(token,id)||d.equipmentSignature});persistClient(id);paintRows();return;}
   if(!local||d.pending===false)equipment.acknowledge(token,d);
   updateConfirmedRows(id,d,matched||file);
-  reviews.get(k)?.delete(token);changes.set(k,(changes.get(k)||0)+1);persistClient(id);const job=jobs.get(k);if(job)job.dirty=true;
+  reviews.get(k)?.delete(token);
+  const revision = d.modifiedTime || d.dateModification || d.revision;
+  const confirmedFile = String(d.fileId || d.id || file);
+  if (!firstListReceipt(k, confirmedFile, token, revision, d.name || d.nom)) {
+    persistClient(id);
+    paintRows();
+    return;
+  }
+  changes.set(k,(changes.get(k)||0)+1);persistClient(id);const job=jobs.get(k);if(job)job.dirty=true;
   paintRows();scheduleClient(id,0);
 }
 function root(id){try{return cacheContenuCompagnies[id]||null;}catch{return null;}}
@@ -714,7 +742,7 @@ function menu(){
   for(const [label,action,write] of [['Ouvrir la liste',open,false],['Actualiser la liste',()=>refresh(true),true]]){const b=document.createElement('button');b.type='button';b.textContent=label;b.disabled=write&&!canWrite();b.onclick=()=>{closeMenu();if(id===client())Promise.resolve(action()).catch(e=>paint(id,e.message,true));};p.append(b);}
   actions.append(p);actions.querySelector('[data-client-list]')?.setAttribute('aria-expanded','true');
 }
-function reset(){epoch++;for(const timer of busyReads2919.values())clearTimeout(timer);busyReads2919.clear();refreshFlightsV2792.clear();engineReconcileFlightsV2792.clear();owner=calibrationIdentity().email;visibleClient='';listNoticeV2892=null;cdqListProgressV2778.clear();journalErrorsV20261028.clear();receipts.clear();states.clear();jobs.clear();failed.clear();saveWaits.clear();changes.clear();satisfied.clear();hydrated.clear();reviews.clear();reviewReceipts.clear();pausedClients.clear();projection.reset();previews.clear();previewJobs.clear();waitChecks.clear();warmIndexes.clear();engineListsV2754.clear();engineImportsV2754.clear();engineListFlightsV2754.clear();enginePendingRowsV2754.clear();engineDataAcksV2754.clear();engineRetiredRequestsV2754.clear();pcScan=null;for(const t of clientTimers.values())clearTimeout(t);clientTimers.clear();clientTimerDeadlinesV2770.clear();clearTimeout(timer);clearTimeout(scanTimer);timer=scanTimer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();paintRows();publishBackground();}
+function reset(){epoch++;scheduledSaveReceipts.clear();for(const timer of busyReads2919.values())clearTimeout(timer);busyReads2919.clear();refreshFlightsV2792.clear();engineReconcileFlightsV2792.clear();owner=calibrationIdentity().email;visibleClient='';listNoticeV2892=null;cdqListProgressV2778.clear();journalErrorsV20261028.clear();receipts.clear();states.clear();jobs.clear();failed.clear();saveWaits.clear();changes.clear();satisfied.clear();hydrated.clear();reviews.clear();reviewReceipts.clear();pausedClients.clear();projection.reset();previews.clear();previewJobs.clear();waitChecks.clear();warmIndexes.clear();engineListsV2754.clear();engineImportsV2754.clear();engineListFlightsV2754.clear();enginePendingRowsV2754.clear();engineDataAcksV2754.clear();engineRetiredRequestsV2754.clear();pcScan=null;for(const t of clientTimers.values())clearTimeout(t);clientTimers.clear();clientTimerDeadlinesV2770.clear();clearTimeout(timer);clearTimeout(scanTimer);timer=scanTimer=0;closeMenu();document.querySelector('[data-balance-list-status]')?.remove();paintRows();publishBackground();}
 function sources(tree){return loadedReportSourcesV2895(tree).files;}
 function listOwnsSourceScanV2810(id){
  const k=key(id);return clientTimers.has(k)||refreshFlightsV2792.has(k)||jobs.has(k)||engineReconcileFlightsV2792.has(k)||engineImportsV2754.has(k)||engineListFlightsV2754.has(k)||failed.has(k);

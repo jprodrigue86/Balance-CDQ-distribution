@@ -65,13 +65,19 @@
     status('Téléchargement de la mise à jour PC '+latest.version+'…',false,true);
     const deadline=Date.now()+180000;
     while(Date.now()<deadline&&!installFailed){
-      if(await waiting()){
-        if(pdfOpen()){finishStartup();scheduleAutomatic();return;}
-        applying=true;document.documentElement.dataset.cdqPcStartupV2717='activating';
-        status('Installation de la mise à jour PC…',false,true);
-        reg.waiting.postMessage({type:'CDQ_PC_ACTIVATE',release:latest.release});
-        // The verified worker reloads this shell; the old workspace never opens.
+      if(await activeTarget()){
+        if (!reloadVerifiedTarget()) finishStartup();
         return;
+      }
+      if(!applying && await waiting()){
+        if(pdfOpen()){finishStartup();scheduleAutomatic();return;}
+        const target=reg.waiting;
+        if(target){
+          applying=true;document.documentElement.dataset.cdqPcStartupV2717='activating';
+          status('Installation de la mise à jour PC…',false,true);
+          try { target.postMessage({type:'CDQ_PC_ACTIVATE',release:latest.release}); }
+          catch { applying=false; }
+        }
       }
       await new Promise(resolve=>setTimeout(resolve,250));
     }
@@ -104,13 +110,54 @@
     if(frame?.contentWindow)frame.contentWindow.postMessage({type:'CDQ_PC_STATUS',state},origin);
   }
   function status(message,available=false,busy=false){state={message,available,checking:busy};post();startupLabel();if(available)scheduleAutomatic();}
+  const verifiedWorkerReleases=new WeakMap();
+  async function workerRelease(worker) {
+    if (!worker) return '';
+    if (verifiedWorkerReleases.has(worker)) return verifiedWorkerReleases.get(worker);
+    return new Promise(resolve => {
+      const ports = new MessageChannel();
+      const finish = value => { clearTimeout(timer); ports.port1.close(); if(value) verifiedWorkerReleases.set(worker,value); resolve(value || ''); };
+      const timer = setTimeout(() => finish(''), 4000);
+      ports.port1.onmessage = event => finish(event.data?.release);
+      try { worker.postMessage({type:'CDQ_PC_VERSION'}, [ports.port2]); }
+      catch { ports.port2.close(); finish(''); }
+    });
+  }
+  async function activeTarget() {
+    const controller=navigator.serviceWorker?.controller;
+    return !!controller && !!latest && current !== latest.release && reg?.active === controller &&
+      await workerRelease(controller) === latest.release && navigator.serviceWorker.controller === controller;
+  }
+  function reloadVerifiedTarget() {
+    if (pdfOpen()) return false;
+    const key='cdq-pc-activated:'+latest.release;
+    try {
+      if (sessionStorage.getItem(key) === current) return false;
+      sessionStorage.setItem(key,current);
+    } catch {}
+    location.reload();
+    return true;
+  }
   async function waiting(){
     if(reg?.waiting&&latest&&latest.release!==current){
       const expected=latest.release,worker=reg.waiting;
-      const actual=await new Promise(resolve=>{const ports=new MessageChannel(),timer=setTimeout(()=>{ports.port1.close();resolve('');},4000);ports.port1.onmessage=e=>{clearTimeout(timer);ports.port1.close();resolve(e.data?.release);};worker.postMessage({type:'CDQ_PC_VERSION'},[ports.port2]);});
+      const actual=await workerRelease(worker);
       if(actual!==expected||worker!==reg.waiting)return false;
       status('Mise à jour PC '+latest.version+' prête. Installation automatique lorsque vos documents sont fermés et que vous avez terminé.',true);return true;}
     return false;
+  }
+  function observeRegistration(registration){
+    if(!registration.__cdqListening){
+      registration.__cdqListening=true;
+      registration.addEventListener('updatefound',()=>{
+        const worker=registration.installing;if(!worker||reg!==registration)return;
+        worker.addEventListener('statechange',async()=>{
+          if (reg !== registration) return;
+          if(worker.state==='installed'){if(!(await waiting())&&latest?.release===current)status('Version PC '+version+' à jour.');}
+          if(worker.state==='redundant'){installFailed=true;status('La préparation de la mise à jour a échoué. Votre version actuelle reste disponible. Réessayez.');}
+        });
+      });
+    }
   }
   async function check(force=false){
     if(checking)return checking;
@@ -127,17 +174,15 @@
           return;
         }
         if(!('serviceWorker' in navigator))throw Error('Ce navigateur ne permet pas les mises à jour installables. Ouvrez CDQ dans Safari.');
-        reg=reg||await navigator.serviceWorker.register(new URL('sw.js',base),{scope:base.href,updateViaCache:'none'});
-        if(!reg.__cdqListening){
-          reg.__cdqListening=true;
-          reg.addEventListener('updatefound',()=>{
-            const worker=reg.installing;if(!worker)return;
-            worker.addEventListener('statechange',async()=>{
-              if(worker.state==='installed'){if(!(await waiting())&&latest?.release===current)status('Version PC '+version+' à jour.');}
-              if(worker.state==='redundant'){installFailed=true;status('La préparation de la mise à jour a échoué. Votre version actuelle reste disponible. Réessayez.');}
-            });
-          });
-        }
+        const sw = navigator.serviceWorker;
+        const options = {scope:base.href,updateViaCache:'none'};
+        const existing = await sw.getRegistration(base.href);
+        const exact = existing && existing.scope === base.href;
+        const known = exact && (existing.installing || existing.waiting || existing.active);
+        const scriptURL = new URL('sw.js',base).href;
+        const reuse = known && known.scriptURL === scriptURL;
+        reg = reuse ? existing : await sw.register(scriptURL,options);
+        observeRegistration(reg);
         const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
         try{
           const response=await fetch(new URL('release.json',base),{cache:'no-store',signal:controller.signal});
@@ -145,7 +190,16 @@
           latest=await response.json();
           if(!/^[a-f0-9]{64}$/.test(latest.release)||typeof latest.version!=='string')throw Error('Informations de mise à jour invalides.');
         }finally{clearTimeout(timer);}
-        await reg.update();
+        if(await waiting())return;
+        if(reuse && !reg.installing && !reg.waiting && reg.active) {
+          try { await reg.update(); }
+          catch (error) {
+            if (error.name !== 'InvalidStateError') throw error;
+            // The registration can retire while a previous release activates.
+            reg = await sw.register(scriptURL,options);
+            observeRegistration(reg);
+          }
+        }
         if(await waiting())return;
         if(latest.release===current)status('Version PC '+version+' à jour.');
         else status('Préparation de la mise à jour PC… Vous pouvez continuer à travailler.');

@@ -179,11 +179,53 @@ function invoiceReviewDisplayV2874(decision){
 function invoiceReviewClearV2874(){var details=page&&page.querySelector('[data-inv-review-v2874]');if(details){details.hidden=true;details.querySelector('p').textContent='';}}
 
 function parseAmount(t,layout){return invoiceAmountDecisionV2874(t,layout).amount;}
+function joinPrintedTotalCurrency(lines) {
+  const joined = [];
+  for (let i = 0; i < lines.length; i++) {
+    const normalized = lines[i].replace(/^\s*(TOTAL)\s+CA[B8]\s*\$\s*(?=\d)/i, '$1 CAD $$');
+    if (normalized !== lines[i] && invoiceOnlyAmount(normalized.replace(/^TOTAL\s+CAD/i, '')).length === 1) {
+      joined.push(normalized);
+      continue;
+    }
+    const label = invoiceAmountLabel(lines[i]).text;
+    const next = (lines[i + 1] || '').trim();
+    const bare = /^total\s*:?$/.test(label);
+    const withCurrency = /^total\s*:?\s*(?:(?:cad|cdn)\s*\$?|\$)\s*:?$/.test(label);
+    const currencyLine = /^(?:(?:CAD|CDN)\s*\$?|\$)$/i;
+    let end = i;
+    if (bare || withCurrency) {
+      let j = i + 1;
+      while (j < i + 3 && currencyLine.test((lines[j] || '').trim())) j++;
+      const hasCurrency = withCurrency || j > i + 1 || /^(?:CAD|CDN|\$)/i.test(next);
+      if (hasCurrency && invoiceOnlyAmount(lines[j] || '').length === 1 &&
+          !invoiceOnlyAmount(lines[j + 1] || '').length) end = j;
+    }
+    joined.push(lines.slice(i, end + 1).join(' '));
+    i = end;
+  }
+  return joined;
+}
+function printedPumpSale(lines) {
+  // Scope unit headings to the following grade and stop at payment or taxes.
+  var grade=/^(?:regulier|regular|super|premium|supreme|diesel|sans plomb|unleaded)\b/;
+  for(var i=0;i<lines.length;i++) {
+    if(!/^carburants?\b/.test(lines[i]))continue;
+    var section=lines.slice(i,i+9).join(' ').split(/\b(?:total|tps|tvq|visa|credit|achat)\b/)[0];
+    if(!/\(\s*l\s*\)/.test(section)||!/(?:\$|prix)\s*\/\s*l\b/.test(section))continue;
+    var pos=section.search(/\b(?:regulier|regular|super|premium|supreme|diesel|sans plomb|unleaded)\b/);
+    if(pos<0)continue;
+    var purchase=section.slice(pos).replace(grade,'').trim().match(/^(\d{1,4}[.,]\d{1,3})\s+(\d{1,2}[.,]\d{2,4})\s+\$?\s*(\d{1,5}[.,]\d{2})(?![\d.,])/);
+    if(!purchase)continue;
+    var values=purchase.slice(1).map(x=>Number(x.replace(',','.')));
+    if(values.every(v=>v>0) && Math.abs(Math.round(values[0]*values[1]*100)-Math.round(values[2]*100))<=2)return true;
+  }
+  return false;
+}
 function invoiceAmountDecisionV2874(t,layout){
   if(invoicePaymentAmbiguousV2791(t))return {amount:NaN,reason:'payment'};
   // Accept a missing OCR space only for a leading known TOTAL label followed
   // immediately by a complete decimal amount, never for arbitrary identifiers.
-  var geometry=invoiceLayoutRowsV2734(layout),physical=geometry!==null,sourceRows=physical?geometry.map(function(line){return {line:line,noAdjacent:true}}):invoiceColumnRowsV2734(textLines(t)),rows=[],suggestionBlock=false,labels=[];
+  var geometry=invoiceLayoutRowsV2734(layout),physical=geometry!==null,sourceRows=physical?joinPrintedTotalCurrency(geometry).map(function(line){return {line:line,noAdjacent:true}}):invoiceColumnRowsV2734(joinPrintedTotalCurrency(textLines(t))),rows=[],suggestionBlock=false,labels=[];
   sourceRows.forEach(function(sourceRow){
     var line=invoiceSpacedTotalV2790(sourceRow.line).replace(/^(T[O0]TA[LI]|TOTAL(?:\s+(?:PAY[EÉ]|PAID|TTC))?|GRAND\s+TOTAL)(?=\d{1,5}\s*[,.]\s*\d{2}(?:\s|\$|$))/i,'$1 ');
     if(physical)line=line.replace(/^(?:T0TAL|TOTAI)(?=\s*(?:$|[:$]|\d|PAY[EÉ]\b|PAID\b|TTC\b))/i,'TOTAL');
@@ -256,7 +298,22 @@ function invoiceCategoryEvidenceV2741(t){
   var volume=normal.some(function(l,i){return purchased(i)&&/(?:\d\s*(?:l\b|litres?\b|liters?\b)|^(?:litres?|liters?)\s*[:=]?\s*\d+(?:[.,]\d+)?(?:\s|$))/.test(l)});
   var litrePrice=normal.some(function(l,i){return purchased(i)&&/(?:\$\s*\d+[.,]\d{2,3}\s*\/\s*(?:l\b|litres?\b)|\d+[.,]\d{2,3}\s*\$?\s*\/\s*(?:l\b|litres?\b)|(?:prix|price)\s*(?:par\s*)?(?:litre|liter)\b|(?:prix|price)\s*\/\s*(?:l\b|litres?\b|liters?\b)\s*[:=]?\s*\$?\s*\d+[.,]\d{2,3})/.test(l)});
   var fuelGrade=normal.some(function(l,i){return purchased(i)&&(/^(?:regulier|regular|super|premium|supreme|diesel|sans\s*plomb|unleaded|v[- ]?power)\b/.test(l)||invoiceFuelV2742(l))});
-  fuel=fuel||fuelGrade&&volume&&litrePrice;
+  fuel=fuel||fuelGrade&&volume&&litrePrice||printedPumpSale(normal);
+  if (!fuel) {
+    // Recover a pump table when the grade or currency glyph is imperfect.
+    // The signed receipt's final amount must corroborate the printed line.
+    const pumpHeaders = normal.findIndex(line =>
+      /\(\s*l\s*\)/.test(line) && /\(\s*[$s8]\s*\/\s*l\s*\)/.test(line));
+    if (pumpHeaders >= 0) {
+      const nearby = normal.slice(pumpHeaders + 1, pumpHeaders + 5);
+      const grade = nearby.find(line => /^(?:regul[iel1]{1,3}r|regular|diesel|premium|supreme|sans plomb)\s+\d/.test(line));
+      const printed = grade?.match(/\s\d{1,4}[.,]\d{2,3}\s+\d{1,2}[.,]\d{2,4}\s+[$]?\s*(\d{1,5}[.,]\d{2})\s*$/);
+      if (printed) {
+        const amount = invoiceAmountDecisionV2874(t,null).amount;
+        fuel = Number.isFinite(amount) && amount > 0 && amount === numberMoney(printed[1]);
+      }
+    }
+  }
   var automotiveMerchant=/\bcanadian\s+tire\b/.test(text);
   var repair=normal.some(function(l,i){return /\b(?:reparations?|vidanges?|pneus?|mecanique|alignement|freins?|chambre\s+a\s*air|main\s*d['’ ]?oeuvre)\b/.test(l)&&!invoiceToolsV2742(l)&&charged(i)||charged(i)&&(automotiveMerchant&&/\b020[- ]?0530[- ]?0\b/.test(l)||/\b(?:ampoules?|bulbs?|essuie[- ]?glaces?|wiper|filtres?\s+a\s+huile|oil\s+filter)\b/.test(l)&&/\b(?:motomaster|automobile|vehicule|automotive|3157\s*a)\b/.test(l))});
   var hardware=normal.some(function(l,i){return !invoiceAdministrativeV2742(lines[i])&&/\b(?:quincaillerie|materiel|equipements?)\b/.test(l)});
