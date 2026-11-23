@@ -83,6 +83,30 @@ function invoiceOnlyAmount(line){
   var token=tokens[0],rest=(line.slice(0,token.start)+line.slice(token.end)).replace(/\b(?:CAD|CDN|CA)\b/gi,'').replace(/[\s$€:;()]/g,'');
   return rest?[]:[token.value];
 }
+// Word order supplied by the recognizer gives the reading direction even
+// when the phone saved the photograph sideways. Require a clear consensus.
+function uprightInvoiceLines(lines, width, height) {
+  const votes = [0, 0, 0, 0];
+  for (const line of lines) {
+    const words = line.elements;
+    if (words.length < 2) continue;
+    const first = words[0], last = words[words.length - 1];
+    const dx = last.left + last.right - first.left - first.right;
+    const dy = last.top + last.bottom - first.top - first.bottom;
+    if (Math.abs(dx) > 2 * Math.abs(dy)) votes[dx > 0 ? 0 : 2]++;
+    if (Math.abs(dy) > 2 * Math.abs(dx)) votes[dy > 0 ? 1 : 3]++;
+  }
+  const best = Math.max(...votes), direction = votes.indexOf(best);
+  if (direction === 0 || best < 3 || best * 3 < votes.reduce((a,b)=>a+b,0) * 2) return lines;
+  function rotate(box) {
+    const {left:l, top:t, right:r, bottom:b} = box;
+    if (direction === 1) return {...box,left:t,top:width-r,right:b,bottom:width-l};
+    if (direction === 2) return {...box,left:width-r,top:height-b,right:width-l,bottom:height-t};
+    return {...box,left:height-b,top:l,right:height-t,bottom:r};
+  }
+  return lines.map(line => ({...rotate(line),elements:line.elements.map(rotate)}));
+}
+
 function invoiceLayoutRowsV2734(layout){
   if(!layout||typeof layout!=='object'||layout.version!==2734||!Number.isInteger(layout.width)||!Number.isInteger(layout.height)||layout.width<=0||layout.height<=0||layout.width>16384||layout.height>16384||layout.width*layout.height>60000000||!Array.isArray(layout.lines)||!layout.lines.length||layout.lines.length>400)return null;
   var count=0,chars=0,lines=[];
@@ -96,10 +120,13 @@ function invoiceLayoutRowsV2734(layout){
     count+=line.elements.length;if(count>2400)return null;
     for(var j=0;j<line.elements.length;j++){var element=line.elements[j];if(!box(element,256)||element.left<line.left||element.right>line.right||element.top<line.top||element.bottom>line.bottom)return null}
     if(chars>65536)return null;
-    var words=line.elements.slice().sort(function(a,b){return a.left-b.left}).map(function(element){return element.text.trim()}).filter(Boolean).join(' ');
-    var text=words||line.text.trim();if(words&&!lineAmounts(words).length&&lineAmounts(line.text).length)text=line.text.trim();
-    lines.push({left:line.left,top:line.top,right:line.right,bottom:line.bottom,text:text,elements:line.elements});
+    lines.push(line);
   }
+  lines = uprightInvoiceLines(lines,layout.width,layout.height).map(function(line){
+    const words=line.elements.slice().sort((a,b)=>a.left-b.left).map(el=>el.text.trim()).filter(Boolean).join(' ');
+    const text=(!words || !lineAmounts(words).length && lineAmounts(line.text).length) ? line.text.trim() : words;
+    return {...line,text:text};
+  });
   function rowPriority(line){var meta=invoiceAmountLabel(line.text.replace(/^(?:T0TAL|TOTAI)(?=\s|[:$]|$)/i,'TOTAL'));return meta.rank||meta.excluded||meta.suggestion?0:/^\$?\s*\d[\d ,.]*\s*\$?$/.test(line.text)?1:2}
   // Anchor financial labels and amounts before unrelated background OCR so
   // a noisy neighboring box cannot claim their row first.
@@ -230,6 +257,45 @@ function printedPumpSale(lines) {
   }
   return false;
 }
+function invoiceApprovedPayment(text, rows) {
+  const normal = value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  const raw = textLines(text).map(normal);
+  const lines = Array.from(new Set([...raw, ...rows.map(row=>normal(row.line))]));
+  const approved=lines.some(s=>/^(?:[o0]?1\s+)?(?:appr[o0][uvl]vee?|approved)\b/.test(s));
+  const purchase=lines.some(s=>/^(?:type\s*:\s*)?(?:achat|purchase)\s*$/.test(s));
+  const terminalContext=lines.some(s=>/^term\s*:/.test(s)) && lines.some(s=>/^#?\s*autor\s*:/.test(s));
+  if (lines.some(s=>/\b(?:remboursement|refund|retour|cash|comptant|pourboire|gratuity|tip|cashback|retrait|split|versement)\b/.test(s))) return null;
+  const terminals = new Set(), cards = new Set();
+  function inspect(line) {
+    const match = /^(mnt|visa|mastercard|interac|debit|credit)\s*:?\s*(.+)$/.exec(line);
+    if (!match) return;
+    const amount = invoiceOnlyAmount(match[2]);
+    if (amount.length === 1 && amount[0] > 0) (match[1] === 'mnt' ? terminals : cards).add(Math.round(amount[0]*100));
+  }
+  lines.forEach(inspect);
+  for(let i=0;i+1<raw.length;i++){
+    if (/^(?:mnt|visa|mastercard|interac|debit|credit)\s*:?$/.test(raw[i]) && invoiceOnlyAmount(raw[i+1]).length===1)
+      inspect(raw[i]+' '+raw[i+1]);
+  }
+  // A separate card-payment row can verify a complete printed total lost
+  // in geometric grouping. Require both amounts to be independently labelled.
+  const totals = new Set();
+  for (const line of raw) {
+    const m=/^total\s*:?\s*(.+)$/.exec(line);
+    if(m){const values=invoiceOnlyAmount(m[1]);if(values.length===1)totals.add(Math.round(values[0]*100));}
+  }
+  if(totals.size===1 && cards.size===1){
+    const same=[...totals][0];
+    if(cards.has(same) && (!approved || !terminals.size || terminals.size===1 && terminals.has(same))) return {cents:same};
+    if(approved || purchase) return {cents:null};
+  }
+  if (!terminals.size) return null;
+  const amounts = new Set([...terminals,...cards]);
+  if (amounts.size>1 && (approved || purchase)) return {cents:null};
+  if (!approved || !purchase && !terminalContext) return null;
+  return {cents:amounts.size===1 ? [...amounts][0] : null};
+}
+
 function invoiceAmountDecisionV2874(t,layout){
   if(invoicePaymentAmbiguousV2791(t))return {amount:NaN,reason:'payment'};
   // Accept a missing OCR space only for a leading known TOTAL label followed
@@ -258,10 +324,20 @@ function invoiceAmountDecisionV2874(t,layout){
     labels.push({rank:row.meta.rank,amounts:amounts});
   });
   var priority=0;labels.forEach(function(label){if(label.rank>priority)priority=label.rank});
-  if(!priority)return {amount:NaN,reason:'missing'};
-  var chosen=NaN,uncertain=false;
-  labels.forEach(function(label){if(label.rank!==priority)return;if(!label.amounts.length){uncertain=true;return}label.amounts.forEach(function(amount){if(!Number.isFinite(chosen))chosen=amount;else if(Math.round(chosen*100)!==Math.round(amount*100))uncertain=true})});
-  var fuel=invoiceFuelCheckV2874(rows,chosen),reason=uncertain?'conflict':!invoiceTotalConsistentV2790(rows,chosen)?'arithmetic':fuel.reason;
+  const payment=invoiceApprovedPayment(t,rows);
+  const printed=new Set();
+  let incomplete=false;
+  for(const label of labels.filter(label=>label.rank===priority)){
+    if(!label.amounts.length) incomplete=true;
+    for(const amount of label.amounts) printed.add(Math.round(amount*100));
+  }
+  const single=printed.size===1 ? [...printed][0] : null;
+  const conflict=printed.size>1 || payment && (payment.cents===null || single!==null && single!==payment.cents);
+  const cents=single===null && payment ? payment.cents : single;
+  const chosen=cents===null ? NaN : cents/100;
+  const fuel=invoiceFuelCheckV2874(rows,chosen);
+  const reason=conflict ? 'conflict' : !Number.isFinite(chosen) || incomplete && !payment ? 'missing' :
+    !invoiceTotalConsistentV2790(rows,chosen) ? 'arithmetic' : fuel.reason;
   return {amount:reason?NaN:chosen,printed:chosen,fuel:fuel.fuel,reason:reason};
 }
 function invoiceValidDateV2791(value){
