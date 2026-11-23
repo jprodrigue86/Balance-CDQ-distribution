@@ -1,6 +1,16 @@
 <!doctype html>
-<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="29.26" data-cdq-pc-release="8f1da8dd54cc79a79f2d2018481b01eea819b10d7318271d82453eb87eb98407">
+<html data-cdq-pc-boot-gate-v2717="1" lang="fr" data-cdq-pc-version="29.27" data-cdq-pc-release="655ea8c4e2c8476a4580cd9d25554af07958a6b053ae085d958048282ecafa2f">
 <head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>
+html{background:#000}
+html:not([data-cdq-startup-handed-off]){background:#000 linear-gradient(#0002,#0002) center/cover no-repeat}
+@media(max-width:899px){html:not([data-cdq-startup-handed-off]){background-image:linear-gradient(#0002,#0002),url("./assets/music-wall-android-v2667.webp");background-size:100% 100%;background-attachment:fixed}}
+@media(min-width:900px){html:not([data-cdq-startup-handed-off]){background-image:linear-gradient(#0002,#0002),url("./assets/music-wall-pc-v2521.webp");background-size:100% 100%;background-attachment:fixed}}
+</style>
+<link rel="preload" as="image" href="./assets/music-wall-android-v2667.webp" media="(max-width:899px)" fetchpriority="high">
+<link rel="preload" as="image" href="./assets/music-wall-pc-v2521.webp" media="(min-width:900px)" fetchpriority="high">
 <script id="cdq-durable-resume-v2751">
 window.cdqDurableResumeV2751=(function createDurableResumeV2751({native=null,read=()=>''}={}){
  const isHeadless=()=>{try{return native?.isHeadlessV2751?.()===true;}catch{return false;}};
@@ -20,10 +30,11 @@ window.cdqDurableResumeV2751=(function createDurableResumeV2751({native=null,rea
 <script src="./app-session-v2661.js"></script>
 <script src="./pc-update.js"></script>
 <script src="https://accounts.google.com/gsi/client" defer></script>
+<script src="./direct-startup-v2645.js"></script>
 <script src="./embedded-rpc.js"></script>
 <link rel="icon" href="./icons/icon-heavy-v3-192.png">
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+
 <meta name="theme-color" content="#000000">
 <meta name="interface-scale" content="1.30">
 <link rel="manifest" href="manifest.webmanifest">
@@ -470,7 +481,7 @@ referrerpolicy="strict-origin-when-cross-origin">
 
 
 <script>
-const CDQ_PWA_BUILD = '2026.11.23-v29.26-runtime-pc';
+const CDQ_PWA_BUILD = '2026.11.23-v29.27-runtime-pc';
 const CDQ_STABLE_DEVICE_TOKEN_KEY = 'cdq_auth_device_token_v2';
 let slowLoadingTimer = null;
 const CDQ_ACTIVATION_SESSION_KEY = 'cdq_activation_pending_v41';
@@ -595,7 +606,7 @@ let cdqFirstFrameStableSourceV2543='';
 let cdqFrameAccessV2751='pending';
 let cdqFirstFrameFallbackV2543=null;
 let loadingShownAt = performance.now();
-let cdqInterfaceReadyV2648=false;
+
 let selectorReady = false;
 let iframeLoaded = false;
 let selectorAwaitingAccess = false;
@@ -928,10 +939,7 @@ if (selectorAwaitingAccess) {
 // Authorization can change within the same already prepared local frame.
 clearTimeout(cdqFirstFrameFallbackV2543);
 clearTimeout(hideLoadingTimer);
-loading.style.display = cdqInterfaceReadyV2648?'none':'grid';
-if(cdqInterfaceReadyV2648)app.style.visibility='visible';
-const pcOneWall=window.matchMedia && matchMedia('(min-width:900px) and (min-aspect-ratio:4/3)').matches;
-if(pcOneWall && cdqFirstFrameStableV2543){app.style.visibility='visible';loading.classList.add('pc-frame-ready');}
+loading.style.display='grid';app.style.visibility='hidden';
 // Dernier secours si le Selector cesse complètement de répondre.
 if (!wasPending) accessWaitTimer = setTimeout(() => {
 if (!selectorAwaitingAccess) return;
@@ -974,7 +982,8 @@ const remaining = Math.max(0, MIN_LOADING_MS - elapsed);
 clearTimeout(hideLoadingTimer);
 const generation = loadGeneration;
 hideLoadingTimer = setTimeout(() => {
-if (selectorReady && !selectorAwaitingAccess && generation === loadGeneration) {
+if (selectorReady && !selectorAwaitingAccess && generation === loadGeneration && cdqFirstFrameStableV2543) {
+  document.documentElement.dataset.cdqStartupHandedOff='true';
 app.style.visibility = 'visible';
 loading.style.display = 'none';
 }
@@ -986,24 +995,6 @@ loading.style.display = 'none';
 app.addEventListener('load', () => {
 if(!app.src || app.src === 'about:blank')return;
 iframeLoaded = true;
-const pcOneWall=window.matchMedia && matchMedia('(min-width:900px) and (min-aspect-ratio:4/3)').matches;
-if(pcOneWall && cdqFirstFrameStableV2543){
-  app.style.visibility='visible';
-  loading.classList.add('pc-frame-ready');
-}
-// V21.95 : le rendu de l'application ne dépend plus exclusivement du postMessage.
-// Sur certains Android/PWA, le Selector est chargé mais CDQ_SELECTOR_READY peut se perdre.
-// Après un très court délai, montrer l'iframe chargée au lieu de bloquer l'utilisateur.
-setTimeout(()=>{
-  if(!cdqFirstFrameStableV2543)return;
-  if(!iframeLoaded || selectorReady)return;
-  clearTimeout(loadingTimer);
-  clearTimeout(slowLoadingTimer);
-  clearTimeout(hideLoadingTimer);
-  if(loadHelp)loadHelp.style.display='none';
-  loading.style.display='none';
-  app.style.visibility='visible';
-},900);
 if (!selectorReady) armLoadingTimeout();
 });
 
@@ -1023,7 +1014,7 @@ if(cdqDeferReloadV2679())return false;
 if (navigator.onLine === false) { afficherConnexionGoogle(false); return; }
 loadGeneration++;
 cdqOffline.then(controller=>controller.lock());
-cdqInterfaceReadyV2648=false;
+
 cdqFrameAccessV2751='pending';
 selectorReady = false;
 iframeLoaded = false;
@@ -1327,7 +1318,7 @@ cdqDemarrerSurveillanceMiseAJourV2254();
 clearTimeout(loadingTimer);
 clearTimeout(slowLoadingTimer);
 loadHelp.style.display = 'none';
-if (data.authProtocol >= 24) recevoirEtatAcces(data.accessState || 'pending');
+if (data.authProtocol >= 24 && data.type==='CDQ_SELECTOR_READY') recevoirEtatAcces(data.accessState || 'pending');
 else if (!selectorAwaitingAccess) masquerMurApresDelaiMinimum();
 }
 if (event.source !== selectorWindow || event.origin !== selectorOrigin) return;
@@ -1338,13 +1329,9 @@ if(data.type==='CDQ_PREWARM_READER_V2554'){
 }
 
 if(data.type==='CDQ_INTERFACE_FAILED_V2652'){loadHelp.style.display='flex';document.getElementById('load-title').textContent='Préparation de l’interface';document.getElementById('load-message').textContent='Une image ou un module n’a pas pu être chargé. Réessayez le chargement.';return;}
-if(data.type==='CDQ_INTERFACE_READY_V2648'){
-  cdqInterfaceReadyV2648=true;if(cdqFrameAccessV2751!=='ready'||cdqFirstFrameStableV2543){app.style.visibility='visible';loading.style.display='none';}
-  return;
-}
 if(data.type==='CDQ_SELECTOR_READY' || (data.type==='CDQ_ACCESS_STATE' && data.state!=='pending'))replyToSelector(event.source,{type:'CDQ_FIRST_FRAME_ARM_V2543',generation:loadGeneration});
 if(data.type==='CDQ_FIRST_FRAME_STABLE_V2543'){
-  if(Number(data.generation)!==loadGeneration)return;
+  if(Number(data.generation)!==loadGeneration||data.state!==cdqFrameAccessV2751||data.state==='pending')return;
   cdqFirstFrameStableV2543=true;
   cdqFirstFrameStableSourceV2543='signal';
   cdqAfterReadyWorkV20261114.schedule();

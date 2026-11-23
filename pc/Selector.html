@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="29.26" data-cdq-pc-release="8f1da8dd54cc79a79f2d2018481b01eea819b10d7318271d82453eb87eb98407">
+<html data-cdq-pc-version="29.27" data-cdq-pc-release="655ea8c4e2c8476a4580cd9d25554af07958a6b053ae085d958048282ecafa2f">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -947,7 +947,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
 <script src="./send-progress-v2893.js"></script>
-<meta name="cdq-package-build" content="2026.11.23-v29.26-runtime-pc">
+<meta name="cdq-package-build" content="2026.11.23-v29.27-runtime-pc">
 
 
 <script id="cdqBridgeV23">
@@ -1001,7 +1001,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.23-v29.26-runtime-pc'
+    build:'2026.11.23-v29.27-runtime-pc'
   });
 }
 
@@ -1014,7 +1014,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.23-v29.26-runtime-pc'
+        build:'2026.11.23-v29.27-runtime-pc'
       });
     }
   } catch(e) {}
@@ -8530,15 +8530,6 @@ function chargerClients(forceRefresh, initialCompanies){
   }
   function server(forceServer=force){
     if(!current())return;
-    let prepared=null;
-    try{if(!forceServer&&window.cdqDriveEntryV2632?.canRead())prepared=window.parent.cdqDirectStartupV2645?.takeClients(cdqObtenirJetonAppareil(),email);}catch(_){}
-    if(prepared){
-      Promise.resolve(prepared).then(companies=>{
-        if(!current()||!window.cdqDriveEntryV2632?.canRead())return;
-        apply(companies);sauvegarderCachePersistantCompagnies(toutesLesCompagnies);
-      }).catch(error=>{if(current())server(true);});
-      return;
-    }
     cdqApiRun().withSuccessHandler(companies=>{
       if(!current())return;
       apply(companies);sauvegarderCachePersistantCompagnies(toutesLesCompagnies);
@@ -12340,7 +12331,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.23-v29.26-runtime-pc";
+  const CDQ_BUILD = "2026.11.23-v29.27-runtime-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14985,7 +14976,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.23-v29.26-runtime-pc";
+const CDQ_V19_BUILD = "2026.11.23-v29.27-runtime-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -15486,7 +15477,7 @@ window.cdqSaveRetirementV2707={...cdqRetirementV2707,
  openCopies:cdqOpenCopiesV2707,ensureSettings:cdqEnsureCopySettingsV2707,download:cdqDownloadCopyV2707};
 let cdqCleaningInvalidPdfsV2714=false;
 async function cdqCleanInvalidPdfsV2714(){
- if(cdqCleaningInvalidPdfsV2714||cdqV19SyncRunning||cdqAccessState!=='ready')return;
+ if(cdqCleaningInvalidPdfsV2714||cdqV19SyncRunning||!window.cdqDriveEntryV2632?.canRead())return;
  cdqCleaningInvalidPdfsV2714=true;const email=cdqReaderOwnerV2520();
  try{const queue=await cdqV19QueueGet();cdqReaderGuardV2520(email);
   for(const a of queue){if(cdqV19SyncRunning)return;if(a.owner===email&&a.kind==='pdf-save-v2520'&&window.cdqFileDeletionV2746?.stateFor(a.clientId,a.targetId)==='confirmed')await cdqRetirementV2707.retireAction(a.id);}
@@ -15524,8 +15515,7 @@ function cdqWatchDeletedPdfsV2707(){
 // Install the callback-only observer before the final RPC budget. It needs no DOM.
 cdqWatchDeletedPdfsV2707();
 window.addEventListener('cdq:access-state-v2527',e=>{
- if(e.detail==='ready'){void window.cdqSaveRetirementV2707.flushDeleted().then(()=>cdqCleanInvalidPdfsV2714()).then(()=>cdqV19RefreshSyncPill()).catch(afficherErreur)}
- else document.getElementById('cdqPdfCopiesV2707')?.remove();
+ if(e.detail!=='ready')document.getElementById('cdqPdfCopiesV2707')?.remove();
 });
 
 function cdqV19SyncPill(){
@@ -19187,7 +19177,10 @@ function cdqV19InstallUi(){
  window.addEventListener('cdq:drive-ready-v2632',()=>{
   driveReady=true;const stamp=++generation,owner=email();
   Promise.resolve().then(async()=>{
+   if(stamp!==generation||owner!==email()||!window.cdqDriveEntryV2632?.canRead())return;
    await window.cdqSaveRetirementV2707?.flushDeleted();
+   if(stamp!==generation||owner!==email()||!window.cdqDriveEntryV2632?.canRead())return;
+   await cdqCleanInvalidPdfsV2714();
    const queue=await cdqV19QueueGet();
    if(stamp!==generation||owner!==email()||!window.cdqDriveEntryV2632?.canRead())return;
    window.cdqDriveBackgroundV2746.setPending('outbox',queue.length,owner);queueReady=true;
@@ -19305,7 +19298,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.23-v29.26-runtime-pc";
+const CDQ_V20_BUILD = "2026.11.23-v29.27-runtime-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20158,7 +20151,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.23-v29.26-runtime-pc";
+const CDQ_V21_BUILD = "2026.11.23-v29.27-runtime-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24657,7 +24650,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.23-v29.26-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.23-v29.27-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -25799,7 +25792,7 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
     paint(message || 'Vous pouvez consulter l’interface. Les clients, les fichiers et l’inventaire restent masqués, et les modifications sont désactivées. Ajoutez cette adresse CDQ au partage Drive pour activer les accès prévus par votre rôle.');
   }
 
-  function check(force = false) {
+  function check(force = false, sessionState = null) {
     if (!confirmed()) return Promise.resolve(false);
     if (checking && checkingEmail === email() && !force) return checkPromise;
     const account = email(), token = ++epoch;
@@ -25818,24 +25811,31 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
           accessStatus = 'allowed';
           allowed = account; applyRole(); paint('');
           // Only read account-scoped client caches after the Drive permission check.
-          if (typeof originalClients === 'function') originalClients.call(window, !!force);
+          if (typeof originalClients === 'function') originalClients.call(window, !!force, sessionState?.compagniesInitiales);
           window.dispatchEvent(new Event('cdq:drive-ready-v2632'));
           resolve(true);
         } else {
           if(!error && result?.email===account && result.consentRequired===true && validTicket(result.ticket)) {
             driveConsent={account,ticket:result.ticket,at:Date.now()};
             accessStatus='consent'; allowed=''; applyRole(); clearClientView(); paint('');
-            resolve(false); return;
+            window.dispatchEvent(new Event('cdq:drive-settled-v2927')); resolve(false); return;
           }
           resetDriveConsent();
           deny(error ? 'Les permissions Drive n’ont pas pu être vérifiées. Vous pouvez utiliser l’application et réessayer plus tard.' : undefined, error);
-          resolve(false);
+          window.dispatchEvent(new Event('cdq:drive-settled-v2927')); resolve(false);
         }
       };
       const timeout = setTimeout(() => finish(null, true), 15000);
       try {
         // Existing authenticated CDQ RPC checks this CDQ email's explicit Drive ACL.
         // It does not launch Google OAuth or depend on the PDF/Sheets account setting.
+        let prepared;
+        try { if(!force && sessionState) prepared=window.parent.cdqDirectStartupV2645?.takeAccess(
+          cdqObtenirJetonAppareil(), account, sessionState.jetonSession); } catch {}
+        if(prepared){
+          prepared.then(r=>finish(r,false),()=>finish(null,true));
+          return;
+        }
         originalRun().withSuccessHandler(r => finish(r, false)).withFailureHandler(() => finish(null, true))
           .verifierAccesDriveEmailCDQV2620(account);
       } catch (_) { finish(null, true); }
@@ -25925,7 +25925,7 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
         paint('Vérification de votre connexion…', true);
         return Promise.resolve(false);
       }
-      return check();
+      return check(false,state);
     }, retry: () => check(true), chooseOther: () => check(true),
     googleResult: () => check(true), approvedEmail: () => canRead() ? allowed : '', applicationLogin: 'email-code-pin'
   });
@@ -26002,26 +26002,7 @@ html.cdq-mobile-layout body .bottom-nav > .bottom-nav-item[data-workspace-route]
   window.cdqAccountV2647=Object.freeze({mount,logout});
 })();
 </script>
-<script id="cdq-fast-interface-v2648">
-/* Render an empty installed interface while the existing server check runs.
- * No cached identity is assigned a role and no private documents are restored. */
-(() => {
-  const token=localStorage.getItem('cdq_auth_device_token_v2');
-  const email=localStorage.getItem('cdqLastUnlockEmailV2511');
-  if(!token||!email||window.top===window)return;
-  if(typeof cdqAccessState==='undefined'||cdqAccessState!=='pending')return;
-  const root=document.documentElement;
-  root.dataset.cdqConnectingV2648='true';
-  const style=document.createElement('style');
-  style.textContent='html[data-cdq-connecting-v2648=true] #accessOverlay{display:none!important}html.cdq-mobile-layout[data-cdq-connecting-v2648=true][data-cdq-workspace-unlocked=false] .bottom-nav{visibility:visible!important;pointer-events:none!important}html[data-cdq-connecting-v2648=true] #filesContainer:empty::before{content:"Connexion…";display:block;padding:14px;color:#aaa;font:14px Arial,sans-serif}';
-  document.head.append(style);
-  window.cdqStartupFrameV2652.wait().then(()=>{
-    if(localStorage.getItem('cdq_auth_device_token_v2')!==token||typeof cdqAccessState==='undefined'||cdqAccessState!=='pending')return;
-    // Approved data and the complete frame are revealed together.
-  }).catch(()=>{});
-})();
 
-</script>
 <script type="module" src="./icon-previews-v2651.mjs"></script>
 <script id="cdqSelectionDockV2656">(function(){
     function start(){const area=document.getElementById('sendArea');if(!area)return;document.body.append(area);

@@ -10,7 +10,7 @@
   const paints=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
   const domReady=document.readyState==='loading'?new Promise(resolve=>document.addEventListener('DOMContentLoaded',resolve,{once:true})):Promise.resolve();
   const decoded=new Map();let preparing,preparingScope,completedGeneration,completedScope;
-  const homeScope=()=>window.cdqDriveEntryV2632?.canRead()===true?String(typeof utilisateurCourantEmail==='undefined'?'':utilisateurCourantEmail).trim().toLowerCase()+'|'+String(typeof utilisateurCourantRole==='undefined'?'':utilisateurCourantRole):'locked';
+  const homeScope=()=>cdqAccessState+'|'+(window.cdqDriveEntryV2632?.status?.()||'pending')+'|'+(window.cdqDriveEntryV2632?.canRead()===true?String(typeof utilisateurCourantEmail==='undefined'?'':utilisateurCourantEmail).trim().toLowerCase()+'|'+String(typeof utilisateurCourantRole==='undefined'?'':utilisateurCourantRole):'locked');
   function visible(el){if(!el)return false;const s=getComputedStyle(el),r=el.getBoundingClientRect();return s.display!=='none'&&s.visibility!=='hidden'&&Number(s.opacity||1)>0&&r.width>0&&r.height>0;}
   function controls(){return [...document.querySelectorAll('#appHeader,#cdqTopActionsV2204,.bottom-nav')];}
   function urls(){
@@ -63,7 +63,7 @@
   function permissionsReady(){
     return new Promise(resolve=>{
       let timer,done=false;
-      const events=['cdq:access-state-v2527','cdq:access-ready','cdq:drive-ready-v2632','cdq:drive-cleared-v2632'];
+      const events=['cdq:access-state-v2527','cdq:access-ready','cdq:drive-ready-v2632','cdq:drive-cleared-v2632','cdq:drive-settled-v2927'];
       const pending=()=>typeof cdqAccessState!=='undefined'&&(cdqAccessState==='pending'||cdqAccessState==='ready'&&window.cdqDriveEntryV2632?.status?.()==='pending');
       const check=()=>{
         clearTimeout(timer);
@@ -116,7 +116,7 @@
   addEventListener('message',async event=>{
     if(event.source!==parent||event.origin!==location.origin||event.data?.type!==ARM)return;
     const generation=Number(event.data.generation)||0;
-    if(completedGeneration===generation&&completedScope===homeScope()){parent.postMessage({type:READY,generation},location.origin);return;}
-    try{await wait();completedGeneration=generation;completedScope=homeScope();parent.postMessage({type:READY,generation},location.origin);}catch(_){}
+    if(completedGeneration===generation&&completedScope===homeScope()){parent.postMessage({type:READY,generation,state:cdqAccessState},location.origin);return;}
+    try{await wait();completedGeneration=generation;completedScope=homeScope();parent.postMessage({type:READY,generation,state:cdqAccessState},location.origin);}catch(_){}
   });
 })();
