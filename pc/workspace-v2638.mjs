@@ -15,9 +15,10 @@ import {createSelectedDriveControllerV2752} from './selected-drive-controller-v2
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>Array.from(r.querySelectorAll(s));
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt=v=>Number(v).toLocaleString('fr-CA',{maximumFractionDigits:8});
-const GENERAL='1F7rgU20Hc1PmjxQHY7ALTqkqArN6RSsf';
+const GENERAL='0AOGVxTUTIJrQUk9PVA';
 const paths={calcul:'<rect x="6" y="3" width="20" height="26" rx="3"/><path d="M10 7h12v5H10zM10 17h2m4 0h2m4 0h0M10 22h2m4 0h2m4 0v3"/>',opportunities:'<path d="M4 26h24M7 23V13h5v10m4 0V9h5v14m4-9V4M19 4h6v6M7 9l7-4 4 2 7-3"/>',drive:'<path d="M3 9V6h10l3 4h13v16H3z"/>',folder:'<path d="M3 9V6h10l3 4h13v16H3z"/>',report:'<path d="M7 3h13l6 6v20H7zM20 3v6h6M11 14h11m-11 5h11m-11 5h7"/>',camera:'<path d="M3 10h6l3-5h8l3 5h6v17H3z"/><circle cx="16" cy="18" r="6"/>',gallery:'<rect x="3" y="4" width="26" height="24" rx="3"/><circle cx="22" cy="10" r="2"/><path d="M4 24l8-10 7 7 4-4 6 7"/>',file:'<path d="M7 3h13l6 6v20H7zM20 3v6h6"/>'};
 export function workspaceIcon(key,style='current'){
+  if(key==='refresh')return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 5v5h-5M4 19v-5h5"/><path d="M19.4 9.4A7.8 7.8 0 0 0 6 6.8M4.6 14.6A7.8 7.8 0 0 0 18 17.2"/></svg>';
   const material=window.cdqMaterialIconV2799?.(key,style);if(material)return material;
   const businessIcon=commercialIcon(key,style);if(businessIcon)return businessIcon;
   const matching=navigationStyleV2708(key,style);if(matching)return matching;
@@ -39,7 +40,7 @@ const canRead=()=>!!window.cdqDriveEntryV2632?.canRead();
 const canWrite=()=>canRead()&&['admin','technicien'].includes(calibrationIdentity().role);
 const ownerKey=()=>calibrationIdentity().email+'|'+calibrationIdentity().role;
 async function rpc(name,...args){const key=ownerKey();if(!canRead())throw Error('Accès Drive requis.');const result=await calibrationRpc(name,...args);if(key!==ownerKey()||!canRead())throw Error('Le compte a changé.');return result;}
-const driveCache=createDriveCache({owner:ownerKey,allowed:canRead,fetchFolder:(id,mode)=>rpc(mode==='favorites'?'obtenirFavorisGenerauxCDQV2521':'obtenirDossierGeneralCDQV2521',...(mode==='favorites'?['']:[id,'']))});
+const driveCache=createDriveCache({owner:()=>ownerKey()+'|'+GENERAL,allowed:canRead,fetchFolder:(id,mode)=>rpc(mode==='favorites'?'obtenirFavorisGenerauxCDQV2521':'obtenirDossierGeneralCDQV2521',...(mode==='favorites'?['']:[id,'']))});
 let homeAfterReader=false,homeReaderSource=null,pendingNavigation=null;
 let active='',observedOwner='',queued=false,driveEpoch=0,driveState={mode:'drive',id:GENERAL,lastDriveId:GENERAL,items:[],crumbs:[],token:'',query:'',loading:false},opportunities=[],opportunityEpoch=0;
 const pageByRoute={dossier:'cdqDrivePageV2638',favorites:'cdqDrivePageV2638',calcul:'cdqCalculPageV2638',opportunities:'cdqOpportunitiesPageV2638',report:'cdqReportOverlayV2578',calibration:'cdqCalibrationDialogV2565',inventory:'cdqInventoryModernV2592',catalog:'cdqCatalogPageV2721',opportunityBoard:'cdqOpportunityBoardV2721',invoices:'cdqInvoicePageV2590',trash:'cdqTrashPageV2713'};
@@ -154,7 +155,7 @@ export function navigate(route,{toggle=false,adopt=false,userInitiated=false}={}
   active=route;document.documentElement.classList.toggle('cdq-workspace-open',!!route);document.documentElement.dataset.cdqWorkspace=route;
   if(!route){driveEpoch++;opportunityEpoch++;document.getElementById('companyMenu')?.style.setProperty('display','none');measure();syncNav();return;}
   if(!adopt){
-    if(route==='dossier')openDrive(favorites?'favorites':'drive');
+    if(route==='dossier')openDrive(favorites?'favorites':'drive', !favorites);
     else if(route==='calcul')openCalcul();
     else if(route==='opportunities')openOpportunities();
     else if(route==='catalog')commercial.openCatalog();
@@ -229,10 +230,10 @@ function renderTrash(){
  if(!items.length)list.innerHTML='<section class="cdq-workspace-card"><h3>'+esc(trashState.loading?'Chargement…':trashState.query?'Aucun résultat':trashState.loaded?(trashState.next?'Aucun élément CDQ sur cette page':'Corbeille vide'):'Corbeille')+'</h3></section>';
 }
 function driveCacheKey(mode,id){return ownerKey()+'|'+mode+'|'+id;}
-function openDrive(mode){
+function openDrive(mode, fromNavigation=false){
   const p=drivePage();p.hidden=false;if(!canRead()){$('.cdq-workspace-body',p).innerHTML='<section class="cdq-workspace-card"><h3>Lecture seule</h3><p>Les dossiers et favoris restent masqués sans accès Drive.</p></section>';return;}
   if(mode==='favorites'&&driveState.mode==='drive')driveState.lastDriveId=driveState.id||GENERAL;
-  const id=mode==='favorites'?'':driveState.mode==='drive'?driveState.id||GENERAL:driveState.lastDriveId||GENERAL;
+  const id=mode==='favorites'?'':fromNavigation?GENERAL:driveState.mode==='drive'?driveState.id||GENERAL:driveState.lastDriveId||GENERAL;
   driveState={...driveState,mode,id,query:''};loadDrive(false);
 }
 async function loadDrive(append=false,id=driveState.id,force=false){
@@ -257,9 +258,12 @@ function renderDriveRows(p){
   const list=$('[data-drive-list]',p);list.replaceChildren();const q=driveState.query.toLocaleLowerCase('fr'),items=driveState.items.filter(x=>(x.nom+' '+(x.path||'')).toLocaleLowerCase('fr').includes(q));
   for(const item of items){const row=document.createElement('article');row.className='cdq-workspace-row';const kind=driveFileKindV2699(item);row.dataset.driveKind=kind.key;row.innerHTML='<button type="button" class="open">'+driveFileIconV2710(kind.key,kind.label)+'<span><strong>'+esc(item.nom)+'</strong><small>'+esc(item.path||kind.label)+'</small></span></button><button type="button" class="pin" aria-label="'+esc(item.favori?'Retirer des favoris':'Ajouter aux favoris')+'" aria-pressed="'+!!item.favori+'">'+(item.favori?'★':'☆')+'</button>';
     if(item.kind==='folder')$('.open',row).onpointerenter=()=>driveCache.request(item.id).catch(()=>{});
-    $('.open',row).onclick=async()=>{if(item.kind==='folder'){driveState.mode='drive';active='dossier';document.documentElement.dataset.cdqWorkspace=active;syncNav();await loadDrive(false,item.id);}else try{if(item.mimeType==='application/pdf')await window.cdqOpenPdfV2520?.(item.id,{nom:item.nom});else if(item.mimeType==='application/vnd.google-apps.spreadsheet')await window.cdqOpenSheetV2526?.(item.id);else window.open('https://drive.google.com/file/d/'+encodeURIComponent(item.id)+'/view','_blank','noopener');}catch(e){status(p,e.message,true);}};
+    $('.open',row).onclick=async()=>{if(item.kind==='folder'){driveState.mode='drive';active='dossier';document.documentElement.dataset.cdqWorkspace=active;syncNav();await loadDrive(false,item.id);}else try{if(item.inClientTree===false){
+      const url=new URL('https://drive.google.com/open');url.searchParams.set('id',item.id);url.searchParams.set('authuser',calibrationIdentity().email);
+      window.open(url.href,'_blank','noopener');
+    }else if(item.mimeType==='application/pdf')await window.cdqOpenPdfV2520?.(item.id,{nom:item.nom});else if(item.mimeType==='application/vnd.google-apps.spreadsheet')await window.cdqOpenSheetV2526?.(item.id);else window.open('https://drive.google.com/file/d/'+encodeURIComponent(item.id)+'/view','_blank','noopener');}catch(e){status(p,e.message,true);}};
     const pin=$('.pin',row);pin.onclick=async()=>{pin.disabled=true;try{const r=await rpc('definirFavoriGeneralCDQV2521',item.id,!item.favori);item.favori=r.favori;driveCache.invalidate();if(driveState.mode==='favorites')driveState.items=driveState.items.filter(x=>x.id!==item.id||item.favori);if(!p.hidden)renderDriveRows(p);}catch(e){status(p,e.message,true);}finally{pin.disabled=false;}};
-    row.dataset.fileName=item.nom;installDriveActionsV2699(row,item,{favorite:()=>pin.click(),rpc,canWrite});list.append(row);
+    row.dataset.fileName=item.nom;if(item.inClientTree!==false)installDriveActionsV2699(row,item,{favorite:()=>pin.click(),rpc,canWrite});list.append(row);
   }
   if(!items.length)list.innerHTML='<section class="cdq-workspace-card"><h3>'+esc(q?'Aucun résultat':driveState.loading?'Chargement…':driveState.mode==='favorites'?'Aucun favori':'Dossier vide')+'</h3><p>'+esc(driveState.mode==='favorites'?'Touchez l’étoile d’un dossier ou d’un fichier pour le retrouver ici.':'Les dossiers s’ouvrent dans cette page; utilisez le chemin pour remonter.')+'</p></section>';
 }

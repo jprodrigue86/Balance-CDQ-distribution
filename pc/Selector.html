@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="29.24" data-cdq-pc-release="df2dfba924a10e7a9eacc6c17f3099861ec3f5c49ed3617e2429160dbdf6d097">
+<html data-cdq-pc-version="29.25" data-cdq-pc-release="3c3ae4074dbada8ac78cc386c0c75060a33535e1cce2acbd36115cef00261a02">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -947,7 +947,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
 <script src="./send-progress-v2893.js"></script>
-<meta name="cdq-package-build" content="2026.11.23-v29.24-runtime-pc">
+<meta name="cdq-package-build" content="2026.11.23-v29.25-runtime-pc">
 
 
 <script id="cdqBridgeV23">
@@ -1001,7 +1001,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.23-v29.24-runtime-pc'
+    build:'2026.11.23-v29.25-runtime-pc'
   });
 }
 
@@ -1014,7 +1014,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.23-v29.24-runtime-pc'
+        build:'2026.11.23-v29.25-runtime-pc'
       });
     }
   } catch(e) {}
@@ -12340,7 +12340,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.23-v29.24-runtime-pc";
+  const CDQ_BUILD = "2026.11.23-v29.25-runtime-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14985,7 +14985,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.23-v29.24-runtime-pc";
+const CDQ_V19_BUILD = "2026.11.23-v29.25-runtime-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -19327,7 +19327,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.23-v29.24-runtime-pc";
+const CDQ_V20_BUILD = "2026.11.23-v29.25-runtime-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20180,7 +20180,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.23-v29.24-runtime-pc";
+const CDQ_V21_BUILD = "2026.11.23-v29.25-runtime-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24571,7 +24571,7 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
 <script id="cdqDriveV2521">
 (function(){
 'use strict';
-const ROOT='1F7rgU20Hc1PmjxQHY7ALTqkqArN6RSsf';
+const ROOT='0AOGVxTUTIJrQUk9PVA';
 let dialog,owner='',sequence=0,items=[],crumbs=[],folder=ROOT,mode='drive',pageToken='',busy=false,opener;
 function account(){if(typeof cdqAccessState!=='undefined'&&cdqAccessState!=='ready')throw Error('Déverrouillez votre compte CDQ.');const email=String(utilisateurCourantEmail||'').toLowerCase();if(!email)throw Error('Connectez votre compte CDQ.');return email;}
 function rpc(name,args){const email=account();return new Promise((resolve,reject)=>{cdqApiRun().withSuccessHandler(value=>{try{if(email!==account())throw Error('Le compte a changé.');resolve(value)}catch(e){reject(e)}}).withFailureHandler(reject)[name](...args);});}
@@ -24679,7 +24679,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.23-v29.24-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.23-v29.25-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
