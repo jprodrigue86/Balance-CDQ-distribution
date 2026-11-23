@@ -1,3 +1,4 @@
+import {LAYOUT2931} from './working-layout-2931.mjs';
 import {LAYOUT2918} from './working-layout-2918.mjs';
 import {V2819_REPORT_ENGINE_TEMPLATES_V2754,V2822_REPORT_ENGINE_TEMPLATES_V2754} from './report-engine-templates-v2754.mjs';
 import {REPORT_TEMPLATES} from './report-templates-v2636.mjs';
@@ -21,7 +22,7 @@ export function pinnedReportTemplateV2788(expected,{family=expected?.modeleId}={
   const key=expected?.modeleId;
   if(typeof key!=='string'||!Object.hasOwn(REPORT_TEMPLATES,key)||expected?.version!==2754||!/^[a-f0-9]{64}$/.test(expected?.sha256||'')||canonicalFamily(family)!==key)throw invalid();
   const matches=meta=>meta&&meta.modeleId===key&&meta.sha256===expected.sha256&&meta.version===expected.version;
-  const approvedLayout=LAYOUT2918[key];
+  const approvedLayout=[LAYOUT2931[key],LAYOUT2918[key]].find(matches);
   if(matches(approvedLayout))return Object.freeze({...approvedLayout,url:new URL('./'+approvedLayout.path,import.meta.url).href});
   const current=REPORT_ENGINE_TEMPLATES_V2754[key],local=REPORT_TEMPLATES[key];
   if(matches(current)&&local.sha256===current.sha256&&local.taille===current.taille)return Object.freeze({...current,url:new URL('./'+local.path,import.meta.url).href});

@@ -2,6 +2,7 @@
 'use strict';
 if(window.cdqFacturesV2590&&!window.cdqFacturesV2590.cdqLazyV2751)return;
 var CATS=['Essence','Outils','Hébergement','Réparation véhicule','Restaurant','Autre'];
+var originalReceiptFile=null;
 var photoSequence=0,ocrRunV2733=null,manualFieldsV2791={};
 var page=null,busy=false,dataUrl='',ocrText='',category='',categorySource='',suggestedCategory='',requestId='',serverTech='',serverStorageMode='checking',serverStorageRevision=0,scheduled=false,savedRows=[];
 var $=function(s,r){return (r||document).querySelector(s)}, $$=function(s,r){return Array.from((r||document).querySelectorAll(s))};
@@ -21,11 +22,11 @@ function update(){if(!page)return;$('[data-inv-tech]',page).textContent=tech().r
 function choose(c,source){var next=CATS.indexOf(c)>=0?c:'';if(source==='ocr'){suggestedCategory=next;if(categorySource==='manual'){update();return}categorySource=next?'ocr':''}else if(source==='manual'){categorySource=next?'manual':''}category=next;update()}
 function cancelInvoiceOcrV2733(){clearTimeout(window.__cdqInvoiceOcrTimerV2590);window.__cdqInvoiceOcrRequestV2590='';ocrRunV2733=null}
 function currentInvoiceOcrV2733(run){return ocrRunV2733===run&&run.sequence===photoSequence&&run.owner===email()+'|'+userRole()&&(typeof cdqAccessState==='undefined'||cdqAccessState==='ready')&&(!window.cdqDriveEntryV2632||window.cdqDriveEntryV2632.canRead())}
-function reset(){invoiceReviewClearV2874();photoSequence++;cancelInvoiceOcrV2733();page?.querySelector('[data-inv-preview]')?.__cdqPreviewV2783?.destroy();dataUrl='';ocrText='';manualFieldsV2791={};category='';categorySource='';suggestedCategory='';busy=false;requestId=uid();$('#cdqInvoiceAmountV2590',page).value='';$('#cdqInvoiceDateV2590',page).value='';$('#cdqInvoiceMerchantV2590',page).value='';$('[data-inv-preview]',page).innerHTML='<div class="cdq-invoice-empty">'+svg('camera')+'<strong>Aucune photo</strong><span>Appuyez sur Prendre ou Importer pour ajouter le reçu.</span></div>';$('[data-inv-analyze]',page).disabled=true;$('[data-inv-clear]',page).disabled=true;detected("En attente d'une photo",'Montant, date et catégorie seront détectés automatiquement.','idle');status('');update();setBusy(false)}
+function reset(){originalReceiptFile=null;invoiceReviewClearV2874();photoSequence++;cancelInvoiceOcrV2733();page?.querySelector('[data-inv-preview]')?.__cdqPreviewV2783?.destroy();dataUrl='';ocrText='';manualFieldsV2791={};category='';categorySource='';suggestedCategory='';busy=false;requestId=uid();$('#cdqInvoiceAmountV2590',page).value='';$('#cdqInvoiceDateV2590',page).value='';$('#cdqInvoiceMerchantV2590',page).value='';$('[data-inv-preview]',page).innerHTML='<div class="cdq-invoice-empty">'+svg('camera')+'<strong>Aucune photo</strong><span>Appuyez sur Prendre ou Importer pour ajouter le reçu.</span></div>';$('[data-inv-analyze]',page).disabled=true;$('[data-inv-clear]',page).disabled=true;detected("En attente d'une photo",'Montant, date et catégorie seront détectés automatiquement.','idle');status('');update();setBusy(false)}
 function setBusy(v,msg){busy=!!v;if(!page)return;$$('button,input,select',page).forEach(function(el){if(el.matches('[data-inv-close],[data-inv-file],.cdq-invoice-zoom-v2783 button'))return;el.disabled=busy||(el.matches('[data-inv-analyze]')&&!dataUrl)||(el.matches('[data-inv-clear]')&&!dataUrl)});if(msg)status(msg)}
 function compress(file){return import('./invoice-photo-v2659.mjs').then(function(photo){return photo.prepareInvoicePhoto(file)})}
-async function take(file){if(!file||busy)return;var sequence=++photoSequence,owner=email()+'|'+userRole();cancelInvoiceOcrV2733();setBusy(true,'Préparation de la photo…');try{var prepared=await compress(file);if(sequence!==photoSequence||owner!==email()+'|'+userRole()||(typeof cdqAccessState!=='undefined'&&cdqAccessState!=='ready')||(window.cdqDriveEntryV2632&&!window.cdqDriveEntryV2632.canRead()))return;invoiceReviewClearV2874();dataUrl=prepared;ocrText='';manualFieldsV2791={};category='';categorySource='';suggestedCategory='';$('#cdqInvoiceAmountV2590',page).value='';$('#cdqInvoiceDateV2590',page).value='';$('#cdqInvoiceMerchantV2590',page).value='';update();var box=$('[data-inv-preview]',page),im=document.createElement('img');im.src=dataUrl;im.alt='Aperçu du reçu';box.__cdqPreviewV2783?.destroy();box.replaceChildren(im);import('./invoice-preview-v2783.mjs').then(module=>{if(sequence===photoSequence&&box.contains(im))module.installInvoicePreviewV2783(box,im);}).catch(error=>console.warn('Aperçu interactif indisponible',error));$('[data-inv-analyze]',page).disabled=false;$('[data-inv-clear]',page).disabled=false;requestId=uid();detected('Photo prête','Appuyez sur Analyser le reçu pour remplir les champs.','idle');status('Photo prête pour la lecture automatique.')}catch(e){if(sequence===photoSequence&&owner===email()+'|'+userRole())status(e.message||String(e),'error')}finally{if(sequence===photoSequence&&owner===email()+'|'+userRole())setBusy(false)}}
-function removePhoto(){invoiceReviewClearV2874();photoSequence++;cancelInvoiceOcrV2733();page?.querySelector('[data-inv-preview]')?.__cdqPreviewV2783?.destroy();dataUrl='';ocrText='';$('[data-inv-preview]',page).innerHTML='<div class="cdq-invoice-empty">'+svg('camera')+'<strong>Aucune photo</strong><span>Appuyez sur Prendre pour photographier le reçu.</span></div>';$('[data-inv-analyze]',page).disabled=true;$('[data-inv-clear]',page).disabled=true;detected("En attente d'une photo",'Montant, date et catégorie seront détectés automatiquement.','idle');status('')}
+async function take(file){if(!file||busy)return;var sequence=++photoSequence,owner=email()+'|'+userRole();cancelInvoiceOcrV2733();setBusy(true,'Préparation de la photo…');try{var prepared=await compress(file);if(sequence!==photoSequence||owner!==email()+'|'+userRole()||(typeof cdqAccessState!=='undefined'&&cdqAccessState!=='ready')||(window.cdqDriveEntryV2632&&!window.cdqDriveEntryV2632.canRead()))return;invoiceReviewClearV2874();dataUrl=prepared;originalReceiptFile=file.size<=4*1024*1024&&/^image\/jpeg$/i.test(file.type)?file:null;ocrText='';manualFieldsV2791={};category='';categorySource='';suggestedCategory='';$('#cdqInvoiceAmountV2590',page).value='';$('#cdqInvoiceDateV2590',page).value='';$('#cdqInvoiceMerchantV2590',page).value='';update();var box=$('[data-inv-preview]',page),im=document.createElement('img');im.src=dataUrl;im.alt='Aperçu du reçu';box.__cdqPreviewV2783?.destroy();box.replaceChildren(im);import('./invoice-preview-v2783.mjs').then(module=>{if(sequence===photoSequence&&box.contains(im))module.installInvoicePreviewV2783(box,im);}).catch(error=>console.warn('Aperçu interactif indisponible',error));$('[data-inv-analyze]',page).disabled=false;$('[data-inv-clear]',page).disabled=false;requestId=uid();detected('Photo prête','Appuyez sur Analyser le reçu pour remplir les champs.','idle');status('Photo prête pour la lecture automatique.')}catch(e){if(sequence===photoSequence&&owner===email()+'|'+userRole())status(e.message||String(e),'error')}finally{if(sequence===photoSequence&&owner===email()+'|'+userRole())setBusy(false)}}
+function removePhoto(){originalReceiptFile=null;invoiceReviewClearV2874();photoSequence++;cancelInvoiceOcrV2733();page?.querySelector('[data-inv-preview]')?.__cdqPreviewV2783?.destroy();dataUrl='';ocrText='';$('[data-inv-preview]',page).innerHTML='<div class="cdq-invoice-empty">'+svg('camera')+'<strong>Aucune photo</strong><span>Appuyez sur Prendre pour photographier le reçu.</span></div>';$('[data-inv-analyze]',page).disabled=true;$('[data-inv-clear]',page).disabled=true;detected("En attente d'une photo",'Montant, date et catégorie seront détectés automatiquement.','idle');status('')}
 function textLines(t){return String(t||'').split(/\r?\n/).map(function(x){return x.replace(/\s+/g,' ').trim()}).filter(Boolean)}
 function invoiceAmountTokens(line){
   var out=[],re=/(^|[^\dA-Za-zÀ-ÿ.,])((?:\d{1,3}(?:[ ,.\u00a0]\d{3})+|\d{1,5})\s*[,.]\s*\d{2})(?!\d|[,.]\d)/g,m,s=String(line||'');
@@ -164,7 +165,7 @@ function invoiceColumnRowsV2734(lines){
   }
   return result;
 }
-function invoicePaymentAmbiguousV2791(t){
+function invoicePaymentAmbiguousV2791(t,confirmedPurchase=false){
   // Mixed cancelled/approved slips and preauthorisations do not establish
   // a unique final purchase. Preserve the image and request a manual amount.
   var text=String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
@@ -175,6 +176,15 @@ function invoicePaymentAmbiguousV2791(t){
   const ls=joinPrintedTotalCurrency(textLines(text));
   const approved=ls.some(l=>/^\s*[|!]*\s*(?:(?:[o0]?1|\d{2}\s*\/\s*\d{3})\s+)?(?:appr[o0][uvl][uv]ee?|approved)\b/.test(l));
   const final=ls.some((l,i)=>{const m=invoiceAmountLabel(l);return m.rank>=2&&!m.excluded&&!m.suggestion&&(lineAmounts(l).some(v=>v>0)||invoiceOnlyAmount(ls[i+1]||'').some(v=>v>0));});
+  // A printed sale and its final total can establish a completed purchase even
+  // when ML Kit splits the approval or damages the terminal's completion word.
+  if(confirmedPurchase){
+    const pending=/\b(?:attente|pending|hold|retenue|empreinte|estimee?|estimated|maximum|plafond|incomplete?|non\s+complet\w*|not\s+complet\w*|non\s+approuv\w*|not\s+approved|refund(?:ed)?|remboursement|reversal|renversee?)\b/i;
+    if(pending.test(text))return true;
+    const completion=/\bpre[ .-]*aut[h]?(?:or\w*)?[\s.,:;-]+(?:[cç][o0][mn]pl[eé]t\w*|finalis\w*)\b/i;
+    const damagedCompletion=/\bpre[ .-]*aut[h]?(?:or\w*)?[\s.,:;-]+[a-z0-9]{1,4}pl[a-z0-9]{2,6}\b/i;
+    if(completion.test(text)||approved&&damagedCompletion.test(text))return false;
+  }
   if(!approved||!final)return true;
   // The terminal must print a completed preauthorization, an approval and a final
   // amount. A single corrupted letter in the completion word is common on thermal paper.
@@ -325,12 +335,18 @@ function invoiceAmountDecisionV2874(t,layout,geometry=invoiceLayoutRowsV2734(lay
   t=textLines(t).map(invoiceCurrencyGlyph).join('\n');
   if(geometry)geometry=geometry.map(invoiceCurrencyGlyph);
   const raw=textLines(t), views=geometry?[geometry,raw]:[raw];
-  if(invoicePaymentAmbiguousV2791(views.map(v=>v.join('\n')).join('\n')))return {amount:NaN,reason:'payment'};
+  const paymentText=views.map(v=>v.join('\n')).join('\n');
   const payment=invoiceApprovedPayment(t,(geometry||[]).map(line=>({line})));
   const reads=views.map((lines,i)=>invoiceReadTotalsV2929(lines,!!geometry&&i===0,payment));
   const disagreement=new Set(reads.filter(r=>Number.isFinite(r.printed)).map(r=>Math.round(r.printed*100))).size>1;
   if(disagreement)return {amount:NaN,reason:'conflict'};
-  return reads.find(r=>r.reason&&r.reason!=='missing')||reads.find(r=>!r.reason)||reads[0];
+  const units=views.flat().map(line=>line.match(/^\s*(\d{1,4}[.,]\d{1,3})\s*l\s*(?:[aà@x])\s*\$?\s*(\d{1,2}[.,]\d{2,4})\s*\/\s*l\s*$/i)).filter(Boolean);
+  const fuelCents=new Set(units.map(m=>Math.round(100*Number(m[1].replace(',','.'))*Number(m[2].replace(',','.')))));
+  const confirmedPurchase=reads.some(r=>Number.isFinite(r.amount)&&r.amount>0&&
+    Number.isFinite(r.printed)&&r.amount===r.printed&&(r.fuel===r.printed||fuelCents.size===1&&fuelCents.has(Math.round(100*r.printed))));
+  if(invoicePaymentAmbiguousV2791(paymentText,confirmedPurchase))return {amount:NaN,reason:'payment'};
+  const selected=reads.find(r=>r.reason&&r.reason!=='missing')||reads.find(r=>!r.reason)||reads[0];
+  return {...selected,confirmedPurchase:confirmedPurchase&&!selected.reason};
 }
 function invoiceReadTotalsV2929(lines,physical,payment){
   // Accept a missing OCR space only for a leading known TOTAL label followed
@@ -619,7 +635,7 @@ function reconcileInvoiceReadings(first,second){
   }else if(!a.reason||!b.reason){
     const good=a.reason?b:a,uncertain=a.reason?a:b;
     const paymentText=[first.text,first.physical,second.text,second.physical].join('\n');
-    const incompletePayment=uncertain.reason==='payment'&&!invoicePaymentAmbiguousV2791(paymentText);
+    const incompletePayment=uncertain.reason==='payment'&&!invoicePaymentAmbiguousV2791(paymentText,good.confirmedPurchase===true);
     decision=uncertain.reason==='missing'||incompletePayment?good:uncertain;
   }else{
     decision=a.reason==='missing'?b:a;
@@ -689,7 +705,13 @@ async function analyze(){
     if(Date.now()>=deadline)throw Error('La préparation a pris trop de temps. Réessayez ou saisissez les champs manuellement.');
     if(native){
       run.sent=transportPhoto;run.bridge=bridge;run.deadline=deadline;
-      run.alternate=transportPhoto!==run.photo?()=>run.photo:null;
+      const originalFile=originalReceiptFile;
+      run.alternate=transportPhoto!==run.photo?()=>run.photo:originalFile?()=>new Promise((resolve,reject)=>{
+        const reader=new FileReader();
+        reader.onload=()=>resolve(reader.result);
+        reader.onerror=()=>reject(reader.error);
+        reader.readAsDataURL(originalFile);
+      }):null;
       run.dateReader=photo&&photo.recoverInvoiceDate ? (image,layout)=>photo.recoverInvoiceDate(image,layout) : null;
       page.dataset.ocrPhase='native';bridge.recognizeReceipt(run.id,transportPhoto);return;
     }
