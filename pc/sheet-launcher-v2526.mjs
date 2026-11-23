@@ -7,6 +7,7 @@ export function sheetWebUrl({id,email='',readOnly=false}) {
   return url.href;
 }
 export function openSheet(data,{host=window,doc=document,ua=navigator.userAgent}={}) {
+  if(!data.email)throw Error('Le compte de la session est requis pour ouvrir une feuille.');
   const web=sheetWebUrl(data);
   if(/BalanceCDQAndroid\//i.test(ua)&&typeof host.BalanceCDQNative?.openSheet==='function'){
     host.BalanceCDQNative.openSheet(String(data.id),String(data.email||''),!!data.readOnly);return;
@@ -14,7 +15,7 @@ export function openSheet(data,{host=window,doc=document,ua=navigator.userAgent}
   let href=web;
   if(/Android/i.test(ua)){
     if(/BalanceCDQAndroid\//i.test(ua)){
-      const q=new URLSearchParams({fileId:data.id,account:data.email||'',accountMode:data.email?'default':'auto',readOnly:data.readOnly?'1':'0'});
+      const q=new URLSearchParams({fileId:data.id,account:data.email||'',accountMode:'session',readOnly:data.readOnly?'1':'0'});
       href='intent://open?'+q+'#Intent;scheme=cdqsheet;package=ca.balancecdq.android;end';
     }else{
       href=web.replace('https://','intent://')+'#Intent;scheme=https;package=com.google.android.apps.docs.editors.sheets;S.browser_fallback_url='+encodeURIComponent(web)+';end';

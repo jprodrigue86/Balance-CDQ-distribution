@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="29.25" data-cdq-pc-release="3c3ae4074dbada8ac78cc386c0c75060a33535e1cce2acbd36115cef00261a02">
+<html data-cdq-pc-version="29.26" data-cdq-pc-release="8f1da8dd54cc79a79f2d2018481b01eea819b10d7318271d82453eb87eb98407">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -947,7 +947,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
 <script src="./send-progress-v2893.js"></script>
-<meta name="cdq-package-build" content="2026.11.23-v29.25-runtime-pc">
+<meta name="cdq-package-build" content="2026.11.23-v29.26-runtime-pc">
 
 
 <script id="cdqBridgeV23">
@@ -1001,7 +1001,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.23-v29.25-runtime-pc'
+    build:'2026.11.23-v29.26-runtime-pc'
   });
 }
 
@@ -1014,7 +1014,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.23-v29.25-runtime-pc'
+        build:'2026.11.23-v29.26-runtime-pc'
       });
     }
   } catch(e) {}
@@ -12340,7 +12340,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.23-v29.25-runtime-pc";
+  const CDQ_BUILD = "2026.11.23-v29.26-runtime-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14985,7 +14985,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.23-v29.25-runtime-pc";
+const CDQ_V19_BUILD = "2026.11.23-v29.26-runtime-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -16572,31 +16572,8 @@ function cdqDocumentMeta(id){
   const row=box&&box.closest('.file-row');
   return row?{id:id,nom:row.dataset.fileName,type:row.dataset.fileType,dateModification:row.dataset.fileDate}:null;
 }
-const CDQ_DEFAULT_GOOGLE_ACCOUNT_KEY_V2299='cdqDefaultGoogleAccountV2299';
-const CDQ_DEFAULT_GOOGLE_ACCOUNT_RESET_V2299='cdqDefaultGoogleAccountResetV2299';
-
 function cdqDefaultGoogleAccountV2299(){
-  try{return String(localStorage.getItem('cdqDefaultGoogleAccountV2294')||'').trim().toLowerCase();}
-  catch(e){return '';}
-}
-function cdqSetDefaultGoogleAccountV2299(email){
-  email=String(email||'').trim().toLowerCase();
-  if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Adresse Google invalide.');
-  try{
-    if(email){
-      localStorage.setItem(CDQ_DEFAULT_GOOGLE_ACCOUNT_KEY_V2299,email);
-      localStorage.setItem('cdqDefaultGoogleAccountV2294',email);
-      localStorage.removeItem(CDQ_DEFAULT_GOOGLE_ACCOUNT_RESET_V2299);
-    }else{
-      localStorage.removeItem(CDQ_DEFAULT_GOOGLE_ACCOUNT_KEY_V2299);
-      localStorage.removeItem('cdqDefaultGoogleAccountV2294');
-      localStorage.setItem(CDQ_DEFAULT_GOOGLE_ACCOUNT_RESET_V2299,'1');
-    }
-  }catch(e){}
-  try{
-    cdqPostToPwa({type:'CDQ_DEFAULT_GOOGLE_ACCOUNT_SET',email:email,reset:!email});
-  }catch(e){}
-  return email;
+  return String(typeof utilisateurCourantEmail==='string'?utilisateurCourantEmail:'').trim().toLowerCase();
 }
 function cdqMarkOpenedV2299(id){
   if(String(utilisateurCourantRole||'')==='lecture')return;
@@ -16639,7 +16616,7 @@ function cdqDocumentText(body,text){const p=document.createElement('p');p.textCo
 function cdqDocumentLink(body,label,url){const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.textContent=label;a.className='modal-button';a.style.cssText='display:block;margin:12px 0;padding:14px;text-align:center;text-decoration:none';body.appendChild(a);return a;}
 function cdqLaunchSheetV2756(id){
   id=String(id||'');if(!/^[A-Za-z0-9_-]{1,200}$/.test(id))throw Error('Identifiant Google Sheets invalide.');
-  const email=cdqDefaultGoogleAccountV2299(),readOnly=String(utilisateurCourantRole||'')==='lecture';
+  const email=cdqReaderOwnerV2520().trim().toLowerCase(),readOnly=String(utilisateurCourantRole||'')==='lecture';
   cdqMarkOpenedV2299(id);
   if(cdqPostToPwa({type:'CDQ_OPEN_SHEET',id,email,readOnly}))return true;
   const url='https://docs.google.com/spreadsheets/d/'+encodeURIComponent(id)+(readOnly?'/preview':'/edit')+'?usp=drivesdk'+(email?'&authuser='+encodeURIComponent(email):'');
@@ -16706,7 +16683,7 @@ async function cdqImportPdf(id,file){
 }
 function cdqReaderOwnerV2520(){
   const email=String(utilisateurCourantEmail||'');
-  if(!email||cdqAccessState!=='ready')throw new Error('Déverrouillez votre compte CDQ.');
+  if(!email||cdqAccessState!=='ready'||!window.cdqDriveEntryV2632?.canRead())throw new Error('Ouvrez une session autorisée dans Balance CDQ.');
   return email;
 }
 function cdqReaderGuardV2520(email){if(cdqReaderOwnerV2520()!==email)throw new Error('Le compte a changé. Rouvrez le PDF.');}
@@ -17754,6 +17731,7 @@ function cdqPdfReaderPreference(){return 'cdq';}
 function cdqSetPdfReaderPreference(){localStorage.setItem('cdqPdfReaderPreferenceV1','cdq');return 'cdq';}
 async function cdqOpenPdf(id,meta){
  if(!/^[A-Za-z0-9_-]{10,200}$/.test(String(id)))throw new Error('Identifiant PDF invalide.');
+ cdqReaderOwnerV2520();
  if(!meta?.forceRefresh&&window.cdqBalanceListV2638?.previewForFileV2781){
   const stop=window.cdqRowLoading23?.start(id)||(()=>{});
   try{const preview=await window.cdqBalanceListV2638.previewForFileV2781(String(id));if(preview&&await window.cdqOpenBalanceListPreviewV2746?.(preview))return true;}finally{stop();}
@@ -19327,7 +19305,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.23-v29.25-runtime-pc";
+const CDQ_V20_BUILD = "2026.11.23-v29.26-runtime-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20180,7 +20158,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.23-v29.25-runtime-pc";
+const CDQ_V21_BUILD = "2026.11.23-v29.26-runtime-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24679,7 +24657,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.23-v29.25-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.23-v29.26-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;

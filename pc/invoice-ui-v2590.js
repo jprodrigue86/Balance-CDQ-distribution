@@ -42,6 +42,7 @@ function invoicePurchaseTotalRankV2745(line){
 function invoiceSpacedTotalV2790(line){return String(line||'').replace(/\bT\s+O\s+T\s+A\s+L\b/gi,'TOTAL')}
 function invoiceTotalConsistentV2790(rows,total){
   // Check a printed total; never manufacture one from a calculation.
+  if(rows.some(r=>/^(?:tps|tvq|gst|qst)\s+incl(?:\.|use?s?\b|uded\b)/.test(r.meta.text)))return true;
   if(rows.some(r=>/\b(?:taxes?|tax)\s+(?:comprises?|inclus\w*|included|incl\b)/.test(r.meta.text)))return true;
   var values=new Map(),ambiguous=false;
   rows.forEach(function(row,index){
@@ -144,16 +145,23 @@ function invoicePaymentAmbiguousV2791(t){
 }
 // Cross-check printed fuel amounts; never replace a printed total with arithmetic.
 function invoiceFuelCheckV2874(rows,total){
- var sales=[],rates=[],other=false,invalid=false;
+ var sales=[],rates=[],other=false,missingSale=false,invalid=false;
  rows.forEach(function(row){
   if(row.meta.suggestion||row.suggestionBlock)return;
   var text=row.meta.text,amounts=lineAmounts(row.line);
   var sale=/^(?:vente\s+d['’ ]\s*ess(?:e|ence)?|total\s+(?:carb(?:urant)?s?|essence|diesel|fuel|gasoline))(?=\s*(?:$|[:$€]|\d|(?:cad|cdn)\b))/.test(text);
-  if(sale){if(amounts.length===1)sales.push(amounts[0]);else invalid=true;return;}
+  if(sale){
+   var distinct=Array.from(new Set(amounts.map(value=>Math.round(value*100))));
+   if(distinct.length===1)sales.push(distinct[0]/100);
+   else if(distinct.length>1)invalid=true;
+   else missingSale=true;
+   return;
+  }
   var rate=text.match(/^(\d{1,4}[,.]\d{1,3})\s*l\s*(?:a|@|x)\s*\$?\s*(\d{1,2}[,.]\d{2,4})\s*(?:\$\s*)?\/\s*l\s*$/);
   if(rate){rates.push(Number(rate[1].replace(',','.'))*Number(rate[2].replace(',','.')));return;}
-  if(amounts.length&&!row.meta.rank&&!/^(?:tps|tvq|gst|qst)\s+(?:incluse?s?|included)\b/.test(text))other=true;
+  if(amounts.length&&!row.meta.rank&&!/^(?:credit|debit|visa|mastercard|interac|achat|paiement|payment|montant paye|pre.?autor|approuve|transaction|ref|regulier|super|diesel|tps|tvq|gst|qst)\b/.test(text)&&!/^(?:tps|tvq|gst|qst)\s+(?:incluse?s?|included)\b/.test(text))other=true;
  });
+ sales=Array.from(new Set(sales));
  var fuel=sales.length===1?sales[0]:NaN;
  if(sales.length>1&&sales.some(value=>Math.round(value*100)!==Math.round(sales[0]*100)))invalid=true;
  // The product is only evidence of a disagreement on the fuel line. Multiple
@@ -162,7 +170,7 @@ function invoiceFuelCheckV2874(rows,total){
   return {reason:'fuel-arithmetic',fuel:fuel};
  if(sales.length===1&&Number.isFinite(total)&&!other&&Math.round(total*100)!==Math.round(fuel*100))
   return {reason:'fuel-total',fuel:fuel};
- return {reason:invalid?'fuel-ambiguous':'',fuel:fuel};
+ return {reason:invalid||missingSale&&!Number.isFinite(total)?'fuel-ambiguous':'',fuel:fuel};
 }
 
 function invoiceReviewDisplayV2874(decision){
@@ -182,7 +190,8 @@ function parseAmount(t,layout){return invoiceAmountDecisionV2874(t,layout).amoun
 function joinPrintedTotalCurrency(lines) {
   const joined = [];
   for (let i = 0; i < lines.length; i++) {
-    const normalized = lines[i].replace(/^\s*(TOTAL)\s+CA[B8]\s*\$\s*(?=\d)/i, '$1 CAD $$');
+    const currencyTotal=lines[i].replace(/^(?:I[O0]TA[LI1]|T[O0]TA[I1])(?=\s+(?:CAD|CDN)\s*\$)/i,'TOTAL');
+    const normalized = currencyTotal.replace(/^\s*(TOTAL)\s+CA[B8]\s*\$\s*(?=\d)/i, '$1 CAD $$');
     if (normalized !== lines[i] && invoiceOnlyAmount(normalized.replace(/^TOTAL\s+CAD/i, '')).length === 1) {
       joined.push(normalized);
       continue;
