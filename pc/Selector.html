@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="29.23" data-cdq-pc-release="428d018dace961097f0446df123569162f414674b7c51a411b17ca538961f68c">
+<html data-cdq-pc-version="29.24" data-cdq-pc-release="df2dfba924a10e7a9eacc6c17f3099861ec3f5c49ed3617e2429160dbdf6d097">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -947,7 +947,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
 <script src="./send-progress-v2893.js"></script>
-<meta name="cdq-package-build" content="2026.11.23-v29.23-runtime-pc">
+<meta name="cdq-package-build" content="2026.11.23-v29.24-runtime-pc">
 
 
 <script id="cdqBridgeV23">
@@ -1001,7 +1001,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.23-v29.23-runtime-pc'
+    build:'2026.11.23-v29.24-runtime-pc'
   });
 }
 
@@ -1014,7 +1014,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.23-v29.23-runtime-pc'
+        build:'2026.11.23-v29.24-runtime-pc'
       });
     }
   } catch(e) {}
@@ -8421,7 +8421,7 @@ function connecterAvecCodeDepuisInterface(){
 let cdqAdminOpenerV2521=null;
 function cdqAdminApiV2521(){
  const owner=String(utilisateurCourantEmail||'');let ok=()=>{},fail=()=>{};
- const valid=()=>owner===String(utilisateurCourantEmail||'')&&utilisateurCourantRole==='admin'&&(typeof cdqAccessState==='undefined'||cdqAccessState==='ready');
+ const valid=()=>owner===String(utilisateurCourantEmail||'')&&(window.cdqDriveEntryV2632?.isSessionAdmin?.()===true)&&(typeof cdqAccessState==='undefined'||cdqAccessState==='ready');
  const proxy=new Proxy({},{get:(_,name)=>name==='withSuccessHandler'?fn=>{ok=fn;return proxy}:name==='withFailureHandler'?fn=>{fail=fn;return proxy}:(...args)=>{if(!valid())return;return cdqApiRun().withSuccessHandler(value=>{if(valid())ok(value)}).withFailureHandler(error=>{if(valid())fail(error)})[name](...args)}});return proxy;
 }
 function cdqAdminTabV2521(name){
@@ -8436,7 +8436,7 @@ function cdqAdminFilterV2521(){
  document.getElementById('cdqAdminCountV2521').textContent=count+' utilisateur'+(count===1?'':'s');
 }
 function ouvrirGestionUtilisateurs(){
- if(utilisateurCourantRole!=='admin'){afficherErreur(new Error('Accès réservé aux administrateurs.'));return;}
+ if(!(window.cdqDriveEntryV2632?.isSessionAdmin?.()===true)){afficherErreur(new Error('Accès réservé aux administrateurs.'));return;}
  const modal=document.getElementById('adminModalOverlay');cdqAdminOpenerV2521=document.activeElement;modal.style.display='flex';
  modal.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();fermerGestionUtilisateurs();return;}if(e.key==='Tab'){const buttons=[...modal.querySelectorAll('button,input,select,textarea,summary')].filter(n=>!n.disabled&&n.getClientRects().length);const first=buttons[0],last=buttons.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}}};
  document.getElementById('adminCurrentUser').textContent='Compte administrateur : '+utilisateurCourantEmail;
@@ -8450,7 +8450,7 @@ function chargerUtilisateursAdmin(){
  const opened=new Set([...liste.querySelectorAll('details[open]')].map(d=>d.dataset.email));
  document.getElementById('cdqAdminCountV2521').textContent='Chargement…';
  cdqAdminApiV2521().withSuccessHandler(function(utilisateurs){
-  if(owner!==utilisateurCourantEmail||utilisateurCourantRole!=='admin')return;liste.replaceChildren();
+  if(owner!==utilisateurCourantEmail||!(window.cdqDriveEntryV2632?.isSessionAdmin?.()===true))return;liste.replaceChildren();
   function el(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!=null)n.textContent=text;return n;}
   (utilisateurs||[]).forEach(u=>{
    const row=el('details','cdq-user-card');row.dataset.email=u.email;row.dataset.search=(String(u.nomRapport||'')+' '+u.email).toLocaleLowerCase('fr');row.open=opened.has(u.email);
@@ -12340,7 +12340,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.23-v29.23-runtime-pc";
+  const CDQ_BUILD = "2026.11.23-v29.24-runtime-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14985,7 +14985,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.23-v29.23-runtime-pc";
+const CDQ_V19_BUILD = "2026.11.23-v29.24-runtime-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -19327,7 +19327,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.23-v29.23-runtime-pc";
+const CDQ_V20_BUILD = "2026.11.23-v29.24-runtime-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20180,7 +20180,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.23-v29.23-runtime-pc";
+const CDQ_V21_BUILD = "2026.11.23-v29.24-runtime-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24679,7 +24679,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.23-v29.23-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.23-v29.24-runtime-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -25661,6 +25661,8 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
   const ready = () => typeof cdqAccessState !== 'undefined' && cdqAccessState === 'ready' && !!email();
   const confirmed = () => ready() && sessionConfirmed && roleAccount === email();
   const canRead = () => confirmed() && allowed === email();
+  const isSessionAdmin = () => confirmed() && assignedRole==='admin';
+  const userAdminMethods = new Set(['obtenirListeUtilisateurs','ajouterUtilisateur','modifierRoleUtilisateur','modifierProfilTechnicien','supprimerUtilisateur','genererNouveauCodeUtilisateur','genererCodesManquants']);
   const originalClients = window.chargerClients;
   const originalRun = window.cdqApiRun;
   // Preview only needs sign-in and the current account's presentation settings.
@@ -25688,22 +25690,22 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
     if (button) return;
     const panel = document.getElementById('cdq-settings-panel-advanced');
     const share = panel?.querySelector('#cdqInstallShareSettingsButton');
-    if (!share) return;
+    if (!panel) return;
     const action = document.createElement('button');
     action.id = 'cdqAdminSettingsButton'; action.type = 'button';
     action.className = 'cdq-admin-settings-button cdq-user-management-settings-v2614';
     action.textContent = 'Gestion des utilisateurs';
     action.onclick = () => {
-      if (canRead() && assignedRole === 'admin' && typeof ouvrirGestionUtilisateurs === 'function') ouvrirGestionUtilisateurs();
+      if (isSessionAdmin() && typeof ouvrirGestionUtilisateurs === 'function') ouvrirGestionUtilisateurs();
     };
-    share.insertAdjacentElement('afterend', action);
+    if(share) share.insertAdjacentElement('afterend', action); else panel.append(action);
   }
 
   function applyRole() {
     if (!ready()) return;
     if (typeof utilisateurCourantRole !== 'undefined') utilisateurCourantRole = canRead() && roleAccount === email() ? assignedRole : 'lecture';
     try { if (typeof appliquerDroitsRoleInterface === 'function') appliquerDroitsRoleInterface(); } catch (_) {}
-    const admin = canRead() && assignedRole === 'admin';
+    const admin = isSessionAdmin();
     syncAdminSettings(admin);
     for (const id of ['adminButton','headerAdminButton']) {
       const el = document.getElementById(id); if (el) el.style.display = admin ? (id === 'headerAdminButton' ? 'grid' : 'block') : 'none';
@@ -25733,6 +25735,56 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
     window.dispatchEvent(new Event('cdq:drive-cleared-v2632'));
   }
 
+  let driveConsent = null;
+  let returningActor = '';
+  let returnTimer = 0;
+  let popupTimer = 0;
+  const validTicket = ticket => typeof ticket==='string' && /^v1\.[A-Za-z0-9_-]{16}\.[A-Za-z0-9_-]{32,700}$/.test(ticket);
+  function resetDriveConsent() {
+    driveConsent=null; returningActor='';
+    clearTimeout(returnTimer); clearInterval(popupTimer);
+  }
+  function resumeDriveConsent() {
+    if (!returningActor || document.hidden || (popupTimer && !document.hasFocus()) || !confirmed() || returningActor!==email()) return;
+    clearTimeout(returnTimer);
+    returnTimer=setTimeout(()=>{
+      if (!returningActor || document.hidden || returningActor!==email() || !confirmed()) return;
+      returningActor='';
+      clearInterval(popupTimer);
+      void check(true);
+    },300);
+  }
+  window.addEventListener('focus',resumeDriveConsent);
+  window.addEventListener('cdq:drive-consent-return',resumeDriveConsent);
+  document.addEventListener('visibilitychange',resumeDriveConsent);
+
+  function startDriveConsent() {
+    const grant=driveConsent;
+    if (!grant || !confirmed() || grant.account!==email()) return;
+    if(Date.now()-grant.at>13*60000){void check(true);return;}
+    const native=window.BalanceCDQNative;
+    returningActor=grant.account;
+    const url='https://cdq-manager-autonomous.balance-cdq.workers.dev/v2/technicien/drive/app?t='+encodeURIComponent(grant.ticket);
+    try {
+      if(typeof native?.openTechnicianDriveV2924==='function') {
+        native.openTechnicianDriveV2924(grant.ticket);
+      } else {
+        const win=window.open(url,'_blank','popup,width=530,height=680');
+        if(!win)throw Error('popup');
+        win.opener=null;
+        clearInterval(popupTimer);
+        const opened=Date.now();
+        popupTimer=setInterval(()=>{
+          if(win.closed && document.hasFocus())resumeDriveConsent();
+          if((win.closed && document.hasFocus()) || Date.now()-opened>15*60000)clearInterval(popupTimer);
+        },600);
+      }
+    } catch {
+      returningActor='';
+      paint('Google n’a pas pu s’ouvrir. Autorisez la fenêtre de connexion puis réessayez.');
+    }
+  }
+
   function paint(message, busy = false) {
     const files = document.getElementById('filesContainer');
     if (!files?.parentNode) return;
@@ -25750,7 +25802,14 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
     card.querySelector('strong').textContent = accessStatus === 'error'
       ? 'Accès Drive à vérifier'
       : 'Compte CDQ connecté — lecture seule';
-    card.querySelector('p').textContent = message;
+    const consent = accessStatus==='consent' && driveConsent?.account===email();
+    if(consent) card.querySelector('strong').textContent='Autoriser Drive pour Balance CDQ';
+    card.querySelector('p').textContent = consent
+      ? (message?.startsWith('Google n’a pas pu') ? message : 'Pour afficher les dossiers clients, autorisez Balance CDQ à utiliser Drive avec '+email()+'.')
+      : message;
+    const action=card.querySelector('button');
+    action.textContent=consent?'Autoriser Drive avec Google':'Actualiser l’accès';
+    action.onclick=consent?startDriveConsent:()=>check(true);
     card.querySelector('button').disabled = busy;
     const legacy = document.getElementById('cdqDriveGateV2620');
     if (legacy) { legacy.classList.remove('show'); legacy.style.display = 'none'; }
@@ -25777,6 +25836,7 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
         if (!current()) { resolve(false); return; }
         checking = false; checkPromise = null;
         if (result?.ok === true && String(result.email || '').trim().toLowerCase() === account) {
+          resetDriveConsent();
           accessStatus = 'allowed';
           allowed = account; applyRole(); paint('');
           // Only read account-scoped client caches after the Drive permission check.
@@ -25784,6 +25844,12 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
           window.dispatchEvent(new Event('cdq:drive-ready-v2632'));
           resolve(true);
         } else {
+          if(!error && result?.email===account && result.consentRequired===true && validTicket(result.ticket)) {
+            driveConsent={account,ticket:result.ticket,at:Date.now()};
+            accessStatus='consent'; allowed=''; applyRole(); clearClientView(); paint('');
+            resolve(false); return;
+          }
+          resetDriveConsent();
           deny(error ? 'Les permissions Drive n’ont pas pu être vérifiées. Vous pouvez utiliser l’application et réessayer plus tard.' : undefined, error);
           resolve(false);
         }
@@ -25810,13 +25876,18 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
       if (name in target) return target[name];
       if (typeof name !== 'string') return undefined;
       return (...args) => {
-        const restricted = protectedMethod(name), account = email(), token = epoch;
+        const administrative=userAdminMethods.has(name);
+        const restricted = !administrative && protectedMethod(name), account = email(), token = epoch;
+        if(administrative && !isSessionAdmin()){
+          if(typeof failure==='function') failure(new Error('Accès réservé aux administrateurs.'),userObject);
+          return;
+        }
         if (restricted && !canRead()) {
           paint('Mode lecture seule : clients, fichiers et inventaire masqués. Aucun changement de données n’est autorisé sans accès Drive.');
           if (typeof failure === 'function') failure(new Error('Accès aux données ou modification non autorisé sans permission Drive.'), userObject);
           return;
         }
-        const current = () => !restricted || (token === epoch && account === email() && canRead());
+        const current = () => administrative ? (isSessionAdmin() && account===email()) : (!restricted || (token === epoch && account === email() && canRead()));
         const onSuccess=success,onFailure=failure;let settled=false;
         const cleanup=()=>window.removeEventListener('cdq:drive-cleared-v2632',cancel);
         const cancel=()=>{if(settled)return;settled=true;cleanup();if(typeof onFailure==='function')onFailure(new Error('Le compte ou l’accès Drive a changé. La sauvegarde reste en attente de confirmation.'),userObject);};
@@ -25857,7 +25928,7 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
     if (force || !canRead()) return check(!!force);
     return originalClients?.call(this, false, ...args);
   };
-  window.cdqDriveEntryV2632 = Object.freeze({ version: '26.58', canRead, status: () => accessStatus, refresh: () => check(true), approvedEmail: () => canRead() ? allowed : '' });
+  window.cdqDriveEntryV2632 = Object.freeze({ version: '29.24', canRead, isSessionAdmin, refreshAdminSettings:()=>syncAdminSettings(isSessionAdmin()), status: () => accessStatus, refresh: () => check(true), approvedEmail: () => canRead() ? allowed : '' });
   // Preserve the historical login call site, while replacing the blocking gate.
   window.cdqDriveAccessGateV2620 = Object.freeze({
     version: '26.33', afterLogin: (_companies, state) => {
@@ -25865,6 +25936,7 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
       // Wait for the actual server session before checking Drive or storing a role.
       ++epoch; allowed = ''; checking = false; checkingEmail = ''; checkPromise = null;
       accessStatus = 'pending';
+      resetDriveConsent();
       roleAccount = email();
       sessionConfirmed = state?.autorise === true && String(state.email || '').trim().toLowerCase() === roleAccount &&
         !state.cdqReadOnlyStartupV2539 && !state.cdqWarmReadOnlyV2540;
@@ -25874,17 +25946,6 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
         applyRole(); clearClientView();
         paint('Vérification de votre connexion…', true);
         return Promise.resolve(false);
-      }
-      const initial=state?.cdqDriveAccessV2638;
-      const age=Date.now()-Number(initial?.checkedAt||0);
-      if(initial&&initial.email===roleAccount&&age>=-5000&&age<30000&&typeof initial.ok==='boolean'){
-        if(initial.ok){
-          accessStatus='allowed';allowed=roleAccount;applyRole();paint('');
-          if(Array.isArray(state.compagniesInitiales)&&typeof toutesLesCompagnies!=='undefined')toutesLesCompagnies=state.compagniesInitiales;
-          if(typeof originalClients==='function')originalClients.call(window,false,state.compagniesInitiales);
-          window.dispatchEvent(new Event('cdq:drive-ready-v2632'));return Promise.resolve(true);
-        }
-        deny();return Promise.resolve(false);
       }
       return check();
     }, retry: () => check(true), chooseOther: () => check(true),
@@ -25897,6 +25958,7 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
     if (event.detail !== 'ready') {
       ++epoch; allowed = ''; assignedRole = ''; roleAccount = ''; sessionConfirmed = false; checking = false; checkPromise = null;
       accessStatus = 'pending';
+      resetDriveConsent();
       syncAdminSettings(false);
       clearClientView(); paint('');
     }
@@ -26141,7 +26203,7 @@ html.cdq-desktop-v2676 body #filesContainer .file-row :is(.file-actions,.file-me
   }
   const logout=$('#cdqAccountLogoutV2647',advanced)||$('[data-cdq-account-logout]',advanced);if(logout)actionCard(advanced,logout,'Compte CDQ','Gérer votre connexion CDQ.','M10 17l5-5-5-5M15 12H3M14 3h7v18h-7');
  }
- const previous=window.cdqOrganizeSettings;window.cdqOrganizeSettings=function(modal){previous(modal);organize(modal)};
+ const previous=window.cdqOrganizeSettings;window.cdqOrganizeSettings=function(modal){previous(modal);window.cdqDriveEntryV2632?.refreshAdminSettings?.();organize(modal)};
  let dragging=null,statusTimer,applyQueued=false;
  function announce(text){let status=$('.cdq-nav-status-v2708');if(!status){status=document.createElement('div');status.className='cdq-nav-status-v2708';status.setAttribute('role','status');document.body.append(status)}status.textContent=text;clearTimeout(statusTimer);statusTimer=setTimeout(()=>status.remove(),2200);}
  const touchGuards=new WeakSet();

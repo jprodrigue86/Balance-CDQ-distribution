@@ -1,14 +1,14 @@
 {
   "androidSourceBuild": "2026.11.22-v29.21-runtime",
-  "build": "2026.11.23-v29.23-runtime-pc",
+  "build": "2026.11.23-v29.24-runtime-pc",
   "desktopModel": 3,
   "files": 1172,
-  "generatedFrom": "patches/maintenance-2923/pc.py",
+  "generatedFrom": "patches/drive-app-2924/pc.py",
   "platform": "pc-pwa",
-  "release": "428d018dace961097f0446df123569162f414674b7c51a411b17ca538961f68c",
-  "version": "29.23",
+  "release": "df2dfba924a10e7a9eacc6c17f3099861ec3f5c49ed3617e2429160dbdf6d097",
+  "version": "29.24",
   "webBaseCommit": "de1e05294f308cd67502ccc4093422501af56e22",
   "candidateOnly": false,
-  "sourceCommit": "c310ffa4a6a4211b9ba790e0a57e9a3d68227223",
+  "sourceCommit": "b52ecaf3262d798979b73c9594f7c857d863f3cb",
   "pdfQualification": "reprise-listes-2918"
 }
