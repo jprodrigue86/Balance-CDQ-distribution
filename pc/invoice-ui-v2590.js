@@ -168,7 +168,33 @@ function invoicePaymentAmbiguousV2791(t){
   // Mixed cancelled/approved slips and preauthorisations do not establish
   // a unique final purchase. Preserve the image and request a manual amount.
   var text=String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  return /\b(?:annul(?:e|ee|es|ees|ation)|cancel(?:led|ed|lation)|void(?:ed)?|refus(?:e|ee)|declined|pre[ -]?autori[sz]\w*|paiement\s+partiel|partial\s+payment)\b/.test(text);
+  text=text.replace(/[‐‑‒–—−]/g,'-');
+  if(/\b(?:annul(?:e[es]*|ation)|cancel(?:led|ed|lation)?|void(?:ed)?|refusee?|declined|paiement\s+partiel|montant\s+partiel|partial(?:ly)?\s+(?:payment|paid)|partiellement\s+paye)\b/.test(text))return true;
+  const pre='\\bpre[ .-]*auth?(?:or(?:i[sz]\\w*)?)?\\b\\.?';
+  if(!new RegExp(pre).test(text))return false;
+  const ls=joinPrintedTotalCurrency(textLines(text));
+  const approved=ls.some(l=>/^\s*[|!]*\s*(?:(?:[o0]?1|\d{2}\s*\/\s*\d{3})\s+)?(?:appr[o0][uvl][uv]ee?|approved)\b/.test(l));
+  const final=ls.some((l,i)=>{const m=invoiceAmountLabel(l);return m.rank>=2&&!m.excluded&&!m.suggestion&&(lineAmounts(l).some(v=>v>0)||invoiceOnlyAmount(ls[i+1]||'').some(v=>v>0));});
+  if(!approved||!final)return true;
+  // The terminal must print a completed preauthorization, an approval and a final
+  // amount. A single corrupted letter in the completion word is common on thermal paper.
+  const mentions=text.matchAll(new RegExp(pre+'[\\s:,;.\\-]*([a-z]*)','g'));
+  function closeWord(word,expected){
+    if(word[0]!==expected[0]||Math.abs(word.length-expected.length)>1)return false;
+    let i=0,j=0,errors=0;
+    while(i<word.length&&j<expected.length){
+      if(word[i]===expected[j]){i++;j++;continue;}
+      if(++errors>1)return false;
+      if(word.length>=expected.length)i++;
+      if(expected.length>=word.length)j++;
+    }
+    return errors+(word.length-i)+(expected.length-j)<=1;
+  }
+  const endings=['complete','completee','completed','completion','finalisee','finalized'];
+  for(const mention of mentions){
+    if(!endings.some(word=>closeWord(mention[1],word)))return true;
+  }
+  return false;
 }
 // Cross-check printed fuel amounts; never replace a printed total with arithmetic.
 function invoiceFuelCheckV2874(rows,total){
@@ -261,10 +287,10 @@ function invoiceApprovedPayment(text, rows) {
   const normal = value => String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
   const raw = textLines(text).map(normal);
   const lines = Array.from(new Set([...raw, ...rows.map(row=>normal(row.line))]));
-  const approved=lines.some(s=>/^(?:[o0]?1\s+)?(?:appr[o0][uvl]vee?|approved)\b/.test(s));
+  const approved=lines.some(s=>/^\s*[|!]*\s*(?:(?:[o0]?1|\d{2}\s*\/\s*\d{3})\s+)?(?:appr[o0][uvl][uv]ee?|approved)\b/.test(s));
   const purchase=lines.some(s=>/^(?:type\s*:\s*)?(?:achat|purchase)\s*$/.test(s));
   const terminalContext=lines.some(s=>/^term\s*:/.test(s)) && lines.some(s=>/^#?\s*autor\s*:/.test(s));
-  if (lines.some(s=>/\b(?:remboursement|refund|retour|cash|comptant|pourboire|gratuity|tip|cashback|retrait|split|versement)\b/.test(s))) return null;
+  if (lines.some(s=>/\b(?:remboursement|refund|cashback|retrait|split|versement)\b/.test(s))) return {cents:null};
   const terminals = new Set(), cards = new Set();
   function inspect(line) {
     const match = /^(mnt|visa|mastercard|interac|debit|credit)\s*:?\s*(.+)$/.exec(line);
@@ -274,41 +300,50 @@ function invoiceApprovedPayment(text, rows) {
   }
   lines.forEach(inspect);
   for(let i=0;i+1<raw.length;i++){
-    if (/^(?:mnt|visa|mastercard|interac|debit|credit)\s*:?$/.test(raw[i]) && invoiceOnlyAmount(raw[i+1]).length===1)
+    if (/^(?:mnt|visa|mastercard|interac|debit|credit)\s*:?$/.test(raw[i]) && invoiceOnlyAmount(raw[i+1]).length===1 && !invoiceOnlyAmount(raw[i+2]||'').length)
       inspect(raw[i]+' '+raw[i+1]);
   }
   // A separate card-payment row can verify a complete printed total lost
   // in geometric grouping. Require both amounts to be independently labelled.
-  const totals = new Set();
-  for (const line of raw) {
-    const m=/^total\s*:?\s*(.+)$/.exec(line);
-    if(m){const values=invoiceOnlyAmount(m[1]);if(values.length===1)totals.add(Math.round(values[0]*100));}
+  if (!terminals.size || !approved || !purchase && !terminalContext) {
+    // Un chiffre après VISA seul n’établit pas un achat. Il peut toutefois
+    // contredire un total, même si celui-ci provient de l’autre transcription.
+    if(!cards.size)return null;
+    return {cents:cards.size===1?[...cards][0]:null,verifyOnly:!(approved&&purchase)};
   }
-  if(totals.size===1 && cards.size===1){
-    const same=[...totals][0];
-    if(cards.has(same) && (!approved || !terminals.size || terminals.size===1 && terminals.has(same))) return {cents:same};
-    if(approved || purchase) return {cents:null};
-  }
-  if (!terminals.size) return null;
   const amounts = new Set([...terminals,...cards]);
   if (amounts.size>1 && (approved || purchase)) return {cents:null};
-  if (!approved || !purchase && !terminalContext) return null;
+  // Ici le MNT est lié à un terminal approuvé, pas à un numéro de carte.
   return {cents:amounts.size===1 ? [...amounts][0] : null};
 }
 
-function invoiceAmountDecisionV2874(t,layout){
-  if(invoicePaymentAmbiguousV2791(t))return {amount:NaN,reason:'payment'};
+function invoiceCurrencyGlyph(line){
+  // CAD and CDN are currency prefixes. The dollar sign can resemble S on thermal paper.
+  return String(line).replace(/\b(CAD|CDN)\s*[sS](?=\s*[0-9]{1,5}\s*[.,]\s*[0-9]{2}\b)/gi,'$1$');
+}
+function invoiceAmountDecisionV2874(t,layout,geometry=invoiceLayoutRowsV2734(layout)){
+  t=textLines(t).map(invoiceCurrencyGlyph).join('\n');
+  if(geometry)geometry=geometry.map(invoiceCurrencyGlyph);
+  const raw=textLines(t), views=geometry?[geometry,raw]:[raw];
+  if(invoicePaymentAmbiguousV2791(views.map(v=>v.join('\n')).join('\n')))return {amount:NaN,reason:'payment'};
+  const payment=invoiceApprovedPayment(t,(geometry||[]).map(line=>({line})));
+  const reads=views.map((lines,i)=>invoiceReadTotalsV2929(lines,!!geometry&&i===0,payment));
+  const disagreement=new Set(reads.filter(r=>Number.isFinite(r.printed)).map(r=>Math.round(r.printed*100))).size>1;
+  if(disagreement)return {amount:NaN,reason:'conflict'};
+  return reads.find(r=>r.reason&&r.reason!=='missing')||reads.find(r=>!r.reason)||reads[0];
+}
+function invoiceReadTotalsV2929(lines,physical,payment){
   // Accept a missing OCR space only for a leading known TOTAL label followed
   // immediately by a complete decimal amount, never for arbitrary identifiers.
-  var geometry=invoiceLayoutRowsV2734(layout),physical=geometry!==null,sourceRows=physical?joinPrintedTotalCurrency(geometry).map(function(line){return {line:line,noAdjacent:true}}):invoiceColumnRowsV2734(joinPrintedTotalCurrency(textLines(t))),rows=[],suggestionBlock=false,labels=[];
+  var joined=joinPrintedTotalCurrency(lines),sourceRows=physical?joined.map(function(line){return {line:line,noAdjacent:true}}):invoiceColumnRowsV2734(joined),rows=[],suggestionBlock=false,labels=[];
   sourceRows.forEach(function(sourceRow){
     var line=invoiceSpacedTotalV2790(sourceRow.line).replace(/^(T[O0]TA[LI]|TOTAL(?:\s+(?:PAY[EÉ]|PAID|TTC))?|GRAND\s+TOTAL)(?=\d{1,5}\s*[,.]\s*\d{2}(?:\s|\$|$))/i,'$1 ');
     if(physical)line=line.replace(/^(?:T0TAL|TOTAI)(?=\s*(?:$|[:$]|\d|PAY[EÉ]\b|PAID\b|TTC\b))/i,'TOTAL');
     var meta=invoiceAmountLabel(line);
-    if(physical&&meta.rank&&!invoicePurchaseTotalRankV2745(meta.text)&&!/^(?:(?:total(?:\s+(?:paye|paid|regle|ttc|final|general|tax(?:es?)?\s+(?:comprises?|inclus\w*|included)))?)|grand\s+total|(?:montant\s+(?:total|paye|a\s+payer|du)|net\s+a\s+payer|solde\s+a\s+payer|amount\s+(?:due|paid)|paid\s+(?:amount|total)|balance\s+due|a\s+payer))(?=\s*(?:$|[:$€]|\d|(?:cad|cdn)\b))/.test(meta.text))meta.rank=0;
+    if(meta.rank&&!invoicePurchaseTotalRankV2745(meta.text)&&!/^(?:(?:total(?:\s+(?:paye|paid|regle|ttc|final|general|tax(?:es?)?\s+(?:comprises?|inclus\w*|included)))?)|(?:grand|final)\s+total|(?:montant\s+(?:total|paye|a\s+payer|du)|net\s+a\s+payer|solde\s+a\s+payer|amount\s+(?:due|paid)|paid\s+(?:amount|total)|balance\s+due|a\s+payer))(?=\s*(?:$|[:$€]|\d|(?:cad|cdn)\b))/.test(meta.text))meta.rank=0;
     if(meta.suggestion)suggestionBlock=true;
     else if(/^(?:visa|mastercard|transaction|paiement\s+(?:effectue|confirme)|payment\s+(?:confirmed|completed|approved))\b/.test(meta.text))suggestionBlock=false;
-    var blocked=meta.excluded||meta.suggestion||suggestionBlock;
+    var blocked=meta.excluded||meta.suggestion||suggestionBlock||/\b(?:carte|card|pan|reference|ref|autorisation|authorization)\b|[*•]{2,}|\bx{2,}\d/i.test(line);
     rows.push({line:line,meta:meta,blocked:blocked,suggestionBlock:suggestionBlock,noAdjacent:sourceRow.noAdjacent});
   });
   // A separate tax/tip/subtotal label owns its following amount. If none
@@ -324,16 +359,16 @@ function invoiceAmountDecisionV2874(t,layout){
     labels.push({rank:row.meta.rank,amounts:amounts});
   });
   var priority=0;labels.forEach(function(label){if(label.rank>priority)priority=label.rank});
-  const payment=invoiceApprovedPayment(t,rows);
+  // Le paiement est vérifié sur les deux transcriptions indépendamment du rang des libellés.
   const printed=new Set();
   let incomplete=false;
-  for(const label of labels.filter(label=>label.rank===priority)){
-    if(!label.amounts.length) incomplete=true;
+  for(const label of labels.filter(label=>label.rank>=Math.min(2,priority))){
+    if(!label.amounts.length&&label.rank===priority) incomplete=true;
     for(const amount of label.amounts) printed.add(Math.round(amount*100));
   }
   const single=printed.size===1 ? [...printed][0] : null;
   const conflict=printed.size>1 || payment && (payment.cents===null || single!==null && single!==payment.cents);
-  const cents=single===null && payment ? payment.cents : single;
+  const cents=single===null && payment && !payment.verifyOnly ? payment.cents : single;
   const chosen=cents===null ? NaN : cents/100;
   const fuel=invoiceFuelCheckV2874(rows,chosen);
   const reason=conflict ? 'conflict' : !Number.isFinite(chosen) || incomplete && !payment ? 'missing' :
@@ -345,7 +380,56 @@ function invoiceValidDateV2791(value){
   var parts=value.split('-').map(Number),date=new Date(Date.UTC(parts[0],parts[1]-1,parts[2]));
   return date.getUTCFullYear()===parts[0]&&date.getUTCMonth()===parts[1]-1&&date.getUTCDate()===parts[2];
 }
-function parseDate(t){
+function parseDate(t,physical,evidence){
+  const norm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[‐‑‒–—−]/g,'-');
+  const negative=/\b(?:sejour|stay|arrivee?|arrival|depart|departure|check[ -]?(?:in|out)|reservation|booking|nuitee?|imprim\w*|impression|print\w*|reprint|livraison|delivery|echeance|due|expir\w*|expiry|exp|valide|valid\s+(?:thru|until)|carte|card|reference|ref|telephone|phone)\b/;
+  const explicit=/\b(?:transaction|factur(?:e|ation)|achat|purchase|invoice|emission|emise?|issued?|sale|vente)\b/;
+  const numberField=/\b(?:no|n[o°º]|numero|number|id|ref)\.?\s+(?:de\s+)?(?:facture|invoice|commande|transaction|autorisation)\s*[:#.-]?\s*$|\b(?:invoice|order|transaction)\s*(?:number|no\.?|#|id)\s*[:#.-]?\s*$/;
+  const idLabel=/(?:\b(?:id|no|num(?:ero)?|number|ref)\b|[#№])\s*[:.-]?\s*$/;
+  const digits='[0-9oil]{1,2}',year='2[0o][0-9oil]{2}';
+  const month='(?:jan(?:v(?:ier)?|uary)?|fev(?:r(?:ier)?)?|feb(?:ruary)?|mar(?:s|ch)?|avr(?:il)?|apr(?:il)?|mai|may|juin|jun(?:e)?|juil(?:l(?:et)?)?|jul(?:y)?|aou(?:t)?|aug(?:ust)?|sep(?:t(?:embre|ember)?)?|oct(?:obre|ober)?|nov(?:embre|ember)?|dec(?:embre|ember)?)';
+  const sep='(?:\\s*[-./]\\s*|\\s+)',namedSep='\\.?'+sep;
+  const pattern='\\b(?:'+year+sep+'(?:'+digits+'|'+month+')'+namedSep+digits+'|'+digits+sep+'(?:'+digits+'|'+month+')'+namedSep+year+'|'+month+namedSep+digits+'(?:,\\s*|'+sep+')'+year+')\\b';
+  const clock=/^(?:t|a\s+|at\s+)?(?:[01]?\d|2[0-3])\s*[:h]\s*[0-5]\d(?:\s*:\s*[0-5]\d)?(?:\s*[ap]m)?\b/i;
+  function decode(token){
+    let p=token.match(/[a-z0-9]+/g);if(!p||p.length!==3)return '';
+    p=p.map(v=>/^[\doil]+$/.test(v)?v.replace(/o/g,'0').replace(/[il]/g,'1'):v);
+    if(/^\d{4}$/.test(p[0])&&/^[a-z]/.test(p[1]))p=[p[2],p[1],p[0]];
+    return invoiceReadDateTokenV2929(p.join(p.some(v=>/^[a-z]/.test(v))?' ':'-'));
+  }
+  const found=[],denied=new Set();
+  function scan(input){
+    const ls=input.map(norm);
+    ls.forEach((line,i)=>{
+      // Some printers leave no gap between a full ISO date and the HH:MM clock.
+      const l=line.replace(/\b(20[0-9oil]{2}[-/]\d{1,2}[-/]\d{2})(?=(?:[01]\d|2[0-3]):[0-5]\d)/g,'$1 ');
+      const re=new RegExp(pattern,'g');let m;
+      while((m=re.exec(l))){
+        const before=l.slice(0,m.index).trim(),after=l.slice(re.lastIndex).trim();
+        const prev=ls[i-1]||'',shortLabel=prev.length<75&&!/\d{2}/.test(prev);
+        const pos=explicit.test(before),prior=shortLabel&&explicit.test(prev);
+        const value=decode(m[0]);
+        if(negative.test(l)||numberField.test(before)||idLabel.test(before)||!pos&&shortLabel&&(negative.test(prev)||numberField.test(prev)||idLabel.test(prev))){if(value)denied.add(value);continue;}
+        // Pas de réparation O/I/l en dehors du token. Un identifiant ou une
+        // date noyée dans une description n’est pas une date d’entête.
+        const bare=/^[\s:|.-]*$/.test(before), generic=/^(?:date(?:\s*[/&-]\s*(?:time|heure))?)\s*[:.-]?$/.test(before);
+        const timed=clock.test(after.replace(/^[,;|]\s*/,''))||!after&&clock.test(ls[i+1]||'');
+        const header=(bare||generic)&&i<14&&(timed||!after);
+        const labelled=pos||bare&&prior;
+        const rank=labelled||header&&timed?3:generic||bare&&/^date\s*:?$/.test(prev)?2:header?1:0;
+        if(rank)found.push({rank,value,labelled});
+      }
+    });
+  }
+  scan(textLines(t));if(physical)scan(physical);
+  const candidates=found.filter(f=>f.labelled||!denied.has(f.value));
+  const rank=candidates.reduce((best,f)=>Math.max(best,f.rank),0);
+  const best=new Set(candidates.filter(f=>f.rank===rank).map(f=>f.value));
+  if(evidence)evidence.conflict=best.size>1;
+  return best.size===1?[...best][0]:'';
+}
+// Décodage d’un seul candidat contextualisé, avec validation du calendrier UTC.
+function invoiceReadDateTokenV2929(t){
   var dates=new Set(),ambiguous=[],invalid=false,months={jan:1,fev:2,feb:2,mar:3,avr:4,apr:4,mai:5,may:5,juin:6,jun:6,juil:7,jul:7,aou:8,aug:8,sep:9,oct:10,nov:11,dec:12};
   function value(y,m,d){return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');}
   function add(y,m,d){var v=value(y,m,d);if(invoiceValidDateV2791(v))dates.add(v);else invalid=true;}
@@ -366,31 +450,46 @@ function merchant(t){var bad=/^(airbag|srs|steering|volant|bienvenue|welcome|mer
 // V27.42: classify purchased items/services; payment, pump and tax lines are not purchases.
 function invoiceCategoryTextV2741(t){return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/œ/g,'oe').replace(/\b0(eufs?)(?=avec|\b)/g,'o$1').replace(/\bcham(?:be|8re|rn?bre)\b/g,'chambre').replace(/\bh0tel\b/g,'hotel').replace(/\b(?:rest0rant|restauramt)\b/g,'restaurant').replace(/\brest0\b/g,'resto').replace(/\bbistr0\b/g,'bistro').replace(/\bpourb(?:[o0][i1l]re|otre)\b/g,'pourboire').replace(/(\d)([a-z])/g,'$1 $2').replace(/\s+/g,' ').trim()}
 function invoiceRoomNumberV2741(line){var l=invoiceCategoryTextV2741(line);return /\b(?:n[o0°º]\s*(?:de\s*)?chambre|numero\s*(?:de\s*)?chambre|room\s*(?:number|no)|chambre\s*(?:n[o0]|numero))\b/.test(l)||/^(?:chambre|room)\s*[:#]?\s*(?:[a-z]?\d{1,5}[a-z]?|[_-]+)\s*$/.test(l)}
-function invoiceMealV2741(line){var l=invoiceCategoryTextV2741(line);return !/\b(?:cafetieres?|machines?|moulin|coupe[- ]?oeufs?|grille[- ]?pain|outils?|quincaillerie)\b/.test(l)&&/\b(?:club\s*(?:cesar|caesar|sandwich)|[0-9]*\s*[o0]eufs?(?:\s*avec)?|omelettes?|dejeuner|breakfast|salades?|sandwichs?|burgers?|pizza|poutine|soupes?|steak|poulet|frites|repas|cafe|espresso|cappuccino|benedictines?|crepes?|gaufres?|paninis?|tacos?|burritos?|sushis?|spaghetti|lasagnes?|grillades?|croque[- ]monsieur|hot[- ]dogs?|fish[ -]and[ -]chips|boissons?|bieres?|chips|muffins?|biscuits?|croissants?|wraps?|jambon|bacon|menu\s*(?:du\s*jour|midi))\b/.test(l)}
+function invoiceMealV2741(line){var l=invoiceCategoryTextV2741(line);return !/\b(?:cafetieres?|machines?|moulin|coupe[- ]?oeufs?|grille[- ]?pain|outils?|quincaillerie)\b/.test(l)&&/\b(?:club\s*(?:cesar|caesar|sandwich)|[0-9]*\s*[o0]eufs?(?:\s*avec)?|omelettes?|dejeuner|breakfast|salades?|sandwich(?:es|s)?|coffee|tea|eggs?|pancakes?|waffles?|soups?|salads?|chicken|fries|meals?|burgers?|pizza|poutine|soupes?|steak|poulet|frites|repas|cafe|espresso|cappuccino|benedictines?|crepes?|gaufres?|paninis?|tacos?|burritos?|sushis?|spaghetti|lasagnes?|grillades?|croque[- ]monsieur|hot[- ]dogs?|fish[ -]and[ -]chips|boissons?|bieres?|chips|muffins?|biscuits?|croissants?|wraps?|jambon|bacon|menu\s*(?:du\s*jour|midi))\b/.test(l)}
 function invoicePurchaseTextV2742(line){return invoiceCategoryTextV2741(String(line||'').replace(/\bra[t7]che[t7]s?\b/gi,'ratchet').replace(/\bd[i1][e3]se[l1]\b/gi,'diesel').replace(/\bregu[l1i][i1l]er\b/gi,'regulier')).replace(/\bv[e3]nte\s*d\s*['’]?\s*e[s5][s5](?:e|ence)?\b/g,'vente essence')}
 function invoiceAdministrativeV2742(line){var l=invoicePurchaseTextV2742(line);return /^(?:n[o0]\s+(?:stan|trans|facture|tps|tvq|chambre)|numero\s+(?:de\s+)?(?:transaction|facture|chambre)|tps|tvq|gst|qst|taxe?s?|total|sous[- ]?total|subtotal|montant\s+(?:total|paye|recu)|solde|visa|mastercard|amex|interac|debit|credit|type\s+de\s+carte|carte|card|pre[- ]?autor|autorisation|approuvee?|approved|reference|ref|aci\/iso|tel(?:ephone)?|fax|courriel|email|www|https?|date|heure|time|merci|thank|copie|copy|conserver|important|pourboire|tip|gratuity|exemple|example|economies?|savings?|rabais|remises?|discount|coupon|distrib(?:uteur)?|distr|trans(?:action)?)\b/.test(l)||/^pompe\s*(?:[#:]*\s*)?(?:n(?:o|umero)\s*)?\d+(?:\s|$)/.test(l)||/^20\d{2}[\/-]\d{1,2}[\/-]\d{1,2}\b/.test(l)||/^[\d ()+.-]{7,}$/.test(l)&&!invoiceOnlyAmount(line).length}
 function invoiceFuelV2742(line){var l=invoicePurchaseTextV2742(line);return !/\b(?:essence\s+(?:de\s+)?vanille|extrait|parfum|nettoyant|additif|antigel|bidon|pompe\s+(?:a|electrique)|super\s*(?:sandwich|burger|combo|dejeuner))\b/.test(l)&&/\b(?:essence|carburants?|diesel|gazole|gas[ -]?oil|petrol|fuel|gasoline|unleaded|sans\s*plomb|vente\s+essence)\b/.test(l)}
 function invoiceToolsV2742(line,hardware){var l=invoicePurchaseTextV2742(line);return !/\b(?:abonnement|internet|television|telephone|virement|transfert|transfer|fil\s+(?:de\s+)?(?:transaction|discussion|dossier)|service\s+(?:de\s+)?cable)\b/.test(l)&&(/\b(?:outils?|perceuses?|quincaillerie|douilles?|sockets?|meuleuses?|scies?|ratchets?|cliquets?|tournevis|pinces?|cles?\s+(?:a\s+cliquet|a\s+molette|allen|hexagonales?)|fils?|wires?|cables?\s*(?:electriques?|coaxiaux?|reseau|usb)?|pompe\s+electrique|multimetres?|sertisseuses?|denudeurs?|marteaux?|visseuses?|boulonneuses?|clef?s? dynamometriques?|forets?|meches?|lames? de scie|niveaux? laser|soudeuses?|etaux|ponceuses?|sanders?|drills?|wrenches?|hammers?)\b/.test(l)||hardware&&/\b(?:cafetieres?|machines?\s+(?:a\s+)?cafe)\b/.test(l))}
 function invoiceCategoryEvidenceV2741(t){
   var lines=textLines(t),normal=lines.map(invoicePurchaseTextV2742),text=normal.join('\n');
-  var purchased=function(i){return !invoiceAdministrativeV2742(lines[i])&&!/\b(?:inclus\w*|included|gratuit\w*|free|coupon|rabais|discount|promotion|promotional|prochaine\s+visite|next\s+visit)\b/.test(normal[i])};
+  let inOffer=false;
+  const offers=normal.map(l=>{
+    if(/^(?:sous[- ]?total|subtotal|total|articles?\s+(?:achetes|vendus)|purchased\s+items|detail\s+des\s+achats)\b/.test(l))inOffer=false;
+    if(/\b(?:suggest\w*|sugger\w*|recommand\w*|recommend\w*|propos\w*|try\s+our|essayez|special\s+offer|offre\s+speciale|prochaine\s+visite|next\s+visit)\b/.test(l))inOffer=true;
+    return inOffer;
+  });
+  var purchased=function(i){return !offers[i]&&!invoiceAdministrativeV2742(lines[i])&&!/\b(?:inclus\w*|included|gratuit\w*|free|coupon|rabais|discount|promotion|promotional|prochaine\s+visite|next\s+visit)\b/.test(normal[i])};
   var charged=function(i){return purchased(i)&&(lineAmounts(lines[i]).some(function(n){return n>0})||(i+1<lines.length&&invoiceOnlyAmount(lines[i+1]).some(function(n){return n>0})))};
-  var lodging=normal.some(function(l,i){return !invoiceRoomNumberV2741(l)&&!/\b(?:room\s*service|service\s*(?:aux?|de)\s*chambres?|chambre\s*(?:a\s*air|froide))\b/.test(l)&&/\b(?:chambre|nuits?|nuitees?|sejour|hebergement|room|nights?|accommodation|lodging)\b/.test(l)&&charged(i)});
+  var lodging=normal.some(function(l,i){return !invoiceRoomNumberV2741(l)&&!/\b(?:restaurant|dining|check[ -]?(?:in|out)|depart|arrivee|reservation)\b/.test(l)&&!/\b(?:room\s*service|service\s*(?:aux?|de)\s*chambres?|chambre\s*(?:a\s*air|froide))\b/.test(l)&&/\b(?:chambre|nuits?|nuitees?|sejour|hebergement|room|nights?|accommodation|lodging)\b/.test(l)&&charged(i)});
   var mealItem=lines.find(function(l,i){return invoiceMealV2741(normal[i])&&charged(i)});
-  var fuel=normal.some(function(l,i){var total=invoiceAmountLabel(lines[i]);return invoiceFuelV2742(l)&&charged(i)||total.rank===1&&!total.excluded&&!total.suggestion&&(lineAmounts(lines[i]).some(function(n){return n>0})||i+1<lines.length&&invoiceOnlyAmount(lines[i+1]).some(function(n){return n>0}))});
+  var fuel=normal.some(function(l,i){var total=invoiceAmountLabel(lines[i]);return invoiceFuelV2742(l)&&charged(i)||!offers[i]&&total.rank===1&&!total.excluded&&!total.suggestion&&(lineAmounts(lines[i]).some(function(n){return n>0})||i+1<lines.length&&invoiceOnlyAmount(lines[i+1]).some(function(n){return n>0}))});
   // A volume and a per-litre price prove a fuel purchase even when the pump
   // prints REGULIER/SUPER on its own line or ML Kit separates price columns.
   var volume=normal.some(function(l,i){return purchased(i)&&/(?:\d\s*(?:l\b|litres?\b|liters?\b)|^(?:litres?|liters?)\s*[:=]?\s*\d+(?:[.,]\d+)?(?:\s|$))/.test(l)});
   var litrePrice=normal.some(function(l,i){return purchased(i)&&/(?:\$\s*\d+[.,]\d{2,3}\s*\/\s*(?:l\b|litres?\b)|\d+[.,]\d{2,3}\s*\$?\s*\/\s*(?:l\b|litres?\b)|(?:prix|price)\s*(?:par\s*)?(?:litre|liter)\b|(?:prix|price)\s*\/\s*(?:l\b|litres?\b|liters?\b)\s*[:=]?\s*\$?\s*\d+[.,]\d{2,3})/.test(l)});
   var fuelGrade=normal.some(function(l,i){return purchased(i)&&(/^(?:regulier|regular|super|premium|supreme|diesel|sans\s*plomb|unleaded|v[- ]?power)\b/.test(l)||invoiceFuelV2742(l))});
-  fuel=fuel||fuelGrade&&volume&&litrePrice||printedPumpSale(normal);
+  // A billed volume and unit price on the same line corroborate fuel if their
+  // product agrees with the printed extension. A merchant name alone never suffices.
+  const metered=normal.some(function(line,i){
+    if(!purchased(i))return false;
+    const match=line.match(/^(\d{1,4}[.,]\d{1,3})\s*(?:l|litres?|liters?)\s*(?:@|a|x)\s*\$?\s*(\d{1,2}[.,]\d{2,4})\s*\$?\s*\/\s*(?:l|litres?|liters?)\s+\$?\s*(\d{1,5}[.,]\d{2})\s*\$?$/);
+    if(!match)return false;
+    const [litres,rate,amount]=match.slice(1).map(numberMoney);
+    return amount>0&&Math.abs(Math.round(litres*rate*100)-Math.round(amount*100))<=2;
+  });
+  fuel=fuel||metered||fuelGrade&&volume&&litrePrice||printedPumpSale(normal.map((l,i)=>offers[i]?'':l));
   if (!fuel) {
     // Recover a pump table when the grade or currency glyph is imperfect.
     // The signed receipt's final amount must corroborate the printed line.
     const pumpHeaders = normal.findIndex(line =>
       /\(\s*l\s*\)/.test(line) && /\(\s*[$s8]\s*\/\s*l\s*\)/.test(line));
     if (pumpHeaders >= 0) {
-      const nearby = normal.slice(pumpHeaders + 1, pumpHeaders + 5);
+      const nearby = normal.slice(pumpHeaders + 1, pumpHeaders + 5).filter((_,k)=>purchased(pumpHeaders+1+k));
       const grade = nearby.find(line => /^(?:regul[iel1]{1,3}r|regular|diesel|premium|supreme|sans plomb)\s+\d/.test(line));
       const printed = grade?.match(/\s\d{1,4}[.,]\d{2,3}\s+\d{1,2}[.,]\d{2,4}\s+[$]?\s*(\d{1,5}[.,]\d{2})\s*$/);
       if (printed) {
@@ -400,7 +499,7 @@ function invoiceCategoryEvidenceV2741(t){
     }
   }
   var automotiveMerchant=/\bcanadian\s+tire\b/.test(text);
-  var repair=normal.some(function(l,i){return /\b(?:reparations?|vidanges?|pneus?|mecanique|alignement|freins?|chambre\s+a\s*air|main\s*d['’ ]?oeuvre)\b/.test(l)&&!invoiceToolsV2742(l)&&charged(i)||charged(i)&&(automotiveMerchant&&/\b020[- ]?0530[- ]?0\b/.test(l)||/\b(?:ampoules?|bulbs?|essuie[- ]?glaces?|wiper|filtres?\s+a\s+huile|oil\s+filter)\b/.test(l)&&/\b(?:motomaster|automobile|vehicule|automotive|3157\s*a)\b/.test(l))});
+  var repair=normal.some(function(l,i){return /\b(?:reparations?|vidanges?|pneus?|mecanique|alignement|freins?|oil\s+change|brake\s+(?:pads?|service|repair)|wheel\s+alignment|tire\s+(?:repair|rotation|installation)|vehicle\s+repair|chambre\s+a\s*air|main\s*d['’ ]?oeuvre)\b/.test(l)&&!invoiceToolsV2742(l)&&charged(i)||charged(i)&&(automotiveMerchant&&/\b020[- ]?0530[- ]?0\b/.test(l)||/\b(?:ampoules?|bulbs?|essuie[- ]?glaces?|wiper|filtres?\s+a\s+huile|oil\s+filter)\b/.test(l)&&/\b(?:motomaster|automobile|vehicule|automotive|3157\s*a)\b/.test(l))});
   var hardware=normal.some(function(l,i){return !invoiceAdministrativeV2742(lines[i])&&/\b(?:quincaillerie|materiel|equipements?)\b/.test(l)});
   var tools=normal.some(function(l,i){return invoiceToolsV2742(l,hardware)&&charged(i)});
   var service=/\b(?:addition|serveur|serveuse|servi|served)\b|\btable\s*[#:]*\s*\d/.test(text),tip=/\b(?:pourboire|gratuity|tips?)\b/.test(text);
@@ -409,7 +508,7 @@ function invoiceCategoryEvidenceV2741(t){
   // a label/price pairing or changing the protected amount parser.
   var mealService=/\baddition\s*[#:]*\s*\d|\btable\s*[#:]*\s*\d/.test(text);
   if(!mealItem&&mealService)mealItem=lines.find(function(l,i){return purchased(i)&&invoiceMealV2741(normal[i])});
-  return {lines:lines,normal:normal,text:text,lodging:lodging,fuel:fuel,repair:repair,tools:tools,meal:!!mealItem||service&&tip,mealItem:mealItem};
+  return {lines:lines,normal:normal,text:text,lodging:lodging,fuel:fuel,repair:repair,tools:tools,meal:!!mealItem,mealItem:mealItem};
 }
 function desc(t){
   var ls=textLines(t),bad=/total|sous[- ]?total|tps|tvq|taxe|merci|date|facture|reçu|receipt|visa|mastercard|débit|debit|\$|\b20\d{2}[\/-]\d{1,2}[\/-]\d{1,2}\b/i;
@@ -418,12 +517,34 @@ function desc(t){
 }
 function infer(t){
   var evidence=invoiceCategoryEvidenceV2741(t),text=evidence.text;
+  const categories=[evidence.lodging,evidence.fuel,evidence.repair,evidence.tools,evidence.meal];
+  if(categories.filter(Boolean).length>1){
+    // Coffee or a snack can be incidental to a clearly itemized work purchase.
+    // Compare printed item prices only. Never derive or change the paid total here.
+    if(categories.filter(Boolean).length!==2||!evidence.meal||!(evidence.fuel||evidence.tools))return '';
+    let meals=0,main=0,unpriced=false;
+    for(let i=0;i<evidence.lines.length;i++){
+      const line=evidence.lines[i],normalized=evidence.normal[i];
+      if(invoiceAdministrativeV2742(line)||/\b(?:inclus\w*|included|free|coupon|rabais|discount|offre|offer)\b/.test(normalized))continue;
+      const values=lineAmounts(line);
+      const cents=values.length ? Math.round(values[values.length-1]*100) : 0;
+      if(invoiceMealV2741(normalized)){
+        if(cents>0)meals+=cents;
+        else unpriced=true;
+      }else if(evidence.tools&&invoiceToolsV2742(normalized,false)||evidence.fuel&&
+          (invoiceFuelV2742(normalized)||/\d\s*l\s*[@ax].*\/\s*l\s+\$?\s*\d+[.,]\d{2}\s*\$?$/.test(normalized))){
+        // A fuel extension can be repeated on the following fuel-sale line.
+        main=Math.max(main,cents);
+      }
+    }
+    if(unpriced||!meals||main<4*meals)return '';
+  }
   if(evidence.lodging)return'Hébergement';
   if(evidence.fuel)return'Essence';
   if(evidence.repair)return'Réparation véhicule';
   if(evidence.tools)return'Outils';
   if(evidence.meal)return'Restaurant';
-  if(evidence.normal.some(function(l){return !invoiceAdministrativeV2742(l)&&/\b(?:restaurant|resto|pizzeria|bistro|brasserie|cafeteria|tim hortons|mcdonald|subway)\b/.test(l)}))return'Restaurant';
+  // L’enseigne, le numéro de table et le guide de pourboire ne sont pas des articles.
   return'';
 }
 function renderSaved(){
@@ -479,12 +600,42 @@ async function deleteSaved(item){
   catch(e){status(e&&e.message?e.message:String(e),'error')}
   finally{setBusy(false)}
 }
-function applyOcr(t,layout){
- invoiceReviewClearV2874();ocrText=String(t||'');choose('','ocr');
+function invoiceReading(text,layout){
+  const physical=invoiceLayoutRowsV2734(layout);
+  const lines=physical?physical.join('\n'):'';
+  const raw=String(text||'').trim()||lines;
+  const rawCategory=infer(raw),rowCategory=lines&&lines!==raw?infer(lines):'';
+  const dateEvidence={};
+  const date=parseDate(raw,physical,dateEvidence);
+  return {text:raw,layout,physical:lines,dateConflict:!!dateEvidence.conflict,categoryConflict:!!(rowCategory&&rawCategory&&rowCategory!==rawCategory),decision:invoiceAmountDecisionV2874(raw,layout,physical),
+    date,category:rawCategory&&rowCategory&&rawCategory!==rowCategory?'':rowCategory||rawCategory};
+}
+function reconcileInvoiceReadings(first,second){
+  if(!second)return first;
+  const a=first.decision,b=second.decision;
+  let decision;
+  if(Number.isFinite(a.amount)&&Number.isFinite(b.amount)){
+    decision=a.amount===b.amount?a:{amount:NaN,reason:'conflict'};
+  }else if(!a.reason||!b.reason){
+    const good=a.reason?b:a,uncertain=a.reason?a:b;
+    const paymentText=[first.text,first.physical,second.text,second.physical].join('\n');
+    const incompletePayment=uncertain.reason==='payment'&&!invoicePaymentAmbiguousV2791(paymentText);
+    decision=uncertain.reason==='missing'||incompletePayment?good:uncertain;
+  }else{
+    decision=a.reason==='missing'?b:a;
+  }
+  function agree(x,y){return x&&y&&x!==y?'':x||y;}
+  return {...first,text:first.text||second.text,decision,
+    date:first.dateConflict||second.dateConflict?'':agree(first.date,second.date),
+    category:first.categoryConflict||second.categoryConflict?'':agree(first.category,second.category)};
+}
+function applyOcr(t,layout,reading){
+ reading=reading||invoiceReading(t,layout);
+ invoiceReviewClearV2874();ocrText=reading.text;t=ocrText;choose('','ocr');
  function field(id,value){if(!manualFieldsV2791[id])$('#'+id,page).value=value;}
  field('cdqInvoiceAmountV2590','');field('cdqInvoiceDateV2590','');field('cdqInvoiceMerchantV2590','');update();
  if(!ocrText.trim()){detected('Aucun texte détecté','Reprenez une photo plus nette ou importez l’image originale.','error');status('Aucun texte lisible détecté dans le reçu.','error');return;}
- var decision=invoiceAmountDecisionV2874(t,layout),a=decision.amount,d=parseDate(t),m=merchant(t),c=infer(t);
+ var decision=reading.decision,a=decision.amount,d=reading.date,m=merchant(t),c=reading.category;
  invoiceReviewDisplayV2874(decision);
  if(Number.isFinite(a))field('cdqInvoiceAmountV2590',displayMoney(a));
  if(d)field('cdqInvoiceDateV2590',d);
@@ -498,12 +649,14 @@ function applyOcr(t,layout){
  detected(warnings.length?'Informations à vérifier':'Informations détectées',warnings.join(' ')||(manual?'Vos corrections manuelles sont conservées. Vérifiez les champs avant d’enregistrer.':'Vérifiez les champs avant d’enregistrer.'),warnings.length?'idle':'ok');
  status(warnings.join(' ')||'Lecture automatique terminée. Vérifiez les informations.');
 }
-function finishInvoiceOcrV2801(run,ok,text,message,layout){
+function finishInvoiceOcrV2801(run,ok,text,message,layout,reading){
   if(!currentInvoiceOcrV2733(run))return false;
+  // A failed or expired second pass still returns the first pass to the form.
+  if(!ok&&run.first){reading=run.first;text=reading.text;layout=reading.layout;ok=true;}
   cancelInvoiceOcrV2733();setBusy(false);
   page.dataset.ocrPhase=ok?'received':'error';
   if(!ok){detected('Lecture impossible',message||'Le reçu n’a pas pu être lu.','error');status(message||'Lecture automatique impossible.','error');return true;}
-  try{applyOcr(text,layout);page.dataset.ocrPhase='complete';}
+  try{applyOcr(text,layout,reading);page.dataset.ocrPhase='complete';}
   catch(_){page.dataset.ocrPhase='error';detected('Lecture à vérifier','Le texte reçu n’a pas pu être traité. Vous pouvez saisir le montant, la date et la catégorie.','error');status('Lecture interrompue. Réessayez ou complétez les champs manuellement.','error');}
   return true;
 }
@@ -516,19 +669,38 @@ async function analyze(){
   setBusy(true,'Recherche du total et des achats…');detected('Analyse en cours','Lecture de la photo du reçu…','idle');page.dataset.ocrPhase='requested';
   var bridge;try{bridge=window.BalanceCDQNative||(window.parent&&window.parent.BalanceCDQNative)}catch(_){bridge=window.BalanceCDQNative}
   var native=!!(bridge&&typeof bridge.recognizeReceipt==='function');
+  var deadline=Date.now()+(native?30000:60000);
   window.__cdqInvoiceOcrRequestV2590=run.id;
   window.__cdqInvoiceOcrTimerV2590=setTimeout(function(){finishInvoiceOcrV2801(run,false,'','La lecture n’a pas répondu. Réessayez ou saisissez les champs manuellement.');},native?30000:60000);
   try{
-    if(native){page.dataset.ocrPhase='native';bridge.recognizeReceipt(run.id,run.photo);return;}
+    page.dataset.ocrPhase=native?'preparing-native':'preparing-web';
     // The existing web service accepts at most 6 MiB of decoded image bytes.
     // Adapt only the OCR copy; keep the archived photo unchanged.
-    page.dataset.ocrPhase='preparing-web';
-    var photo=await import('./invoice-photo-v2659.mjs');
-    var webPhoto=await photo.prepareInvoiceOcrPhotoV2801(run.photo);
+    var transportPhoto=run.photo;
+    try{
+      var photo=await import('./invoice-photo-v2659.mjs');
+      if(!currentInvoiceOcrV2733(run))return;
+      transportPhoto=await photo.prepareInvoiceOcrPhotoV2801(run.photo,native);
+    }catch(prepError){
+      if(!native&&run.photo.length-23>8*1024*1024)throw prepError;
+      // Import ou canvas indisponible : le transport original reste utilisable.
+    }
     if(!currentInvoiceOcrV2733(run))return;
-    page.dataset.ocrPhase='web';var r=await rpc('cdqLireFactureOcrV2599',[webPhoto]);
+    if(Date.now()>=deadline)throw Error('La préparation a pris trop de temps. Réessayez ou saisissez les champs manuellement.');
+    if(native){
+      run.sent=transportPhoto;run.bridge=bridge;run.deadline=deadline;
+      run.alternate=transportPhoto!==run.photo?()=>run.photo:null;
+      run.dateReader=photo&&photo.recoverInvoiceDate ? (image,layout)=>photo.recoverInvoiceDate(image,layout) : null;
+      page.dataset.ocrPhase='native';bridge.recognizeReceipt(run.id,transportPhoto);return;
+    }
+    page.dataset.ocrPhase='web';var r=await rpc('cdqLireFactureOcrV2599',[transportPhoto]);
     if(!r||r.ok!==true)throw Error(r&&r.message||'La lecture automatique n’a pas été confirmée.');
-    finishInvoiceOcrV2801(run,true,r.text||'','',r.layout);
+    if(!currentInvoiceOcrV2733(run))return;
+    const reading=invoiceReading(r.text,r.layout);
+    if(!reading.date&&!reading.dateConflict&&!manualFieldsV2791.cdqInvoiceDateV2590&&photo&&photo.recoverInvoiceDate){
+      try{reading.date=await photo.recoverInvoiceDate(transportPhoto,r.layout);}catch(_){}
+    }
+    finishInvoiceOcrV2801(run,true,r.text||'','',r.layout,reading);
   }catch(e){
     var msg=e&&e.message?e.message:String(e||'Lecture automatique impossible.');
     var missing=/cdqLireFactureOcrV2599|Script function not found|fonction.*introuvable|not found/i.test(msg);
@@ -537,8 +709,53 @@ async function analyze(){
 }
 window.cdqNativeReceiptOcrV2590=function(id,ok,text,msg,layout){
   var run=ocrRunV2733;
-  if(!run||String(id)!==String(window.__cdqInvoiceOcrRequestV2590||'')||String(id)!==String(run.id))return false;
-  return finishInvoiceOcrV2801(run,ok===true,text,String(msg||''),layout);
+  if(!run||String(id)!==String(window.__cdqInvoiceOcrRequestV2590||'')||String(id)!==String(run.id)||!currentInvoiceOcrV2733(run))return false;
+  if(!ok)return finishInvoiceOcrV2801(run,false,'',String(msg||''));
+  let reading;
+  try{reading=invoiceReading(text,layout);}
+  catch(_){return finishInvoiceOcrV2801(run,false,'','Les champs du reçu doivent être vérifiés.');}
+  if(run.first){
+    const merged=reconcileInvoiceReadings(run.first,reading);
+    const missingDate=!merged.date&&!run.first.date&&!reading.date&&!run.first.dateConflict&&!reading.dateConflict;
+    if(missingDate&&run.dateReader&&!manualFieldsV2791.cdqInvoiceDateV2590){
+      // Keep the values we already have if the image changes or the second pass times out.
+      run.first=merged;
+      Promise.resolve().then(()=>run.dateReader(run.sent,layout)).then(date=>{
+        if(date)merged.date=date;
+      }).catch(()=>{}).finally(()=>finishInvoiceOcrV2801(run,true,text,'',layout,merged));
+      return true;
+    }
+    return finishInvoiceOcrV2801(run,true,text,'',layout,merged);
+  }
+  const incomplete=!manualFieldsV2791.cdqInvoiceAmountV2590&&!Number.isFinite(reading.decision.amount)||
+    !manualFieldsV2791.cdqInvoiceDateV2590&&!reading.date||categorySource!=='manual'&&!reading.category;
+  if(incomplete&&(run.alternate||!reading.date&&run.dateReader)&&run.deadline-Date.now()>4000){
+    run.first=reading;
+    run.id=uid();
+    window.__cdqInvoiceOcrRequestV2590=run.id;
+    page.dataset.ocrPhase='native-relecture';
+    // Let the alternate native pass and the small date crop finish within one bounded retry.
+    clearTimeout(window.__cdqInvoiceOcrTimerV2590);
+    const remaining=Math.max(0,Math.min(32000,run.deadline+26000-Date.now()));
+    run.deadline=Date.now()+remaining;
+    window.__cdqInvoiceOcrTimerV2590=setTimeout(()=>finishInvoiceOcrV2801(run,false,'',''),remaining);
+    (async()=>{
+      if(!run.alternate&&!reading.date&&!reading.dateConflict&&!manualFieldsV2791.cdqInvoiceDateV2590&&run.dateReader){
+        let date='';try{date=await run.dateReader(run.sent,layout);}catch(_){}
+        if(!currentInvoiceOcrV2733(run))return null;
+        if(date)run.first={...reading,date};
+      }
+      if(run.first.date&&Number.isFinite(run.first.decision.amount)&&run.first.category)return null;
+      return run.alternate?run.alternate():null;
+    })().then(photo=>{
+      if(!currentInvoiceOcrV2733(run))return;
+      if(!photo||photo===run.sent||Date.now()>=run.deadline)return finishInvoiceOcrV2801(run,false,'','');
+      run.sent=photo;
+      run.bridge.recognizeReceipt(run.id,photo);
+    }).catch(()=>finishInvoiceOcrV2801(run,false,'',''));
+    return true;
+  }
+  return finishInvoiceOcrV2801(run,true,text,'',layout,reading);
 };
 async function context(force=false){syncInvoiceScopeV2631();serverStorageRevision=0;if(!email()){serverStorageMode='legacy';return}var owner=email()+'|'+userRole(),epoch=invoiceEpochV2631;serverStorageMode='checking';try{var c=await invoiceReadV2631('cdqContexteFactureV2590',[],force===true);if(owner!==email()+'|'+userRole()||epoch!==invoiceEpochV2631||!invoiceAllowedV2631())return;if(c&&c.ok){serverTech=String(c.technicien||'').trim();serverStorageMode=String(c.classement||'legacy').trim().toLowerCase();serverStorageRevision=Number(c.storageRevision)||0;update();return}}catch(_){}if(owner===email()+'|'+userRole()&&epoch===invoiceEpochV2631&&invoiceAllowedV2631())serverStorageMode='legacy'}
 async function save(){if(busy)return;if(userRole()==='lecture'){status('Le rôle Lecture seule ne peut pas enregistrer de facture.','error');return}if(serverStorageMode==='checking')await context();if(serverStorageMode!=='mensuel'||serverStorageRevision<2732){status('Le service Factures V27.32 doit être déployé pour activer le classement par mois et catégorie.','error');return}if(!dataUrl){status('Prenez une photo du reçu avant d’enregistrer.','error');return}var amount=numberMoney($('#cdqInvoiceAmountV2590',page).value),date=$('#cdqInvoiceDateV2590',page).value,shop=$('#cdqInvoiceMerchantV2590',page).value.trim();if(!Number.isFinite(amount)||amount<0){status('Vérifiez le montant de la facture.','error');return}if(!invoiceValidDateV2791(date)){status('Vérifiez la date de la facture.','error');return}if(!category){status('Choisissez une catégorie de dépense.','error');return}setBusy(true,'Enregistrement de la facture…');try{var r=await rpc('cdqEnregistrerFactureV2590',[{requestId:requestId,dataUrl:dataUrl,montant:amount,date:date,commercant:shop,description:'',categorie:category}]);if(!r||!r.ok)throw Error(r&&r.message||"L'enregistrement n'a pas été confirmé.");serverTech=String(r.technicien||serverTech||'').trim();update();status('Facture enregistrée : '+String(r.nom||filename()),'ok');if(typeof afficherMessage==='function')afficherMessage('Facture enregistrée.',true);await refreshSaved();reset();status('Facture enregistrée. Vous pouvez en ajouter une autre ou supprimer une facture ci-dessous.','ok')}catch(e){var msg=e.message||String(e);status(/cdqEnregistrerFactureV2590|Script function not found|fonction/i.test(msg)?'Le service Factures doit être activé dans CDQ Script Manager avant le premier enregistrement.':msg,'error')}finally{setBusy(false)}}
