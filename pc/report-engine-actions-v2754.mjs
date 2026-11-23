@@ -50,7 +50,7 @@ export function createReportEngineActionsV2754({engine,owner,canWrite,guard=()=>
     const selected=new Set(selection.folderIds.map(String)),folders=new Map([...selected].map(id=>[id,id]));
     const visit=(node,ancestor='')=>{if(!node)return;const source=selected.has(String(node.id))?String(node.id):ancestor;if(source)folders.set(String(node.id),source);for(const child of node.dossiers||[])visit(child,source);};visit(getTree(clientId));return folders;
   }
-  async function deleteSelection(selection,{clientId,descendantIds=[]}={},legacy){
+  async function deleteSelection(selection,{clientId,descendantIds=[],onFileConfirmed=()=>{}}={},legacy){
     const email=owner();clientId=String(clientId||'');check(email,clientId);
     const capability=await engine.capabilities();check(email,clientId);
     if(!capability?.ready){if(capability?.configured===false)return legacy(selection);throw failure('Le moteur de rapports doit être joignable pour vérifier la suppression.','CDQ_DELETE_UNCONFIRMED');}
@@ -68,9 +68,12 @@ export function createReportEngineActionsV2754({engine,owner,canWrite,guard=()=>
       for(const record of targets.values()){const restoredFolderId=folders.get(record.context.destinationId);if(restoredFolderId)record.context={...record.context,restoredFolderId};}
     }
     const removeReports=()=>parallelV2789([...targets.values()],async record=>{
-      check(email,clientId);if(record.deleted&&record.deleteAck&&!record.pending)return;
+      check(email,clientId);
+      const notifyFile=()=>{const file=record.context.fileId||record.pdf?.fileId;if(file&&!selection.folderIds.length&&selection.fileIds.includes(file))onFileConfirmed(file);};
+      if(record.deleted&&record.deleteAck&&!record.pending){notifyFile();return;}
       if(record.context.template){const result=await remove(record.context);record.context={...result.context,...(record.context.restoredFolderId?{restoredFolderId:record.context.restoredFolderId}:{})};}
       else {const result=await engine.call('status',{reportId:record.context.reportId,clientId});check(email,clientId);if(!result.deleted||result.drivePending!==false)throw failure('La suppression du rapport reste à confirmer.','CDQ_DELETE_UNCONFIRMED');}
+      check(email,clientId);notifyFile();
     });
     check(email,clientId);const remainder={fileIds:selection.fileIds.filter(id=>!managedFiles.has(String(id))),folderIds:selection.folderIds};
     const removeRemainder=()=>remainder.fileIds.length||remainder.folderIds.length?legacy(remainder):{ok:true,fichiers:[],dossiers:[]};

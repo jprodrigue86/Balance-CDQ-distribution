@@ -42,18 +42,33 @@ export async function readReportSourceTreeV2895(root,{readFolder,stillCurrent=()
   if(files.has(id(file)))fail('Un rapport apparaît plusieurs fois dans le parcours.');
   files.set(id(file),{...file});if(files.size>500)fail('Plus de 500 rapports candidats : le parcours est incomplet.');
  }
- async function visit(node,depth=0,includePdf=true){
+ const queued=new Set([id(root)]), pending=[];
+ function collect(node,depth,includePdf){
   guard();if(depth>24||!id(node)||visited.has(id(node))||visited.size>=500)fail('Le parcours des dossiers est incomplet ou cyclique.');
   if(incomplete(node)||!Array.isArray(node.fichiers)||!Array.isArray(node.dossiers))fail('Dossier client incomplet ou non confirmé.');
   visited.add(id(node));if(depth)folders.push(id(node));
   for(const file of node.fichiers)take(file,includePdf);
-  const children=node.dossiers.filter(child=>!excludedReportSourceV2895(child?.nom||child?.name)).slice().sort((a,b)=>id(a).localeCompare(id(b)));
-  if(children.some(child=>!id(child))||new Set(children.map(id)).size!==children.length)fail('Dossier de rapports incomplet.');
-  for(const child of children){
-   guard();if(depth>=24||visited.has(id(child))||visited.size>=500)fail('Le parcours des dossiers est incomplet ou cyclique.');
-   const loaded=await readFolder(id(child));guard();if(id(loaded)!==id(child)||Array.isArray(loaded.parents)&&!loaded.parents.map(String).includes(id(node)))fail('Le dossier retourné ne correspond pas au dossier demandé.');
-   await visit(loaded,depth+1,depth===0&&reportFolder(child.nom||child.name));
+  for(const child of node.dossiers){
+   if(excludedReportSourceV2895(child?.nom||child?.name))continue;
+   const childId=id(child);
+   if(!childId||depth>=24||queued.has(childId)||queued.size>=500)fail('Le parcours des dossiers est incomplet ou cyclique.');
+   queued.add(childId);
+   pending.push({childId,parent:id(node),depth:depth+1,includePdf:depth===0&&reportFolder(child.nom||child.name)});
   }
  }
- await visit(root);guard();return {files:[...files.values()].sort((a,b)=>id(a).localeCompare(id(b))),folders:folders.sort()};
+ collect(root,0,true);
+ // At most two outstanding folder reads. Drain both before releasing the scan lease.
+ for(let i=0;i<pending.length;){
+  guard();
+  const pair=pending.slice(i,i+2);i+=pair.length;
+  const replies=await Promise.allSettled(pair.map(async item=>readFolder(item.childId)));
+  guard();
+  for(const [j,response] of replies.entries()){
+   if(response.status==='rejected')throw response.reason;
+   const item=pair[j],node=response.value;
+   if(id(node)!==item.childId||Array.isArray(node.parents)&&!node.parents.map(String).includes(item.parent))fail('Le dossier retourné ne correspond pas au dossier demandé.');
+   collect(node,item.depth,item.includePdf);
+  }
+ }
+ guard();return {files:[...files.values()].sort((a,b)=>id(a).localeCompare(id(b))),folders:folders.sort()};
 }

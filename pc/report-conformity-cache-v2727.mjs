@@ -24,9 +24,10 @@ const kind=file=>['GOOGLE_SHEETS','application/vnd.google-apps.spreadsheet'].inc
 export function validateReportReadV2729(record,file,{owner='',clientId='',sheet=false}={}){
  if(!record||typeof record!=='object')throw Error('Rapport absent.');
  const expected=text(file?.modifiedTime||file?.dateModification||file?.revision),actual=text(record.revision||record.modifiedTime||record.dateModification);
- if(expected&&actual!==expected)throw Error('La révision du rapport a changé.');
+ 
  const id=text(file?.id);if(sheet&&!text(record.id||record.fileId)||['id','fileId'].some(name=>text(record[name])&&text(record[name])!==id))throw Error('Le rapport ne correspond pas au fichier demandé.');
  if(owner&&record.owner&&email(record.owner)!==email(owner)||clientId&&text(record.clientId)&&text(record.clientId)!==text(clientId))throw Error('Le compte ou le client du rapport a changé.');
+ if(expected&&actual!==expected)throw Object.assign(Error('La révision du rapport a changé.'),{code:actual?'LIST_SOURCE_REVISION_CHANGED':'LIST_SOURCE_INCOMPLETE'});
  if(text(file?.version)&&text(record.version)&&text(file.version)!==text(record.version))throw Error('La version du rapport a changé.');
  for(const name of ['md5Checksum','sha256Checksum'])if(text(file?.[name])&&text(record[name])&&text(file[name])!==text(record[name]))throw Error('Le contenu du rapport a changé.');
  if(sheet&&record.kind==='cdq-conformity-summary-v2775'){

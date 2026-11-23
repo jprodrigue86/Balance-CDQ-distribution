@@ -91,7 +91,10 @@ export async function updateBalanceListFastV2729(options){
  for(let attempt=0;attempt<2;attempt++){
   try{return await prepareBalanceListFastV2792(options);}
   catch(error){
-   if(error?.code!=='LIST_SNAPSHOT_CHANGED')throw error;
+   const sourceChanged=error?.readOnly===true&&['LIST_SOURCE_REVISION_CHANGED','SHEET_REVISION_CHANGED'].includes(error.code);
+   if(error?.code!=='LIST_SNAPSHOT_CHANGED'&&!sourceChanged)throw error;
+   // Re-read membership and revisions from Drive, including after a cached-index attempt.
+   options={...options,sourceIndex:null};
    error.stabilizationAttempts=attempt;
    if(attempt||!options.stillCurrent())throw error;
    options.onProgress?.({phase:'stabilizing',done:0,total:0,changes:error.changes});
