@@ -1,20 +1,54 @@
 {
-  "apkUrl": "https://github.com/jprodrigue86/Balance-CDQ-distribution/releases/download/v29.32/Balance-CDQ-Android.apk",
-  "buildRunId": "45324688461",
-  "bytes": 266404650,
+  "apkUrl": "https://github.com/jprodrigue86/Balance-CDQ-distribution/releases/download/v29.33/Balance-CDQ-Android.apk",
+  "buildRunId": "45335138906",
+  "bytes": 266408746,
   "channel": "stable",
   "compatibleReleaseIdentityFrom": "25.15",
   "exhaustivePdfGatePassed": false,
   "mandatory": false,
   "publicationAuthorizedWithKnownLimits": true,
-  "publicationCommit": "21b2fc2b95f11f57aa847e8da27a44df806bfe00",
+  "publicationCommit": "4fd83db0763bc911db243c0c6915d7d09bbdf3fe",
   "qualificationAttemptRecipeCommit": "8a75186e88712f4b46f0997404258e56d2abb616",
   "qualificationAttemptRunId": "45326147465",
   "runtimeQualificationComplete": false,
   "scope": "model-replacement-integrity",
-  "sha256": "0967721ed34ef283f86911ecec3ec9ba2639d5608c2cdc36c5f7468faafd4d75",
+  "sha256": "1dc7578380610cb0c1589dc0234f4cb724d8d4fe96bb010852fab194bea356c3",
   "signingCertificateSha256": "496030d9cd10e81ff4e9486c38491bc15389112c0c295c61c295981c101c4436",
-  "sourceCommit": "12fbd75be064b7c83ee33e4cd646797b3e4688c9",
-  "versionCode": 2932,
-  "versionName": "29.32"
+  "sourceCommit": "831a0f7b683b731bacf17283dbb2123d96f0ad37",
+  "versionCode": 2933,
+  "versionName": "29.33",
+  "qualificationRun": "45338372000",
+  "qualificationRecipeCommit": "4376fd045c4da40d3ffffcf4088ea97ff15ec863",
+  "qualificationBundleRun": "45341943555",
+  "qualificationOrigins": {
+    "android": {
+      "sourceCommit": "831a0f7b683b731bacf17283dbb2123d96f0ad37",
+      "buildRunId": "45335138906",
+      "runId": "45338372000",
+      "recipeCommit": "4376fd045c4da40d3ffffcf4088ea97ff15ec863",
+      "inherited": true
+    },
+    "pc": {
+      "sourceCommit": "71b43aff6be837992db6d1f803283141215b46e4",
+      "buildRunId": "45341943555",
+      "runId": "45341943555",
+      "recipeCommit": "71b43aff6be837992db6d1f803283141215b46e4",
+      "inherited": false
+    }
+  },
+  "productOrigins": {
+    "android": {
+      "sourceCommit": "831a0f7b683b731bacf17283dbb2123d96f0ad37",
+      "buildRunId": "45335138906",
+      "apkSha256": "1dc7578380610cb0c1589dc0234f4cb724d8d4fe96bb010852fab194bea356c3",
+      "inherited": true
+    },
+    "pc": {
+      "sourceCommit": "71b43aff6be837992db6d1f803283141215b46e4",
+      "buildRunId": "45341943555",
+      "pcRelease": "f37ad5ec958f624d5b6f1877936d8d93e23e68c063cc4798ba9156fd570d02a5",
+      "packageSha256": "8ae8cfc3bee40aea6d6428eae1a3c2a2c39bec8a38d0e59c871c4f271bf4591d",
+      "inherited": false
+    }
+  }
 }

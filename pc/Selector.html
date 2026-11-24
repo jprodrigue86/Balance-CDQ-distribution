@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="29.32" data-cdq-pc-release="b4ec0bd246d1396a3ffbe0e1c971e841c1ae79294e8490d3c76b96d32275027f">
+<html data-cdq-pc-version="29.33" data-cdq-pc-release="f37ad5ec958f624d5b6f1877936d8d93e23e68c063cc4798ba9156fd570d02a5">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -947,7 +947,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
 <script src="./send-progress-v2893.js"></script>
-<meta name="cdq-package-build" content="2026.11.23-v29.32-pdf-catalogue-pc">
+<meta name="cdq-package-build" content="2026.11.24-v29.33-cancel-tasks-pc">
 
 
 <script id="cdqBridgeV23">
@@ -1001,7 +1001,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.23-v29.32-pdf-catalogue-pc'
+    build:'2026.11.24-v29.33-cancel-tasks-pc'
   });
 }
 
@@ -1014,7 +1014,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.23-v29.32-pdf-catalogue-pc'
+        build:'2026.11.24-v29.33-cancel-tasks-pc'
       });
     }
   } catch(e) {}
@@ -12331,7 +12331,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.23-v29.32-pdf-catalogue-pc";
+  const CDQ_BUILD = "2026.11.24-v29.33-cancel-tasks-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14976,7 +14976,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.23-v29.32-pdf-catalogue-pc";
+const CDQ_V19_BUILD = "2026.11.24-v29.33-cancel-tasks-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -16150,24 +16150,24 @@ function cdqLocalRecordV2757(record,email,fileId,clientId){
 function publishDriveDocumentV2741({data:d,email,valid,versions,get,put,confirm,dispatch,refresh,conformity,warn=()=>{}}){
  valid(email);const key=email+'|'+d.fileId,old=versions.get(key),version=Number(d.editVersion||0);
  if(old&&(old.version>version||old.version===version&&old.uploadId===d.uploadId&&old.confirmed&&d.pending))return;
- const reportDataV2757=cdqLocalReportDataV2757(d,email);
- const token={version,uploadId:d.uploadId,confirmed:!d.pending,record:{...reportDataV2757,id:d.fileId,clientId:d.clientId,folderId:d.folderId,nom:d.name,revision:d.revision,blob:d.blob,pendingSaveId:d.pending?d.uploadId:'',localEditVersionV2660:version}};versions.set(key,token);
- const error=String(d.error||'').trim().slice(0,350);
+ const reportDataV2757=cdqLocalReportDataV2757(d,email),stoppedV2933=['annule','arret_demande'].includes(d.taskCancellationV2933?.state);
+ const token={version,uploadId:d.uploadId,confirmed:!d.pending,record:{...reportDataV2757,taskCancellationV2933:d.taskCancellationV2933||null,id:d.fileId,clientId:d.clientId,folderId:d.folderId,nom:d.name,revision:d.revision,blob:d.blob,pendingSaveId:d.pending?d.uploadId:'',localEditVersionV2660:version}};versions.set(key,token);
+ const error=stoppedV2933?'':String(d.error||'').trim().slice(0,350);
  const conformitySaveIdV2727=String(d.uploadId||('offline-'+d.fileId+'-'+version));
  try{
-  if(reportDataV2757.reportSnapshotV2754){
+  if(stoppedV2933){}else if(reportDataV2757.reportSnapshotV2754){
    const context=reportDataV2757.reportEngineV2754,saveId=String(d.uploadId||'').replace(/^fields_/,'');
    const detail={owner:email,clientId:d.clientId,sourceId:d.fileId,reportId:context.reportId,saveId,fields:reportDataV2757.reportSnapshotV2754,localDurable:true,pending:!!d.pending,savedAt:Date.now(),revision:Number(d.reportRevisionV2754||context.baseRevision),pdf:d.enginePdfV2754};
    if(d.pending)conformity?.tracker.engineLocal(detail);else conformity?.tracker.engineConfirmed(detail);
   }else Promise.resolve(conformity?.noteSave({id:d.fileId,clientId:d.clientId,revision:d.revision,owner:email},d.blob,conformitySaveIdV2727)).catch(warn);
  }catch(problem){warn(problem);}
- try{if(!d.pending)conformity?.tracker.acknowledge(conformitySaveIdV2727,{id:d.fileId,clientId:d.clientId,owner:email,revision:d.revision});}catch(problem){warn(problem);}
- try{confirm({id:d.fileId,nom:d.name,type:'PDF',_cdqPendingSaveV2660:d.pending?d.uploadId:'',_cdqCommittedUploadV2660:d.pending?'':d.uploadId,_cdqDriveUploadErrorV2740:error},d.clientId,d.offlineSelected&&d.folderId===d.clientId?'':d.folderId||'');}catch(problem){warn(problem);}
- try{dispatch('cdq:pdf-local-saved',{id:d.fileId,localId:d.localId||'',sourceId:d.sourceId||d.fileId,clientId:d.clientId,owner:email,name:d.name,saveId:d.uploadId,pending:!!d.pending,revision:d.revision,equipmentSignature:d.equipmentSignature,error});}catch(problem){warn(problem);}
+ try{if(!stoppedV2933&&!d.pending)conformity?.tracker.acknowledge(conformitySaveIdV2727,{id:d.fileId,clientId:d.clientId,owner:email,revision:d.revision});}catch(problem){warn(problem);}
+ try{confirm({id:d.fileId,nom:stoppedV2933?d.name+(d.taskCancellationV2933.state==='annule'?' — Envoi annulé · copie conservée':' — Arrêt demandé'):d.name,type:'PDF',_cdqPendingSaveV2660:d.pending&&!stoppedV2933?d.uploadId:'',_cdqCommittedUploadV2660:d.pending?'':d.uploadId,_cdqDriveUploadErrorV2740:error},d.clientId,d.offlineSelected&&d.folderId===d.clientId?'':d.folderId||'');}catch(problem){warn(problem);}
+ try{if(!stoppedV2933)dispatch('cdq:pdf-local-saved',{id:d.fileId,localId:d.localId||'',sourceId:d.sourceId||d.fileId,clientId:d.clientId,owner:email,name:d.name,saveId:d.uploadId,pending:!!d.pending,revision:d.revision,equipmentSignature:d.equipmentSignature,error});}catch(problem){warn(problem);}
  Promise.resolve().then(async()=>{
   valid(email);const prior=await get('document-pdf',d.fileId);valid(email);
   if(versions.get(key)!==token||Number(prior?.localEditVersionV2660||0)>version)return;
-  await put('document-pdf',d.fileId,{...reportDataV2757,id:d.fileId,nom:d.name,autoReportName:d.autoReportName===true,clientId:d.clientId,clientName:d.clientName,folderId:d.folderId||prior?.folderId,ancestorIds:d.ancestorIds||prior?.ancestorIds||[],revision:d.revision,taille:d.blob.size,blob:d.blob,readerPreparedVersion:d.readerPreparedVersion===2730?2730:undefined,offlineSelected:d.offlineSelected===true,offlinePrepared:d.offlineSelected===true,pendingSaveId:d.pending?d.uploadId:'',committedSaveIdV2749:d.pending?'':d.uploadId,localEditVersionV2660:d.editVersion,driveUploadErrorV2740:error});valid(email);
+  await put('document-pdf',d.fileId,{...reportDataV2757,taskCancellationV2933:d.taskCancellationV2933||null,id:d.fileId,nom:d.name,autoReportName:d.autoReportName===true,clientId:d.clientId,clientName:d.clientName,folderId:d.folderId||prior?.folderId,ancestorIds:d.ancestorIds||prior?.ancestorIds||[],revision:d.revision,taille:d.blob.size,blob:d.blob,readerPreparedVersion:d.readerPreparedVersion===2730?2730:undefined,offlineSelected:d.offlineSelected===true,offlinePrepared:d.offlineSelected===true,pendingSaveId:d.pending?d.uploadId:'',committedSaveIdV2749:d.pending?'':d.uploadId,localEditVersionV2660:d.editVersion,driveUploadErrorV2740:error});valid(email);
   if(versions.get(key)===token)await refresh();
  }).catch(warn);
 }
@@ -17777,7 +17777,8 @@ function installLocalReportListV2713({host=window,fromPwa,owner,allowed,confirm,
   // Only an explicitly non-pending receipt may retire the recoverable local row.
   if(d.driveId&&d.pending!==true){host.cdqFileDeletionV2746?.noteCreatedReport?.(String(d.driveId),d.localId,String(d.clientId));remove(d.clientId,localId);seen.set(key,{...old,version:Number(d.editVersion||0),driveId:d.driveId});return;}
   if(old?.retired||old?.driveId&&!(d.pending===true&&Number(d.editVersion||0)>Number(old.version||0)))return;
-  const error=String(d.error||'').trim().slice(0,350);
+  const cancellation=d.taskCancellationV2933,stopped=cancellation?.state==='annule',stopping=cancellation?.state==='arret_demande';
+  const error=stopped||stopping?'':String(d.error||'').trim().slice(0,350);
   seen.set(key,{version:Number(d.editVersion||0),driveId:'',error});
   // V27.40: inspect the locally committed PDF as a pending report; this
   // does not acknowledge a Drive upload or change the calibration results.
@@ -17785,10 +17786,10 @@ function installLocalReportListV2713({host=window,fromPwa,owner,allowed,confirm,
   // A stalled/failed upload must not keep the animated upload circle forever.
   // This is still a LOCAL report, never a false Drive confirmation.
   const localName=String(d.name||'Rapport.pdf');
-  confirm({id:localId,nom:error?localName+' — ⚠ Drive non confirmé':localName,
+  confirm({id:localId,nom:stopped?localName+' — Envoi annulé · copie conservée':stopping?localName+' — Arrêt demandé':error?localName+' — ⚠ Drive non confirmé':localName,
     type:'PDF',_cdqLocalReportV2713:d.localId,
     ...(d.reportEngineV2754?.clientId===String(d.clientId)?{reportIdV2754:String(d.reportEngineV2754.reportId||''),_cdqEngineFileIdV2757:String(d.reportEngineV2754.fileId||''),_cdqReportOwnerV2757:email,_cdqReportClientV2757:String(d.clientId)}:{}),
-    _cdqPendingSaveV2660:error?'':String(d.uploadId||d.localId),
+    _cdqPendingSaveV2660:error||stopped||stopping?'':String(d.uploadId||d.localId),
     _cdqDriveUploadErrorV2740:error},
     String(d.clientId),String(d.folderId||d.clientId));
  });
@@ -19301,7 +19302,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.23-v29.32-pdf-catalogue-pc";
+const CDQ_V20_BUILD = "2026.11.24-v29.33-cancel-tasks-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20154,7 +20155,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.23-v29.32-pdf-catalogue-pc";
+const CDQ_V21_BUILD = "2026.11.24-v29.33-cancel-tasks-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24653,7 +24654,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.23-v29.32-pdf-catalogue-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.24-v29.33-cancel-tasks-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -26777,6 +26778,74 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
   function stateName(v){return labels[v]||v||'État inconnu';}
   let busy=false,clientId='',presenceKey='',presenceTimer=null,presenceFailures=0,presenceFlight=null;
   const listed=new Map(),reads=new Map();
+ function cancellationNoteV2933(data){
+   if(data.state==='arret_demande')return 'Arrêt demandé. La requête déjà partie peut encore se terminer dans Drive. Les relances sont arrêtées et le PDF reste conservé.';
+   if(data.remoteOutcome==='confirmed')return 'Tâche arrêtée. Le fichier était déjà confirmé dans Drive; les copies sont conservées.';
+   return 'Tâche annulée sur cet appareil. Le PDF et les réponses sont conservés.'+(data.remoteOutcome==='unconfirmed'?' Le résultat de la requête déjà partie dans Drive reste à vérifier.':'');
+ }
+ function cancelledDependencyV2933(data){
+   if(data?.state!=='annule'||data.preserved!==true||!data.clientId||!data.localId)return;
+   window.dispatchEvent(new CustomEvent('cdq:pdf-task-cancelled-v2933',{detail:{owner:data.email,clientId:data.clientId,localId:data.localId,sourceId:data.sourceId||'',uploadId:data.uploadId||'',saveRequestId:data.saveRequestId||'',reportId:data.reportId||'',state:data.state,preserved:true}}));
+ }
+ function resumedDependencyV2933(data){
+   if(data?.state!=='repris'||data.preserved!==true||!data.clientId||!data.localId)return;
+   window.dispatchEvent(new CustomEvent('cdq:pdf-task-resumed-v2933',{detail:{owner:data.email,clientId:data.clientId,localId:data.localId,sourceId:data.sourceId||'',uploadId:data.uploadId||'',saveRequestId:data.saveRequestId||'',reportId:data.reportId||'',cancelledSourceId:data.cancelledSourceId||'',cancelledUploadId:data.cancelledUploadId||'',cancelledSaveRequestId:data.cancelledSaveRequestId||'',pending:data.pending===true,state:data.state,preserved:true}}));
+ }
+  let copyTasksV2933=[],offlineQueryV2933='',pendingCancelV2933=null,localCancelBusyV2933=false;
+  function requestOfflineV2933(context){
+    if(typeof cdqPostToPwa!=='function'||typeof cdqPwaAvailable!=='function'||!cdqPwaAvailable())return;
+    offlineQueryV2933='task-query-'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+    cdqPostToPwa({type:'CDQ_OFFLINE_TASKS_REQUEST_V2902',email:normalized(context.owner),requestId:offlineQueryV2933});
+  }
+  function detailTasksV2933(){
+    let context;try{context=current();guardOwner(context);}catch{return [];}
+    return [...(window.cdqBalanceListV2638?.listTasks?.()||[]),...copyTasksV2933].filter(t=>t.owner===normalized(context.owner)&&t.clientId===context.clientId&&!terminal(t));
+  }
+  async function cancelDetailV2933(task){
+    if(localCancelBusyV2933||!task.canCancel)return;
+    let context;try{context=current();guardOwner(context);if(task.owner!==normalized(context.owner)||task.clientId!==context.clientId)throw Error('Le client ou le compte a changé.');}
+    catch(error){note(error.message);return;}
+    if(!window.confirm(task.source==='offline'?'Annuler l’envoi automatique de ce rapport ? Le PDF et les réponses resteront sur cet appareil. Un envoi déjà commencé peut encore se terminer dans Drive.':'Annuler cette tâche de liste de balances ? Les rapports et la liste existante seront conservés.'))return;
+    if(task.source==='balance-list'){
+      localCancelBusyV2933=true;try{guardOwner(context);window.cdqBalanceListV2638.cancelCheck(task);note('Tâche de liste annulée. Les rapports et la liste existante sont conservés.');}
+      catch(error){note(error.message);}finally{localCancelBusyV2933=false;refreshPresence();}return;
+    }
+    if(task.source!=='offline'||typeof task.jobId!=='string'||!task.jobId||task.jobId.length>500||/[\u0000-\u001f]/.test(task.jobId))return;
+    if(typeof cdqPostToPwa!=='function'||typeof cdqPwaAvailable!=='function'||!cdqPwaAvailable()){note('La file locale est indisponible. Aucun changement effectué.');return;}
+    const requestId='task-cancel-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8);
+    localCancelBusyV2933=true;pendingCancelV2933={requestId,localId:task.jobId,clientId:task.clientId,context,key:discoveryKey(context)};
+    note('Enregistrement de l’annulation sur cet appareil…');
+    try{guardOwner(context);cdqPostToPwa({type:'CDQ_OFFLINE_TASK_CANCEL_V2933',email:normalized(context.owner),clientId:task.clientId,requestId,localId:task.jobId});}
+    catch(error){pendingCancelV2933=null;localCancelBusyV2933=false;note(error.message);return;}
+    setTimeout(()=>{if(pendingCancelV2933?.requestId!==requestId)return;pendingCancelV2933=null;localCancelBusyV2933=false;note('Aucune confirmation de l’annulation locale. Le PDF reste conservé. Actualisez les tâches.');},20000);
+  }
+  window.addEventListener('message',event=>{
+    if(typeof cdqFromPwa!=='function'||!cdqFromPwa(event))return;
+    const data=event.data||{};let context;try{context=current();guardOwner(context);if(data.email!==normalized(context.owner))return;}catch{return;}
+    if(data.type==='CDQ_OFFLINE_TASK_CANCEL_V2933_RESULT'){
+      const pending=pendingCancelV2933;
+      if(!pending||data.requestId!==pending.requestId||data.localId!==pending.localId||data.clientId!==pending.clientId||pending.key!==discoveryKey(context))return;
+      pendingCancelV2933=null;localCancelBusyV2933=false;
+      if(data.ok===true&&data.preserved===true&&['annule','arret_demande'].includes(data.state)){
+        if(data.state==='annule')copyTasksV2933=copyTasksV2933.filter(t=>t.jobId!==data.localId||t.clientId!==data.clientId);
+        cancelledDependencyV2933(data);note(cancellationNoteV2933(data));requestOfflineV2933(context);refreshPresence();
+      }else note('Annulation non confirmée. '+String(data.message||data.code||'Le PDF reste conservé.').slice(0,180));
+      return;
+    }
+    if(data.type==='CDQ_OFFLINE_TASK_CANCELLED_V2933'){
+      cancelledDependencyV2933(data);if(data.state==='annule')copyTasksV2933=copyTasksV2933.filter(t=>t.jobId!==data.localId||t.clientId!==data.clientId);
+      requestOfflineV2933(context);refreshPresence();return;
+    }
+    if(data.type==='CDQ_OFFLINE_TASK_RESUMED_V2933'){
+      resumedDependencyV2933(data);requestOfflineV2933(context);refreshPresence();return;
+    }
+    if(data.type!=='CDQ_OFFLINE_TASKS_RESULT_V2902'||data.requestId!==offlineQueryV2933||!Array.isArray(data.tasks))return;
+    copyTasksV2933=data.tasks.filter(t=>t&&t.owner===normalized(context.owner)&&t.source==='offline'&&t.jobId&&t.clientId).slice(0,100);
+    for(const cancelled of Array.isArray(data.cancellations)?data.cancellations.slice(0,100):[])if(cancelled?.email===normalized(context.owner))cancelledDependencyV2933(cancelled);
+    for(const resumed of Array.isArray(data.resumptions)?data.resumptions.slice(0,100):[])if(resumed?.email===normalized(context.owner))resumedDependencyV2933(resumed);
+    refreshPresence();
+  });
+
   const normalized=value=>String(value||'').trim().toLowerCase();
   const terminal=task=>['annule','clos_apres_verification','termine','complete','cancelled','closed','cancelled_before_send','closed_unconfirmed'].includes(String(task?.status||''))||task?.status==='envoye_confirme'&&task.phase==='complete';
   const contextKey=context=>normalized(context.owner)+'|'+context.clientId;
@@ -26788,8 +26857,8 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
   function localTasks(){
     const background=window.cdqDriveBackgroundV2746,state=background?.status?.();
     if(!state?.authorized||normalized(state.owner)!==normalized(utilisateurCourantEmail))return [];
-    const items=[],labels={'balance-list':'Liste de balance','deletion':'Suppressions demandées','copies':'Copies demandées','outbox':'Sauvegardes demandées'};
-    for(const [scope,label]of Object.entries(labels)){const count=Number(background.pendingFor?.(scope)||0);if(count>0)items.push({scope,count,text:label+' — '+count+' traitement(s) en attente.'});}
+    const details=detailTasksV2933(),items=details.map(task=>({task,scope:task.source==='offline'?'copies':'balance-list',count:1,text:[task.fileName,task.phase||task.description].filter(Boolean).join(' · ')})),labels={'balance-list':'Liste de balance','deletion':'Suppressions demandées','copies':'Copies demandées','outbox':'Sauvegardes demandées'};
+    for(const [scope,label]of Object.entries(labels)){const count=Number(background.pendingFor?.(scope)||0);if(count>0&&!details.some(task=>scope==='balance-list'&&task.source==='balance-list'||scope==='copies'&&task.source==='offline'))items.push({scope,count,text:label+' — '+count+' traitement(s) en attente.'});}
     if(state.nativeQueuedCount>0){const detail={authorization:'Connexion Drive à reprendre.',conflict:'La version Drive a changé; une vérification est nécessaire.',denied:'Drive a refusé cet envoi.',network:'Drive est momentanément indisponible.',interrupted:'Reprise automatique à la prochaine ouverture.',local_read:'La file locale doit être vérifiée.'};items.push({scope:'native',count:state.nativeQueuedCount,text:state.nativeQueuedCount+' sauvegarde(s) PDF en attente sur cet appareil. '+(detail[state.nativeError]||(state.nativeActiveCount?'Envoi Drive en cours.':'Confirmation Drive en attente.'))});}
     return items;
   }
@@ -26801,7 +26870,9 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
     const stamp=JSON.stringify(items);if(section?.dataset.localPendingV2892===stamp)return;
     if(!section){section=document.createElement('div');section.className='cdq-pending-task';body.prepend(section);}section.dataset.localPendingV2892=stamp;section.replaceChildren();
     const title=document.createElement('strong');title.textContent='Opérations déjà demandées sur cet appareil';section.append(title);
-    for(const item of items){const line=document.createElement('div');line.className='cdq-pending-meta';line.textContent=item.text;section.append(line);}
+    for(const item of items){const group=document.createElement('div'),line=document.createElement('div');line.className='cdq-pending-meta';line.textContent=item.text;group.append(line);
+      if(item.task){const actions=document.createElement('div');actions.className='cdq-pending-actions';if(item.task.source==='offline')actions.append(button('Voir les copies',()=>{cdqPostToPwa({type:'CDQ_OFFLINE_SHOW_LOCAL'});close();}));if(item.task.canCancel)actions.append(button('Annuler la tâche',()=>cancelDetailV2933(item.task),'caution'));group.append(actions);}
+      section.append(group);}
   }
   function pendingCount(){
     let context;try{context=current();}catch(_){return 0;}
@@ -26811,7 +26882,7 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
   }
   function refreshPresence(){
     const row=document.getElementById('cdqSendPendingRowV2892'),trigger=document.getElementById(buttonId);if(!row||!trigger)return;
-    const count=pendingCount(),local=localTasks(),hidden=count===0&&!local.length,label='Tâches en attente'+(count&&!local.length?' ('+count+')':'');
+    const count=pendingCount(),local=localTasks(),total=count+local.reduce((sum,item)=>sum+(item.count||1),0),hidden=total===0,label='Tâches en attente'+(total?' ('+total+')':'');
     if(row.hidden!==hidden)row.hidden=hidden;if(trigger.textContent!==label)trigger.textContent=label;
     renderLocalTasks();
   }
@@ -26855,7 +26926,7 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
   function syncPresence(force=false){
     let context;try{context=current();}catch(_){presenceKey='';clearPresenceRetry();presenceFailures=0;refreshPresence();return;}
     const k=discoveryKey(context);refreshPresence();if(presenceFlight?.key===k||!force&&k===presenceKey)return;
-    if(k!==presenceKey){clearPresenceRetry();presenceFailures=0;}presenceKey=k;
+    if(k!==presenceKey){clearPresenceRetry();presenceFailures=0;requestOfflineV2933(context);}presenceKey=k;
     const attempt={key:k};presenceFlight=attempt;
     void fetchTasks(context).then(()=>{if(presenceKey===k){clearPresenceRetry();presenceFailures=0;}}).catch(error=>{
       refreshPresence();let latest;try{latest=current();}catch(_){return;}
@@ -26869,6 +26940,7 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
   }
 
   async function load(){
+    try{requestOfflineV2933(current());}catch{}
     if(busy)return;busy=true;note('Vérification des tâches enregistrées…');
     try{
       const context=current();if(context.clientId!==clientId)throw Error('Le client a changé. Rouvrez les tâches.');
@@ -26971,7 +27043,7 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
     let trigger=document.getElementById(buttonId);if(!trigger){trigger=button('Tâches en attente',open,'refresh');trigger.id=buttonId;}if(trigger.parentElement!==row)row.append(trigger);
     syncPresence();
   }
-  window.cdqPendingTasksV20261112={open,refresh:load,refreshPresence,observe};
+  window.cdqPendingTasksV20261112={version:2933,open,refresh:load,refreshPresence,localChanged:refreshPresence,observe};
   window.addEventListener('online',()=>syncPresence(true));
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)syncPresence(true);});
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',attach,{once:true});else attach();
@@ -26979,7 +27051,7 @@ window.cdqCompanyControlsV2760=companyControlsV2760;
   window.addEventListener('cdq:access-ready',attach);
   window.addEventListener('cdq:access-state-v2527',attach);
   function resetTaskPanel(){
-    close();listed.clear();clearPresenceRetry();presenceKey='';presenceFailures=0;presenceFlight=null;clientId='';
+    close();listed.clear();copyTasksV2933=[];pendingCancelV2933=null;localCancelBusyV2933=false;busy=false;clearPresenceRetry();presenceKey='';presenceFailures=0;presenceFlight=null;clientId='';
     document.getElementById('cdqSendPendingRowV2892')?.setAttribute('hidden','');
   }
   window.addEventListener('cdq:drive-cleared-v2632',resetTaskPanel);
