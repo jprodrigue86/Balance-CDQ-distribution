@@ -1,57 +1,108 @@
 {
-  "androidSourceBuild": "2026.11.24-v29.33-cancel-tasks",
-  "build": "2026.11.24-v29.33-cancel-tasks-pc",
-  "buildRunId": "45341943555",
+  "androidSourceBuild": "2026.11.24-v29.34-send-preflight",
+  "build": "2026.11.24-v29.34-send-preflight-pc",
   "candidateOnly": false,
   "desktopModel": 3,
   "exhaustivePdfGatePassed": false,
   "files": 1188,
-  "generatedFrom": "patches/cancel-tasks-2933/pc.py",
+  "generatedFrom": "patches/send-preflight-20261124/pc.py",
   "pdfQualification": "integrity-verified-runtime-incomplete",
   "platform": "pc-pwa",
-  "publicationAuthorizedWithKnownLimits": true,
-  "publicationCommit": "4fd83db0763bc911db243c0c6915d7d09bbdf3fe",
-  "qualificationAttemptRecipeCommit": "8a75186e88712f4b46f0997404258e56d2abb616",
-  "qualificationAttemptRunId": "45326147465",
-  "release": "f37ad5ec958f624d5b6f1877936d8d93e23e68c063cc4798ba9156fd570d02a5",
+  "release": "3d2f03339b0affc024dbdefe1b96ab89a22ad70246697d719a5c7a23f7aa0ab9",
   "runtimeQualificationComplete": false,
-  "scope": "model-replacement-integrity",
-  "sourceCommit": "71b43aff6be837992db6d1f803283141215b46e4",
-  "version": "29.33",
+  "scope": "send-preflight-timeout",
+  "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
+  "version": "29.34",
   "webBaseCommit": "de1e05294f308cd67502ccc4093422501af56e22",
-  "qualificationRun": "45341943555",
-  "qualificationRecipeCommit": "71b43aff6be837992db6d1f803283141215b46e4",
+  "authenticatedDriveTested": false,
+  "baseProvenance": {
+    "version": "29.33",
+    "sourceCommit": "71b43aff6be837992db6d1f803283141215b46e4",
+    "build": "2026.11.24-v29.33-cancel-tasks-pc",
+    "release": "f37ad5ec958f624d5b6f1877936d8d93e23e68c063cc4798ba9156fd570d02a5",
+    "buildRunId": "45341943555",
+    "publicationCommit": "4fd83db0763bc911db243c0c6915d7d09bbdf3fe",
+    "publicationAuthorizedWithKnownLimits": true,
+    "qualificationAttemptRecipeCommit": "8a75186e88712f4b46f0997404258e56d2abb616",
+    "qualificationAttemptRunId": "45326147465",
+    "qualificationRun": "45341943555",
+    "qualificationRecipeCommit": "71b43aff6be837992db6d1f803283141215b46e4",
+    "qualificationOrigins": {
+      "android": {
+        "sourceCommit": "831a0f7b683b731bacf17283dbb2123d96f0ad37",
+        "buildRunId": "45335138906",
+        "runId": "45338372000",
+        "recipeCommit": "4376fd045c4da40d3ffffcf4088ea97ff15ec863",
+        "inherited": true
+      },
+      "pc": {
+        "sourceCommit": "71b43aff6be837992db6d1f803283141215b46e4",
+        "buildRunId": "45341943555",
+        "runId": "45341943555",
+        "recipeCommit": "71b43aff6be837992db6d1f803283141215b46e4",
+        "inherited": false
+      }
+    },
+    "productOrigins": {
+      "android": {
+        "sourceCommit": "831a0f7b683b731bacf17283dbb2123d96f0ad37",
+        "buildRunId": "45335138906",
+        "apkSha256": "1dc7578380610cb0c1589dc0234f4cb724d8d4fe96bb010852fab194bea356c3",
+        "inherited": true
+      },
+      "pc": {
+        "sourceCommit": "71b43aff6be837992db6d1f803283141215b46e4",
+        "buildRunId": "45341943555",
+        "pcRelease": "f37ad5ec958f624d5b6f1877936d8d93e23e68c063cc4798ba9156fd570d02a5",
+        "packageSha256": "8ae8cfc3bee40aea6d6428eae1a3c2a2c39bec8a38d0e59c871c4f271bf4591d",
+        "inherited": false
+      }
+    },
+    "taskCancellationQualification": "android-emulator-and-pc-ui-reviewed"
+  },
+  "published": true,
+  "publicationCommit": "2c3c479659dfb81a4c11728fb91d1e57c61f42fd",
+  "buildRunId": "45514329144",
+  "qualificationRun": "45517925323",
+  "qualificationRecipeCommit": "3af73469ca866de9a57d59746a0be125e9337cec",
   "qualificationOrigins": {
     "android": {
-      "sourceCommit": "831a0f7b683b731bacf17283dbb2123d96f0ad37",
-      "buildRunId": "45335138906",
-      "runId": "45338372000",
-      "recipeCommit": "4376fd045c4da40d3ffffcf4088ea97ff15ec863",
-      "inherited": true
+      "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
+      "buildRunId": "45514329144",
+      "runId": "45519195131",
+      "recipeCommit": "0f621ff4eb28bc603cefee3b39acb251f8b894e6",
+      "jobId": 138886433315,
+      "runConclusion": "success",
+      "jobConclusion": "success",
+      "inherited": false,
+      "reusedQualification": false
     },
     "pc": {
-      "sourceCommit": "71b43aff6be837992db6d1f803283141215b46e4",
-      "buildRunId": "45341943555",
-      "runId": "45341943555",
-      "recipeCommit": "71b43aff6be837992db6d1f803283141215b46e4",
-      "inherited": false
+      "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
+      "buildRunId": "45514329144",
+      "runId": "45517925323",
+      "recipeCommit": "3af73469ca866de9a57d59746a0be125e9337cec",
+      "jobId": 138882087267,
+      "runConclusion": "failure",
+      "jobConclusion": "success",
+      "inherited": false,
+      "reusedQualification": true
     }
   },
   "productOrigins": {
     "android": {
-      "sourceCommit": "831a0f7b683b731bacf17283dbb2123d96f0ad37",
-      "buildRunId": "45335138906",
-      "apkSha256": "1dc7578380610cb0c1589dc0234f4cb724d8d4fe96bb010852fab194bea356c3",
-      "inherited": true
+      "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
+      "buildRunId": "45514329144",
+      "apkSha256": "35dfa9f144d69442a9d7fadf00b81c3deb385f8cb17b81c0b1df060ffcaa6fca",
+      "inherited": false
     },
     "pc": {
-      "sourceCommit": "71b43aff6be837992db6d1f803283141215b46e4",
-      "buildRunId": "45341943555",
-      "pcRelease": "f37ad5ec958f624d5b6f1877936d8d93e23e68c063cc4798ba9156fd570d02a5",
-      "packageSha256": "8ae8cfc3bee40aea6d6428eae1a3c2a2c39bec8a38d0e59c871c4f271bf4591d",
+      "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
+      "buildRunId": "45514329144",
+      "pcRelease": "3d2f03339b0affc024dbdefe1b96ab89a22ad70246697d719a5c7a23f7aa0ab9",
+      "packageSha256": "5034e25e285d4a2935871176826500877bc7c59466f9abbec920ab01eee7d2c1",
       "inherited": false
     }
   },
-  "taskCancellationQualification": "android-emulator-and-pc-ui-reviewed",
-  "authenticatedDriveTested": false
+  "sendPreflightQualification": "android-emulator-and-pc-ui-reviewed"
 }

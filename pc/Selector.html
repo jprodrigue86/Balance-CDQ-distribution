@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="29.33" data-cdq-pc-release="f37ad5ec958f624d5b6f1877936d8d93e23e68c063cc4798ba9156fd570d02a5">
+<html data-cdq-pc-version="29.34" data-cdq-pc-release="3d2f03339b0affc024dbdefe1b96ab89a22ad70246697d719a5c7a23f7aa0ab9">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -947,7 +947,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
 <script src="./send-progress-v2893.js"></script>
-<meta name="cdq-package-build" content="2026.11.24-v29.33-cancel-tasks-pc">
+<meta name="cdq-package-build" content="2026.11.24-v29.34-send-preflight-pc">
 
 
 <script id="cdqBridgeV23">
@@ -1001,7 +1001,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.24-v29.33-cancel-tasks-pc'
+    build:'2026.11.24-v29.34-send-preflight-pc'
   });
 }
 
@@ -1014,7 +1014,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.24-v29.33-cancel-tasks-pc'
+        build:'2026.11.24-v29.34-send-preflight-pc'
       });
     }
   } catch(e) {}
@@ -12331,7 +12331,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.24-v29.33-cancel-tasks-pc";
+  const CDQ_BUILD = "2026.11.24-v29.34-send-preflight-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13638,13 +13638,13 @@ function cdqInstallSwipeGesture(row){
       afficherErreur(e);
     }
   }
-const CDQ_SEND_PREFLIGHT_TIMEOUT_MS_V2780=20000;
+const CDQ_SEND_PREFLIGHT_TIMEOUT_MS_V2780=55000;
 function cdqSendPreflightV2780(args,timeoutMs=CDQ_SEND_PREFLIGHT_TIMEOUT_MS_V2780){
   let timer;
   const remote=cdqRpcV2553('cdqPreparerLivraisonV2866',args);
   const deadline=new Promise((resolve,reject)=>{
     timer=setTimeout(()=>{
-      const error=new Error('Le serveur ne répond pas à la vérification de l’envoi après 20 secondes. Aucun nouvel envoi n’a été lancé. Vérifiez la connexion et réessayez.');
+      const error=new Error('La vérification de l’envoi n’est pas terminée après '+Math.ceil(timeoutMs/1000)+' secondes. Aucun nouvel envoi n’a été lancé. Réessayez dans un moment.');
       error.code='CDQ_SEND_CHECK_TIMEOUT';
       reject(error);
     },timeoutMs);
@@ -14976,7 +14976,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.24-v29.33-cancel-tasks-pc";
+const CDQ_V19_BUILD = "2026.11.24-v29.34-send-preflight-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -19302,7 +19302,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.24-v29.33-cancel-tasks-pc";
+const CDQ_V20_BUILD = "2026.11.24-v29.34-send-preflight-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20155,7 +20155,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.24-v29.33-cancel-tasks-pc";
+const CDQ_V21_BUILD = "2026.11.24-v29.34-send-preflight-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24654,7 +24654,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.24-v29.33-cancel-tasks-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.24-v29.34-send-preflight-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
