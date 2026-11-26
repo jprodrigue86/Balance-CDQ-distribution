@@ -9,17 +9,37 @@ const text=(tag,value)=>{const el=document.createElement(tag);el.textContent=val
 const command=(label,run)=>{const b=text('button',label);b.type='button';b.addEventListener('click',run);return b;};
 const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const owner=()=>window.cdqDeadlineSession?.()?.owner||'';
-const records=new Map(), states=new Map();
+const records=new Map();
 let identity='',generation=0,mode='month',month='',selected='',companies=[],loading=false,timer,paint;
-const cacheKey=(account,id)=>'cdq.echeance.index.v1.'+account+'.'+id;
-function cached(account,id){
-  try{const entry=JSON.parse(sessionStorage.getItem(cacheKey(account,id)));
-    return entry && Array.isArray(entry.rows) && entry.rows.every(r=>r.clientId===id) && Date.now()-entry.readAt<12*3600000 ? entry : null;
-  }catch{return null;}
+let database,hydrated='',syncToken=0;
+function openCache(){
+ if(!database)database=new Promise((resolve,reject)=>{
+   const request=indexedDB.open('cdq-deadlines-v2',1);
+   request.onupgradeneeded=()=>{const store=request.result.createObjectStore('clients',{keyPath:['owner','id']});store.createIndex('owner','owner');};
+   request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error);
+ }).catch(error=>{database=null;throw error;});
+ return database;
+}
+async function loadCache(account){
+ const db=await openCache();
+ return new Promise((resolve,reject)=>{
+   const req=db.transaction('clients').objectStore('clients').index('owner').getAll(account);
+   req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+ });
+}
+async function saveCache(account,changed,removed){
+ if(!changed.length&&!removed.length)return;
+ const db=await openCache();
+ await new Promise((resolve,reject)=>{
+   const tx=db.transaction('clients','readwrite'),store=tx.objectStore('clients');
+   for(const entry of changed)store.put({...entry,owner:account});
+   for(const id of removed)store.delete([account,id]);
+   tx.oncomplete=resolve;tx.onabort=tx.onerror=()=>reject(tx.error);
+ });
 }
 const planStates=['À contacter','Contacté / à planifier','Rendez-vous fixé'];
-function close(){generation++;loading=false;clearTimeout(timer);cancelAnimationFrame(paint);paint=0;if(panel.open)panel.close();button.setAttribute('aria-expanded','false');}
-function reset(){close();records.clear();states.clear();companies=[];identity='';field('rows').replaceChildren();field('notice').textContent='';}
+function close(){generation++;syncToken++;loading=false;clearTimeout(timer);cancelAnimationFrame(paint);paint=0;if(panel.open)panel.close();button.setAttribute('aria-expanded','false');}
+function reset(){close();records.clear();companies=[];identity='';hydrated='';field('rows').replaceChildren();field('notice').textContent='';}
 function available(){return !!identity && owner()===identity && panel.open;}
 function hasClient(id){return window.cdqDeadlineSession?.()?.clients.some(c=>String(c.id)===id);}
 function planning(row,parent){
@@ -40,7 +60,8 @@ function planning(row,parent){
      if(!available()||account!==identity||stamp!==generation)return;
      if(!result?.ok||result.clientId!==request.clientId||result.identity!==request.identity||result.plan?.requestId!==request.requestId||result.plan?.revision!==request.revision+1)throw Error('Reçu invalide');
      const record=records.get(row.clientId),stored=record?.rows.find(r=>r.identity===row.identity);
-     if(stored){stored.plan=result.plan;try{sessionStorage.setItem(cacheKey(account,row.clientId),JSON.stringify(record));}catch{}}
+     if(stored)stored.plan=result.plan;
+     // Keep the server revision. The next delta retrieves the saved plan for every device.
      field('notice').textContent='Suivi enregistré.';details.open=false;render();
    }catch(error){if(account===identity && stamp===generation){field('notice').textContent=/CONFLICT/.test(String(error.code||error.message))?'Le suivi a changé. Actualisez avant de saisir votre modification.':'Enregistrement non confirmé. Actualisez pour vérifier le suivi.';}}
    finally{save.disabled=false;}
@@ -93,8 +114,8 @@ function render(){
  .filter(r=>(!follow||(r.plan.state||planStates[0])===follow)&&norm([r.client,r.city,r.region,r.site,r.lot,r.technicien,r.identification].join(' ')).includes(term))
  .sort((a,b)=>(a.due.date||'9999').localeCompare(b.due.date||'9999')||a.client.localeCompare(b.client,'fr')||a.identification.localeCompare(b.identification,'fr',{numeric:true}));
  drawCalendar(visible,today);
- const ready=scoped.filter(c=>records.get(c.id)?.complete && states.get(c.id)!=='error').length,failed=scoped.filter(c=>states.get(c.id)==='error').length;
- field('coverage').textContent=(ready===scoped.length&&ready?'Dossiers indexés':'Couverture partielle')+' · '+ready+' / '+scoped.length+' dossiers complets'+(loading?' · Lecture en cours…':'')+(failed?' · '+failed+' à réessayer':'');
+ const consulted=scoped.filter(c=>records.has(c.id)).length,ready=scoped.filter(c=>records.get(c.id)?.complete).length;
+ field('coverage').textContent=loading?'Actualisation de l’index partagé…':consulted?'Index partagé · '+consulted+' dossiers · '+ready+' avec liste complète':'Aucun dossier indexé disponible';
  const groups=new Map();
  for(const r of visible){const matches=mode==='late'?r.due.overdue:mode==='unknown'?r.due.group==='verify':mode==='day'?r.due.date===selected:r.due.date?.slice(0,7)===month;if(!matches)continue;if(!groups.has(r.clientId))groups.set(r.clientId,[]);groups.get(r.clientId).push(r);}
  const body=field('rows'),expanded=new Set([...body.querySelectorAll(':scope > details[open]')].map(el=>el.dataset.client));body.replaceChildren();
@@ -114,32 +135,47 @@ function render(){
  if(!groups.size)body.append(text('p',loading?'Lecture des dossiers…':'Aucune balance dans les données disponibles pour cette sélection.'));
 }
 function scheduleRender(){if(panel.querySelector('details[data-plan][open]'))return;if(!paint)paint=requestAnimationFrame(()=>{paint=0;render();});}
-async function refresh(force){
+async function refresh(){
  const session=window.cdqDeadlineSession?.();if(!session||session.owner!==identity){reset();return;}
- companies=session.clients;
- for(const c of companies){if(!records.has(c.id)){const prior=cached(identity,c.id);if(prior)records.set(c.id,prior);}}
- const stamp=++generation;
- const queue=companies.filter(c=>force||states.has(c.id)||!records.has(c.id)||Date.now()-records.get(c.id).readAt>12*3600000);
- loading=queue.length>0;render();let cursor=0;
- async function read(){while(stamp===generation&&available()&&cursor<queue.length){
-   const c=queue[cursor++];if(!hasClient(c.id))continue;
-   try{const result=await window.cdqReportEngineSelectorV2754.call('list',{clientId:c.id,deadlineIndex:1});
-     if(stamp!==generation||!available())return;
-     const entry={rows:indexedRows(c,result),complete:result.baselineComplete===true,readAt:Date.now()};
-     records.set(c.id,entry);states.delete(c.id);
-     try{sessionStorage.setItem(cacheKey(identity,c.id),JSON.stringify(entry));}catch{/* The in-memory index remains available. */}
-   }catch(error){
-     if(stamp!==generation)return;
-     if(/SESSION|FORBIDDEN|DENIED|NOT_AUTHORIZED|SCOPE/.test(String(error.code||error.message))){
-       records.delete(c.id);try{sessionStorage.removeItem(cacheKey(identity,c.id));}catch{}
-     }
-     states.set(c.id,'error');
-   }scheduleRender();
- }}
- await Promise.all([read(),read()]);if(stamp===generation){loading=false;if(!panel.querySelector('details[data-plan][open]'))render();}
+ const account=identity,ticket=++syncToken;
+ const active=()=>ticket===syncToken&&available()&&identity===account;
+ companies=session.clients;loading=true;render();
+ try{
+   let previous=records;
+   if(hydrated!==account){
+     let cached=[];try{cached=await loadCache(account);}catch{}
+     if(!active())return;
+     previous=new Map(cached.filter(c=>Number.isSafeInteger(c.revision)&&Array.isArray(c.rows)).map(c=>[c.id,c]));
+   }
+   const known=Object.fromEntries([...previous].map(([id,entry])=>[id,entry.revision]));
+   const result=await calibrationRpc('cdqLireIndexEcheancesV2',known);
+   if(!active())return;
+   if(result?.protocol!==2939||!Array.isArray(result.ids)||!Array.isArray(result.changes))throw Error('Index partagé invalide');
+   const authorized=new Set(result.ids),directory=new Map(companies.filter(c=>authorized.has(c.id)).map(c=>[c.id,c]));
+   const removed=[...previous.keys()].filter(id=>!directory.has(id)),updated=[],seen=new Set();
+   const next=new Map([...previous].filter(([id])=>directory.has(id)));
+   for(const change of result.changes){
+     if(!authorized.has(change.clientId)||seen.has(change.clientId)||!Number.isSafeInteger(change.revision)||change.revision<0)throw Error('Révision invalide');
+     seen.add(change.clientId);
+     const company=directory.get(change.clientId);if(!company)continue;
+     const entry={id:company.id,revision:change.revision,complete:change.baselineComplete===true,rows:indexedRows(company,change)};
+     next.set(company.id,entry);updated.push(entry);
+   }
+   if([...directory.keys()].some(id=>!next.has(id)))throw Error('Index partagé incomplet');
+   // Directory labels can change independently of an equipment revision.
+   for(const [id,entry] of next){const c=directory.get(id);entry.rows=entry.rows.map(r=>({...r,client:c.nom,city:c.ville||'',region:c.region||''}));}
+   companies=[...directory.values()];records.clear();for(const [id,entry] of next)records.set(id,entry);
+   hydrated=account;field('notice').textContent='';
+   try{await saveCache(account,updated,removed);}catch{/* The shared server snapshot remains available. */}
+ }catch(error){
+   if(!active())return;
+   const msg=String(error.code||'')+' '+String(error.message||'');
+   if(/SESSION|FORBIDDEN|DENIED|NOT_AUTHORIZED|SCOPE|CONSENT/.test(msg)){records.clear();hydrated='';}
+   field('notice').textContent='Actualisation non confirmée. Réessayez dans les filtres.';
+ }finally{if(active()){loading=false;render();}}
 }
 async function open(){const next=owner();if(next!==identity)reset();if(!next){button.title='Ouvrez une session CDQ pour voir les échéances';return;}
- identity=next;month=localDay().slice(0,7);mode='month';selected='';fitPage();panel.show();button.setAttribute('aria-expanded','true');field('notice').textContent='';await window.cdqClientsReadyV2658;if(!available())return;refresh(false);
+ identity=next;month=localDay().slice(0,7);mode='month';selected='';fitPage();panel.show();button.setAttribute('aria-expanded','true');field('notice').textContent='';await window.cdqClientsReadyV2658;if(!available())return;refresh();
  let day=localDay();function tick(){if(!available())return;const now=localDay();if(now!==day){day=now;render();}timer=setTimeout(tick,60000);}tick();
 }
 function fitPage(){
@@ -156,10 +192,11 @@ for(const key of ['late','unknown'])field(key).onclick=()=>changeView(mode===key
 window.addEventListener('pointerdown',e=>{if(panel.open&&e.target.closest?.('.bottom-nav-item')&&!e.target.closest('[data-open-deadlines]'))close();},true);
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel.open){e.preventDefault();close();button.focus();}});
 button.addEventListener('click',()=>panel.open?close():open());field('close').onclick=close;panel.addEventListener('cancel',close);
-field('refresh').onclick=()=>{if(!loading)refresh(true);};for(const key of ['search','follow','archives'])field(key).addEventListener('input',render);
-for(const type of ['cdq:pdf-save-retired-v2707','cdq:report-data-saved-v2754','cdq:deleted','cdq:moved','cdq:copied','cdq:renamed']){
- window.addEventListener(type,event=>{const id=String(event.detail?.clientId||'');if(!id)return;records.delete(id);try{sessionStorage.removeItem(cacheKey(owner(),id));}catch{}if(available())refresh(false);});
+field('refresh').onclick=()=>{if(!loading)refresh();};for(const key of ['search','follow','archives'])field(key).addEventListener('input',render);
+for(const type of ['cdq:pdf-save-retired-v2707','cdq:report-data-saved-v2754','cdq:report-pdf-confirmed-v2754','cdq:report-deleted-v2754','cdq:deleted','cdq:moved','cdq:copied','cdq:renamed']){
+ window.addEventListener(type,event=>{if(event.detail?.clientId&&available())refresh();});
 }
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&available()&&!loading)refresh();});
 window.addEventListener('cdq:drive-cleared-v2632',reset);window.addEventListener('cdq:access-state-v2527',event=>{if(event.detail!=='ready')reset();});
 
 const workspace=window.cdqWorkspaceV2638;

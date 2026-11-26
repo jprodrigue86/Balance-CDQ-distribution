@@ -16,3 +16,5 @@
 .deadline-links{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}.deadline-links [aria-pressed=true]{outline:1px solid var(--deadline-gold)}#deadline-panel [data-field=coverage]{opacity:.72}#deadline-panel [data-field=notice]:empty{display:none}
 
 #deadline-panel [data-field=heading]{scroll-margin-top:82px}
+
+html body .bottom-nav .bottom-nav-item[data-open-deadlines] > small{--cdq-ink:#ebc45a!important;color:#ebc45a!important;-webkit-text-fill-color:#ebc45a!important;text-shadow:0 0 5px #7b5b22!important}

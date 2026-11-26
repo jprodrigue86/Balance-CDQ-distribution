@@ -1,23 +1,23 @@
 {
-  "scope": "calendrier-notification",
-  "sourceCommit": "e33468bd6ebefd08383277b3f53df6e4189d1c1e",
-  "publicationCommit": "e33468bd6ebefd08383277b3f53df6e4189d1c1e",
-  "buildRunId": "45875559786",
+  "scope": "index-echeances",
+  "sourceCommit": "2116c28122d32b940761183012740842049775ad",
+  "publicationCommit": "2116c28122d32b940761183012740842049775ad",
+  "buildRunId": "45882123544",
   "runtimeQualificationComplete": false,
   "authenticatedDriveTested": false,
   "channel": "stable",
-  "versionCode": 2938,
-  "versionName": "29.38",
+  "versionCode": 2939,
+  "versionName": "29.39",
   "mandatory": false,
   "compatibleReleaseIdentityFrom": "25.15",
-  "apkUrl": "https://github.com/jprodrigue86/Balance-CDQ-distribution/releases/download/v29.38/Balance-CDQ-Android.apk",
-  "sha256": "d7934bd4b619437bd77176f36628778eff887581d852041a702cc726f76fbcb3",
+  "apkUrl": "https://github.com/jprodrigue86/Balance-CDQ-distribution/releases/download/v29.39/Balance-CDQ-Android.apk",
+  "sha256": "351cdfa7db1eee98aff66be3368990bd2935c3fc4e7f205518a7e63efb928462",
   "bytes": 280013712,
   "signingCertificateSha256": "496030d9cd10e81ff4e9486c38491bc15389112c0c295c61c295981c101c4436",
   "baseProvenance": {
-    "versionName": "29.37",
-    "versionCode": 2937,
-    "sha256": "e647954b181f0b5d8f2ee3f10f719b46c5f24fc30888dddceaa72d8381447c7a",
-    "sourceCommit": "95b6779d8b9cfef32edfc33a1153c677af01fb0c"
+    "versionName": "29.38",
+    "versionCode": 2938,
+    "sha256": "d7934bd4b619437bd77176f36628778eff887581d852041a702cc726f76fbcb3",
+    "sourceCommit": "e33468bd6ebefd08383277b3f53df6e4189d1c1e"
   }
 }
