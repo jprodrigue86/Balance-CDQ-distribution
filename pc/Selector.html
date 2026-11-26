@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="29.37" data-cdq-pc-release="a5563e42eab3fbeff76cef7e8e898318bf2c279870b428d7c3209b01793c648f">
+<html data-cdq-pc-version="29.38" data-cdq-pc-release="47f3241f116c531f8de2dbc0b985b31ef908343212abf4f4ce82e33ff5f464db">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -947,7 +947,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
 <script src="./send-progress-v2893.js"></script>
-<meta name="cdq-package-build" content="2026.11.26-v29.37-demarrage-pc">
+<meta name="cdq-package-build" content="2026.11.26-v29.38-calendrier-pc">
 
 
 <script id="cdqBridgeV23">
@@ -1001,7 +1001,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.26-v29.37-demarrage-pc'
+    build:'2026.11.26-v29.38-calendrier-pc'
   });
 }
 
@@ -1014,7 +1014,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.26-v29.37-demarrage-pc'
+        build:'2026.11.26-v29.38-calendrier-pc'
       });
     }
   } catch(e) {}
@@ -6813,7 +6813,7 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
 </div>
 
 <nav class="bottom-nav" data-cdq-sliding-nav="true" aria-label="Navigation principale">
-<button type="button" class="bottom-nav-item" data-open-deadlines aria-haspopup="dialog" aria-label="Échéance"><span><svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><rect x="4" y="7" width="32" height="29" rx="4" fill="#27313a" stroke="#e6e34a" stroke-width="2"/><path d="M5 15h30M12 4v7m16-7v7" stroke="#e6e34a" stroke-width="3"/><path d="M13 24a7 7 0 0 1 14 0c0 3-2 4-4 5v3h-6v-3c-2-1-4-2-4-5z" fill="#c8d1d9"/><g fill="#232c35"><circle cx="17" cy="24" r="2"/><circle cx="23" cy="24" r="2"/><path d="m20 26-1.5 3h3z"/></g></svg></span><small>Échéance</small></button>
+<button type="button" class="bottom-nav-item" data-open-deadlines aria-haspopup="dialog" aria-expanded="false" aria-controls="deadline-panel" aria-label="Échéance"><span><img src="./calendrier-forge.webp" alt=""></span><small>Échéance</small></button>
 
   <button type="button" class="bottom-nav-item active home-nav-button" onclick="window.scrollTo({top:0,behavior:'smooth'})"><span class="home-nav-icon">⌂</span><small>Accueil</small></button>
   <button id="favoriteNavButton" type="button" class="bottom-nav-item" onclick="actionFavoris()" title="Ajouter aux favoris ou afficher les favoris"><span>★</span><small>Favoris</small></button>
@@ -12333,7 +12333,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.26-v29.37-demarrage-pc";
+  const CDQ_BUILD = "2026.11.26-v29.38-calendrier-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14978,7 +14978,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.26-v29.37-demarrage-pc";
+const CDQ_V19_BUILD = "2026.11.26-v29.38-calendrier-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -19316,7 +19316,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.26-v29.37-demarrage-pc";
+const CDQ_V20_BUILD = "2026.11.26-v29.38-calendrier-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20169,7 +20169,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.26-v29.37-demarrage-pc";
+const CDQ_V21_BUILD = "2026.11.26-v29.38-calendrier-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24668,7 +24668,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.26-v29.37-demarrage-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.26-v29.38-calendrier-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -25965,17 +25965,28 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
 <script type="module" src="./cursor-v2721.mjs"></script>
 <link rel="stylesheet" href="./workspace-v2638.css">
 <script type="module" src="./workspace-v2638.mjs"></script>
-<dialog id="deadline-panel" aria-labelledby="deadline-title">
-  <header><h2 id="deadline-title">Échéance</h2><button type="button" data-field="close">Fermer</button></header>
-  <div data-field="filters" aria-label="Priorité des étalonnages"></div>
-  <div class="deadline-controls">
-    <label>Recherche <input data-field="search" type="search" placeholder="Client, ville, site, lot, technicien ou balance"></label>
-    <label>Suivi <select data-field="follow"><option value="">Tous les suivis</option><option>À contacter</option><option>Contacté / à planifier</option><option>Rendez-vous fixé</option></select></label>
-    <label><input data-field="archives" type="checkbox"> Inclure les clients archivés accessibles</label>
-    <button type="button" data-field="refresh">Actualiser</button>
-  </div>
-  <p data-field="coverage" role="status"></p><p data-field="notice" role="status"></p>
-  <div data-field="rows"></div>
+<dialog id="deadline-panel" class="cdq-workspace-page" aria-labelledby="deadline-title">
+ <header class="deadline-head">
+  <img src="./calendrier-forge.webp" alt="" width="44" height="44">
+  <div><h2 id="deadline-title">Échéance</h2><small>Calendrier des étalonnages</small></div>
+  <button type="button" data-field="close" aria-label="Fermer Échéance">×</button>
+ </header>
+ <main class="deadline-body">
+  <section class="deadline-calendar" aria-label="Calendrier">
+   <div class="deadline-month"><button type="button" data-field="prev" aria-label="Mois précédent">‹</button><h3 data-field="month"></h3><button type="button" data-field="next" aria-label="Mois suivant">›</button></div>
+   <div class="deadline-week" aria-hidden="true"><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span><span>D</span></div>
+   <div class="deadline-grid" data-field="days"></div>
+   <div class="deadline-legend"><i></i>En retard ou d’ici un mois</div>
+  </section>
+  <div class="deadline-tools"><button type="button" data-field="whole">Voir tout le mois</button><button type="button" data-field="today">Mois actuel</button><details data-field="options"><summary>Filtres</summary><div class="deadline-controls">
+   <label>Recherche<input type="search" data-field="search" placeholder="Client, ville ou balance"></label>
+   <label>Suivi<select data-field="follow"><option value="">Tous</option><option>À contacter</option><option>Contacté / à planifier</option><option>Rendez-vous fixé</option></select></label>
+   <label><input type="checkbox" data-field="archives"> Inclure les archives</label><button type="button" data-field="refresh">Actualiser</button>
+  </div></details></div>
+  <h3 data-field="heading"></h3><div data-field="rows"></div>
+  <div class="deadline-links"><button type="button" data-field="late"></button><button type="button" data-field="unknown"></button></div>
+  <small data-field="coverage" role="status"></small><p data-field="notice" role="status"></p>
+ </main>
 </dialog>
 <link rel="stylesheet" href="./deadline.css">
 <script type="module" src="./deadline-ui.mjs"></script>
