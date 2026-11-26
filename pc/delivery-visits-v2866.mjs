@@ -1,5 +1,6 @@
+import {localDay} from './deadline-model.mjs';
 import {calibrationRpc} from './calibration-feedback-v2566.mjs';
-export function installDeliveryVisits(doc=document,{readState=id=>calibrationRpc('cdqLireVisitesClientV2866',id),uuid=()=>crypto.randomUUID(),today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}}={}){
+export function installDeliveryVisits(doc=document,{readState=id=>calibrationRpc('cdqLireVisitesClientV2866',id),uuid=()=>crypto.randomUUID(),today=localDay}={}){
  const host=doc.getElementById('cdqVisitChoiceV2866'),select=doc.getElementById('cdqVisitModeV2866'),date=doc.getElementById('cdqVisitDateV2866'),info=doc.getElementById('cdqVisitInfoV2866');
  const repair=doc.getElementById('cdqRepairV2874'),repairHelp=doc.getElementById('cdqRepairHelpV2874');
  let generation=0,head=null,client='',newId='',ready=false,isCurrent=()=>false;

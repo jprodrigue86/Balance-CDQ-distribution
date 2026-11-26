@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="29.35" data-cdq-pc-release="384b97f289a228d51778c4c561d9772a56d61def23cfbe78f00b671e736c1f55">
+<html data-cdq-pc-version="29.36" data-cdq-pc-release="4a0c8f686f901902c75747c5bbb998ae4a4e28dbc0b69108fc773857d88aaa07">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -947,7 +947,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
 <script src="./send-progress-v2893.js"></script>
-<meta name="cdq-package-build" content="2026.11.24-v29.35-pdf-r9-pc">
+<meta name="cdq-package-build" content="2026.11.26-v29.36-page-client-echeance-pc">
 
 
 <script id="cdqBridgeV23">
@@ -1001,7 +1001,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.24-v29.35-pdf-r9-pc'
+    build:'2026.11.26-v29.36-page-client-echeance-pc'
   });
 }
 
@@ -1014,7 +1014,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.24-v29.35-pdf-r9-pc'
+        build:'2026.11.26-v29.36-page-client-echeance-pc'
       });
     }
   } catch(e) {}
@@ -6813,6 +6813,8 @@ html:is(.android,.ios,.mobile-device).cdq-mobile-layout:not(.cdq-desktop-v2676) 
 </div>
 
 <nav class="bottom-nav" data-cdq-sliding-nav="true" aria-label="Navigation principale">
+<button type="button" class="bottom-nav-item" data-open-deadlines aria-haspopup="dialog" aria-label="Échéance"><span><svg viewBox="0 0 40 40" aria-hidden="true" focusable="false"><rect x="4" y="7" width="32" height="29" rx="4" fill="#27313a" stroke="#e6e34a" stroke-width="2"/><path d="M5 15h30M12 4v7m16-7v7" stroke="#e6e34a" stroke-width="3"/><path d="M13 24a7 7 0 0 1 14 0c0 3-2 4-4 5v3h-6v-3c-2-1-4-2-4-5z" fill="#c8d1d9"/><g fill="#232c35"><circle cx="17" cy="24" r="2"/><circle cx="23" cy="24" r="2"/><path d="m20 26-1.5 3h3z"/></g></svg></span><small>Échéance</small></button>
+
   <button type="button" class="bottom-nav-item active home-nav-button" onclick="window.scrollTo({top:0,behavior:'smooth'})"><span class="home-nav-icon">⌂</span><small>Accueil</small></button>
   <button id="favoriteNavButton" type="button" class="bottom-nav-item" onclick="actionFavoris()" title="Ajouter aux favoris ou afficher les favoris"><span>★</span><small>Favoris</small></button>
   <button id="folderActionButton" type="button" class="bottom-nav-item" onclick="cdqToggleDossierV2206()" title="Ouvrir / fermer Dossier"><span id="folderActionIcon">📁+</span><small id="folderActionLabel">Dossier</small></button>
@@ -12331,7 +12333,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.24-v29.35-pdf-r9-pc";
+  const CDQ_BUILD = "2026.11.26-v29.36-page-client-echeance-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14976,7 +14978,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.24-v29.35-pdf-r9-pc";
+const CDQ_V19_BUILD = "2026.11.26-v29.36-page-client-echeance-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -17272,6 +17274,18 @@ function cdqReadManyRpcV20261103(payload,{signal}={}){
 }
 const cdqReportEngineSelectorV2754=createReportEngineSelectorV2754({rpc:(action,payload,options)=>action==='readMany'?cdqReadManyRpcV20261103(payload,options):cdqV19Gs('cdqReportEngineV2754',[action,payload]),promoteOpenRead:payload=>window.cdqRpcBudgetV2751?.promote?.(cdqReadManyKeyV20261103(payload)),owner:()=>String(utilisateurCourantEmail||''),canRead:()=>cdqAccessState==='ready',canWrite:()=>cdqAccessState==='ready'&&['admin','technicien'].includes(utilisateurCourantRole),epoch:()=>cdqDriveAccessEpochV2745,currentClient:()=>String(compagnieSelectionnee||''),post:cdqPostToPwa,instant:window.cdqInstantFiles2530,background:window.cdqDriveBackgroundV2746,readLocal:async id=>{const email=cdqReaderOwnerV2520(),announced=cdqDriveDocumentVersionsV2741.get(email+'|'+id)?.record;const stored=announced||await cdqV19GetRecord('document-pdf',id);cdqReaderGuardV2520(email);return cdqLocalRecordV2757(stored,email,id,String(compagnieSelectionnee||''));},loadClient:()=>import('./report-engine-client-v2754.mjs'),loadTemplate:async(expected,options)=>{const {loadPinnedReportTemplateV2788}=await import('./report-template-pins-v2788.mjs');return loadPinnedReportTemplateV2788(expected,options);},publish:(type,detail)=>window.dispatchEvent(new CustomEvent(type,{detail}))});
 window.cdqReportEngineSelectorV2754=cdqReportEngineSelectorV2754;
+// Installed in the same Selector as the authenticated directory.
+window.cdqDeadlineSession = () => {
+  const owner = String(utilisateurCourantEmail || '');
+  if (!owner || cdqAccessState !== 'ready' || !window.cdqDriveEntryV2632?.canRead()) return null;
+  const clients = document.documentElement.dataset.cdqClientsOwnerV2658 === owner ? toutesLesCompagnies : [];
+  return {owner,canWrite:['admin','technicien'].includes(utilisateurCourantRole),clients:clients.filter(c=>c?.id && c.nom).map(c=>({...c,id:String(c.id)}))};
+};
+window.cdqDeadlineOpen = id => {
+  const company = window.cdqDeadlineSession()?.clients.find(c=>c.id===id);
+  if(company) window.choisirCompagnie(company);
+};
+
 function normalizeReaderSaveProgressV2758(detail){
   const uuid=value=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
   const text=value=>typeof value==='string'&&value.length>0&&value.length<=320;
@@ -19302,7 +19316,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.24-v29.35-pdf-r9-pc";
+const CDQ_V20_BUILD = "2026.11.26-v29.36-page-client-echeance-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20155,7 +20169,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.24-v29.35-pdf-r9-pc";
+const CDQ_V21_BUILD = "2026.11.26-v29.36-page-client-echeance-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24654,7 +24668,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.24-v29.35-pdf-r9-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.26-v29.36-page-client-echeance-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
@@ -25951,6 +25965,21 @@ html[data-cdq-palette=light] #cdqInvoicePageV2590 :is(input[type=date],select){c
 <script type="module" src="./cursor-v2721.mjs"></script>
 <link rel="stylesheet" href="./workspace-v2638.css">
 <script type="module" src="./workspace-v2638.mjs"></script>
+<dialog id="deadline-panel" aria-labelledby="deadline-title">
+  <header><h2 id="deadline-title">Échéance</h2><button type="button" data-field="close">Fermer</button></header>
+  <div data-field="filters" aria-label="Priorité des étalonnages"></div>
+  <div class="deadline-controls">
+    <label>Recherche <input data-field="search" type="search" placeholder="Client, ville, site, lot, technicien ou balance"></label>
+    <label>Suivi <select data-field="follow"><option value="">Tous les suivis</option><option>À contacter</option><option>Contacté / à planifier</option><option>Rendez-vous fixé</option></select></label>
+    <label><input data-field="archives" type="checkbox"> Inclure les clients archivés accessibles</label>
+    <button type="button" data-field="refresh">Actualiser</button>
+  </div>
+  <p data-field="coverage" role="status"></p><p data-field="notice" role="status"></p>
+  <div data-field="rows"></div>
+</dialog>
+<link rel="stylesheet" href="./deadline.css">
+<script type="module" src="./deadline-ui.mjs"></script>
+
 <script type="module" src="./balance-list-v2638.mjs"></script>
 <script type="module" src="./client-portal-ui-v2793.mjs"></script>
 <script type="module" src="./background-v2793.mjs"></script>

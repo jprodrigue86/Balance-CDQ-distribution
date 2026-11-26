@@ -1,85 +1,21 @@
 {
-  "androidSourceBuild": "2026.11.24-v29.35-pdf-r9",
-  "authenticatedDriveTested": false,
-  "baseProvenance": {
-    "distributionCommit": "c2ab6fb364ff9438e05d8aa54a7d73fe9b52e83a",
-    "release": "3d2f03339b0affc024dbdefe1b96ab89a22ad70246697d719a5c7a23f7aa0ab9",
-    "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
-    "version": "29.34"
-  },
-  "build": "2026.11.24-v29.35-pdf-r9-pc",
-  "buildOrigin": {
-    "buildRecipeCommit": "eed34d27541ce877551a91a17d7cc773c78d6093",
-    "buildRunAttempt": 1,
-    "buildRunId": "45688316552",
-    "buildWorkflowPath": ".github/workflows/cdq-pdf-r9-2935.yml",
-    "nativeApplicationRecompiled": false,
-    "previewOnly": false,
-    "productSourceCommit": "9ea846cd43259fd48d67a457cf317a143d8dc35b"
-  },
+  "version": "29.36",
+  "sourceCommit": "895eb4c4373b71d0c118a0f3a8ca76f961e14a12",
+  "scope": "page-client-echeance",
   "candidateOnly": false,
-  "catalogueBaseRelease": "16b0063b3293bec1ae71f09a9fee3dd8237408f5e75716590a3aae963ec23ec3",
-  "catalogueBuildOrigin": {
-    "recipeCommit": "9f67c40d29c59f55fbcc0561687778cb689c5bab",
-    "runAttempt": 1,
-    "runId": "45728917587",
-    "workflowPath": ".github/workflows/cdq-r9-vector-catalogue-final.yml"
-  },
-  "derivationBase": {
-    "pcBuildRun": "45554027057",
-    "pcPackageSha256": "6c3de17ce2dd67fa7e04e8ba0383fafd334ffd8948ffa9164e071224ea0aefd5",
-    "pcRelease": "9e2cc1924e59b5d6a58d60b6a6f04124db3787988cf9c1eabbec9e97c56f84e8",
-    "sourceCommit": "a2df50240663c7fd2756dd19891541d0ef6ebdc3"
-  },
-  "desktopModel": 3,
-  "exhaustivePdfGatePassed": false,
-  "files": 1204,
-  "flattenBaseRelease": "18df509f1be25a22a346780be7928f414a0739301e5e63f07b7de5d21456fed6",
-  "flattenBuildOrigin": {
-    "recipeCommit": "ea9bd1e8cf120ec54ecb7e584074104c60496c74",
-    "runAttempt": 1,
-    "runId": "45733517594",
-    "workflowPath": ".github/workflows/cdq-r9-vector-catalogue-final.yml"
-  },
-  "generatedFrom": "patches/pdf-r9-2935/recovery-H/derive_product.py",
-  "pdfQualificationComplete": false,
-  "platform": "pc-pwa",
   "published": true,
-  "release": "384b97f289a228d51778c4c561d9772a56d61def23cfbe78f00b671e736c1f55",
   "runtimeQualificationComplete": false,
-  "scope": "approved-pdf-r9",
-  "sourceCommit": "9ea846cd43259fd48d67a457cf317a143d8dc35b",
-  "vectorPcBuildOrigin": {
-    "productSourceCommit": "9ea846cd43259fd48d67a457cf317a143d8dc35b",
-    "recipeCommit": "3db741d2a625e28621dd543aaef00b69332d4f2f",
-    "runAttempt": 1,
-    "runId": "45723793985",
-    "sourceCommit": "9ea846cd43259fd48d67a457cf317a143d8dc35b",
-    "workflowPath": ".github/workflows/cdq-r9-vector-qualification.yml"
+  "authenticatedDriveTested": false,
+  "platform": "pc-pwa",
+  "desktopModel": 3,
+  "release": "4a0c8f686f901902c75747c5bbb998ae4a4e28dbc0b69108fc773857d88aaa07",
+  "build": "2026.11.26-v29.36-page-client-echeance-pc",
+  "androidSourceBuild": "2026.11.26-v29.36-page-client-echeance",
+  "files": 1208,
+  "derivationBase": {
+    "release": "384b97f289a228d51778c4c561d9772a56d61def23cfbe78f00b671e736c1f55",
+    "sourceCommit": "9ea846cd43259fd48d67a457cf317a143d8dc35b"
   },
-  "vectorTableBaseRelease": "4211ac755f8bff6c0da62857d0f3462b1d3956d541954da32a017c6ccb991da7",
-  "vectorTableBuildOrigin": {
-    "recipeCommit": "fe28cebd73407d528ab43c05906e20e56edaee41",
-    "runAttempt": 1,
-    "runId": "45716275373",
-    "workflowPath": ".github/workflows/cdq-r9-table-vector-sentinel.yml"
-  },
-  "vectorTableSha256": "4afe1b1d1f8f5a0cfdfb1158ce409fcd56b0e146d3a2f6aad54d1666951c20b0",
-  "version": "29.35",
-  "webBaseCommit": "c2ab6fb364ff9438e05d8aa54a7d73fe9b52e83a",
-  "publicationCommit": "c7fd138902824e335c051d4b76cffedab2da0583",
-  "buildRunId": "45733517594",
-  "qualificationScope": "existing-targeted-android-and-pc-evidence",
-  "qualificationOrigins": {
-    "android": [
-      45733517594,
-      45739747375,
-      45748642257,
-      45751667591
-    ],
-    "pcPrior": 45723793985,
-    "pcTableExact": 45733517594,
-    "pcAdditionalRun": 45755251889
-  },
-  "deliveryDecisionSHA256": "c59fd195ea35cf70da3bb3d7cfb20d7a41ae4efeb1083619b86f3bcab105d6ef"
+  "publicationCommit": "334937ad6968a4148f96f9e748eb124bfc5ccd09",
+  "buildRunId": "45860800398"
 }
