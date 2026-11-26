@@ -1,103 +1,93 @@
 {
-  "apkUrl": "https://github.com/jprodrigue86/Balance-CDQ-distribution/releases/download/v29.34/Balance-CDQ-Android.apk",
-  "buildRunId": "45514329144",
-  "bytes": 266408746,
+  "apkUrl": "https://github.com/jprodrigue86/Balance-CDQ-distribution/releases/download/v29.35/Balance-CDQ-Android.apk",
+  "buildRunId": "45733517594",
+  "bytes": 279783947,
   "channel": "stable",
   "compatibleReleaseIdentityFrom": "25.15",
   "exhaustivePdfGatePassed": false,
   "mandatory": false,
-  "publicationCommit": "2c3c479659dfb81a4c11728fb91d1e57c61f42fd",
+  "publicationCommit": "c7fd138902824e335c051d4b76cffedab2da0583",
   "runtimeQualificationComplete": false,
-  "scope": "send-preflight-timeout",
-  "sha256": "35dfa9f144d69442a9d7fadf00b81c3deb385f8cb17b81c0b1df060ffcaa6fca",
+  "scope": "thirteen-R9-pdf-models",
+  "sha256": "148616336f07e8364571bd6539955e32d3a9eade9907b06bcbb0b205beb06ff0",
   "signingCertificateSha256": "496030d9cd10e81ff4e9486c38491bc15389112c0c295c61c295981c101c4436",
-  "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
-  "versionCode": 2934,
-  "versionName": "29.34",
-  "qualificationRun": "45519195131",
-  "qualificationRecipeCommit": "0f621ff4eb28bc603cefee3b39acb251f8b894e6",
+  "sourceCommit": "9ea846cd43259fd48d67a457cf317a143d8dc35b",
+  "versionCode": 2935,
+  "versionName": "29.35",
+  "qualificationRun": "45748642257",
+  "qualificationRecipeCommit": "6d8b99f4bdf128b9df422994f52524ce9cd38f10",
   "qualificationOrigins": {
-    "android": {
-      "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
-      "buildRunId": "45514329144",
-      "runId": "45519195131",
-      "recipeCommit": "0f621ff4eb28bc603cefee3b39acb251f8b894e6",
-      "jobId": 138886433315,
-      "runConclusion": "success",
-      "jobConclusion": "success",
-      "inherited": false,
-      "reusedQualification": false
-    },
-    "pc": {
-      "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
-      "buildRunId": "45514329144",
-      "runId": "45517925323",
-      "recipeCommit": "3af73469ca866de9a57d59746a0be125e9337cec",
-      "jobId": 138882087267,
-      "runConclusion": "failure",
-      "jobConclusion": "success",
-      "inherited": false,
-      "reusedQualification": true
-    }
+    "android": [
+      45733517594,
+      45739747375,
+      45748642257,
+      45751667591
+    ],
+    "pcPrior": 45723793985,
+    "pcTableExact": 45733517594,
+    "pcAdditionalRun": 45755251889
   },
   "productOrigins": {
     "android": {
-      "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
-      "buildRunId": "45514329144",
-      "apkSha256": "35dfa9f144d69442a9d7fadf00b81c3deb385f8cb17b81c0b1df060ffcaa6fca",
-      "inherited": false
+      "apkSha256": "148616336f07e8364571bd6539955e32d3a9eade9907b06bcbb0b205beb06ff0",
+      "buildRunId": "45733517594",
+      "sourceCommit": "9ea846cd43259fd48d67a457cf317a143d8dc35b"
     },
     "pc": {
-      "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
-      "buildRunId": "45514329144",
-      "pcRelease": "3d2f03339b0affc024dbdefe1b96ab89a22ad70246697d719a5c7a23f7aa0ab9",
-      "packageSha256": "5034e25e285d4a2935871176826500877bc7c59466f9abbec920ab01eee7d2c1",
-      "inherited": false
+      "pcRelease": "384b97f289a228d51778c4c561d9772a56d61def23cfbe78f00b671e736c1f55",
+      "packageSha256": "9aecf4454122ed38868e51632081d218f68721836417d0d696dfeda6405741dc",
+      "buildRunId": "45733517594",
+      "sourceCommit": "9ea846cd43259fd48d67a457cf317a143d8dc35b"
     }
   },
   "baseProvenance": {
-    "versionCode": 2933,
-    "versionName": "29.33",
-    "sourceCommit": "831a0f7b683b731bacf17283dbb2123d96f0ad37",
-    "buildRunId": "45335138906",
-    "publicationCommit": "4fd83db0763bc911db243c0c6915d7d09bbdf3fe",
-    "qualificationRun": "45338372000",
-    "qualificationRecipeCommit": "4376fd045c4da40d3ffffcf4088ea97ff15ec863",
-    "qualificationBundleRun": "45341943555",
-    "qualificationAttemptRecipeCommit": "8a75186e88712f4b46f0997404258e56d2abb616",
-    "qualificationAttemptRunId": "45326147465",
+    "versionCode": 2934,
+    "versionName": "29.34",
+    "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
+    "buildRunId": "45514329144",
+    "publicationCommit": "2c3c479659dfb81a4c11728fb91d1e57c61f42fd",
+    "qualificationRun": "45519195131",
+    "qualificationRecipeCommit": "0f621ff4eb28bc603cefee3b39acb251f8b894e6",
     "qualificationOrigins": {
       "android": {
-        "sourceCommit": "831a0f7b683b731bacf17283dbb2123d96f0ad37",
-        "buildRunId": "45335138906",
-        "runId": "45338372000",
-        "recipeCommit": "4376fd045c4da40d3ffffcf4088ea97ff15ec863",
-        "inherited": true
+        "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
+        "buildRunId": "45514329144",
+        "runId": "45519195131",
+        "recipeCommit": "0f621ff4eb28bc603cefee3b39acb251f8b894e6",
+        "jobId": 138886433315,
+        "runConclusion": "success",
+        "jobConclusion": "success",
+        "inherited": false,
+        "reusedQualification": false
       },
       "pc": {
-        "sourceCommit": "71b43aff6be837992db6d1f803283141215b46e4",
-        "buildRunId": "45341943555",
-        "runId": "45341943555",
-        "recipeCommit": "71b43aff6be837992db6d1f803283141215b46e4",
-        "inherited": false
+        "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
+        "buildRunId": "45514329144",
+        "runId": "45517925323",
+        "recipeCommit": "3af73469ca866de9a57d59746a0be125e9337cec",
+        "jobId": 138882087267,
+        "runConclusion": "failure",
+        "jobConclusion": "success",
+        "inherited": false,
+        "reusedQualification": true
       }
     },
     "productOrigins": {
       "android": {
-        "sourceCommit": "831a0f7b683b731bacf17283dbb2123d96f0ad37",
-        "buildRunId": "45335138906",
-        "apkSha256": "1dc7578380610cb0c1589dc0234f4cb724d8d4fe96bb010852fab194bea356c3",
-        "inherited": true
+        "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
+        "buildRunId": "45514329144",
+        "apkSha256": "35dfa9f144d69442a9d7fadf00b81c3deb385f8cb17b81c0b1df060ffcaa6fca",
+        "inherited": false
       },
       "pc": {
-        "sourceCommit": "71b43aff6be837992db6d1f803283141215b46e4",
-        "buildRunId": "45341943555",
-        "pcRelease": "f37ad5ec958f624d5b6f1877936d8d93e23e68c063cc4798ba9156fd570d02a5",
-        "packageSha256": "8ae8cfc3bee40aea6d6428eae1a3c2a2c39bec8a38d0e59c871c4f271bf4591d",
+        "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
+        "buildRunId": "45514329144",
+        "pcRelease": "3d2f03339b0affc024dbdefe1b96ab89a22ad70246697d719a5c7a23f7aa0ab9",
+        "packageSha256": "5034e25e285d4a2935871176826500877bc7c59466f9abbec920ab01eee7d2c1",
         "inherited": false
       }
     }
   },
-  "sendPreflightQualification": "android-emulator-and-pc-ui-reviewed",
-  "authenticatedDriveTested": false
+  "authenticatedDriveTested": false,
+  "deliveryDecisionSHA256": "c59fd195ea35cf70da3bb3d7cfb20d7a41ae4efeb1083619b86f3bcab105d6ef"
 }

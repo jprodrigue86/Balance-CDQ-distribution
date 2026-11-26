@@ -1,3 +1,4 @@
+import {LAYOUT2935} from './working-layout-2935.mjs';
 import {LAYOUT2932} from './working-layout-2932.mjs';
 import {LAYOUT2931} from './working-layout-2931.mjs';
 import {LAYOUT2918} from './working-layout-2918.mjs';
@@ -23,7 +24,7 @@ export function pinnedReportTemplateV2788(expected,{family=expected?.modeleId}={
   const key=expected?.modeleId;
   if(typeof key!=='string'||!Object.hasOwn(REPORT_TEMPLATES,key)||expected?.version!==2754||!/^[a-f0-9]{64}$/.test(expected?.sha256||'')||canonicalFamily(family)!==key)throw invalid();
   const matches=meta=>meta&&meta.modeleId===key&&meta.sha256===expected.sha256&&meta.version===expected.version;
-  const approvedLayout=[LAYOUT2932[key],LAYOUT2931[key],LAYOUT2918[key]].find(matches);
+  const approvedLayout=[LAYOUT2935[key],LAYOUT2932[key],LAYOUT2931[key],LAYOUT2918[key]].find(matches);
   if(matches(approvedLayout))return Object.freeze({...approvedLayout,url:new URL(approvedLayout.path,import.meta.url).href});
   const current=REPORT_ENGINE_TEMPLATES_V2754[key],local=REPORT_TEMPLATES[key];
   if(matches(current)&&local.sha256===current.sha256&&local.taille===current.taille)return Object.freeze({...current,url:new URL('./'+local.path,import.meta.url).href});
@@ -62,13 +63,15 @@ export async function authenticatePinnedReportBlobV2788(blob,expected,{family=ex
   return authenticatedBlob(blob,meta,checkCurrent);
 }
 // Preserve an already cached historical blank master for offline recovery.
-// Only the thirteen immutable 29.31 pins and CDQ static caches are eligible.
+// Only the approved immutable 29.31/29.32 pins and CDQ static caches are eligible.
 // This reads existing bytes; it never purges caches or stores user documents.
 async function historicalStaticTemplateV2932(meta){
-  const pinned=Object.hasOwn(LAYOUT2931,meta.modeleId)?LAYOUT2931[meta.modeleId]:null;
-  const prefix='https://raw.githubusercontent.com/jprodrigue86/Balance-CDQ-distribution/0d950bd83eff93e6f13241be9f79ec0ca2c4182f/pc/';
-  const relative='assets/templates/pdf-modeles-2931/'+meta.modeleId+'.pdf';
-  if(!pinned||pinned.sha256!==meta.sha256||pinned.taille!==meta.taille||pinned.version!==meta.version||pinned.path!==prefix+relative)return null;
+  const pinned=[LAYOUT2932[meta.modeleId],LAYOUT2931[meta.modeleId]].find(row=>row&&row.sha256===meta.sha256&&row.taille===meta.taille&&row.version===meta.version&&row.path===meta.path);
+  if(!pinned)return null;
+  const match=/^https:\/\/raw\.githubusercontent\.com\/jprodrigue86\/Balance-CDQ-distribution\/[a-f0-9]{40}\/pc\/(assets\/templates\/pdf-modeles-(?:2931|2932)\/[a-z0-9]+\.pdf)$/.exec(pinned.path);
+  const local=/^assets\/templates\/history\/(pdf-modeles-2932\/[a-z0-9]+\.pdf)$/.exec(pinned.path);
+  if(!match&&!local)return null;
+  const relative=match?match[1]:'assets/templates/'+local[1];
   let storage,names;
   try{storage=globalThis.caches;if(!storage||typeof storage.keys!=='function'||typeof storage.match!=='function')return null;names=await storage.keys();}catch{return null;}
   const url=new URL('./'+relative,import.meta.url).href;

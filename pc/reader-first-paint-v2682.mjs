@@ -6,5 +6,5 @@ export function firstReaderPaintV2682(eventBus){
  function paint(e){if(e.pageNumber!==1)return;canvas=true;if(e.error)error=e.error;finish();}
  function annotate(e){if(e.pageNumber!==1)return;annotations=true;if(e.error)error=e.error;finish();}
  eventBus.on('pagerendered',paint);eventBus.on('annotationlayerrendered',annotate);
- return {wait(required){return new Promise((resolve,reject)=>{waiter={required,resolve,reject};timer=setTimeout(()=>{error=Error('Le rendu du PDF n’a pas terminé. Réessayez son ouverture.');finish();},15000);finish();});},dispose:cleanup};
+ return {wait(required){return new Promise((resolve,reject)=>{waiter={required,resolve,reject};timer=setTimeout(()=>{error=Error('Le rendu du PDF n’a pas terminé. Réessayez son ouverture.');finish();},90000);finish();});},dispose:cleanup};
 }

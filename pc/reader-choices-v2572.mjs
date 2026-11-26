@@ -1,3 +1,4 @@
+import {authoredUniformTrialTextSpecV2935} from './reader-authored-text-v2935.mjs';
 // One reader-owned choice interface. PDF fields only store values and calculate.
 // No PDF field is moved, hidden or made read-only while this dialog is open.
 const TITLES={points_test:'Points de test',client_technicien:'Technicien',frequence_etalonnage:"Fréquence d’étalonnage",legal_pour_commerce:'Légal pour le commerce',unite_mesure:'Unité de mesure',etalon_utilise:'Étalon utilisé'};
@@ -60,13 +61,18 @@ export function cdqFitDetailTextV2864(value,width,height,base,measure=cdqTrialTe
   return {...cdqFitTrialTextV4(value,width,height,base,true,measure),lineHeight:1.19,padding:3,ascent:.83};
 }
 let cdqDomFitCanvasV4=null;
+export function cdqTrialDomTextWidthV2935(element,text,size,spec){
+  cdqDomFitCanvasV4??=element.ownerDocument.createElement('canvas').getContext('2d');
+  cdqDomFitCanvasV4.font=(spec?.cssFontWeight||'400')+' '+size+'px '+(spec?.cssFontFamily||'CDQSummary, Arial, sans-serif');
+  return cdqDomFitCanvasV4.measureText(text).width;
+}
 export function cdqFitTrialDomTextV4(value,element,spec,scale){
   const css=getComputedStyle(element),width=parseFloat(css.width)||element.getBoundingClientRect().width,height=parseFloat(css.height)||element.getBoundingClientRect().height;
   const padding=3*scale,availableWidth=Math.max(.001,width-2*padding),availableHeight=Math.max(.001,height-(spec.multiline?2*padding:0));
   const base=spec.base*scale;
   if(!(width>0&&height>0))return {text:String(value??''),lines:[String(value??'')],size:base,width,height,padding};
   cdqDomFitCanvasV4??=element.ownerDocument.createElement('canvas').getContext('2d');
-  const measure=(text,size)=>{cdqDomFitCanvasV4.font='400 '+size+'px CDQSummary, Arial, sans-serif';return cdqDomFitCanvasV4.measureText(text).width;};
+  const measure=(text,size)=>cdqTrialDomTextWidthV2935(element,text,size,spec);
   // Chromium rounds advances at tiny sizes. Use its actual shaping rather
   // than assuming that PDF font units scale perfectly into subpixel glyphs.
   const nativeFit=cdqFitTrialTextV4(value,availableWidth+6,availableHeight+6,base,spec.multiline,measure);
@@ -175,13 +181,13 @@ export function installReaderChoices({surface,onConfirm,onOpen=()=>{},onClose=()
     if(pairs&&nameOf(entry)==='essai_cdq_probleme_constate'){
       const chosen=problemDraft(selected(entry),pairs),all=[pairs.none,...pairs.rows.flatMap(row=>[row.problem,row.corrected])];
       currentLabels=all.filter(option=>chosen.has(option.value)).map(option=>plainLabel(option.label));
-      const spec=cdqTrialTextSpecV4(nameOf(entry)),scale=(parseFloat(css.fontSize)||spec.base)/spec.base;
-      const caption=cdqProblemCaptionV3(currentLabels,spec.width-6,spec.base);
+      const source=sourceOf(entry),spec=authoredUniformTrialTextSpecV2935(cdqTrialTextSpecV4(nameOf(entry)),source.dataset.cdqAuthoredTextFont,source.dataset.cdqAuthoredTextBase),scale=(parseFloat(css.fontSize)||spec.base)/spec.base;
+      const caption=cdqProblemCaptionV3(currentLabels,spec.width-6,spec.base,spec.authoredUniform?(text,size)=>cdqTrialDomTextWidthV2935(source,text,size,spec):undefined);
       const fitted={size:spec.base*scale};
       display=caption.text;
       entry.button.style.setProperty('font-size',fitted.size+'px','important');
-      entry.button.style.fontFamily='CDQSummary, Arial, sans-serif';
-      entry.button.style.fontWeight='400';
+      entry.button.style.fontFamily=spec.cssFontFamily||'CDQSummary, Arial, sans-serif';
+      entry.button.style.fontWeight=spec.cssFontWeight||'400';
       if(entry.label){entry.label.style.textAlign='left';entry.label.style.padding='0 '+(3*scale)+'px';entry.label.style.textOverflow='clip';}
     }else if(pairs){
       const count=Array.from(problemDraft(selected(entry),pairs)).filter(value=>value!==pairs.none.value).length;

@@ -4,10 +4,16 @@ const alias=family=>family==='cuve'?'cuve4':family==='tremie'?'tremie4':family;
 const exact=(names,expected)=>names.length===expected.length&&names.every((name,i)=>name===expected[i]);
 const backlogStatusNames=family=>['essai_cdq_conclusion_blue','essai_cdq_conclusion_pending',...(family==='multitete'?['green','red','gray','blue','pending'].map(state=>'essai_cdq_bloc3_'+state):['bloc3',...(family==='suspendue'?[]:['bloc4'])].flatMap(block=>['gray','blue','pending'].map(state=>'essai_cdq_'+block+'_'+state)))];
 const backlogNames=(names,entry,family)=>exact(names,[...entry.fieldNames,...backlogStatusNames(family)].sort());
+// PDF.js omits Precision's non-widget focus state from getFieldObjects().
+// Compare that one exact metadata omission without changing any field
+// or weakening the strict PDF/catalog provenance branch below.
+const backlogMetadataNamesV2935=(names,entry,family)=>backlogNames(names,entry,family)||
+  family==='precision'&&!names.includes('_cdq_precision12_last_focus')&&
+  backlogNames([...names,'_cdq_precision12_last_focus'].sort(),entry,family);
 export function v34FamilyMetadataV2819(fields){
  const names=(fields instanceof Map?[...fields.keys()]:Object.keys(fields||{})).sort();
  if(!names.includes('essai_cdq_probleme_constate')||names.includes('essai_cdq_client_nom'))return null;
- for(const [family,entry]of Object.entries(FAMILIES))if(backlogNames(names,entry,family)||exact(names.filter(n=>n!=='essai_cdq__recalcul'&&n!=='_cdq_precision12_last_focus'),entry.fieldNames.filter(n=>n!=='essai_cdq__recalcul'&&n!=='_cdq_precision12_last_focus')))return alias(family);
+ for(const [family,entry]of Object.entries(FAMILIES))if(backlogMetadataNamesV2935(names,entry,family)||exact(names.filter(n=>n!=='essai_cdq__recalcul'&&n!=='_cdq_precision12_last_focus'),entry.fieldNames.filter(n=>n!=='essai_cdq__recalcul'&&n!=='_cdq_precision12_last_focus')))return alias(family);
  return null;
 }
 export function v34FamilyBridgeV2819(pdf,L){

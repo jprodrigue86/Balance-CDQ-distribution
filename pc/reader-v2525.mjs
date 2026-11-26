@@ -1,3 +1,6 @@
+import {authoredUniformTrialTextSpecV2935} from './reader-authored-text-v2935.mjs';
+import {LAYOUT2935} from './working-layout-2935.mjs';
+const authoredTemplateSHAsV2935=new Set(Object.values(LAYOUT2935).map(meta=>meta.sha256));
 import {measurementDisplayV2871,problemLocksV2871} from './reader-ne-v2871.mjs';
 let fieldFontNamesV2871=new Map();
 import {installWeightsControlsV2871,weightsDateParts} from './reader-weights-v2871.mjs';
@@ -38,7 +41,7 @@ import {paintReaderResults} from './reader-results-v2648.mjs';
 import {identificationReportName} from './report-name-v2648.mjs';
 import {createZoomSchedulerV2809,installTouchNavigation,installFormNavigation,installNativeTextInput} from './reader-interactions-v2525.mjs';
 import {installReaderCalibration} from './reader-calibration-v2565.mjs';
-import {installReaderChoices,cdqFitTrialDomTextV4,cdqFitDetailTextV2864,cdqTrialTextSpecV4} from './reader-choices-v2572.mjs';
+import {installReaderChoices,cdqFitTrialDomTextV4,cdqFitDetailTextV2864,cdqTrialTextSpecV4,cdqTrialDomTextWidthV2935} from './reader-choices-v2572.mjs';
 import {installReaderTheme,applyReaderTheme} from './reader-theme-v2572.mjs';
 import {pdfWorkV2729,validatedPdfSaveInfoV2753} from './pdf-work-v2729.mjs';
 import {readReaderOpeningBytesV2753} from './reader-opening-source-v2753.mjs';
@@ -65,7 +68,7 @@ installAutofillPaletteV2871($('viewer'));
 let parentOrigin='',autoReportName=false;
 const formattedFields=new Map(),fieldTypography=new Map();
 function fitTrialTextFieldV4(field){
-  const spec=cdqTrialTextSpecV4(field.name);
+  const spec=authoredUniformTrialTextSpecV2935(cdqTrialTextSpecV4(field.name),fieldFontNamesV2871.get(field.name),fieldTypography.get(field.name));
   if(!spec||!field.matches('input,textarea'))return false;
   const definition=cdqFieldDefinitionsV2581(field.name)[0],rect=definition?.rect;
   const height=rect?.length===4?Math.abs(rect[3]-rect[1]):spec.height;
@@ -73,11 +76,11 @@ function fitTrialTextFieldV4(field){
   const scale=viewer?.getPageView?.(pageIndex)?.viewport?.scale||field.getBoundingClientRect().height/height||1;
   let fit=cdqFitTrialDomTextV4(field.value,field,spec,scale);
   if(field.name==='essai_cdq_problemes_detail'){
-    const detailed=cdqFitDetailTextV2864(field.value,fit.width/scale,fit.height/scale,spec.base);
+    const detailed=cdqFitDetailTextV2864(field.value,fit.width/scale,fit.height/scale,spec.base,spec.authoredUniform?(text,size)=>cdqTrialDomTextWidthV2935(field,text,size,spec):undefined);
     fit={...fit,...detailed,padding:detailed.lines.length===4&&detailed.size===spec.base?0:detailed.padding,size:detailed.size*scale};
   }
   const set=(name,value)=>{if(field.style.getPropertyValue(name)!==value||field.style.getPropertyPriority(name)!=='important')field.style.setProperty(name,value,'important');};
-  set('font-family','CDQSummary, Arial, sans-serif');set('font-weight','400');set('font-size',fit.size+'px');
+  set('font-family',spec.cssFontFamily||'CDQSummary, Arial, sans-serif');set('font-weight',spec.cssFontWeight||'400');set('font-size',fit.size+'px');
   set('box-sizing','border-box');set('text-align','left');set('text-overflow','clip');set('overflow','hidden');
   set('white-space',spec.multiline?'pre-wrap':'pre');set('word-break','normal');set('overflow-wrap','normal');set('hyphens','none');
   const padding=spec.multiline?((fit.padding??3)*scale)+'px':'0 '+(3*scale)+'px';
@@ -96,6 +99,8 @@ function applyFieldTypography(){
   for(const field of $('viewer').querySelectorAll('input,textarea,select,button.cdq-choice-field')){
     if(isCorrectionReadingV2736(field.name))field.inputMode='text';
     if(field.name===ECHELON_FIELD_V22)field.inputMode='decimal';
+    const authoredText=authoredUniformTrialTextSpecV2935(cdqTrialTextSpecV4(field.name),fieldFontNamesV2871.get(field.name),fieldTypography.get(field.name));
+    if(authoredText?.authoredUniform){field.dataset.cdqAuthoredTextFont='FUniform';field.dataset.cdqAuthoredTextBase=String(authoredText.base);}else{delete field.dataset.cdqAuthoredTextFont;delete field.dataset.cdqAuthoredTextBase;}
     if(fitTrialTextFieldV4(field))continue;
     if(field.matches('button.cdq-choice-field[name="essai_cdq_probleme_constate"]')&&$('viewer').querySelector('select[name="essai_cdq_probleme_constate"]')?.multiple)continue;
     if(!fieldTypography.has(field.name)||field.name.startsWith('_')||/statut/i.test(field.name)||tableColumnV2737?.isSans()&&field.name.startsWith('indicateur_'))continue;
@@ -114,6 +119,8 @@ function applyFieldTypography(){
       if(field.matches('input[type=checkbox],input[type=radio],input[type=button]'))continue;
       if(field.style.fontFamily!=='CDQForm2918, sans-serif')field.style.setProperty('font-family','CDQForm2918, sans-serif','important');
       if(field.style.fontWeight!=='700')field.style.setProperty('font-weight','700','important');
+      // R9 values keep their authored black; status artwork and head labels retain their colours.
+      if(host.dataset.cdqAuthoredR9V2935==='true'&&!field.name.startsWith('_')&&!/(?:statut|conforme|_numero_tete$)/i.test(field.name)){field.style.setProperty('color','#000000','important');field.style.setProperty('-webkit-text-fill-color','#000000','important');}
     }
   }
 }
@@ -744,6 +751,8 @@ async function open(data){
     const sourceLength=sourceBytes.byteLength,cacheSource={...data,bytes:sourceLength};
     const sourceKind=preparedBlob?(isCacheableReaderDraftV2730(cacheSource)?'draft':isCacheableReaderDocumentV2730(cacheSource)?'document':null):null,eligible=!!sourceKind;
     const key=eligible?await readerSourceKeyV2730(sourceBytes):null;checkLease();
+    const authoredTemplateV2935=authoredTemplateSHAsV2935.has(reportEngineV2754?.template?.sha256)||authoredTemplateSHAsV2935.has(key||await readerSourceKeyV2730(sourceBytes));checkLease();
+    $('viewer').dataset.cdqAuthoredR9V2935=String(authoredTemplateV2935);
     reuse=eligible&&canReuseReaderCanvasV2730(retained,{key,epoch:workEpoch,viewport:readerViewportV2730(viewer),pageView:viewer.getPageView(0)});
     if(retained&&!reuse){await destroyReaderDocumentV2730(retained.task);retained=null;checkLease();}
     if(!reuse&&readerTemplatePaintAvailableV2753()){

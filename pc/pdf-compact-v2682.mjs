@@ -47,6 +47,30 @@ function stripSentJavaScriptV2750(pdf,L){
  }
  scrub(pdf.catalog);return removed;
 }
+// The authored Table's vector artwork is a widget whose appearance BBox is
+// in page coordinates. pdf-lib's flatten() assumes a zero-origin, unit-scale
+// appearance and iterates field order rather than page annotation paint order.
+// Match the PDF annotation mapping, keeping the artwork behind the data.
+function flattenAuthoredTableV2935(pdf,L,form){
+ const N=L.PDFName.of,ctx=pdf.context,widgets=new Map();
+ for(const field of form.getFields())for(const widget of field.acroField.getWidgets())widgets.set(widget.dict,{field,widget});
+ for(const page of pdf.getPages())for(const item of page.node.Annots()?.asArray()||[]){
+  const found=widgets.get(ctx.lookup(item));if(!found)continue;
+  const {field,widget}=found;
+  const ref=form.findWidgetAppearanceRef(field,widget),ap=ctx.lookup(ref);
+  const bbox=ap?.dict.lookupMaybe(N('BBox'),L.PDFArray),matrix=ap?.dict.lookupMaybe(N('Matrix'),L.PDFArray);
+  if(!bbox||bbox.size()!==4||(matrix&&matrix.size()!==6))throw Error('Apparence PDF de table invalide.');
+  const nums=a=>a.asArray().map(v=>ctx.lookup(v,L.PDFNumber).asNumber());
+  const [x0,y0,x1,y1]=nums(bbox),[a,b,c,d,e,f]=matrix?nums(matrix):[1,0,0,1,0,0];
+  const points=[[x0,y0],[x0,y1],[x1,y0],[x1,y1]].map(([x,y])=>[a*x+c*y+e,b*x+d*y+f]);
+  const loX=Math.min(...points.map(p=>p[0])),hiX=Math.max(...points.map(p=>p[0])),loY=Math.min(...points.map(p=>p[1])),hiY=Math.max(...points.map(p=>p[1]));
+  const r=widget.getRectangle(),sx=r.width/(hiX-loX),sy=r.height/(hiY-loY),tx=r.x-sx*loX,ty=r.y-sy*loY;
+  if(![sx,sy,tx,ty].every(Number.isFinite)||sx<=0||sy<=0)throw Error('Dimensions PDF de table invalides.');
+  const key=page.node.newXObject('FlatWidget',ref);
+  page.pushOperators(L.pushGraphicsState(),L.concatTransformationMatrix(sx,0,0,sy,tx,ty),L.drawObject(key),L.popGraphicsState());
+ }
+ for(const field of form.getFields())form.removeField(field);
+}
 // Operates only on a separately loaded outgoing copy. The authored PDF and
 // its interactive fields stay untouched. pdf-lib otherwise paints hidden
 // alternate appearances and can leave deleted widget references in /Annots.
@@ -66,7 +90,10 @@ export function flattenForSendV2750(pdf,L){
   if(!kids)throw Error('Impossible d’aplatir les apparences de ce PDF sans modifier son affichage.');
   for(let i=kids.size()-1;i>=0;i--)if(hidden.has(pdf.context.lookup(kids.get(i))))kids.remove(i);
  }
- if(form.getFields().length)form.flatten({updateFieldAppearances:false});
+ if(form.getFields().length){
+  if(fields.some(f=>f.getName()==='_cdq_table_colonne_equipement_sans')&&fields.some(f=>f.getName()==='_cdq_table_colonne_equipement_avec'))flattenAuthoredTableV2935(pdf,L,form);
+  else form.flatten({updateFieldAppearances:false});
+ }
  for(const page of pdf.getPages()){
   const items=page.node.Annots();
   if(items)for(let i=items.size()-1;i>=0;i--)if(annotations.has(items.get(i)))items.remove(i);

@@ -20,7 +20,11 @@ export function normalizeCamionDisplayV2741(pdf,L){
   const selection=da.match(/\/(\S+)\s+([-+]?(?:\d+\.?\d*|\.\d+))\s+Tf\b/),color=da.match(/([-+]?[\d.]+)\s+([-+]?[\d.]+)\s+([-+]?[\d.]+)\s+rg\b/);
   const fonts=form.acroForm.dict.lookup(N('DR'),L.PDFDict).lookup(N('Font'),L.PDFDict),alias=selection?.[1],fontRef=alias?fonts.get(N(alias)):null,font=fontRef?pdf.context.lookup(fontRef):null;
   const widths=font?.lookupMaybe(N('Widths'),L.PDFArray),first=font?.lookupMaybe(N('FirstChar'),L.PDFNumber)?.asNumber()||0,nominal=Number(selection?.[2]);
-  if(!widths||!color||!(nominal>0)||!(r.width>0&&r.height>0))throw Error('Invalid native Camion indicator style');
+  // R9 explicitly authors this existing indicator in black. Older native RGB
+  // styles retain their established rendering path and its validation.
+  const authoredBlack=pdf.catalog.lookupMaybe(N('CDQGeometryV2871'),L.PDFNumber)?.asNumber()===2871&&pdf.catalog.lookupMaybe(N('CDQVisualV2872'),L.PDFNumber)?.asNumber()===2872&&alias==='FUniform'&&font?.get(N('BaseFont'))?.toString()==='/RobotoCondensed-Bold'&&font?.get(N('Subtype'))?.toString()==='/TrueType'&&font?.get(N('Encoding'))?.toString()==='/WinAnsiEncoding'&&/^\s*\/FUniform\s+[\d.]+\s+Tf\s+0\s+g\s*$/.test(da);
+  if(!widths||!(color||authoredBlack)||!(nominal>0)||!(r.width>0&&r.height>0))throw Error('Invalid native Camion indicator style');
+  const appearanceColor=authoredBlack?'0 g':'1 0.15 0.1 rg';
   const value=asText(driver.getText());
   // The driver is a numeric input. Keep its value exact; equivalent nonbreaking
   // separators use the existing WinAnsi space in the printed appearance.
@@ -28,7 +32,7 @@ export function normalizeCamionDisplayV2741(pdf,L){
   const advance=chars.reduce((sum,c)=>sum+(widths.lookup(c-first,L.PDFNumber)?.asNumber()||0),0)/1000;
   const size=advance?Math.min(nominal,Math.max(.1,r.width-.4)/advance):nominal;
   const x=(r.width-advance*size)/2,y=(r.height-size*.718)/2,hex=chars.map(c=>c.toString(16).padStart(2,'0')).join('');
-  const commands=`q 0 0 ${number(r.width)} ${number(r.height)} re W n BT 0 Tc 0 Tw 100 Tz 0 Tr /${alias} ${number(size)} Tf 1 0.15 0.1 rg 1 0 0 1 ${number(x)} ${number(y)} Tm <${hex}> Tj ET Q`;
+  const commands=`q 0 0 ${number(r.width)} ${number(r.height)} re W n BT 0 Tc 0 Tw 100 Tz 0 Tr /${alias} ${number(size)} Tf ${appearanceColor} 1 0 0 1 ${number(x)} ${number(y)} Tm <${hex}> Tj ET Q`;
   let changed=false;
   if(asText(display.getText())!==value){dict.set(N('V'),L.PDFHexString.fromText(value));changed=true;}
   const ap=widget.dict.lookupMaybe(N('AP'),L.PDFDict),oldRef=ap?.get(N('N')),old=oldRef?pdf.context.lookup(oldRef):null;

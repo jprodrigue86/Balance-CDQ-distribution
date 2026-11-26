@@ -1,3 +1,4 @@
+import {isAuthoredWeightsR9FieldsV2935} from './report-field-aliases-v2819.mjs';
 // Pure pdf-lib helper. Call after PDF.js saveDocument/defaultUpdateAppearances.
 // Text operators, field values/actions, and appearance resources are retained.
 export const CDQ_BORDER_WIDTH_V2872=0.6;
@@ -125,6 +126,7 @@ function transformToWidget(bbox,matrix,width,height){
 }
 
 export function normalizePdfLayoutBordersV2872(pdf,L){
+  if(isAuthoredWeightsR9FieldsV2935(pdf.getForm()))return {changed:0,skipped:0,reason:'authored R9 frames are static page artwork'};
   const N=L.PDFName.of;
   if(pdf.catalog.lookupMaybe(N('CDQVisualV2872'),L.PDFNumber)?.asNumber()!==2872)
     return {changed:0,skipped:0,reason:'unmarked PDF'};
@@ -193,6 +195,7 @@ function winAnsiBytes(text){
 // Optional prefill companion. The caller explicitly selects touched fields.
 // No value is computed, changed, inferred, or copied from another field here.
 export function refreshWeightTextAppearanceV2872(pdf,L,fieldNames){
+  if(isAuthoredWeightsR9FieldsV2935(pdf.getForm()))return refreshAuthoredWeightTextV2935(pdf,L,fieldNames);
   const N=L.PDFName.of;
   if(pdf.catalog.lookupMaybe(N('CDQVisualV2872'),L.PDFNumber)?.asNumber()!==2872||
      pdf.catalog.lookupMaybe(N('CDQWeightsV2871'),L.PDFNumber)?.asNumber()!==2871)
@@ -242,4 +245,33 @@ export function refreshWeightTextAppearanceV2872(pdf,L,fieldNames){
     form.markFieldAsClean(field.ref);
   }
   return result;
+}
+
+// New certificates retain the font, colour and alignment of their own DA.
+// Only touched text values receive an AP; page frames and all other APs stay.
+function refreshAuthoredWeightTextV2935(pdf,L,fieldNames){
+ const N=L.PDFName.of,form=pdf.getForm(),fonts=form.acroForm.dict.lookupMaybe(N('DR'),L.PDFDict)?.lookupMaybe(N('Font'),L.PDFDict);
+ const result={changed:0,details:[]};
+ for(const name of new Set(fieldNames)){
+  const field=form.getFieldMaybe(name);if(!(field instanceof L.PDFTextField)||field.isMultiline?.())continue;
+  const da=field.acroField.getInheritableAttribute(N('DA'))?.decodeText?.()||field.acroField.getDefaultAppearance()||'',match=/\/([A-Za-z0-9_.-]+)\s+([\d.]+)\s+Tf/.exec(da);
+  if(!match)throw Error('Authored certificate text appearance is unavailable');
+  const fontName=match[1],fontRef=fonts?.get(N(fontName)),font=fonts?.lookupMaybe(N(fontName),L.PDFDict),widths=font?.lookupMaybe(N('Widths'),L.PDFArray),first=font?.lookupMaybe(N('FirstChar'),L.PDFNumber)?.asNumber();
+  if(!fontRef||!widths||!Number.isFinite(first))throw Error('Authored certificate font is unavailable');
+  const bytes=winAnsiBytes(field.getText()||'');let advance=0;
+  for(const byte of bytes){const i=byte-first;if(i<0||i>=widths.size())throw Error('Glyph outside authored font');advance+=widths.lookup(i,L.PDFNumber).asNumber()/1000;}
+  const descriptor=font.lookupMaybe(N('FontDescriptor'),L.PDFDict),ascent=(descriptor?.lookupMaybe(N('Ascent'),L.PDFNumber)?.asNumber()??928)/1000,descent=(descriptor?.lookupMaybe(N('Descent'),L.PDFNumber)?.asNumber()??-244)/1000;
+  const color=da.match(/(?:[+-]?(?:\d+\.?\d*|\.\d+)\s+){3}rg\b|[+-]?(?:\d+\.?\d*|\.\d+)\s+g\b/)?.[0]||'0 g';
+  for(const widget of field.acroField.getWidgets()){
+   const {width,height}=widget.getRectangle();if(width<4||height<4)continue;
+   const size=Math.min(Number(match[2]),advance>0?(width-5)/advance:Number(match[2])),align=field.getAlignment(),textWidth=advance*size;
+   const x=align===1?(width-textWidth)/2:align===2?width-2.5-textWidth:2.5,y=(height-size*(ascent+descent))/2;
+   const source='/Tx BMC\nq\n0 0 '+fmt(width)+' '+fmt(height)+' re W n\nBT\n/'+fontName+' '+fmt(size)+' Tf\n'+color+'\n1 0 0 1 '+fmt(x)+' '+fmt(y)+' Tm\n<'+bytes.map(b=>b.toString(16).padStart(2,'0')).join('')+'> Tj\nET\nQ\nEMC\n';
+   const ap=widget.dict.lookupMaybe(N('AP'),L.PDFDict)||pdf.context.obj({}),stream=pdf.context.flateStream(Uint8Array.from(source,c=>c.charCodeAt(0)),{Type:'XObject',Subtype:'Form',BBox:[0,0,width,height],Resources:{Font:{[fontName]:fontRef}}});
+   ap.set(N('N'),pdf.context.register(stream));widget.dict.set(N('AP'),ap);
+   result.changed++;result.details.push({name,size,font:fontName,valuePreserved:true,authoredDAUnchanged:true});
+  }
+  form.markFieldAsClean(field.ref);
+ }
+ return result;
 }

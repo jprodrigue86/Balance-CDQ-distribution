@@ -1,3 +1,4 @@
+import {authoredTableGeometryV2935,fieldActionSourcesV2935,authoredTableRectV2935} from './reader-authored-table-geometry-v2935.mjs';
 import {clearWidgetFrameV2702} from './reader-truck-equipment-v2702.mjs';
 
 // Presentation contract for the explicitly authored Table v2737. The existing
@@ -34,7 +35,8 @@ export function isTableColumnFormV2737(pdf,L){
 export function isTableColumnMetadataV2737(fields){
   if(!requiredNames.every(name=>definitions(fields,name).length))return false;
   const label=definitions(fields,'type_balance')[0]?.value;
-  if(!/^Balance de table$/i.test(String(label||'').trim()))return false;
+  const revised=authoredTableGeometryV2935(fieldActionSourcesV2935(fields));
+  if(!/^Balance de table$/i.test(String(label||'').trim())&&!(revised&&label==='Balance compteuse'))return false;
   const choice=definitions(fields,'colonne')[0];
   return choice?.items?.map(item=>item.exportValue).join('|')==='Sans|Avec'&&
     (choice.actions?.get?.('Keystroke')||choice.actions?.Keystroke||[]).some(source=>source.includes('CDQ_TABLE_COLUMN_V2737'));
@@ -143,6 +145,8 @@ export function installReaderTableColumnV2737({surface,getDocument,getFields,get
   const controls=name=>Array.from(surface.querySelectorAll('input,select,textarea')).filter(el=>el.name===name);
   function mode(){
     const fields=getFields();if(!isTableColumnMetadataV2737(fields))return null;
+    const revised=authoredTableGeometryV2935(fieldActionSourcesV2935(fields));
+    if(revised){const type=controls('type_balance').find(el=>el.tagName==='SELECT'),def=definitions(fields,'type_balance')[0],stored=def&&getDocument()?.annotationStorage?.getValue(def.id,def);if((type?.value??stored?.value??def?.value)==='Balance compteuse')return 'Sans';}
     const choice=controls('colonne').find(el=>el.tagName==='SELECT');
     if(choice)return modeOf(choice.value);
     const def=definitions(fields,'colonne')[0],stored=getDocument()?.annotationStorage?.getValue(def.id,def);
@@ -151,7 +155,7 @@ export function installReaderTableColumnV2737({surface,getDocument,getFields,get
   function put(def,state){
     const storage=getDocument()?.annotationStorage;if(!storage||!def?.id)return;
     const existing=storage.getValue(def.id,{});
-    if(Object.entries(state).some(([key,value])=>existing[key]!==value))storage.setValue(def.id,state);
+    if(Object.entries(state).some(([key,value])=>Array.isArray(value)?!Array.isArray(existing[key])||value.length!==existing[key].length||value.some((v,i)=>v!==existing[key][i]):existing[key]!==value))storage.setValue(def.id,state);
   }
   function refresh(){
     if(disposed||applying)return;
@@ -183,6 +187,17 @@ export function installReaderTableColumnV2737({surface,getDocument,getFields,get
         for(const def of definitions(fields,name))put(def,{value:checked,noView:false,noPrint:false});
         for(const control of controls(name)){control.checked=checked;const section=control.closest('section[data-annotation-id]');if(section)section.style.visibility='visible';}
       }
+      const revised=authoredTableGeometryV2935(fieldActionSourcesV2935(fields));
+      if(revised)for(const row of revised.rows){
+        const {name,rect}=authoredTableRectV2935(row,selected);
+        for(const def of definitions(fields,name)){
+          const stored=getDocument()?.annotationStorage?.getValue(def.id,def),before=stored?.rect??def.rect;
+          if(!Array.isArray(before)||before.some((v,i)=>Math.abs(v-rect[i])>0.00001))put(def,{rect});
+          const geometry=tableColumnDomRectV2737(rect,rect[1],getPageView(def.page??0));
+          const section=surface.querySelector('section[data-annotation-id="'+CSS.escape(def.id)+'"]');
+          if(section&&geometry)Object.assign(section.style,geometry);
+        }
+      }
       const changed=lastMode!==selected;lastMode=selected;
       afterChange({mode:selected,changed});
     }finally{applying=false;}
@@ -191,12 +206,13 @@ export function installReaderTableColumnV2737({surface,getDocument,getFields,get
     if(disposed||scheduled)return;scheduled=true;
     queueMicrotask(()=>{scheduled=false;refresh();});
   }
-  const choiceChanged=event=>{if(event.target?.name==='colonne')schedule();};
+  const choiceChanged=event=>{if(event.target?.name==='colonne'||event.target?.name==='type_balance')schedule();};
   const reset=()=>schedule();
   surface.addEventListener('input',choiceChanged);
   surface.addEventListener('change',choiceChanged);
   // resetform is non-bubbling in PDF.js, so observe it in capture, then read
   // the choice after the native target listeners have restored its default.
   surface.addEventListener('resetform',reset,true);
-  return {refresh,schedule,mode,isSans:()=>mode()==='Sans',dispose(){disposed=true;surface.removeEventListener('input',choiceChanged);surface.removeEventListener('change',choiceChanged);surface.removeEventListener('resetform',reset,true);}};
+  surface.addEventListener('updatefromsandbox',schedule,true);
+  return {refresh,schedule,mode,isSans:()=>mode()==='Sans',dispose(){disposed=true;surface.removeEventListener('input',choiceChanged);surface.removeEventListener('change',choiceChanged);surface.removeEventListener('resetform',reset,true);surface.removeEventListener('updatefromsandbox',schedule,true);}};
 }

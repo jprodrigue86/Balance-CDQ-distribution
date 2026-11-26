@@ -1,8 +1,10 @@
+import {authoredUniformPdfTextStyleV2935} from './reader-authored-text-v2935.mjs';
 import {isCorrectionReadingV2736} from './reader-measurements-v2736.mjs';
 import {cdqPlainProblemLabelV3,cdqProblemCaptionV3,cdqFitDetailTextV2864,cdqFitTrialTextV4,cdqTrialTextSpecV4,cdqWinAnsiCodeV4} from './reader-choices-v2572.mjs';
 function nativeTrialChoiceAppearanceV2(pdf,form,L,field,text){
   const N=L.PDFName.of,dr=form.acroForm.dict.lookupMaybe(N('DR'),L.PDFDict);
-  const fonts=dr?.lookupMaybe(N('Font'),L.PDFDict),fontRef=fonts?.get(N('FRC'));
+  const authored=authoredUniformPdfTextStyleV2935(pdf,form,L,field);
+  const fonts=dr?.lookupMaybe(N('Font'),L.PDFDict),fontRef=authored?.fontRef||fonts?.get(N('FRC')),fontName=authored?.fontName||'FRC';
   const font=fontRef?pdf.context.lookup(fontRef,L.PDFDict):null;
   if(!font||font.lookup(N('Encoding'))?.toString()!=='/WinAnsiEncoding')return false;
   const first=font.lookup(N('FirstChar'),L.PDFNumber).asNumber(),widths=font.lookup(N('Widths'),L.PDFArray);
@@ -20,7 +22,7 @@ function nativeTrialChoiceAppearanceV2(pdf,form,L,field,text){
     const {width:w,height:h}=widget.getRectangle();
     const da=(widget.dict.lookup(N('DA'))||field.acroField.dict.lookup(N('DA')))?.decodeText?.()||'';
     const nativeSize=(widget.dict.lookupMaybe(N('CDQAutoFitBaseSize'),L.PDFNumber)||field.acroField.dict.lookupMaybe(N('CDQAutoFitBaseSize'),L.PDFNumber))?.asNumber();
-    const base=nativeSize||spec?.base||Number(/\/FRC\s+([\d.]+)\s+Tf/.exec(da)?.[1]);
+    const base=authored?.base||nativeSize||spec?.base||Number(/\/FRC\s+([\d.]+)\s+Tf/.exec(da)?.[1]);
     if(!(base>0))return false;
     const fit=field.getName()==='essai_cdq_problemes_detail'?cdqFitDetailTextV2864(text,w,h,base,textWidth):cdqFitTrialTextV4(text,w,h,base,!!spec?.multiline,textWidth),size=fit.size;
     const align=(widget.dict.lookup(N('Q'))||field.acroField.dict.lookup(N('Q')))?.asNumber?.()??0;
@@ -34,15 +36,15 @@ function nativeTrialChoiceAppearanceV2(pdf,form,L,field,text){
     fit.lines.forEach((line,index)=>{
       const length=textWidth(line,size),x=align===1?(w-length)/2:align===2?w-3-length:3,y=firstY-index*size*(fit.lineHeight??1.19);
       const encoded='<'+codes(line).map(code=>code.toString(16).padStart(2,'0')).join('')+'>';
-      commands.push('BT',`/FRC ${size.toFixed(3)} Tf 0 g`,`1 0 0 1 ${x.toFixed(3)} ${y.toFixed(3)} Tm ${encoded} Tj`,'ET');
+      commands.push('BT',`/${fontName} ${size.toFixed(3)} Tf 0 g`,`1 0 0 1 ${x.toFixed(3)} ${y.toFixed(3)} Tm ${encoded} Tj`,'ET');
     });
     commands.push('Q EMC');
     const stream=pdf.context.flateStream(commands.join('\n'),{
-      Type:'XObject',Subtype:'Form',BBox:[0,0,w,h],Resources:{Font:{FRC:fontRef}}
+      Type:'XObject',Subtype:'Form',BBox:[0,0,w,h],Resources:{Font:{[fontName]:fontRef}}
     });
     widget.dict.set(N('AP'),pdf.context.obj({N:pdf.context.register(stream)}));
     // Keep the authoring size independent of each currently fitted appearance.
-    if(spec)widget.dict.set(N('DA'),L.PDFString.of(`/FRC ${base.toFixed(3)} Tf 0 g`));
+    if(spec)widget.dict.set(N('DA'),L.PDFString.of(`/${fontName} ${base.toFixed(3)} Tf 0 g`));
   }
   return true;
 }

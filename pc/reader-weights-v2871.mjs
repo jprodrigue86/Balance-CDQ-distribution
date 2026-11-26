@@ -1,3 +1,4 @@
+import {isAuthoredWeightsR9FieldsV2935} from './report-field-aliases-v2819.mjs';
 // Weight certificate controls. Opening an existing report never rewrites dates.
 import {tableBorderStyleV2872} from './pdf-layout-borders-v2872.mjs';
 export const WEIGHT_FREQUENCIES=Object.freeze(['1 mois','2 mois','3 mois','4 mois','5 mois','6 mois','12 mois','24 mois','1 an','2 ans']);
@@ -25,6 +26,7 @@ export function weightsToday(now=new Date()){return `${now.getFullYear()}-${Stri
 export function installWeightsControlsV2871({surface,doc,fields}){
  const definitions=name=>{const f=fields instanceof Map?fields.get(name):fields?.[name];return f?(Array.isArray(f)?f:[f]):[];};
  if(!definitions('poids_01_01').length||!definitions('poids_14_06').length||!definitions('date_prochain').length)return ()=>{};
+ const authored=isAuthoredWeightsR9FieldsV2935(fields),boundCalendars=new WeakSet();
  const controller=new AbortController(),signal=controller.signal,buttons=new Set();let dialog=null,writing=false,uniformBorders=false,separated=false;
  const live=name=>surface.querySelector(`[name="${name}"]`);
  const read=name=>{const el=live(name);if(el)return el.value;const d=definitions(name)[0];return d?String(doc.annotationStorage.getValue(d.id,d)?.value??''):'';};
@@ -80,8 +82,22 @@ export function installWeightsControlsV2871({surface,doc,fields}){
   // keep their authored regular Roboto Condensed typeface in live controls.
   if(definitions('classe').length)for(const field of surface.querySelectorAll('input,textarea,select,button.cdq-choice-field')){
    if(!field.name||!definitions(field.name).length)continue;
-   for(const [key,value] of Object.entries({'font-family':'CDQForm2918, sans-serif','font-weight':'700','color':'#092952','-webkit-text-fill-color':'#092952'}))
+   for(const [key,value] of Object.entries({'font-family':'CDQForm2918, sans-serif','font-weight':'700','color':authored?'#000000':'#092952','-webkit-text-fill-color':authored?'#000000':'#092952'}))
     if(field.style.getPropertyValue(key)!==value||field.style.getPropertyPriority(key)!=='important')field.style.setProperty(key,value,'important');
+  }
+  if(authored){
+   for(const [buttonName,dateName]of [['calendrier_date','date_etalonnage'],['calendrier_prochain','date_prochain']]){
+    // Initial prefill can supply the hidden ISO value before the three parts.
+    // Fill only an entirely empty visible date; retain every manual part.
+    if(weightsDateParts(read(dateName))&&['jour','mois','annee'].every(part=>!read(dateName+'_'+part)))write(dateName,read(dateName));
+    for(const def of definitions(buttonName)){
+     const target=surface.querySelector('[data-element-id="'+CSS.escape(def.id)+'"]')||live(buttonName);
+     if(!target||boundCalendars.has(target))continue;
+     target.addEventListener('click',event=>{event.preventDefault();event.stopImmediatePropagation();open(dateName);},{capture:true,signal});
+     boundCalendars.add(target);
+    }
+   }
+   return;
   }
   for(const name of ['date_etalonnage','date_prochain','date_approbation']){
    const outside=segmented(name),field=live(outside?name+'_annee':name),section=field?.closest('section');if(!section)continue;
@@ -109,6 +125,6 @@ export function installWeightsControlsV2871({surface,doc,fields}){
   }
  }
  const observer=new MutationObserver(refresh);observer.observe(surface,{subtree:true,childList:true});refresh();
- Promise.resolve(doc.getMetadata()).then(metadata=>{if(!signal.aborted&&String(metadata?.info?.Custom?.CDQVisualV2872||'')==='2872'){uniformBorders=true;separated=String(metadata?.info?.Custom?.CDQCellsSeparatedV2874||'')==='2874';refresh();}}).catch(()=>{});
+ Promise.resolve(doc.getMetadata()).then(metadata=>{if(!authored&&!signal.aborted&&String(metadata?.info?.Custom?.CDQVisualV2872||'')==='2872'){uniformBorders=true;separated=String(metadata?.info?.Custom?.CDQCellsSeparatedV2874||'')==='2874';refresh();}}).catch(()=>{});
  return()=>{controller.abort();observer.disconnect();for(const b of buttons)b.remove();dialog?.remove();};
 }

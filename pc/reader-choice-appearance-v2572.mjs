@@ -1,3 +1,4 @@
+import {applyAuthoredTableGeometryV2935} from './reader-authored-table-geometry-v2935.mjs';
 import {fitBacklogStatusCaptionsV2868} from './footer-status-fit-v2868.mjs';
 import {normalizePdfLayoutBordersV2872} from './pdf-layout-borders-v2872.mjs';
 import {restoreBacklogCommentBorderV2866} from './reader-backlog-save-v2866.mjs';
@@ -120,7 +121,7 @@ export async function saveEditableFormAppearance(bytes,providedLibrary,onPrepare
   const form=pdf.getForm();
   // Extract save metadata from this already-loaded, repaired document. The
   // observer may restore only the authenticated native widget MK palette.
-  const persist=async()=>{if(pdf.catalog.lookupMaybe(PDFName.of('CDQGeometryV2871'),L.PDFNumber)?.asNumber()!==2871)fitBacklogStatusCaptionsV2868(pdf,L);normalizeConformityV2823(pdf,L);restoreBacklogCommentBorderV2866(pdf,L);if(typeof onPrepared==='function')await onPrepared(pdf);normalizePdfLayoutBordersV2872(pdf,L);return pdf.save({updateFieldAppearances:false,useObjectStreams:true});};
+  const persist=async()=>{applyAuthoredTableGeometryV2935(pdf,L);if(pdf.catalog.lookupMaybe(PDFName.of('CDQGeometryV2871'),L.PDFNumber)?.asNumber()!==2871)fitBacklogStatusCaptionsV2868(pdf,L);normalizeConformityV2823(pdf,L);restoreBacklogCommentBorderV2866(pdf,L);if(typeof onPrepared==='function')await onPrepared(pdf);normalizePdfLayoutBordersV2872(pdf,L);return pdf.save({updateFieldAppearances:false,useObjectStreams:true});};
   // PDF.js saves a dynamically added technician as /V, but does not serialize
   // the dropdown's updated items into /Opt. Keep that exact saved value valid
   // for the next editable opening and other PDF viewers, without replacing the

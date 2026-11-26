@@ -1,6 +1,6 @@
-import {reportFieldNameV2819,reportFieldV2819,reportFieldValueV2819,isV34ReportFieldsV2819,isWeightsV6FieldsV2866,weightsCreationIdentityV2866} from './report-field-aliases-v2819.mjs';
+import {reportFieldNameV2819,reportFieldV2819,reportFieldValueV2819,isV34ReportFieldsV2819,isWeightsV6FieldsV2866,isAuthoredWeightsR9FieldsV2935,weightsCreationIdentityV2866} from './report-field-aliases-v2819.mjs';
 import {isWeightCreationFieldV2872} from './weights-catalog-v2872.mjs';
-import {weightsDateParts} from './reader-weights-v2871.mjs';
+import {weightsDateParts,weightDateSegments} from './reader-weights-v2871.mjs';
 import {normalizePdfLayoutBordersV2872,refreshWeightTextAppearanceV2872} from './pdf-layout-borders-v2872.mjs';
 import {t05Family} from './reader-t05.mjs';
 import {normalizeMeasurementRulesV2736} from './reader-measurements-v2736.mjs';
@@ -24,8 +24,9 @@ export async function fillPdf(values,{blob,strict=true,onlyEmpty=false,library=n
   const L=library||globalThis.PDFLib,lib=await L.PDFDocument.load(bytes),form=lib.getForm(),approved=approvedReportFamilyV2735(lib,L);let changed=false;
   if(isWeightsV6FieldsV2866(form)){
     for(const [k,v] of entries)if(!/^client_(nom|telephone|technicien|adresse|ville|province|code_postal)$/.test(k)&&!(k==='date_etalonnage'&&weightsDateParts(v))&&!isWeightCreationFieldV2872(k,v))throw Error('Champ de transfert refusé : '+k);
-    const touched=[];
-    for(const [key,value]of Object.entries(weightsCreationIdentityV2866(Object.fromEntries(entries)))){
+    const touched=[],identity=weightsCreationIdentityV2866(Object.fromEntries(entries),form);
+    if(isAuthoredWeightsR9FieldsV2935(form)&&weightsDateParts(identity.date_etalonnage))Object.assign(identity,weightDateSegments('date_etalonnage',identity.date_etalonnage));
+    for(const [key,value]of Object.entries(identity)){
       const name=reportFieldNameV2819(form,key),field=form.getFieldMaybe(name);
       if(!field){if(strict)throw Error('Champ absent du modèle : '+name);continue;}
       if(field.isReadOnly())continue;

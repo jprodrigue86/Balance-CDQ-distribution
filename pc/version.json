@@ -1,108 +1,85 @@
 {
-  "androidSourceBuild": "2026.11.24-v29.34-send-preflight",
-  "build": "2026.11.24-v29.34-send-preflight-pc",
-  "candidateOnly": false,
-  "desktopModel": 3,
-  "exhaustivePdfGatePassed": false,
-  "files": 1188,
-  "generatedFrom": "patches/send-preflight-20261124/pc.py",
-  "pdfQualification": "integrity-verified-runtime-incomplete",
-  "platform": "pc-pwa",
-  "release": "3d2f03339b0affc024dbdefe1b96ab89a22ad70246697d719a5c7a23f7aa0ab9",
-  "runtimeQualificationComplete": false,
-  "scope": "send-preflight-timeout",
-  "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
-  "version": "29.34",
-  "webBaseCommit": "de1e05294f308cd67502ccc4093422501af56e22",
+  "androidSourceBuild": "2026.11.24-v29.35-pdf-r9",
   "authenticatedDriveTested": false,
   "baseProvenance": {
-    "version": "29.33",
-    "sourceCommit": "71b43aff6be837992db6d1f803283141215b46e4",
-    "build": "2026.11.24-v29.33-cancel-tasks-pc",
-    "release": "f37ad5ec958f624d5b6f1877936d8d93e23e68c063cc4798ba9156fd570d02a5",
-    "buildRunId": "45341943555",
-    "publicationCommit": "4fd83db0763bc911db243c0c6915d7d09bbdf3fe",
-    "publicationAuthorizedWithKnownLimits": true,
-    "qualificationAttemptRecipeCommit": "8a75186e88712f4b46f0997404258e56d2abb616",
-    "qualificationAttemptRunId": "45326147465",
-    "qualificationRun": "45341943555",
-    "qualificationRecipeCommit": "71b43aff6be837992db6d1f803283141215b46e4",
-    "qualificationOrigins": {
-      "android": {
-        "sourceCommit": "831a0f7b683b731bacf17283dbb2123d96f0ad37",
-        "buildRunId": "45335138906",
-        "runId": "45338372000",
-        "recipeCommit": "4376fd045c4da40d3ffffcf4088ea97ff15ec863",
-        "inherited": true
-      },
-      "pc": {
-        "sourceCommit": "71b43aff6be837992db6d1f803283141215b46e4",
-        "buildRunId": "45341943555",
-        "runId": "45341943555",
-        "recipeCommit": "71b43aff6be837992db6d1f803283141215b46e4",
-        "inherited": false
-      }
-    },
-    "productOrigins": {
-      "android": {
-        "sourceCommit": "831a0f7b683b731bacf17283dbb2123d96f0ad37",
-        "buildRunId": "45335138906",
-        "apkSha256": "1dc7578380610cb0c1589dc0234f4cb724d8d4fe96bb010852fab194bea356c3",
-        "inherited": true
-      },
-      "pc": {
-        "sourceCommit": "71b43aff6be837992db6d1f803283141215b46e4",
-        "buildRunId": "45341943555",
-        "pcRelease": "f37ad5ec958f624d5b6f1877936d8d93e23e68c063cc4798ba9156fd570d02a5",
-        "packageSha256": "8ae8cfc3bee40aea6d6428eae1a3c2a2c39bec8a38d0e59c871c4f271bf4591d",
-        "inherited": false
-      }
-    },
-    "taskCancellationQualification": "android-emulator-and-pc-ui-reviewed"
+    "distributionCommit": "c2ab6fb364ff9438e05d8aa54a7d73fe9b52e83a",
+    "release": "3d2f03339b0affc024dbdefe1b96ab89a22ad70246697d719a5c7a23f7aa0ab9",
+    "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
+    "version": "29.34"
   },
+  "build": "2026.11.24-v29.35-pdf-r9-pc",
+  "buildOrigin": {
+    "buildRecipeCommit": "eed34d27541ce877551a91a17d7cc773c78d6093",
+    "buildRunAttempt": 1,
+    "buildRunId": "45688316552",
+    "buildWorkflowPath": ".github/workflows/cdq-pdf-r9-2935.yml",
+    "nativeApplicationRecompiled": false,
+    "previewOnly": false,
+    "productSourceCommit": "9ea846cd43259fd48d67a457cf317a143d8dc35b"
+  },
+  "candidateOnly": false,
+  "catalogueBaseRelease": "16b0063b3293bec1ae71f09a9fee3dd8237408f5e75716590a3aae963ec23ec3",
+  "catalogueBuildOrigin": {
+    "recipeCommit": "9f67c40d29c59f55fbcc0561687778cb689c5bab",
+    "runAttempt": 1,
+    "runId": "45728917587",
+    "workflowPath": ".github/workflows/cdq-r9-vector-catalogue-final.yml"
+  },
+  "derivationBase": {
+    "pcBuildRun": "45554027057",
+    "pcPackageSha256": "6c3de17ce2dd67fa7e04e8ba0383fafd334ffd8948ffa9164e071224ea0aefd5",
+    "pcRelease": "9e2cc1924e59b5d6a58d60b6a6f04124db3787988cf9c1eabbec9e97c56f84e8",
+    "sourceCommit": "a2df50240663c7fd2756dd19891541d0ef6ebdc3"
+  },
+  "desktopModel": 3,
+  "exhaustivePdfGatePassed": false,
+  "files": 1204,
+  "flattenBaseRelease": "18df509f1be25a22a346780be7928f414a0739301e5e63f07b7de5d21456fed6",
+  "flattenBuildOrigin": {
+    "recipeCommit": "ea9bd1e8cf120ec54ecb7e584074104c60496c74",
+    "runAttempt": 1,
+    "runId": "45733517594",
+    "workflowPath": ".github/workflows/cdq-r9-vector-catalogue-final.yml"
+  },
+  "generatedFrom": "patches/pdf-r9-2935/recovery-H/derive_product.py",
+  "pdfQualificationComplete": false,
+  "platform": "pc-pwa",
   "published": true,
-  "publicationCommit": "2c3c479659dfb81a4c11728fb91d1e57c61f42fd",
-  "buildRunId": "45514329144",
-  "qualificationRun": "45517925323",
-  "qualificationRecipeCommit": "3af73469ca866de9a57d59746a0be125e9337cec",
+  "release": "384b97f289a228d51778c4c561d9772a56d61def23cfbe78f00b671e736c1f55",
+  "runtimeQualificationComplete": false,
+  "scope": "approved-pdf-r9",
+  "sourceCommit": "9ea846cd43259fd48d67a457cf317a143d8dc35b",
+  "vectorPcBuildOrigin": {
+    "productSourceCommit": "9ea846cd43259fd48d67a457cf317a143d8dc35b",
+    "recipeCommit": "3db741d2a625e28621dd543aaef00b69332d4f2f",
+    "runAttempt": 1,
+    "runId": "45723793985",
+    "sourceCommit": "9ea846cd43259fd48d67a457cf317a143d8dc35b",
+    "workflowPath": ".github/workflows/cdq-r9-vector-qualification.yml"
+  },
+  "vectorTableBaseRelease": "4211ac755f8bff6c0da62857d0f3462b1d3956d541954da32a017c6ccb991da7",
+  "vectorTableBuildOrigin": {
+    "recipeCommit": "fe28cebd73407d528ab43c05906e20e56edaee41",
+    "runAttempt": 1,
+    "runId": "45716275373",
+    "workflowPath": ".github/workflows/cdq-r9-table-vector-sentinel.yml"
+  },
+  "vectorTableSha256": "4afe1b1d1f8f5a0cfdfb1158ce409fcd56b0e146d3a2f6aad54d1666951c20b0",
+  "version": "29.35",
+  "webBaseCommit": "c2ab6fb364ff9438e05d8aa54a7d73fe9b52e83a",
+  "publicationCommit": "c7fd138902824e335c051d4b76cffedab2da0583",
+  "buildRunId": "45733517594",
+  "qualificationScope": "existing-targeted-android-and-pc-evidence",
   "qualificationOrigins": {
-    "android": {
-      "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
-      "buildRunId": "45514329144",
-      "runId": "45519195131",
-      "recipeCommit": "0f621ff4eb28bc603cefee3b39acb251f8b894e6",
-      "jobId": 138886433315,
-      "runConclusion": "success",
-      "jobConclusion": "success",
-      "inherited": false,
-      "reusedQualification": false
-    },
-    "pc": {
-      "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
-      "buildRunId": "45514329144",
-      "runId": "45517925323",
-      "recipeCommit": "3af73469ca866de9a57d59746a0be125e9337cec",
-      "jobId": 138882087267,
-      "runConclusion": "failure",
-      "jobConclusion": "success",
-      "inherited": false,
-      "reusedQualification": true
-    }
+    "android": [
+      45733517594,
+      45739747375,
+      45748642257,
+      45751667591
+    ],
+    "pcPrior": 45723793985,
+    "pcTableExact": 45733517594,
+    "pcAdditionalRun": 45755251889
   },
-  "productOrigins": {
-    "android": {
-      "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
-      "buildRunId": "45514329144",
-      "apkSha256": "35dfa9f144d69442a9d7fadf00b81c3deb385f8cb17b81c0b1df060ffcaa6fca",
-      "inherited": false
-    },
-    "pc": {
-      "sourceCommit": "f65b6844efd521cc5eb9b06f41d34115da3ce894",
-      "buildRunId": "45514329144",
-      "pcRelease": "3d2f03339b0affc024dbdefe1b96ab89a22ad70246697d719a5c7a23f7aa0ab9",
-      "packageSha256": "5034e25e285d4a2935871176826500877bc7c59466f9abbec920ab01eee7d2c1",
-      "inherited": false
-    }
-  },
-  "sendPreflightQualification": "android-emulator-and-pc-ui-reviewed"
+  "deliveryDecisionSHA256": "c59fd195ea35cf70da3bb3d7cfb20d7a41ae4efeb1083619b86f3bcab105d6ef"
 }

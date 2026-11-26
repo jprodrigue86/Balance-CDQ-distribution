@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="29.34" data-cdq-pc-release="3d2f03339b0affc024dbdefe1b96ab89a22ad70246697d719a5c7a23f7aa0ab9">
+<html data-cdq-pc-version="29.35" data-cdq-pc-release="384b97f289a228d51778c4c561d9772a56d61def23cfbe78f00b671e736c1f55">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -947,7 +947,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
 <script src="./send-progress-v2893.js"></script>
-<meta name="cdq-package-build" content="2026.11.24-v29.34-send-preflight-pc">
+<meta name="cdq-package-build" content="2026.11.24-v29.35-pdf-r9-pc">
 
 
 <script id="cdqBridgeV23">
@@ -1001,7 +1001,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.24-v29.34-send-preflight-pc'
+    build:'2026.11.24-v29.35-pdf-r9-pc'
   });
 }
 
@@ -1014,7 +1014,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.24-v29.34-send-preflight-pc'
+        build:'2026.11.24-v29.35-pdf-r9-pc'
       });
     }
   } catch(e) {}
@@ -12331,7 +12331,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.24-v29.34-send-preflight-pc";
+  const CDQ_BUILD = "2026.11.24-v29.35-pdf-r9-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -14976,7 +14976,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.24-v29.34-send-preflight-pc";
+const CDQ_V19_BUILD = "2026.11.24-v29.35-pdf-r9-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -17683,7 +17683,7 @@ async function cdqOpenPdfInternal(id,preparedRecord){
   }
   try{
     valid();
-    openingAttemptV2757=createReaderOpeningAttemptV2757({valid:()=>{try{valid();return true;}catch{return false;}},onPhase:metricV2757});
+    openingAttemptV2757=createReaderOpeningAttemptV2757({deadlineMs:165000,valid:()=>{try{valid();return true;}catch{return false;}},onPhase:metricV2757});
     // Opening uses the row spinner; save/list/send progress remains independent.
     const label={textContent:'Ouverture du PDF…'};
     openingBarV2757={firstChild:label,remove(){}};
@@ -19302,7 +19302,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.24-v29.34-send-preflight-pc";
+const CDQ_V20_BUILD = "2026.11.24-v29.35-pdf-r9-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20155,7 +20155,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.24-v29.34-send-preflight-pc";
+const CDQ_V21_BUILD = "2026.11.24-v29.35-pdf-r9-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24654,7 +24654,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.24-v29.34-send-preflight-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.24-v29.35-pdf-r9-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;
