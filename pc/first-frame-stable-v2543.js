@@ -37,12 +37,16 @@
     const shown=locked?laidOut:visible;
     // 27.94: accept Settings and user-customized order; reject duplicates/unknown routes.
     const expected=new Map(routes.map((route,i)=>[route,labels[i]]));
+    // Échéance opens its own dialog; workspace routes handle the other buttons.
+    expected.set('deadlines','Échéance');
+    const keyOf=button=>button.matches('button[data-open-deadlines]') && !button.dataset.workspaceRoute
+      ? 'deadlines' : button.dataset.workspaceRoute;
     if(nav.some(button=>button.dataset.workspaceRoute==='settings'))expected.set('settings','Réglages');
     const ready=nav.length===expected.size
-      &&new Set(nav.map(button=>button.dataset.workspaceRoute)).size===nav.length
-      &&nav.every(button=>expected.has(button.dataset.workspaceRoute)
+      &&new Set(nav.map(keyOf)).size===nav.length
+      &&nav.every(button=>expected.has(keyOf(button))
         &&shown(button)&&shown(button.querySelector('small'))
-        &&button.querySelector('small').textContent.trim()===expected.get(button.dataset.workspaceRoute)
+        &&button.querySelector('small').textContent.trim()===expected.get(keyOf(button))
         &&button.querySelector(':scope > span'))
       &&(() => {
         const topActions=[...document.querySelectorAll('#cdqTopActionsV2204 > button')];
