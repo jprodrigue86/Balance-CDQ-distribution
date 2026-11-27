@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Signature de Jean-Pierre Rodrigue pour Samsung Mail</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f5f7fa;color:#152339;font:16px/1.5 system-ui,sans-serif}main{max-width:660px;margin:auto;padding:24px 16px}h1{font-size:24px;line-height:1.2}#frame{overflow:hidden;width:100%;max-width:520px;margin:20px 0}#art{width:520px;transform-origin:top left}
+button,.save{display:inline-block;padding:12px 16px;margin:0 6px 8px 0;border:none;border-radius:7px;font:inherit;font-weight:600;cursor:pointer}button{color:#fff;background:#006e94}.save{color:#12475d;background:#e0ecf1;text-decoration:none}[hidden]{display:none}button:disabled{opacity:.5}p{margin:9px 0}
+</style>
+</head>
+<body><main>
+<h1>Signature de Jean-Pierre Rodrigue</h1>
+<div id="frame"><div id="art"></div></div>
+<button id="copy" disabled>Copier la bannière avec ses 4 liens</button>
+<a class="save" id="save" download="Signature-CDQ-Jean-Pierre-Rodrigue.png" hidden>Télécharger l’image PNG</a>
+<p id="status" role="status">Chargement de la signature…</p>
+<p>L’image PNG sert à insérer le visuel seul. Les quatre liens sont inclus dans la version à copier.</p>
+</main>
+<script>
+const art=document.getElementById('art'),frame=document.getElementById('frame'),copy=document.getElementById('copy'),save=document.getElementById('save'),statusLine=document.getElementById('status');
+let table;
+function size(){const scale=Math.min(1,frame.clientWidth/520);art.style.transform='scale('+scale+')';frame.style.height=(128*scale)+'px';}
+addEventListener('resize',size);
+async function init(){
+  const response=await fetch('./jean-pierre-rodrigue.html?v=11-image-unique');
+  if(!response.ok)throw Error();
+  const doc=new DOMParser().parseFromString(await response.text(),'text/html');
+  const model=doc.getElementById('signature-html');
+  const source=model?.querySelector('table'),img=source?.querySelector('img');
+  if(model?.dataset.name!=='Jean-Pierre Rodrigue'||!img?.src.startsWith('data:image/png;base64,')||source.querySelectorAll('img').length!==1||source.querySelectorAll('a[href]').length!==4)throw Error();
+  table=document.importNode(source,true);art.append(table);size();
+  save.href=img.src;save.hidden=false;copy.disabled=false;statusLine.textContent='Dans Samsung Mail, ouvre la signature de ton compte CDQ, puis colle la bannière.';
+}
+copy.addEventListener('click',async()=>{
+  let ok=false;
+  try{
+    await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([table.outerHTML],{type:'text/html'})})]);
+    ok=true;
+  }catch{
+    const sel=getSelection(),range=document.createRange();range.selectNode(table);sel.removeAllRanges();sel.addRange(range);
+    const write=e=>{if(e.clipboardData){e.clipboardData.setData('text/html',table.outerHTML);e.preventDefault();}};
+    document.addEventListener('copy',write);
+    try{ok=document.execCommand('copy');}finally{document.removeEventListener('copy',write);sel.removeAllRanges();}
+  }
+  statusLine.textContent=ok?'Bannière copiée. Colle-la dans Samsung Mail.':'La copie a échoué. Ouvre cette page dans Chrome et réessaie.';
+});
+init().catch(()=>{statusLine.textContent='La signature n’a pas pu être chargée. Recharge la page.'});
+</script></body></html>
