@@ -1,21 +1,21 @@
 {
-  "version": "29.43",
-  "sourceCommit": "ce4b5825696072f1cb08741180d3aa5d992eb4bf",
-  "scope": "themes-couverture-echeances",
+  "version": "29.44",
+  "sourceCommit": "328ff5d345da490fff9a9f77a8e3eacc59032590",
+  "scope": "echeances-progression",
   "candidateOnly": false,
   "published": true,
   "runtimeQualificationComplete": false,
   "authenticatedDriveTested": false,
   "platform": "pc-pwa",
   "desktopModel": 3,
-  "release": "264fcdaeecdd2a4a24137d70d23378d011ef6d45aec62e41d7edf9899e8d093d",
-  "build": "2026.11.27-v29.43-themes-echeances-pc",
-  "androidSourceBuild": "2026.11.27-v29.43-themes-echeances",
+  "release": "9a7b04dfd49d7bc3dd9c23e7568f823d77cb1d8a6103d629086bc000fe697f16",
+  "build": "2026.11.27-v29.44-echeances-progression-pc",
+  "androidSourceBuild": "2026.11.27-v29.44-echeances-progression",
   "files": 1222,
   "derivationBase": {
-    "sourceCommit": "04ff0a7bdf61bf2abacb41b090136a7baf19c50e",
-    "version": "29.42"
+    "sourceCommit": "ce4b5825696072f1cb08741180d3aa5d992eb4bf",
+    "version": "29.43"
   },
-  "publicationCommit": "ce4b5825696072f1cb08741180d3aa5d992eb4bf",
-  "buildRunId": "46015432262"
+  "publicationCommit": "328ff5d345da490fff9a9f77a8e3eacc59032590",
+  "buildRunId": "46062431500"
 }

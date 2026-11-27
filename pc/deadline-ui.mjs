@@ -5,13 +5,17 @@ const nav=document.querySelector('.bottom-nav');
 const button=nav?.querySelector('[data-open-deadlines]');
 const panel=document.querySelector('#deadline-panel');
 const field=name=>panel.querySelector('[data-field="'+name+'"]');
+// Keep scan status visible above long client lists on both platforms.
+const subtitle=panel.querySelector('.deadline-head small');
+if(subtitle)subtitle.replaceWith(field('coverage'));
 const text=(tag,value)=>{const el=document.createElement(tag);el.textContent=value;return el;};
 const command=(label,run)=>{const b=text('button',label);b.type='button';b.addEventListener('click',run);return b;};
 const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const owner=()=>window.cdqDeadlineSession?.()?.owner||'';
 const records=new Map();
 let identity='',generation=0,mode='red',companies=[],loading=false,timer,paint;
-let database,hydrated='',syncToken=0;
+let database,hydrated='',syncToken=0,scan=null;
+let syncFailed=false;
 function openCache(){
  if(!database)database=new Promise((resolve,reject)=>{
    const request=indexedDB.open('cdq-deadlines-v2',1);
@@ -39,7 +43,7 @@ async function saveCache(account,changed,removed){
 }
 const planStates=['À contacter','Contacté / à planifier','Rendez-vous fixé'];
 function close(){generation++;syncToken++;loading=false;clearTimeout(timer);cancelAnimationFrame(paint);paint=0;if(panel.open)panel.close();button.setAttribute('aria-expanded','false');}
-function reset(){close();records.clear();companies=[];identity='';hydrated='';field('rows').replaceChildren();field('notice').textContent='';}
+function reset(){close();scan=null;syncFailed=false;records.clear();companies=[];identity='';hydrated='';field('rows').replaceChildren();field('notice').textContent='';}
 function available(){return !!identity && owner()===identity && panel.open;}
 function hasClient(id){return window.cdqDeadlineSession?.()?.clients.some(c=>String(c.id)===id);}
 function planning(row,parent){
@@ -110,7 +114,7 @@ function render(){
  }
  for(const b of toolbar.children){
    const n=groups.get(b.dataset.band).size;b.setAttribute('aria-pressed',String(b.dataset.band===mode));
-   b.querySelector('strong').textContent=String(n);b.querySelector('small').textContent=n>1?'compagnies':'compagnie';
+   b.querySelector('strong').textContent=hydrated===identity ? String(n) : '—';b.querySelector('small').textContent=n>1?'compagnies':'compagnie';
  }
  field('heading').textContent=bands.find(([key])=>key===mode)?.[2]||'Dates à vérifier';
  const unknown=field('unknown');unknown.hidden=!groups.get('verify').size;
@@ -140,10 +144,13 @@ function render(){
    }
    box.append(items);area.append(box);
  }
- if(!area.childElementCount)area.append(text('p',loading?'Lecture des dossiers…':'Aucune compagnie dans cette période.'));
+ if(!area.childElementCount && hydrated===identity && !scan?.initial)area.append(text('p','Aucune compagnie dans cette période.'));
  const represented = scoped.filter(company => records.get(company.id)?.rows.length > 0).length;
- field('coverage').textContent = loading ? 'Actualisation…' :
-   represented + ' dossier' + (represented === 1 ? '' : 's') + ' avec documents sur ' + scoped.length;
+ const coverage = represented + ' dossier' + (represented === 1 ? '' : 's') + ' avec documents sur ' + scoped.length;
+ const progress = scan?.paused ? 'Indexation en pause. Reprise automatique.' :
+   scan?.initial ? 'Préparation de l’index en arrière-plan…' : '';
+ field('coverage').textContent = hydrated===identity ? [coverage,progress].filter(Boolean).join(' · ') :
+   syncFailed ? 'Compteurs indisponibles' : 'Chargement de l’index…';
 }
 
 function scheduleRender(){if(panel.querySelector('details[data-plan][open]'))return;if(!paint)paint=requestAnimationFrame(()=>{paint=0;render();});}
@@ -163,6 +170,7 @@ async function refresh(){
    const result=await calibrationRpc('cdqLireIndexEcheancesV2',known);
    if(!active())return;
    if(result?.protocol!==2939||!Array.isArray(result.ids)||!Array.isArray(result.changes))throw Error('Index partagé invalide');
+   if(result.ids.length && !companies.length)throw Error('Répertoire des compagnies en préparation');
    const authorized=new Set(result.ids),directory=new Map(companies.filter(c=>authorized.has(c.id)).map(c=>[c.id,c]));
    const removed=[...previous.keys()].filter(id=>!directory.has(id)),updated=[],seen=new Set();
    const next=new Map([...previous].filter(([id])=>directory.has(id)));
@@ -177,18 +185,19 @@ async function refresh(){
    // Directory labels can change independently of an equipment revision.
    for(const [id,entry] of next){const c=directory.get(id);entry.rows=entry.rows.map(r=>({...r,client:c.nom,city:c.ville||'',region:c.region||''}));}
    companies=[...directory.values()];records.clear();for(const [id,entry] of next)records.set(id,entry);
-   hydrated=account;field('notice').textContent='';
+   scan=result.scan||null;syncFailed=false;hydrated=account;field('notice').textContent='';
    try{await saveCache(account,updated,removed);}catch{/* The shared server snapshot remains available. */}
  }catch(error){
    if(!active())return;
+   syncFailed=true;
    const msg=String(error.code||'')+' '+String(error.message||'');
-   if(/SESSION|FORBIDDEN|DENIED|NOT_AUTHORIZED|SCOPE|CONSENT/.test(msg)){records.clear();hydrated='';}
+   if(/SESSION|FORBIDDEN|DENIED|NOT_AUTHORIZED|SCOPE|CONSENT/.test(msg)){records.clear();hydrated='';scan=null;}
    field('notice').textContent='Actualisation non confirmée. Réessayez dans les filtres.';
  }finally{if(active()){loading=false;render();}}
 }
 async function open(){const next=owner();if(next!==identity)reset();if(!next){button.title='Ouvrez une session CDQ pour voir les échéances';return;}
- identity=next;mode='red';field('rows').replaceChildren();fitPage();panel.show();button.setAttribute('aria-expanded','true');field('notice').textContent='';await window.cdqClientsReadyV2658;if(!available())return;refresh();
- let day=localDay();function tick(){if(!available())return;const now=localDay();if(now!==day){day=now;render();}timer=setTimeout(tick,60000);}tick();
+ const openedAt=generation;identity=next;mode='red';field('rows').replaceChildren();fitPage();panel.show();button.setAttribute('aria-expanded','true');field('notice').textContent='';render();await window.cdqClientsReadyV2658;if(openedAt!==generation||!available())return;refresh();
+ let day=localDay();function tick(){if(!available())return;const now=localDay();if(now!==day){day=now;render();}if(!document.hidden&&!loading&&!panel.querySelector('details[data-plan][open]'))refresh();timer=setTimeout(tick,60000);}timer=setTimeout(tick,60000);
 }
 function fitPage(){
  const bar=nav.getBoundingClientRect(),banner=document.querySelector('#appHeader')?.getBoundingClientRect();
