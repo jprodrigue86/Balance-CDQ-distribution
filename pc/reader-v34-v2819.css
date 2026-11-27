@@ -169,3 +169,10 @@ body.cdq-choice-open #formNav {display:none!important;pointer-events:none!import
 #choiceDialog .choice-pages[hidden] {display:none!important}
 #choiceDialog .choice-pages button {min-height:36px;font-size:14px;padding:4px 12px}
 #choiceDialog .choice-footer button {flex:1}
+
+/* When the form declares FUniform, the visible caption uses the field font too. */
+#viewer button.cdq-choice-field[name="essai_cdq_probleme_constate"][data-cdq-authored-text-font="FUniform"],
+#viewer button.cdq-choice-field[name="essai_cdq_probleme_constate"][data-cdq-authored-text-font="FUniform"] > span {
+ font-family:CDQForm2918,sans-serif!important;
+ font-weight:700!important;
+}

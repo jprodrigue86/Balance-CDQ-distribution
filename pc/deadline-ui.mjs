@@ -128,7 +128,19 @@ function render(){
    for(const r of rows){const item=text('article','');item.dataset.group=r.due.group;item.append(text('strong',[r.site,r.lot,r.identification].filter(Boolean).join(' · ')),text('p',r.due.label));
      if(r.plan.rdv){const after=r.due.date&&(r.due.partial?r.plan.rdv.slice(0,7)>r.due.date:r.plan.rdv>r.due.date);item.append(text('p','Rendez-vous le '+r.plan.rdv+(after?' · Après l’échéance':'')));}
      if(r.updatedAt)item.append(text('small','Donnée mise à jour le '+new Date(r.updatedAt).toLocaleDateString('fr-CA')));
-     if(/^[\w-]{8,200}$/.test(r.fileId||'')){const a=text('a','Rapport source');a.href='https://drive.google.com/open?id='+encodeURIComponent(r.fileId);a.target='_blank';a.rel='noopener noreferrer';item.append(a);}
+     if(/^[\w-]{8,200}$/.test(r.fileId||'')){
+       const source=command('Rapport source',async()=>{
+         const stamp=generation,account=identity;
+         const current=()=>stamp===generation&&account===identity&&available()&&hasClient(id);
+         if(!current()||source.disabled)return;
+         source.disabled=true;
+         try{
+           if(await window.cdqDeadlineSource(id,r.fileId,current)&&current())close();
+         }catch(error){if(current())field('notice').textContent=error.message||'Ouverture du rapport impossible.';}
+         finally{source.disabled=false;}
+       });
+       item.append(source);
+     }
      planning(r,item);box.append(item);
    }body.append(box);
  }

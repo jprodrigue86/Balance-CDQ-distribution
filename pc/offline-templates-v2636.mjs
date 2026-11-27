@@ -1,3 +1,4 @@
+import {LAYOUT2940} from './working-layout-2940.mjs';
 import {LAYOUT2935} from './working-layout-2935.mjs';
 import {LAYOUT2932} from './working-layout-2932.mjs';
 import {LAYOUT2931} from './working-layout-2931.mjs';
@@ -390,7 +391,7 @@ export function createOfflineTemplates({send,unlock,openPdf:openPdfDirect,warmPd
   }
   async function attachEngineV2754(copy,template,current){
     if(current.reportEngineV2754!==true||!template.bundled||copy.modeleId==='poids'&&template.storageProtocol==='editable-pdf')return copy;
-    const {REPORT_ENGINE_TEMPLATES_V2754}=await import('./report-engine-templates-v2754.mjs'),familyKey=engineFamilyAliasV2754[copy.modeleId]||copy.modeleId,layout=[LAYOUT2935[familyKey],LAYOUT2932[familyKey],LAYOUT2931[familyKey],LAYOUT2918[familyKey]].find(v=>v&&v.sha256===template.sha256),meta=layout&&template.sha256===layout.sha256?layout:REPORT_ENGINE_TEMPLATES_V2754[familyKey];
+    const {REPORT_ENGINE_TEMPLATES_V2754}=await import('./report-engine-templates-v2754.mjs'),familyKey=engineFamilyAliasV2754[copy.modeleId]||copy.modeleId,layout=[LAYOUT2940[familyKey],LAYOUT2935[familyKey],LAYOUT2932[familyKey],LAYOUT2931[familyKey],LAYOUT2918[familyKey]].find(v=>v&&v.sha256===template.sha256),meta=layout&&template.sha256===layout.sha256?layout:REPORT_ENGINE_TEMPLATES_V2754[familyKey];
     if(!meta)throw Error('Le modèle de ce rapport n’est pas disponible dans le nouveau moteur.');
     const context=reportContextV2754({reportId:crypto.randomUUID(),clientId:copy.destination.clientId,destinationId:copy.destination.folderId,family:copy.modeleId,template:{modeleId:meta.modeleId,sha256:meta.sha256,version:2754},baseRevision:0});
     if(!context)throw Error('Le nouveau rapport n’a pas pu être préparé.');

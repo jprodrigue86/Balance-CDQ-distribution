@@ -155,3 +155,30 @@ html:is(.cdq-mobile-layout,.cdq-desktop-v2676)[data-cdq-background-v2793="leathe
 html:is(.cdq-mobile-layout,.cdq-desktop-v2676)[data-cdq-background-v2793="leather"]:is(:root) body #filesContainer:empty{border:0!important;padding:0!important;box-shadow:none!important}
 html:is(.cdq-mobile-layout,.cdq-desktop-v2676)[data-cdq-background-v2793="leather"]:is(:root) body :is(#filesContainer .file-name,#filesContainer .folder-name){color:#f5f3f1!important}
 html:is(.cdq-mobile-layout,.cdq-desktop-v2676)[data-cdq-background-v2793="leather"]:is(:root) body #filesContainer .file-date{color:#c8c4c1!important}
+
+/* Match the picker and the page to the same charcoal horizontal grain. */
+html[data-cdq-background-v2793="brushed"],
+#cdqSettingsModalV2294 [data-cdq-background-option-v2793="brushed"] {
+ --cdq-bg-base-v2793:#0c0e10;
+ --cdq-bg-v2793:repeating-linear-gradient(to bottom,#ffffff08 0 1px,transparent 1px 3px,#0003 3px 4px,transparent 4px 7px),linear-gradient(97deg,#0a0b0c,#202225 32%,#131517 63%,#0c0d0e);
+}
+html.cdq-mobile-layout[data-cdq-palette="metal"][data-cdq-background-v2793="brushed"]:not(.cdq-desktop-v2676) {
+ --metal-2796:var(--cdq-bg-v2793);
+}
+html[data-cdq-background-v2793="smoke"] {
+ --cdq-personal-fit:contain;
+ --cdq-bg-base-v2793:#090808;
+}
+html:is(.cdq-mobile-layout,.cdq-desktop-v2676)[data-cdq-background-v2793="smoke"] body,
+html:is(.cdq-mobile-layout,.cdq-desktop-v2676)[data-cdq-background-v2793="smoke"] body :is(.cdq-workspace-page,#cdqDrivePageV2638,#cdqCalculPageV2638,#cdqCalibrationDialogV2565,#cdqInventoryModernV2592,#cdqCatalogPageV2721,#cdqOpportunitiesPageV2638,#cdqInvoicePageV2590,#cdqTrashPageV2713){
+ background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important;
+}
+#cdqSettingsModalV2294 [data-cdq-background-option-v2793="smoke"] .cdq-bg-thumb-v2793 {
+ background-size:contain;background-repeat:no-repeat;background-color:#090808;
+}
+/* Sewn edge inside each raised hide panel. Outline uses no layout space. */
+html:is(.cdq-mobile-layout,.cdq-desktop-v2676)[data-cdq-background-v2793="leather"]:root body :is(#appHeader,#filesContainer:not(:empty),.bottom-nav,#companyButton,#cdqTopActionsV2204>.cdq-top-action,#cdqClientActionsV2640>button),
+#cdqSettingsModalV2294 [data-cdq-background-option-v2793="leather"] .cdq-bg-thumb-v2793{
+ outline:1px dashed #766962!important;outline-offset:-4px!important;
+ box-shadow:inset 0 2px 2px #a998853f,inset 0 -3px 3px #000e,0 2px 4px #000e!important;
+}

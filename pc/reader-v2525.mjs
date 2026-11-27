@@ -1,6 +1,7 @@
+import {LAYOUT2940} from './working-layout-2940.mjs';
 import {authoredUniformTrialTextSpecV2935} from './reader-authored-text-v2935.mjs';
 import {LAYOUT2935} from './working-layout-2935.mjs';
-const authoredTemplateSHAsV2935=new Set(Object.values(LAYOUT2935).map(meta=>meta.sha256));
+const authoredTemplateSHAsV2935=new Set([...Object.values(LAYOUT2940),...Object.values(LAYOUT2935)].map(meta=>meta.sha256));
 import {measurementDisplayV2871,problemLocksV2871} from './reader-ne-v2871.mjs';
 let fieldFontNamesV2871=new Map();
 import {installWeightsControlsV2871,weightsDateParts} from './reader-weights-v2871.mjs';
