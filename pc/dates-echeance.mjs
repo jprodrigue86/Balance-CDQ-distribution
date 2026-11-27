@@ -38,6 +38,6 @@ export function deadlineGroup(value, today) {
   const partial = due.length === 7;
   const start = partial ? due + '-01' : due;
   const end = partial ? due + '-' + lastDay(...due.split('-').map(Number)) : due;
-  const group = start <= boundary(1) ? 'red' : start <= boundary(2) ? 'orange' : start < boundary(6) ? 'yellow' : 'green';
+  const group = end < today ? 'red' : start <= boundary(1) ? 'orange' : start < boundary(6) ? 'yellow' : 'green';
   return {group, date:due, partial, overdue:end < today};
 }

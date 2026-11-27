@@ -10,7 +10,7 @@ const command=(label,run)=>{const b=text('button',label);b.type='button';b.addEv
 const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const owner=()=>window.cdqDeadlineSession?.()?.owner||'';
 const records=new Map();
-let identity='',generation=0,mode='month',month='',selected='',companies=[],loading=false,timer,paint;
+let identity='',generation=0,mode='red',companies=[],loading=false,timer,paint;
 let database,hydrated='',syncToken=0;
 function openCache(){
  if(!database)database=new Promise((resolve,reject)=>{
@@ -70,82 +70,75 @@ function planning(row,parent){
  else for(const input of [status,contact,rdv])input.disabled=true;
  parent.append(details);
 }
-function monthShift(value, delta){
- const [year,mon]=value.split('-').map(Number);
- return new Date(Date.UTC(year,mon-1+delta,1)).toISOString().slice(0,7);
+const bands = [
+  ['red','Dépassé','Échéances dépassées'],
+  ['orange','1 mois ou moins','Échéances d’ici un mois'],
+  ['yellow','Plus de 1 à moins de 6 mois','Échéances entre un et six mois'],
+  ['green','6 mois et plus','Échéances dans six mois et plus']
+];
+const shortDate=new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
+const monthDate=new Intl.DateTimeFormat('fr-CA',{month:'long',year:'numeric',timeZone:'UTC'});
+function dueText(due){
+ if(!due.date)return 'Date à vérifier';
+ return due.partial?monthDate.format(new Date(due.date+'-01T12:00:00Z')):shortDate.format(new Date(due.date+'T12:00:00Z'));
 }
-const dateLabel=(date,options)=>new Intl.DateTimeFormat('fr-CA',{...options,timeZone:'UTC'}).format(new Date(date+'T12:00:00Z'));
-function changeView(view,date=''){
- mode=view;selected=date;render();
+function showBand(next){
+ if(mode!==next){mode=next;field('rows').replaceChildren();}
+ render();
 }
-function drawCalendar(rows,today){
- const first=month+'-01',counts=new Map();
- for(const row of rows)if(row.due.group==='red'&&!row.due.partial)counts.set(row.due.date,(counts.get(row.due.date)||0)+1);
- field('month').textContent=dateLabel(first,{month:'long',year:'numeric'});
- const grid=field('days'),focus=grid.contains(document.activeElement)?document.activeElement.dataset.date:null;
- const length=new Date(Date.parse(monthShift(month,1)+'-01T12:00:00Z')-86400000).getUTCDate();
- const cells=document.createDocumentFragment();
- for(let i=0;i<(new Date(first+'T12:00:00Z').getUTCDay()+6)%7;i++)cells.append(document.createElement('span'));
- for(let day=1;day<=length;day++){
-   const date=month+'-'+String(day).padStart(2,'0'),total=counts.get(date)||0;
-   const b=command(String(day),()=>{
-     changeView('day',date);
-     field('heading').scrollIntoView({block:'start'});
-   });b.className='deadline-day';b.dataset.date=date;
-   b.dataset.urgent=String(total>0);b.setAttribute('aria-pressed',String(mode==='day'&&selected===date));
-   if(today===date)b.setAttribute('aria-current','date');
-   b.setAttribute('aria-label',dateLabel(date,{day:'numeric',month:'long',year:'numeric'})+(total?' · '+total+' balance'+(total>1?'s':'')+' prioritaire'+(total>1?'s':''):''));
-   cells.append(b);
- }
- grid.replaceChildren(cells);
- if(focus)grid.querySelector('[data-date="'+focus+'"]')?.focus({preventScroll:true});
- field('whole').hidden=mode==='month';field('today').hidden=month===today.slice(0,7);
- const late=rows.filter(r=>r.due.overdue).length,unknown=rows.filter(r=>r.due.group==='verify').length;
- field('late').textContent='En retard · '+late;field('unknown').textContent='Dates à vérifier · '+unknown;
- for(const key of ['late','unknown'])field(key).setAttribute('aria-pressed',String(mode===key));
- field('heading').textContent=mode==='day'?dateLabel(selected,{weekday:'long',day:'numeric',month:'long'}):mode==='late'?'Balances en retard':mode==='unknown'?'Dates à vérifier':'Échéances du mois';
-}
-
 function render(){
  if(!available())return;
- const today=localDay(),scoped=companies.filter(c=>field('archives').checked||!(c.archived||c.archive===true));
- const term=norm(field('search').value), follow=field('follow').value;
- const visible=scoped.flatMap(c=>(records.get(c.id)?.rows||[])).map(row=>({...row,due:describeDue(row.prochaineDate,today),plan:row.plan||{}}))
- .filter(r=>(!follow||(r.plan.state||planStates[0])===follow)&&norm([r.client,r.city,r.region,r.site,r.lot,r.technicien,r.identification].join(' ')).includes(term))
- .sort((a,b)=>(a.due.date||'9999').localeCompare(b.due.date||'9999')||a.client.localeCompare(b.client,'fr')||a.identification.localeCompare(b.identification,'fr',{numeric:true}));
- drawCalendar(visible,today);
- const consulted=scoped.filter(c=>records.has(c.id)).length,ready=scoped.filter(c=>records.get(c.id)?.complete).length;
- field('coverage').textContent=loading?'Actualisation de l’index partagé…':consulted?'Index partagé · '+consulted+' dossiers · '+ready+' avec liste complète':'Aucun dossier indexé disponible';
- const groups=new Map();
- for(const r of visible){const matches=mode==='late'?r.due.overdue:mode==='unknown'?r.due.group==='verify':mode==='day'?r.due.date===selected:r.due.date?.slice(0,7)===month;if(!matches)continue;if(!groups.has(r.clientId))groups.set(r.clientId,[]);groups.get(r.clientId).push(r);}
- const body=field('rows'),expanded=new Set([...body.querySelectorAll(':scope > details[open]')].map(el=>el.dataset.client));body.replaceChildren();
- for(const [id,rows] of groups){const box=document.createElement('details'),name=rows[0].client;box.dataset.client=id;box.open=!!term||groups.size===1||mode==='day'||expanded.has(id);box.append(text('summary',name+' · '+rows.length+' balance'+(rows.length>1?'s':'')+' · '+rows[0].due.label));
-   box.append(command('Ouvrir le dossier',()=>{if(available()&&hasClient(id)){close();window.cdqDeadlineOpen(id);}}));
-   const phones=text('div','');box.append(command('Coordonnées',async()=>{if(!available()||!hasClient(id))return;const stamp=generation;phones.textContent='Chargement…';try{const result=await calibrationRpc('cdqLireCoordonneesClientV2866',id);
-     if(stamp!==generation||!available()||!hasClient(id))return;if(result?.clientId!==id||!Array.isArray(result.sites))throw Error();
-     phones.textContent=result.sites.map(s=>[s.label,s.adresse,s.ville,s.telephone].filter(Boolean).join(' · ')).filter(Boolean).join(' / ')||'Aucune coordonnée renseignée.';
-   }catch{if(stamp===generation)phones.textContent='Coordonnées indisponibles.';}}),phones);
-   for(const r of rows){const item=text('article','');item.dataset.group=r.due.group;item.append(text('strong',[r.site,r.lot,r.identification].filter(Boolean).join(' · ')),text('p',r.due.label));
-     if(r.plan.rdv){const after=r.due.date&&(r.due.partial?r.plan.rdv.slice(0,7)>r.due.date:r.plan.rdv>r.due.date);item.append(text('p','Rendez-vous le '+r.plan.rdv+(after?' · Après l’échéance':'')));}
-     if(r.updatedAt)item.append(text('small','Donnée mise à jour le '+new Date(r.updatedAt).toLocaleDateString('fr-CA')));
-     if(/^[\w-]{8,200}$/.test(r.fileId||'')){
-       const source=command('Rapport source',async()=>{
-         const stamp=generation,account=identity;
-         const current=()=>stamp===generation&&account===identity&&available()&&hasClient(id);
-         if(!current()||source.disabled)return;
-         source.disabled=true;
-         try{
-           if(await window.cdqDeadlineSource(id,r.fileId,current)&&current())close();
-         }catch(error){if(current())field('notice').textContent=error.message||'Ouverture du rapport impossible.';}
-         finally{source.disabled=false;}
-       });
-       item.append(source);
-     }
-     planning(r,item);box.append(item);
-   }body.append(box);
+ const today=localDay();
+ const scoped=companies.filter(c=>field('archives').checked||!(c.archived===true||c.archive===true));
+ const term=norm(field('search').value),follow=field('follow').value;
+ const sorted=scoped.flatMap(c=>records.get(c.id)?.rows||[]).map(r=>({...r,due:describeDue(r.prochaineDate,today),plan:r.plan||{}}))
+  .filter(r=>(!follow||(r.plan.state||planStates[0])===follow)&&norm([r.client,r.city,r.region,r.site,r.lot,r.identification].join(' ')).includes(term))
+  .sort((a,b)=>(a.due.date||'9999').localeCompare(b.due.date||'9999')||a.client.localeCompare(b.client,'fr')||String(a.identification||'').localeCompare(String(b.identification||''),'fr',{numeric:true}));
+ const groups=new Map([...bands.map(([key])=>[key,new Map()]),['verify',new Map()]]);
+ for(const row of sorted){
+   const group=groups.get(row.due.group);
+   if(!group.has(row.clientId))group.set(row.clientId,[]);
+   group.get(row.clientId).push(row);
  }
- if(!groups.size)body.append(text('p',loading?'Lecture des dossiers…':'Aucune balance dans les données disponibles pour cette sélection.'));
+ const toolbar=field('bands');
+ if(!toolbar.childElementCount){
+  for(const [key,label] of bands){
+   const b=command('',()=>showBand(key));b.dataset.band=key;
+   const name=text('span',label),count=text('span','');count.className='count-line';
+   count.append(text('strong',''),text('small',''));b.append(name,count);toolbar.append(b);
+  }
+ }
+ for(const b of toolbar.children){
+   const n=groups.get(b.dataset.band).size;b.setAttribute('aria-pressed',String(b.dataset.band===mode));
+   b.querySelector('strong').textContent=String(n);b.querySelector('small').textContent=n>1?'compagnies':'compagnie';
+ }
+ field('heading').textContent=bands.find(([key])=>key===mode)?.[2]||'Dates à vérifier';
+ const unknown=field('unknown');unknown.hidden=!groups.get('verify').size;
+ unknown.textContent='Dates à vérifier ('+groups.get('verify').size+')';
+ const area=field('rows'),open=new Set([...area.querySelectorAll(':scope > details[open]')].map(el=>el.dataset.client));area.replaceChildren();
+ for(const [id,rows] of groups.get(mode)){
+   const box=document.createElement('details');box.dataset.client=id;box.open=open.has(id);
+   const summary=document.createElement('summary');summary.append(text('strong',rows[0].client),text('span',dueText(rows[0].due)));box.append(summary);
+   const items=text('div','');items.className='equipment-list';
+   for(const r of rows){
+     const title=[r.identification,r.type].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(' · ')||r.name||'Balance';
+     const linkable=/^[\w-]{8,200}$/.test(r.fileId||'');
+     const item=linkable?command('',async()=>{
+       const stamp=generation,account=identity,current=()=>stamp===generation&&account===identity&&available()&&hasClient(id);
+       if(!current()||item.disabled)return;item.disabled=true;
+       try{if(await window.cdqDeadlineSource(id,r.fileId,current)&&current())close();}
+       catch{if(current())field('notice').textContent='Ouverture du certificat impossible.';}
+       finally{item.disabled=false;}
+     }):text('div','');
+     item.className='equipment-row';item.append(text('span',title),text('time',dueText(r.due)));items.append(item);
+     if(field('management').checked)planning(r,items);
+   }
+   box.append(items);area.append(box);
+ }
+ if(!area.childElementCount)area.append(text('p',loading?'Lecture des dossiers…':'Aucune compagnie dans cette période.'));
+ field('coverage').textContent=loading?'Actualisation…':scoped.filter(c=>records.has(c.id)).length+' dossiers indexés';
 }
+
 function scheduleRender(){if(panel.querySelector('details[data-plan][open]'))return;if(!paint)paint=requestAnimationFrame(()=>{paint=0;render();});}
 async function refresh(){
  const session=window.cdqDeadlineSession?.();if(!session||session.owner!==identity){reset();return;}
@@ -187,7 +180,7 @@ async function refresh(){
  }finally{if(active()){loading=false;render();}}
 }
 async function open(){const next=owner();if(next!==identity)reset();if(!next){button.title='Ouvrez une session CDQ pour voir les échéances';return;}
- identity=next;month=localDay().slice(0,7);mode='month';selected='';fitPage();panel.show();button.setAttribute('aria-expanded','true');field('notice').textContent='';await window.cdqClientsReadyV2658;if(!available())return;refresh();
+ identity=next;mode='red';field('rows').replaceChildren();fitPage();panel.show();button.setAttribute('aria-expanded','true');field('notice').textContent='';await window.cdqClientsReadyV2658;if(!available())return;refresh();
  let day=localDay();function tick(){if(!available())return;const now=localDay();if(now!==day){day=now;render();}timer=setTimeout(tick,60000);}tick();
 }
 function fitPage(){
@@ -198,13 +191,11 @@ function fitPage(){
  panel.style.setProperty('--deadline-bottom',(side?0:Math.max(0,innerHeight-bar.top))+'px');
 }
 window.addEventListener('resize',()=>{if(panel.open)fitPage();});
-for(const [key,delta] of [['prev',-1],['next',1]])field(key).onclick=()=>{month=monthShift(month,delta);changeView('month');};
-field('whole').onclick=()=>changeView('month');field('today').onclick=()=>{month=localDay().slice(0,7);changeView('month');};
-for(const key of ['late','unknown'])field(key).onclick=()=>changeView(mode===key?'month':key);
+field('unknown').onclick=()=>showBand('verify');
 window.addEventListener('pointerdown',e=>{if(panel.open&&e.target.closest?.('.bottom-nav-item')&&!e.target.closest('[data-open-deadlines]'))close();},true);
 window.addEventListener('keydown',e=>{if(e.key==='Escape'&&panel.open){e.preventDefault();close();button.focus();}});
 button.addEventListener('click',()=>panel.open?close():open());field('close').onclick=close;panel.addEventListener('cancel',close);
-field('refresh').onclick=()=>{if(!loading)refresh();};for(const key of ['search','follow','archives'])field(key).addEventListener('input',render);
+field('refresh').onclick=()=>{if(!loading)refresh();};for(const key of ['search','follow','archives','management'])field(key).addEventListener('input',render);
 for(const type of ['cdq:pdf-save-retired-v2707','cdq:report-data-saved-v2754','cdq:report-pdf-confirmed-v2754','cdq:report-deleted-v2754','cdq:deleted','cdq:moved','cdq:copied','cdq:renamed']){
  window.addEventListener(type,event=>{if(event.detail?.clientId&&available())refresh();});
 }
