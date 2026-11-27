@@ -10,9 +10,9 @@ html.cdq-mobile-layout[data-cdq-background-v2793] body,
 html.cdq-desktop-v2676[data-cdq-background-v2793] body{
  background-image:var(--cdq-bg-v2793)!important;
  background-color:var(--cdq-bg-base-v2793)!important;
- background-position:center center!important;
+ background-position:var(--cdq-material-position,center center)!important;
  background-repeat:no-repeat!important;
- background-size:var(--cdq-personal-fit,cover)!important;
+ background-size:var(--cdq-material-size,var(--cdq-personal-fit,cover))!important;
 }
 html[data-cdq-background-v2793] :is(
  .cdq-workspace-page,#cdqDrivePageV2638,#cdqCalculPageV2638,#cdqOpportunitiesPageV2638,
@@ -21,9 +21,9 @@ html[data-cdq-background-v2793] :is(
 ){
  background-image:var(--cdq-bg-v2793)!important;
  background-color:var(--cdq-bg-base-v2793)!important;
- background-position:center center!important;
+ background-position:var(--cdq-material-position,center center)!important;
  background-repeat:no-repeat!important;
- background-size:var(--cdq-personal-fit,cover)!important;
+ background-size:var(--cdq-material-size,var(--cdq-personal-fit,cover))!important;
 }
 /* The central app shell must let the selected backing show through.
    Do not change the file cards or control panels. */
@@ -105,3 +105,26 @@ html[data-cdq-background-v2793] #cdqCalibrationDialogV2565 :is(.cdq-cal-shell,.c
 #cdq-settings-panel-appearance [data-personal-images] img{width:100%;height:120px;border-radius:6px;background:var(--cdq-page)}
 #cdq-settings-panel-appearance .personal-actions{display:flex;gap:8px;flex-wrap:wrap}
 #cdq-settings-panel-appearance .personal-actions button:disabled{opacity:.5}
+
+/* The approved S2 composition puts the band of embers directly above navigation. */
+html[data-cdq-background-v2793="smoke"] {
+  --cdq-material-size: contain;
+  --cdq-material-position: center center;
+  --cdq-bg-base-v2793: #0b0807;
+}
+@media (orientation: portrait) {
+  html[data-cdq-background-v2793="smoke"] {
+    --cdq-material-size: min(100%, calc((100dvh - var(--cdq-nav-height, 72px)) * 852 / 844)) auto;
+    --cdq-material-position: center bottom var(--cdq-nav-height, 72px);
+  }
+}
+#cdqSettingsModalV2294 [data-cdq-background-option-v2793="smoke"] .cdq-bg-thumb-v2793 {
+  background-color: #0b0807;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+@media (orientation: portrait) {
+  html[data-cdq-background-v2793="smoke"] body {
+    background-attachment: fixed !important;
+  }
+}

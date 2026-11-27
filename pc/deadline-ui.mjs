@@ -121,7 +121,12 @@ function render(){
    const summary=document.createElement('summary');summary.append(text('strong',rows[0].client),text('span',dueText(rows[0].due)));box.append(summary);
    const items=text('div','');items.className='equipment-list';
    for(const r of rows){
-     const title=[r.identification,r.type].filter(Boolean).filter((v,i,a)=>a.indexOf(v)===i).join(' · ')||r.name||'Balance';
+     const clean = value => typeof value === 'string' ? value.trim() : '';
+     const fileTitle = [r.name, r.source].map(clean).find(Boolean);
+     const identification = clean(r.identification);
+     const title = !identification || identification === 'Balance'
+       ? fileTitle || clean(r.type) || 'Balance'
+       : [identification, clean(r.type)].filter((v, i, all) => v && all.indexOf(v) === i).join(' · ');
      const linkable=/^[\w-]{8,200}$/.test(r.fileId||'');
      const item=linkable?command('',async()=>{
        const stamp=generation,account=identity,current=()=>stamp===generation&&account===identity&&available()&&hasClient(id);
@@ -136,7 +141,9 @@ function render(){
    box.append(items);area.append(box);
  }
  if(!area.childElementCount)area.append(text('p',loading?'Lecture des dossiers…':'Aucune compagnie dans cette période.'));
- field('coverage').textContent=loading?'Actualisation…':scoped.filter(c=>records.has(c.id)).length+' dossiers indexés';
+ const represented = scoped.filter(company => records.get(company.id)?.rows.length > 0).length;
+ field('coverage').textContent = loading ? 'Actualisation…' :
+   represented + ' dossier' + (represented === 1 ? '' : 's') + ' avec documents sur ' + scoped.length;
 }
 
 function scheduleRender(){if(panel.querySelector('details[data-plan][open]'))return;if(!paint)paint=requestAnimationFrame(()=>{paint=0;render();});}
