@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Appeler le mobile — Balance CDQ</title>
+  <style>
+    html { color-scheme: light dark; }
+    body { font: 16px/1.5 system-ui, sans-serif; margin: 0; padding: 24px; }
+    main { max-width: 420px; margin: 28px auto; text-align: center; }
+    h1 { font-size: 24px; }
+    a { display: block; background: #006e97; color: white; padding: 18px; border-radius: 9px;
+        font-weight: 700; font-size: 20px; text-decoration: none; }
+    [hidden] { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Appeler le mobile</h1>
+    <a id="appel" hidden></a>
+    <p id="instruction">Compose le numéro indiqué dans la signature CDQ.</p>
+  </main>
+  <script>
+    const digits = new URLSearchParams(location.search).get('n') || '';
+    const number = /^1([2-9]\d{2})([2-9]\d{2})(\d{4})$/.exec(digits);
+    if (number) {
+      const link = document.getElementById('appel');
+      link.href = 'tel:+' + digits;
+      link.textContent = 'Appeler le +1 (' + number[1] + ') ' + number[2] + '-' + number[3];
+      link.hidden = false;
+      document.getElementById('instruction').textContent =
+        'Si le téléphone ne s’ouvre pas automatiquement, appuie sur le numéro.';
+      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+          && document.visibilityState === 'visible' && !document.prerendering) {
+        location.href = link.href;
+      }
+    }
+  </script>
+</body>
+</html>
