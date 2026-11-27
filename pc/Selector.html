@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="29.40" data-cdq-pc-release="a4b2c54ebcc988b395f9de5f75eebd116c53f836b8fe2f5c8c6c4989d73a5a62">
+<html data-cdq-pc-version="29.40" data-cdq-pc-release="7a3078361c7d2a9d27c9cb684bf226f2fd69f33e6f4f92ff991324028a95a9a3">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -947,7 +947,7 @@ function coalesceReportAliasesV2757(root,client,owner,remember=()=>{}){
 <link rel="stylesheet" href="./icon-artwork-baseline-v2540.css">
 <script src="./embedded-rpc.js"></script>
 <script src="./send-progress-v2893.js"></script>
-<meta name="cdq-package-build" content="2026.11.26-v29.40-portail-pc">
+<meta name="cdq-package-build" content="2026.11.26-v29.41-correctifs-pc">
 
 
 <script id="cdqBridgeV23">
@@ -1001,7 +1001,7 @@ function cdqAnnounceSelectorReadyV42(){
     type:'CDQ_SELECTOR_READY',
     authProtocol:42,
     accessState:cdqAccessState,
-    build:'2026.11.26-v29.40-portail-pc'
+    build:'2026.11.26-v29.41-correctifs-pc'
   });
 }
 
@@ -1014,7 +1014,7 @@ function cdqAnnounceHealthReadyV97(){
         type:'CDQ_HEALTH_READY',
         authProtocol:42,
         accessState:cdqAccessState,
-        build:'2026.11.26-v29.40-portail-pc'
+        build:'2026.11.26-v29.41-correctifs-pc'
       });
     }
   } catch(e) {}
@@ -12333,7 +12333,7 @@ function changerMode(){
 (function(){
   "use strict";
 
-  const CDQ_BUILD = "2026.11.26-v29.40-portail-pc";
+  const CDQ_BUILD = "2026.11.26-v29.41-correctifs-pc";
   let cdqRootContent = null;
   let cdqFolderMap = Object.create(null);
   let cdqParentMap = Object.create(null);
@@ -13225,7 +13225,7 @@ function cdqInstallSwipeGesture(row){
     if(complete){state.done=state.total;state.preparedKnown=true;}
     state.current=state.done;state.percent=progress?.globalPercent??0;
     const text=String(p.message||'');
-    const pendingLabel=state.localChecks?'Envoi non soumis':p.status?'Envoi en cours':pendingLabel;
+    const pendingLabel=state.localChecks?'Envoi non soumis':p.status?'Envoi en cours':'Demande en cours de transmission';
     label.textContent=p.status?progress.detail:text||progress?.detail||'Confirmation du serveur en attente…';
     modal.dataset.indeterminate=String(progress?.globalPercent==null);modal.dataset.busy=String(!complete&&!['blocked','cancelled','closed'].includes(progress?.outcome));
     fill.style.width=(progress?.globalPercent??0)+'%';
@@ -15004,7 +15004,7 @@ function cdqCheckUpdate(){
 (function(){
 "use strict";
 
-const CDQ_V19_BUILD = "2026.11.26-v29.40-portail-pc";
+const CDQ_V19_BUILD = "2026.11.26-v29.41-correctifs-pc";
 const CDQ_V19_DAY_KEY = "cdqV19OfflineDay";
 let cdqV19SyncRunning = false;
 let cdqV19OfflineToggleRunning = false;
@@ -19356,7 +19356,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V20_BUILD = "2026.11.26-v29.40-portail-pc";
+const CDQ_V20_BUILD = "2026.11.26-v29.41-correctifs-pc";
 let cdqV20Inventory = null;
 let cdqV20Tab = "stock";
 let cdqV20Location = "";
@@ -20209,7 +20209,7 @@ window.addEventListener("load",function(){
 (function(){
 "use strict";
 
-const CDQ_V21_BUILD = "2026.11.26-v29.40-portail-pc";
+const CDQ_V21_BUILD = "2026.11.26-v29.41-correctifs-pc";
 let cdqV21PushPending = false;
 function v21IsAdmin(){return String(utilisateurCourantRole||'')==='admin';}
 
@@ -24708,7 +24708,7 @@ html.windows #cdqPcV16 tr.pc22-swiped .pc22-copy-swipe{display:inline-flex!impor
 <script id="cdqfeedbackV2522">
 (function(){
 'use strict';
-const BUILD='2026.11.26-v29.40-portail-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
+const BUILD='2026.11.26-v29.41-correctifs-pc',ORIGIN='https://jprodrigue86.github.io',BASE=ORIGIN+'/Balance-CDQ-distribution/';
 const jobs=new Map();let serial=0,indicator,update,checking=false,lastCheck=0,available='',deployed='';
 function paint(){
  if(!document.documentElement.classList.contains('windows'))return;

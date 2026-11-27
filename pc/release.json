@@ -1,21 +1,21 @@
 {
-  "version": "29.40",
-  "sourceCommit": "40a191ef5c771ebb39fca1cdf958b6aab90b82fe",
-  "scope": "portail-rapports-themes",
+  "version": "29.41",
+  "sourceCommit": "8282c7a7d94e545bf3b1dc2dca4b5774b91b879e",
+  "scope": "portail-envoi-publication-drive",
   "candidateOnly": false,
   "published": true,
   "runtimeQualificationComplete": false,
   "authenticatedDriveTested": false,
   "platform": "pc-pwa",
   "desktopModel": 3,
-  "release": "a4b2c54ebcc988b395f9de5f75eebd116c53f836b8fe2f5c8c6c4989d73a5a62",
-  "build": "2026.11.26-v29.40-portail-pc",
-  "androidSourceBuild": "2026.11.26-v29.40-portail",
+  "release": "7a3078361c7d2a9d27c9cb684bf226f2fd69f33e6f4f92ff991324028a95a9a3",
+  "build": "2026.11.26-v29.41-correctifs-pc",
+  "androidSourceBuild": "2026.11.26-v29.41-correctifs",
   "files": 1222,
   "derivationBase": {
-    "sourceCommit": "2116c28122d32b940761183012740842049775ad",
-    "version": "29.39"
+    "sourceCommit": "40a191ef5c771ebb39fca1cdf958b6aab90b82fe",
+    "version": "29.40"
   },
-  "publicationCommit": "40a191ef5c771ebb39fca1cdf958b6aab90b82fe",
-  "buildRunId": "45929873472"
+  "publicationCommit": "8282c7a7d94e545bf3b1dc2dca4b5774b91b879e",
+  "buildRunId": "45938892852"
 }
