@@ -1,3 +1,4 @@
+import {conclusionRows} from './conclusion-detail-2946.mjs';
 import {authoredUniformPdfTextStyleV2935} from './reader-authored-text-v2935.mjs';
 import {isCorrectionReadingV2736} from './reader-measurements-v2736.mjs';
 import {cdqPlainProblemLabelV3,cdqProblemCaptionV3,cdqFitDetailTextV2864,cdqFitTrialTextV4,cdqTrialTextSpecV4,cdqWinAnsiCodeV4} from './reader-choices-v2572.mjs';
@@ -32,12 +33,21 @@ function nativeTrialChoiceAppearanceV2(pdf,form,L,field,text){
     if(fill)commands.push(fill+` 0 0 ${w} ${h} re f`);
     if(stroke&&border>0)commands.push(stroke+` ${border} w ${border/2} ${border/2} ${w-border} ${h-border} re S`);
     const clip=fit.lineHeight===1.03?.2:1;commands.push(`${clip} ${clip} ${Math.max(0,w-2*clip)} ${Math.max(0,h-2*clip)} re W n`);
+    const split=field.getName()==='essai_cdq_problemes_detail' && pdf.catalog.lookupMaybe(N('CDQConclusionV2946'),L.PDFNumber)?.asNumber()===2946
+      ?conclusionRows(text,w,h,textWidth):null;
+    if(split){
+      for(const row of split){
+        const encoded='<'+codes(row.text).map(code=>code.toString(16).padStart(2,'0')).join('')+'>';
+        commands.push('BT',`/${fontName} ${row.size} Tf 0 g`,`1 0 0 1 ${row.x} ${h-row.y} Tm ${encoded} Tj`,'ET');
+      }
+    }else{
     const firstY=spec?.multiline?h-(fit.padding??3)-size*(fit.ascent??.83):(h-size)/2+size*.22;
     fit.lines.forEach((line,index)=>{
       const length=textWidth(line,size),x=align===1?(w-length)/2:align===2?w-3-length:3,y=firstY-index*size*(fit.lineHeight??1.19);
       const encoded='<'+codes(line).map(code=>code.toString(16).padStart(2,'0')).join('')+'>';
       commands.push('BT',`/${fontName} ${size.toFixed(3)} Tf 0 g`,`1 0 0 1 ${x.toFixed(3)} ${y.toFixed(3)} Tm ${encoded} Tj`,'ET');
     });
+    }
     commands.push('Q EMC');
     const stream=pdf.context.flateStream(commands.join('\n'),{
       Type:'XObject',Subtype:'Form',BBox:[0,0,w,h],Resources:{Font:{[fontName]:fontRef}}

@@ -1,7 +1,9 @@
+import {LAYOUT2946} from './working-layout-2946.mjs';
+import {showConclusionRows} from './conclusion-detail-2946.mjs';
 import {LAYOUT2940} from './working-layout-2940.mjs';
 import {authoredUniformTrialTextSpecV2935} from './reader-authored-text-v2935.mjs';
 import {LAYOUT2935} from './working-layout-2935.mjs';
-const authoredTemplateSHAsV2935=new Set([...Object.values(LAYOUT2940),...Object.values(LAYOUT2935)].map(meta=>meta.sha256));
+const authoredTemplateSHAsV2935=new Set([...Object.values(LAYOUT2946),...Object.values(LAYOUT2940),...Object.values(LAYOUT2935)].map(meta=>meta.sha256));
 import {measurementDisplayV2871,problemLocksV2871} from './reader-ne-v2871.mjs';
 let fieldFontNamesV2871=new Map();
 import {installWeightsControlsV2871,weightsDateParts} from './reader-weights-v2871.mjs';
@@ -75,6 +77,10 @@ function fitTrialTextFieldV4(field){
   const height=rect?.length===4?Math.abs(rect[3]-rect[1]):spec.height;
   const pageIndex=Math.max(0,Number(field.closest('.page')?.dataset.pageNumber||1)-1);
   const scale=viewer?.getPageView?.(pageIndex)?.viewport?.scale||field.getBoundingClientRect().height/height||1;
+  if(field.name==='essai_cdq_problemes_detail' && field.closest('section')?.title==='Conclusion — problèmes corrigés et non corrigés'){
+    const width=Math.abs(rect[2]-rect[0]);
+    if(showConclusionRows(field,width,height,(text,size)=>cdqTrialDomTextWidthV2935(field,text,size,spec)))return true;
+  }
   let fit=cdqFitTrialDomTextV4(field.value,field,spec,scale);
   if(field.name==='essai_cdq_problemes_detail'){
     const detailed=cdqFitDetailTextV2864(field.value,fit.width/scale,fit.height/scale,spec.base,spec.authoredUniform?(text,size)=>cdqTrialDomTextWidthV2935(field,text,size,spec):undefined);
