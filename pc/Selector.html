@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="29.44" data-cdq-pc-release="9a7b04dfd49d7bc3dd9c23e7568f823d77cb1d8a6103d629086bc000fe697f16">
+<html data-cdq-pc-version="29.45" data-cdq-pc-release="35a9fe8798873c3cd04137b21cfefcad7f82cf49759f173efa28d3ad28a347e0">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -26336,6 +26336,17 @@ html.cdq-desktop-v2676 body #filesContainer .file-row :is(.file-actions,.file-me
   if(!window.cdqActionArtworkV2657)return;
   for(const button of document.querySelectorAll('button,[role="button"]')){
    if(button.closest('.bottom-nav,.cdq-icon-choice-v2514,[data-cdq-heading-icon-v2675],[data-pc-home-art],.cdq-preview-item-v2651')||button.matches('.cdq-swipe-action,[data-file-action]'))continue;
+   if(button.matches('[data-cdq-heading-close-v2671],.cdq-settings-close-v2708,#deadline-panel [data-field="close"]')){
+     if(!button.querySelector(':scope > svg[data-page-cross]')){
+       const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+       svg.setAttribute('data-page-cross','');svg.setAttribute('aria-hidden','true');
+       svg.setAttribute('viewBox','0 0 24 24');
+       const cross=document.createElementNS(svg.namespaceURI,'path');
+       cross.setAttribute('d','M6 6L18 18M18 6L6 18');
+       svg.append(cross);button.replaceChildren(svg);
+     }
+     continue;
+   }
    const key=action(button);if(!key)continue;
    let icon=button.querySelector(':scope > svg:not([data-file-artwork]),:scope > [data-cdq-home-icon],:scope > .action-icon,:scope > .ico,:scope > .icon,:scope > .cdq-secondary-icon-v2710');
    if(!icon&&/^[×✕Xx+−–✎⚙★☆↻←]+$/.test(button.textContent.trim())){icon=document.createElement('span');button.replaceChildren(icon);}

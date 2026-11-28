@@ -104,6 +104,15 @@ function render(){
    if(!group.has(row.clientId))group.set(row.clientId,[]);
    group.get(row.clientId).push(row);
  }
+ const emptyCompanies = new Map();
+ if(hydrated===identity && scan?.initial===false && !syncFailed && !follow){
+   for(const company of scoped){
+     const record=records.get(company.id);
+     if(record && !record.rows.length && norm([company.nom,company.ville,company.region].join(' ')).includes(term)){
+       emptyCompanies.set(company.id,company);
+     }
+   }
+ }
  const toolbar=field('bands');
  if(!toolbar.childElementCount){
   for(const [key,label] of bands){
@@ -117,8 +126,9 @@ function render(){
    b.querySelector('strong').textContent=hydrated===identity ? String(n) : '—';b.querySelector('small').textContent=n>1?'compagnies':'compagnie';
  }
  field('heading').textContent=bands.find(([key])=>key===mode)?.[2]||'Dates à vérifier';
- const unknown=field('unknown');unknown.hidden=!groups.get('verify').size;
- unknown.textContent='Dates à vérifier ('+groups.get('verify').size+')';
+ const unknown=field('unknown'),verifyCount=groups.get('verify').size+emptyCompanies.size;
+ unknown.hidden=!verifyCount;
+ unknown.textContent='Dates à vérifier ('+verifyCount+')';
  const area=field('rows'),open=new Set([...area.querySelectorAll(':scope > details[open]')].map(el=>el.dataset.client));area.replaceChildren();
  for(const [id,rows] of groups.get(mode)){
    const box=document.createElement('details');box.dataset.client=id;box.open=open.has(id);
@@ -143,6 +153,12 @@ function render(){
      if(field('management').checked)planning(r,items);
    }
    box.append(items);area.append(box);
+ }
+ if(mode==='verify' && emptyCompanies.size){
+   area.append(text('h4','Sans rapport ni certificat indexé'));
+   for(const company of [...emptyCompanies.values()].sort((a,b)=>a.nom.localeCompare(b.nom,'fr'))){
+     area.append(text('p',company.nom));
+   }
  }
  if(!area.childElementCount && hydrated===identity && !scan?.initial)area.append(text('p','Aucune compagnie dans cette période.'));
  const represented = scoped.filter(company => records.get(company.id)?.rows.length > 0).length;

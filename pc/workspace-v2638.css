@@ -201,3 +201,16 @@ body #cdqInvoicePageV2590 .cdq-invoice-tech{margin-top:12px!important}
 @media (max-width: 349px) {
   #cdqDrivePageV2638 .cdq-drive-toolbar button { flex-direction: column; gap: 2px; }
 }
+
+/* Center the cross within each page's existing hit area. */
+#deadline-panel [data-field="close"] { --cdq-close-ink:var(--deadline-gold); }
+#cdqSettingsModalV2294 .cdq-settings-close-v2708 { --cdq-close-ink:#af8bdc; }
+html body :is([data-cdq-heading-close-v2671],#cdqSettingsModalV2294 .cdq-settings-close-v2708,#deadline-panel [data-field="close"]) {
+  display:grid!important; place-items:center!important; padding:0!important; line-height:1!important;
+}
+html body button > svg[data-page-cross] {
+  width:24px!important; height:24px!important; margin:0!important; display:block!important;
+  color:var(--cdq-close-ink,currentColor)!important;
+  fill:none!important; stroke:currentColor!important; stroke-width:2.25; stroke-linecap:round;
+  pointer-events:none;
+}

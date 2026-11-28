@@ -8,7 +8,8 @@ export function normalizeTechniciansV2767(raw){
 export function technicianFieldV2767(definition,context,{newReport=false,currentValue}={}){
  const value=String(currentValue??definition.value??definition.defaultValue??'');
  const normalized=normalizeTechniciansV2767(context);if(!normalized)return null;
- const next=value||newReport&&normalized.current||'';
+ const givenName=normalized.current.split(' ')[0];
+ const next=value||(newReport?givenName:'');
  const names=[...normalized.names];if(next&&!names.includes(next))names.push(next);
  return {value:next,items:[{displayValue:'',exportValue:''},...names.map(name=>({displayValue:name,exportValue:name}))]};
 }

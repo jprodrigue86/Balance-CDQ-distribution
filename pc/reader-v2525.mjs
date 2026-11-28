@@ -167,7 +167,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)rememberRea
 window.addEventListener('pagehide',rememberReaderV2767);
 $('container').addEventListener('scroll',scheduleReaderResumeV2767,{passive:true});
 for(const event of ['input','change'])$('viewer').addEventListener(event,scheduleReaderResumeV2767);
-let techniciansV2767=null;
+let techniciansV2767=null, technicianReaderId='';
 let initialValuesV2730=null,initialAppliedV2730=false,initialUpdatesV2730=[],initialPreparedDraftV2730=false;
 // V27.79: only a brand-new report may adopt the signed-in technician.
 const cdqNewReportIdentityV2779=()=>initialPreparedDraftV2730&&!reportSnapshotV2754&&!resumeSavedV2767?.fields;
@@ -733,6 +733,7 @@ async function open(data){
   reportEngineV2754=reportContextV2754(data.reportEngineV2754);reportSnapshotV2754=data.reportSnapshotV2754?reportFieldsV2754(data.reportSnapshotV2754):null;snapshotUpdatesV2754=[];engineDefaultsAppliedV2754=false;
   resumeContextV2767=data.resumeContextV2767||null;
   resumeSavedV2767=resumeContextV2767?resumeJournalV2767.restore(resumeContextV2767):null;
+  technicianReaderId=String(data.readerRequestId||'');
   techniciansV2767=normalizeTechniciansV2767(data.techniciansV2767);
   initialValuesV2730=data.initialValues||null;initialAppliedV2730=false;initialUpdatesV2730=[];initialPreparedDraftV2730=data.readerPreparedVersion===2730&&(isCacheableReaderDraftV2730({...data,bytes:blob.size})||isWeightCreationDraftV2872({...data,bytes:blob.size}));
   $('name').textContent=name;$('empty').style.display='none';status('Ouverture du PDF…');
@@ -938,12 +939,22 @@ window.addEventListener('message',async e=>{
   if(!hosted||e.source!==parent||!parentOrigin||e.origin!==parentOrigin)return;
   const d=e.data||{};
   if(d.type==='CDQ_READER_TECHNICIANS_V2767'){
+    if(d.readerRequestId!==technicianReaderId || closed)return;
     techniciansV2767=normalizeTechniciansV2767(d.context);
-    if(doc&&!closed&&!opening&&!readOnly&&cdqNewReportIdentityV2779())for(const definition of cdqFieldDefinitionsV2581('client_technicien')){
-      const state=technicianFieldV2767(definition,techniciansV2767,{currentValue:cdqStoredFieldStateV2581('client_technicien').value});
-      if(!state)continue;Object.assign(definition,state);doc.annotationStorage.setValue(definition.id,state);
-      viewer.eventBus.dispatch('updatefromsandbox',{source:window,detail:{id:definition.id,items:state.items}});
-      viewer.eventBus.dispatch('updatefromsandbox',{source:window,detail:{id:definition.id,value:state.value}});
+    if(doc&&!closed&&!opening&&!readOnly&&cdqNewReportIdentityV2779()){
+      const name='client_technicien';
+      const current=cdqStoredFieldStateV2581(name);
+      const allowDefault=!current.readOnly&&!touchedIdentity.has(name)&&pending===null&&savedVersion===0;
+      const state=technicianFieldV2767({},techniciansV2767,{currentValue:current.value,newReport:allowDefault});
+      if(state){
+        for(const definition of cdqFieldDefinitionsV2581(name)){
+          Object.assign(definition,state);
+          viewer.eventBus.dispatch('updatefromsandbox',{source:window,detail:{id:definition.id,items:state.items}});
+          viewer.eventBus.dispatch('updatefromsandbox',{source:window,detail:{id:definition.id,value:state.value}});
+          doc.annotationStorage.setValue(definition.id,state);
+        }
+        if(state.value!==String(current.value??''))modified();
+      }
     }
     cdqRestoreInteractiveFieldsV2581();choices?.refresh();return;
   }
@@ -985,7 +996,7 @@ try{
       const technicianNameV2819=reportFieldNameV2819(data.objects,'client_technicien'),technicianDefinitionsV2767=data.objects?.get?.(technicianNameV2819)||data.objects?.[technicianNameV2819]||[];
       if(cdqNewReportIdentityV2779())for(const definition of Array.isArray(technicianDefinitionsV2767)?technicianDefinitionsV2767:[technicianDefinitionsV2767]){
         const newTechnicianV2767=!!techniciansV2767?.current;
-        const state=technicianFieldV2767(definition,techniciansV2767,{newReport:!!newTechnicianV2767,...(newTechnicianV2767?{currentValue:techniciansV2767.current}:{})});
+        const state=technicianFieldV2767(definition,techniciansV2767,{newReport:newTechnicianV2767,...(newTechnicianV2767?{currentValue:''}:{})});
         if(state){Object.assign(definition,state);sandboxDocument.annotationStorage.setValue(definition.id,state);updates.push({id:definition.id,name:technicianNameV2819,...state});}
       }
       sandbox.create(data);
@@ -1005,6 +1016,7 @@ try{
   nativeInput=installNativeTextInput($('viewer'));
   choices=installReaderChoices({surface:$('viewer'),isReadOnly:()=>readOnly,
     onConfirm:(field,selection)=>{
+      if(legacyReportFieldNameV2819(field.name)==='client_technicien')touchedIdentity.add('client_technicien');
       if(!selection?.problem){form.advance(field);return;}
       if(selection.hasProblems){
         const comment=$('viewer').querySelector('[name="essai_cdq_precisions"],[name="precisions"]');
