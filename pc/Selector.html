@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html data-cdq-pc-version="29.45" data-cdq-pc-release="35a9fe8798873c3cd04137b21cfefcad7f82cf49759f173efa28d3ad28a347e0">
+<html data-cdq-pc-version="29.45" data-cdq-pc-release="2d4d62f6fe97d3bb43e5781bce7dcdb361cc37330c410f43519315fb2fbf4722">
 <head>
 <script src="./desktop-boot-v2676.js"></script>
 <script src="./pc-update.js"></script>
@@ -23745,6 +23745,8 @@ html.cdq-mobile-layout #cdqCompanyBackdrop[hidden]{display:none!important}
   // Previously its inline !important writes overruled the shipped styles after
   // every resize/theme/icon refresh. Release those properties at their writer.
   function homeStyleOwnsV2798(el, key) {
+    if (root.classList.contains('cdq-desktop-v2676') && root.dataset.cdqBackgroundV2793==='leather' &&
+        key==='background' && el.matches('#companyButton,.bottom-nav,#cdqTopActionsV2204,#cdqClientActionsV2640,#cdqTopActionsV2204>.cdq-top-action,#filesContainer,.file-row,.folder-header')) return true;
     if (root.classList.contains('cdq-desktop-v2676')) return false;
     if (el.id === 'cdqTopDisplayButtonV2204' && key === 'display') return true;
     if (el.id === 'cdqClientPortalButton20261028' && key === 'display') return true;
